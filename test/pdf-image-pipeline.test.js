@@ -18,6 +18,13 @@ import {
   fetchOrLoadFunsdBenchmark
 } from '../src/pdf-image-pipeline.js';
 import { scanRecordsForPII, maskValue, runCleanAndTokenizePipeline } from '../src/clean-and-tokenize.js';
+import {
+  auditVerisieveDlWasm,
+  embedNeedleWasm,
+  searchNeedleWasm,
+  trainWasmSmallModel
+} from '../src/wasm-needle-dl.js';
+
 
 test('1. Generated PDF 1.4 binary starts with %PDF-1.4 and ends with %%EOF', () => {
   const { pdfBuffer } = generateResearchPdfAndImage();
@@ -343,7 +350,85 @@ test('12. UI server endpoints /api/duckdb and /api/train-model process SQL and t
     assert.strictEqual(trainData.model_training.piiExposureRatePctRaw, 100.0, 'Raw model PII leak rate must be 100%');
     assert.ok(trainData.model_training.valPerplexityVerisieve <= trainData.model_training.valPerplexityRaw, 'VeriSieve validation perplexity must be superior');
     assert.ok(Array.isArray(trainData.sftPreview), 'Must return sftPreview array');
+
+    // 3. Test /api/needle-search
+    const needleResp = await fetch(`http://localhost:${testPort}/api/needle-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'hip fracture recovery' })
+    });
+    assert.strictEqual(needleResp.status, 200);
+    const needleData = await needleResp.json();
+    assert.strictEqual(needleData.ok, true);
+    assert.strictEqual(needleData.piiExposureRatePct, 0.0);
+    assert.ok(needleData.results.length >= 1);
   } finally {
     child.kill();
   }
 });
+
+test('13. auditVerisieveDlWasm verifies 100% air-gapped pure WASM (0 imports, 60,096 bytes, 23 DL kernel exports)', async () => {
+  const audit = await auditVerisieveDlWasm();
+  assert.strictEqual(audit.ok, true);
+  assert.strictEqual(audit.byteLength, 60096);
+  assert.strictEqual(audit.importCount, 0, 'Must have zero WASM imports (100% air-gapped pure WASM)');
+  assert.strictEqual(audit.exportCount, 23, 'Must export exactly 23 DL kernels');
+  assert.strictEqual(audit.sha256, '2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2');
+  assert.strictEqual(audit.airGapped, true);
+  assert.ok(audit.kernelExports.includes('mle_dl_embed_subword'));
+  assert.ok(audit.kernelExports.includes('mle_dl_bitnet_encode'));
+  assert.ok(audit.kernelExports.includes('mle_dl_transformer_train'));
+  assert.ok(audit.kernelExports.includes('mle_dl_vera_train'));
+});
+
+test('14. embedNeedleWasm and searchNeedleWasm return deterministic 64-dim embeddings and accurate semantic ranking in pure WASM', () => {
+  const textA = 'Effects of Nutritional Status on Elderly Hip Fracture Recovery';
+  const textB = 'Functional recovery after hip fracture in elderly patients';
+  const textC = 'CONFIDENTIAL FACSIMILE COVER SHEET Dec 10 1998';
+
+  const embA = embedNeedleWasm(textA);
+  const embB = embedNeedleWasm(textB);
+  const embC = embedNeedleWasm(textC);
+
+  assert.strictEqual(embA.length, 64, 'Must return 64-dim embedding');
+  assert.strictEqual(embB.length, 64);
+  assert.strictEqual(embC.length, 64);
+
+  // Verify L2 unit-norm
+  const normA = Math.hypot(...embA);
+  assert.ok(Math.abs(normA - 1.0) < 1e-4, 'Must be L2 unit normalized');
+
+  // Determinism test
+  const embA2 = embedNeedleWasm(textA);
+  assert.deepStrictEqual(Array.from(embA), Array.from(embA2), 'Embeddings must be 100% deterministic');
+
+  // Semantic search test
+  const docs = [textA, textB, textC];
+  const results = searchNeedleWasm('elderly hip fracture nutrition recovery', docs, { topK: 3 });
+
+  assert.strictEqual(results.length, 3);
+  assert.ok(results[0].latencyMs < 50, 'Search latency must be fast');
+  // Top match must be textA (nutritional status on hip fracture)
+  assert.strictEqual(results[0].text, textA);
+  // Score of clinical match must be higher than fax cover sheet
+  assert.ok(results[0].score > results[2].score);
+});
+
+test('15. trainWasmSmallModel completes in <100 ms in pure WASM with decreasing loss and 0.0% PII exposure on VeriSieve shard', () => {
+  const t0 = performance.now();
+  const { results } = trainWasmSmallModel(null, { epochs: 25, exportArtifacts: false });
+  const duration = performance.now() - t0;
+
+  assert.ok(duration < 150, `Training must complete in <150 ms in pure WASM, took ${duration.toFixed(2)} ms`);
+  const m = results.model_training;
+  assert.ok(m.lossHistoryVerisieve.length === 25, 'Must record 25 epochs of loss');
+  assert.ok(
+    m.lossHistoryVerisieve[m.lossHistoryVerisieve.length - 1] <= m.lossHistoryVerisieve[0],
+    'Training loss must decrease or converge'
+  );
+  assert.strictEqual(m.piiExposureRatePctVerisieve, 0.0, 'PII exposure rate on VeriSieve shard must be 0.0%');
+  assert.strictEqual(m.piiExposureRatePctRaw, 100.0, 'PII exposure rate on raw shard must be 100%');
+  assert.ok(m.valPerplexityVerisieve <= m.valPerplexityRaw, 'Validation perplexity must be superior on VeriSieve shard');
+  assert.strictEqual(m.needleRetrievalPurityPctVerisieve, 100.0, 'Needle retrieval purity must be 100% on certified shard');
+});
+

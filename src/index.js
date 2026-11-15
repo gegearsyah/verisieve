@@ -4,3 +4,5 @@ export * from './clean-and-tokenize.js';
 export * from './gatekeeper.js';
 export * from './pdf-image-pipeline.js';
 export * from './mcp-server.js';
+export * from './wasm-needle-dl.js';
+
