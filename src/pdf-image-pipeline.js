@@ -658,6 +658,49 @@ export function extractPdfTextStreams(buf) {
 export function extractLinesFromPdfBuffer(buf) {
   const streams = extractPdfTextStreams(buf);
   const lines = [];
+
+  // Parse ToUnicode CMaps if present across streams
+  const cmap = new Map();
+  for (const s of streams) {
+    if (s.includes('beginbfchar') || s.includes('beginbfrange')) {
+      const bfcharMatches = s.matchAll(/beginbfchar([\s\S]*?)endbfchar/g);
+      for (const m of bfcharMatches) {
+        const pairs = m[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g);
+        for (const p of pairs) {
+          const src = p[1].toUpperCase();
+          const dst = String.fromCharCode(parseInt(p[2], 16));
+          cmap.set(src, dst);
+        }
+      }
+      const bfrangeMatches = s.matchAll(/beginbfrange([\s\S]*?)endbfrange/g);
+      for (const m of bfrangeMatches) {
+        const ranges = m[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g);
+        for (const r of ranges) {
+          const start = parseInt(r[1], 16);
+          const end = parseInt(r[2], 16);
+          const dstStart = parseInt(r[3], 16);
+          const padLen = r[1].length;
+          for (let i = 0; i <= end - start; i++) {
+            const srcHex = (start + i).toString(16).toUpperCase().padStart(padLen, '0');
+            const dstChar = String.fromCharCode(dstStart + i);
+            cmap.set(srcHex, dstChar);
+          }
+        }
+      }
+    }
+  }
+
+  const decodeHex = (hex) => {
+    if (!hex || cmap.size === 0) return '';
+    const step = cmap.has(hex.slice(0, 2).toUpperCase()) ? 2 : (cmap.has(hex.slice(0, 4).toUpperCase()) ? 4 : 2);
+    let out = '';
+    for (let j = 0; j < hex.length; j += step) {
+      const code = hex.slice(j, j + step).toUpperCase();
+      if (cmap.has(code)) out += cmap.get(code);
+    }
+    return out;
+  };
+
   for (const s of streams) {
     const tjMatches = s.matchAll(/\[(.*?)\]\s*TJ/gs);
     for (const m of tjMatches) {
@@ -666,11 +709,30 @@ export function extractLinesFromPdfBuffer(buf) {
       for (const sm of strMatches) parts.push(sm[1]);
       let line = parts.join('').replace(/\\([()\\])/g, '$1').replace(/\s+/g, ' ').trim();
       if (line.length >= 8 && !lines.includes(line)) lines.push(line);
+
+      // Also decode hex strings in TJ arrays if literal strings yielded short text
+      if (line.length < 8 && cmap.size > 0) {
+        const hexMatches = m[1].matchAll(/<([0-9a-fA-F]+)>/g);
+        let hLine = '';
+        for (const hm of hexMatches) {
+          hLine += decodeHex(hm[1]);
+        }
+        hLine = hLine.replace(/\s+/g, ' ').trim();
+        if (hLine.length >= 8 && !lines.includes(hLine)) lines.push(hLine);
+      }
     }
     const singleTj = s.matchAll(/(?<!\[\s*)\((.*?)\)\s*Tj/gs);
     for (const m of singleTj) {
       let line = m[1].replace(/\\([()\\])/g, '$1').replace(/\s+/g, ' ').trim();
       if (line.length >= 8 && !lines.includes(line)) lines.push(line);
+    }
+
+    if (cmap.size > 0) {
+      const hexTjMatches = s.matchAll(/(?<!\[\s*)<([0-9a-fA-F]+)>\s*Tj/gs);
+      for (const m of hexTjMatches) {
+        let line = decodeHex(m[1]).replace(/\s+/g, ' ').trim();
+        if (line.length >= 8 && !lines.includes(line)) lines.push(line);
+      }
     }
   }
   return lines;

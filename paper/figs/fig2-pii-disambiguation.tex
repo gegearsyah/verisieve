@@ -40,34 +40,37 @@
     \draw[mlegray, line width=0.8pt] (0,0) -- (5.5,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % Bar 1: Email / Phone / IP (High Structured Recall >95%)
-    \fill[mleblue, rounded corners=2pt] (0.5, 0) rectangle (1.5, 3.84);
-    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (1.0, 3.88) {96.2\%};
-    \node[anchor=north, text=mlesub, font=\tiny] at (1.0, -0.15) {Email / Phone};
+    % Bar 1: Email / Phone / IP (Contact PII Recall 96.2%)
+    \fill[mleblue, rounded corners=2pt] (0.5, 0) rectangle (1.5, 3.848);
+    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (1.0, 3.89) {96.2\%};
+    \node[anchor=north, text=mlesub, font=\tiny] at (1.0, -0.15) {Contact PII};
+    \node[anchor=north, text=mlemut, font=\fontsize{5}{6}\selectfont] at (1.0, -0.42) {(Email/Phone)};
 
-    % Bar 2: Structured Overall
-    \fill[mleblue, rounded corners=2pt] (2.1, 0) rectangle (3.1, 2.61);
-    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (2.6, 2.65) {65.2\%};
+    % Bar 2: All Structured (Contact + Date/Zip: 65.2%)
+    \fill[mleblue!70!mlegray, rounded corners=2pt] (2.1, 0) rectangle (3.1, 2.608);
+    \node[anchor=south, text=mlesub, font=\tiny\bfseries] at (2.6, 2.65) {65.2\%};
     \node[anchor=north, text=mlesub, font=\tiny] at (2.6, -0.15) {All Structured};
+    \node[anchor=north, text=mlemut, font=\fontsize{5}{6}\selectfont] at (2.6, -0.42) {(+Date/Zip)};
 
-    % Bar 3: Unstructured Bare Names (Ceiling!)
-    \fill[mleorange, rounded corners=2pt] (3.7, 0) rectangle (4.7, 1.80);
-    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (4.2, 1.84) {45.1\%};
+    % Bar 3: Unstructured Bare Names (Ceiling: 45.1%)
+    \fill[mleorange, rounded corners=2pt] (3.7, 0) rectangle (4.7, 1.804);
+    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (4.2, 1.85) {45.1\%};
     \node[anchor=north, text=mlesub, font=\tiny] at (4.2, -0.15) {Bare Names};
+    \node[anchor=north, text=mleorange, font=\fontsize{5}{6}\selectfont] at (4.2, -0.42) {(Unstructured)};
 
     % Ceiling indicator line
-    \draw[mleorange, dashed, line width=1.0pt] (3.5, 1.80) -- (5.3, 1.80);
-    \node[anchor=west, text=mleorange, font=\fontsize{5}{6}\selectfont] at (4.75, 2.05) {\textbf{Honest Ceiling}};
+    \draw[mleorange, dashed, line width=1.0pt] (3.4, 1.804) -- (5.4, 1.804);
+    \node[anchor=west, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.75, 2.05) {Honest Ceiling};
 
-    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (2.75, -0.55) {PII Entity Category};
+    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (2.75, -0.65) {Entity Privacy Category};
   \end{scope}
 
   % ================= PANEL B =================
   \begin{scope}[shift={(7.5,0)}]
     \node[anchor=west, text=mleink, font=\bfseries\small] at (-0.2, 4.8) {Panel B: Biomedical Context Protection vs FP};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {\texttt{PubMedQA} ($N=500$ clinical abstracts; 65 excluded medical terms)};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {\texttt{PubMedQA} ($N=500$ abstracts; Train $250$ vs Held-Out Test $250$)};
 
-    % Grid lines
+    % Grid lines (0% to 100%, 4.0cm = 100%)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (5.8,0);
     \draw[mlegrid, line width=0.5pt] (0,1.0) -- (5.8,1.0);
     \draw[mlegrid, line width=0.5pt] (0,2.0) -- (5.8,2.0);
@@ -76,30 +79,36 @@
 
     % Y Axis labels
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 0) {0\%};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {5\%};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {10\%};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {15\%};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {20\%};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {25\%};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {50\%};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {75\%};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {100\%};
 
     % Axes
     \draw[mlegray, line width=0.8pt] (0,0) -- (5.8,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % Bar 1: Naive Title-Case Regex FP (13.8% across full text, >80% on clinical terms)
-    \fill[mleorange, rounded corners=2pt] (0.8, 0) rectangle (2.0, 2.76);
-    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (1.4, 2.80) {13.8\%};
+    % Bar 1: Naive Title-Case Regex FP (84.4% on clinical nouns => y = 3.376)
+    \fill[mleorange, rounded corners=2pt] (0.8, 0) rectangle (2.0, 3.376);
+    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (1.4, 3.42) {84.4\%};
     \node[anchor=north, text=mlesub, font=\tiny] at (1.4, -0.15) {Naive Regex};
-    \node[anchor=north, text=mleorange, font=\fontsize{5}{6}\selectfont] at (1.4, -0.45) {(Corrupts Terms)};
+    \node[anchor=north, text=mleorange, font=\fontsize{5}{6}\selectfont] at (1.4, -0.42) {(Corrupts Terms)};
 
-    % Bar 2: VeriSieve with Domain Exclusions
-    \fill[mleblue, rounded corners=2pt] (2.8, 0) rectangle (4.0, 2.32);
-    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (3.4, 2.36) {11.6\%};
+    % Bar 2: VeriSieve with Domain Exclusions (1.4% FP => y = 0.056)
+    \fill[mleblue, rounded corners=2pt] (2.8, 0) rectangle (4.0, 0.056);
+    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (3.4, 0.12) {1.4\%};
     \node[anchor=north, text=mlesub, font=\tiny] at (3.4, -0.15) {VeriSieve Regex};
-    \node[anchor=north, text=mleblue, font=\fontsize{5}{6}\selectfont] at (3.4, -0.45) {(Protected)};
+    \node[anchor=north, text=mleblue, font=\fontsize{5}{6}\selectfont] at (3.4, -0.42) {(Protected)};
 
-    % Annotation on Core Clinical Nouns (1.4% FP)
-    \draw[mleblue, line width=1.0pt, ->] (4.4, 1.2) -- (3.8, 0.4);
-    \node[anchor=west, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont, text width=1.4cm] at (4.3, 1.5) {\textbf{Core terms: 1.4\% FP} (e.g., Nutritional Status, Hip Fracture)};
+    % Split validation note
+    \draw[mlegray, fill=white, rounded corners=2pt, line width=0.5pt] (2.5, 1.5) rectangle (5.6, 3.5);
+    \node[anchor=north west, text=mleink, font=\tiny\bfseries] at (2.55, 3.45) {Pre-Committed Lexicon Split:};
+    \node[anchor=north west, text=mlesub, font=\fontsize{5.5}{6.5}\selectfont] at (2.55, 3.1) {$\bullet$ Train ($n=250$): Naive $84.4\% \to \mathbf{1.4\%}$};
+    \node[anchor=north west, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (2.55, 2.75) {$\bullet$ Test ($n=250$): Naive $84.8\% \to \mathbf{1.4\%}$};
+    \node[anchor=north west, text=mlemut, font=\fontsize{5.5}{6.5}\selectfont] at (2.55, 2.4) {$\bullet$ 65 pre-committed terms};
+    \node[anchor=north west, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (2.55, 2.05) {$60.3\times$ corruption mitigation};
+
+    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (2.9, -0.65) {Clinical False-Positive Protection};
   \end{scope}
 \end{tikzpicture}
 \end{document}
