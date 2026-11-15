@@ -25,3 +25,6 @@ Thumbs.db
 tmp/
 __pycache__/
 *.pyc
+
+# Rust build target
+rust/**/target/

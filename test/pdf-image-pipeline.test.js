@@ -488,8 +488,10 @@ test('17. trainWasmSmallModel and chatWithTrainedModelsWasm accept modelPath and
   assert.ok(m.local_weight_audit, 'Training results must include local_weight_audit');
   if (m.local_weight_audit.exists) {
     assert.strictEqual(m.local_weight_audit.format, 'GGUF');
-    assert.ok(m.seed !== 42, 'Seed must be derived from open weights');
   }
+  assert.strictEqual(m.executionScope, 'wasm_gatekeeper_only_no_llm_backprop');
+  assert.strictEqual(m.canFineTuneLlmInWasm, false);
+  assert.ok(typeof m.recommendedUvCommand === 'string' && m.recommendedUvCommand.includes('uv run'));
 
   const chat = chatWithTrainedModelsWasm('Who is the author?', null, {
     modelPath: 'llama3.2:3b'

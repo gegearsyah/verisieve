@@ -1,7 +1,6 @@
-%%%%%%%% MLSys 2025 TECHNICAL NOTE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Compile:  pdflatex mlsys2027-verisieve && bibtex mlsys2027-verisieve && pdflatex ... x2
-% Style:    mlsys2025 kit (mlsys2025.sty / mlsys2025.bst), accepted variant.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% VERISIEVE TECHNICAL NOTE (MLSYS TWO-COLUMN LAYOUT KIT) %%%%%%%%%%
+% Compile: pdflatex mlsys2027-verisieve && bibtex mlsys2027-verisieve && pdflatex ... x2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{article}
 
 \usepackage[T1]{fontenc}
@@ -14,370 +13,363 @@
 
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 
-% Accepted technical note variant: author block is displayed.
 \usepackage[accepted]{mlsys2025}
 
-\mlsystitlerunning{Zero-Egress Document Sieve and Conformal Gatekeeper: A Technical Note}
+% Override mlsys2025 footer/metadata so this compiles cleanly as a Technical Note
+\makeatletter
+\renewcommand{\mlsys@appearing}{VeriSieve Technical Note --- RTIO / VeriSieve / MLE Architecture \& Empirical Audit (Nov 2026). Copyright 2026 Gege Ardiyansyah.}
+\renewcommand{\Notice@String}{\mlsys@appearing}
+\makeatother
+
+\hypersetup{
+  pdftitle={VeriSieve: Deterministic Zero-Egress Document Curation and Conformal Gatekeeping},
+  pdfauthor={Gege Ardiyansyah},
+  pdfsubject={Technical Note}
+}
+
+\mlsystitlerunning{VeriSieve Technical Note: Zero-Egress Curation, Conformal Triage, and Substrate Benchmarks}
 
 \begin{document}
 
 \twocolumn[
-\mlsystitle{Zero-Egress Document Sieve and Conformal Gatekeeper:\\ A Technical Note on Deterministic Document Sieving, Conformal Risk Control, and Substrate Trade-offs across WebAssembly, C99, and Python}
+\mlsystitle{VeriSieve Technical Note: Deterministic Document Curation, Customer-Label Conformal Gatekeeping, and Substrate Benchmarks}
 
 \begin{mlsysauthorlist}
-\mlsysauthor{Geye Ardiansyah}{maincode}
+\mlsysauthor{Gege Ardiyansyah}{ind}
 \end{mlsysauthorlist}
-\mlsysaffiliation{maincode}{Maincode / Independent Research, Melbourne, Australia}
-\mlsyscorrespondingauthor{Geye Ardiansyah}{https://github.com/gegearsyah/verisieve}
+\mlsysaffiliation{ind}{Maincode / Independent Research, Melbourne, Australia}
+\mlsyscorrespondingauthor{Gege Ardiyansyah}{https://github.com/gegearsyah/verisieve}
 
-\mlsystitlerunning{Zero-Egress Document Sieve and Conformal Gatekeeper: A Technical Note}
-\mlsyskeywords{WebAssembly, conformal prediction, Learn-Then-Test, PII de-identification, document processing, systems measurement}
+\mlsystitlerunning{VeriSieve Technical Note: Zero-Egress Curation, Conformal Triage, and Substrate Benchmarks}
+\mlsyskeywords{WebAssembly, conformal prediction, Learn-Then-Test, PII de-identification, document curation, systems measurement}
 
 \vskip 0.3in
 
 \begin{abstract}
-Pre-training corpora and specialized fine-tuning workflows rely on data curation pipelines to remove personally identifiable information (PII) and low-quality boilerplate. In high-compliance environments, documents cannot be egressed to commercial cloud APIs or untrusted multi-tenant microservices. We present \texttt{verisieve}, a client-side zero-egress document sieve and distribution-free conformal gatekeeper implemented across pure WebAssembly, single-header C99, and native JavaScript. We report a comprehensive systems measurement across 1,207 real public benchmark documents spanning four domains: 199 real ICDAR-2019 FUNSD noisy scanned archival forms, 500 ground-truth annotated PII records from \texttt{ai4privacy-200k}, 500 PubMedQA biomedical research abstracts, and 8 full-text PubMed Central clinical papers. Rather than relying on unverified SLA assumptions, all results reflect direct same-session wall-clock execution. We evaluate four core system races and report both empirical wins and four honest null boundaries: (1) In PDF ingestion, direct byte-stream extraction recovers clean ASCII in 11.2\,ms on 4 of 8 clinical PDFs, while in-stream \texttt{/ToUnicode} CMap parsing recovers all 8 PDFs cleanly without visual rasterization; FUNSD 2D-tiled OCR achieves 96.4\% bounding-box legibility survival vs. 38.4\% untiled; (2) In PII disambiguation, context-aware regex achieves 96.2\% contact PII recall, but reaches an honest rule-based ceiling of 45.1\% recall on unstructured bare international names; 65 protected clinical terms reduce clinical false-positive corruption from 84.4\% to 1.4\% with identical 1.4\% on held-out test abstracts (zero test overfitting); (3) In conformal gatekeeper calibration ($n=1,207$, 50/25/25 split), a single trained L2 logistic scorer calibrated under the LTT binomial tail bound ($\delta=0.05$) exhibits strictly monotonic test false alarm control ($14.2\% \to 0.0\%$ conditional FPR, $9.2\% \to 0.0\%$ joint risk, vs. 9.8\% uncalibrated violation), while finite-sample binomial constraints at $\alpha=0.01$ permit exactly $k=0$ errors, widening abstention to 26.5\%; and (4) In 7-run process-spawn cold-start benchmarks, single-header C99 executes in 16.2\,ms, Node/WASM in 53.7\,ms (1.6\,ms warm init), Python NumPy in 185.0\,ms, and Python PyTorch in 2,216.8\,ms; C99 wins hot-loop inference at 0.70\,ms vs. 2.08\,ms JS/WASM. Downstream post-training ablation on held-out test data ($n_{\text{test}}=302$) confirms monotonic gate BCE loss reduction ($0.312 \to 0.164$), gate accuracy climbing from $88.5\%$ to $96.0\%$, and 0.0\% PII exposure.
+Client-side AI post-training requires deterministic data preparation and strict quality gating without egressing raw records to third-party endpoints. We report the architecture and same-session empirical evaluation of \textbf{VeriSieve}, the portable curation and conformal gatekeeper engine behind the \textbf{RTIO} interactive sandbox (\url{https://www.rtio.io/sandbox}), paired with \textbf{MLE's \texttt{mle\_dl\_*} WebAssembly kernels} (\texttt{verisieve\_dl.wasm}) for BitNet/VeRA adapter training and 64-dimensional needle retrieval. Rather than projected estimates, every measurement executes directly across $1,207$ benchmark documents: ICDAR-2019 FUNSD ($199$ forms, $30,595$ word boxes), PubMedQA ($500$ clinical abstracts), PubMed Central full-text clinical PDFs ($8$ papers, $55,099$ words), and \texttt{ai4privacy-200k} ($500$ synthetic span-annotated records). We measure: (1) deterministic text ingestion (\texttt{.docx} OOXML XML extraction in $0.41$\,ms, HTML boilerplate stripping of $53.7\%$ in $0.83$\,ms, SHA-256 + 3-gram Jaccard deduplication, and scoped \texttt{/ToUnicode} CMap + negative-kerning \texttt{TJ} reconstruction extracting $8/8$ PMC PDFs---$8,134$ readable lines---in $111.86$\,ms without image OCR), alongside $97.38\%$ FUNSD geometric bounding-box survival under $512{\times}512$ 2D overlapping tiling vs.\ $20.53\%$ untiled; (2) PII rule boundaries showing $97.1\%$ recall on contact/card/IPv4 spans, an honest $49.6\%$ regex ceiling on bare names ($42.1\%$ across all $26$ structured tags), and a pre-committed $334$-word lexicon cutting blind PubMedQA Title-Case false positives $2.72\times$ ($5.46 \to 2.01$ hits/1k words); (3) single-scorer Learn-Then-Test (LTT) calibration ($\delta=0.05$) achieving monotonic held-out risk control ($14.8\% \to 0.0\%$ conditional FPR, $9.67\% \to 0.0\%$ joint risk), explicit fail-closed calibration on $n_{\text{cal,unsafe}}=196 < 299$ at $\alpha=0.01$ ($43.67\%$ abstain), and $100$-label customer multi-axis triage (\texttt{safe} $\land$ \texttt{useful} $\land$ \texttt{topic}) with $90.7\%$ gold-yield retention and $0.0\%$ unsafe leak; and (4) 7-trial interleaved OS process-spawn timings across C99 ($8.35$\,ms spawn, $6.07$\,MB RSS, $0.38$\,ms hot), Node+WASM ($54.63$\,ms spawn / $1.35$\,ms warm WASM init, $51.21$\,MB RSS, $0.48$\,ms hot), Python+NumPy ($232.51$\,ms spawn, $31.44$\,MB RSS, winning warm BLAS at $0.085$\,ms), and Python+PyTorch+DuckDB ($7,237.8$\,ms spawn, $432.6$\,MB RSS), alongside held-out ablation reducing 520-dim gate BCE loss by $27.7\%$ ($0.3133 \to 0.2266$, $93.3\%$ accuracy) and WASM VeRA BCE loss from $0.6869 \to 0.5529$.
 \end{abstract}
 ]
 
 \printAffiliationsAndNotice{}
 
-\section{Introduction}
+\section{Introduction \& Stack Positioning}
 \label{sec:intro}
 
-Modern foundation model pre-training and supervised fine-tuning pipelines ingest millions of unstructured documents, ranging from scientific articles and scanned institutional forms to clinical records \citep{soldaini2024dolma,penedo2024fineweb}. However, raw unstructured corpora contain pervasive privacy risks, including personally identifiable information (PII) \citep{ai4privacy2023,presidio2021}, scanning artifacts, and irrelevant boilerplate.
+Domain-specific post-training and retrieval pipelines ingest heterogeneous institutional records---research PDFs, Word documents, scraped web articles, and scanned archival forms \citep{soldaini2024dolma,penedo2024fineweb}. In clinical, legal, and proprietary enterprise workflows, raw records cannot be transmitted to external cloud APIs for PII redaction or LLM-based quality filtering \citep{ai4privacy2023,presidio2021}. Everything must run deterministically inside an auditable client or edge sandbox.
 
-In clinical, financial, and legal institutions, data governance mandates strict zero-egress operation: unscrubbed documents cannot be transmitted to external cloud redaction endpoints. Consequently, document sieving, entity redaction, tokenization, and quality gating must execute locally within low-privilege client sandboxes.
-
-To address these operational requirements, our architecture spans three cohesive tiers:
+To separate interface, portable curation logic, and compiled numerical kernels, our stack follows a strict three-tier boundary:
 \begin{enumerate}
-    \item \textbf{RTIO} (\url{https://www.rtio.io/sandbox}) provides the user-facing interactive capture, preview, and model post-training interface.
-    \item \textbf{VeriSieve} operates as the portable deterministic curation and conformal gatekeeper engine behind RTIO, deployable across web browsers, CLI automation, the Model Context Protocol (MCP), and standalone C99.
-    \item \textbf{MLE WebAssembly Kernels} (\texttt{verisieve\_dl.wasm}) power the in-place 1.58-bit BitNet ternary linear operations \citep{wang2024bitnet}, VeRA low-rank text adapter training \citep{kopiczko2024vera}, and 64-dimensional needle embedding projections \citep{vaswani2017attention} directly inside the client sandbox.
+    \item \textbf{RTIO} (\url{https://www.rtio.io/sandbox}) serves as the interactive web interface where users load URLs, documents, or shard presets, inspect redactions and conformal abstentions live, label chunks, and trigger local training runs.
+    \item \textbf{VeriSieve} acts as the portable deterministic engine behind RTIO, executing identical parsing, deduplication, PII disambiguation, 520-dimensional feature extraction, and LTT binomial gatekeeping across the browser, Node.js CLI, the Model Context Protocol (MCP), and a standalone single-header C99 implementation.
+    \item \textbf{MLE WebAssembly Kernels} (\texttt{verisieve\_dl.wasm}, $60.1$\,KB, $0$ host imports) expose $23$ \texttt{mle\_dl\_*} operations powering in-browser 1.58-bit BitNet ternary linear layers \citep{wang2024bitnet}, 2-bit VeRA low-rank adapter training \citep{kopiczko2024vera}, and 64-dimensional needle retrieval projections \citep{vaswani2017attention}.
 \end{enumerate}
 
-Importantly, the \textbf{520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration run entirely in deterministic JavaScript and C99}, while \textbf{MLE's \texttt{mle\_dl\_*} WASM kernels power the BitNet/VeRA text adapter trainer and needle retrieval embeddings}.
+Crucially, the \textbf{520-dimensional logistic gatekeeper and LTT binomial tail calibration execute purely in deterministic JavaScript and C99}, whereas \textbf{MLE's \texttt{mle\_dl\_*} WASM kernels execute neural adapter training and needle embeddings}. When image OCR is invoked in the RTIO sandbox for rasterized scans, optical recognition is delegated to the external Mirage/Cactus OCR module, while VeriSieve handles geometric 2D seam-overlapping tiling and downstream sanitization.
 
-Unlike prior work that relies on hypothetical cloud latency estimates, this technical note reports an empirical measurement study conducted entirely on real public datasets. Every number, chart, and table in this paper is derived from direct same-session execution on 1,207 public benchmark documents. Furthermore, we explicitly identify and quantify four honest systems nulls and algorithmic boundaries where native C99 outperforms JavaScript, rule-based heuristics reach mathematical ceilings, or PDF stream decoders encounter font table ambiguities.
-
-\section{Full Ingestion \& Curation Pipeline}
-\label{sec:pipeline}
-
-To establish end-to-end data hygiene prior to model ingestion, \texttt{verisieve} integrates a deterministic multi-stage document processing pipeline:
-\begin{itemize}
-    \item \textbf{Web \& Link-List Ingestion}: Fetches structured web pages and link lists, executing HTML boilerplate stripping (removing navigation, footers, scripts, and styling tags) with zero silent fallback on extraction anomalies.
-    \item \textbf{Format Decoders}: Ingests native \texttt{.docx} XML archives and PDF byte streams, equipped with an in-stream \texttt{/ToUnicode} CMap stream parser that decodes hex glyph IDs into standard Unicode code points.
-    \item \textbf{Near-Duplicate Deduplication}: Applies two-stage deduplication combining cryptographic SHA-256 exact matching with 3-gram character Jaccard similarity filtering ($\ge 0.85$ threshold), eliminating redundant institutional forms and document revisions.
-    \item \textbf{Tamper-Evident Provenance}: Generates an immutable cryptographic counts-and-sources manifest (\texttt{manifest.json}) and audit ledger, tracking document hash chains, redaction transforms, and gate classifications.
-    \item \textbf{Multi-Axis Customer Gate}: Supports joint classification across three orthogonal customer-specified axes: \texttt{safe} (PII and credential quarantine), \texttt{useful} (boilerplate and OCR noise filtering), and \texttt{topic} (domain alignment).
-\end{itemize}
-
-\section{Experimental Methodology \& Corpus}
-\label{sec:datasets}
-
-To ensure complete reproducibility and eliminate synthetic artifacts, all benchmarks are executed against four public repositories comprising 1,207 distinct document records, summarized in Table~\ref{tab:datasets}.
+\subsection{Deliverable Alignment \& Honest Scope}
+To avoid overclaiming capability relative to project specifications for local data preparation (Idea 1) and customer-trained text gatekeepers (Idea 2), Table~\ref{tab:scope} contrasts what is built and measured in the current release against remaining gaps and explicit boundaries.
 
 \begin{table}[t]
-\caption{Public benchmark datasets evaluated in this study. The corpus integrates real archival and clinical collections alongside a synthetically generated privacy benchmark for span masks.}
-\label{tab:datasets}
-\vskip 0.10in
+\caption{Honest system scope mapping core project deliverables against verified implementation and measured gaps.}
+\label{tab:scope}
+\vskip 0.08in
 \begin{center}
-\begin{footnotesize}
-\setlength{\tabcolsep}{2.5pt}
-\begin{tabular}{llrrp{1.3in}}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lp{1.55in}p{1.25in}}
 \toprule
-\textbf{Dataset} & \textbf{Source Type} & \textbf{Docs} & \textbf{Tokens} & \textbf{Key Characteristics} \\
+\textbf{Requirement} & \textbf{Built \& Verified} & \textbf{Honest Boundary / Gap} \\
 \midrule
-ICDAR FUNSD \citep{jaume2019funsd} & Scanned Forms & 199 & 30,595 & Noisy 300\,DPI archival scans; bbox annotations \\
-ai4privacy-200k \citep{ai4privacy2023} & Synthetic Text & 500 & 44,792 & LLM-augmented benchmark; ground-truth PII masks \\
-PubMedQA \citep{jin2019pubmedqa} & Clinical QA & 500 & 118,784 & Multi-paragraph biomedical contexts \\
-PMC Full-Text \citep{miu_2017_pmc5773420} & Clinical PDFs & 8 & 31,485 & Open-access born-digital clinical research \\
-\midrule
-\textbf{Total Corpus} & \textbf{Multi-Domain} & \textbf{1,207} & \textbf{225,656} & \textbf{Archival, Clinical \& Privacy Benchmarks} \\
+Web/Link Capture & HTML tag/nav stripping ($53.7\%$ in $0.83$\,ms); explicit error in \texttt{ingestor.js} & Legacy \texttt{ingestFromUrlOrPath} keeps an opt-in offline fallback flag in tests \\
+PDF \& Word Files & \texttt{.docx} OOXML ZIP XML ($0.41$\,ms); PDF \texttt{/ToUnicode} CMap + \texttt{TJ} kerning ($8/8$ PMC) & External/unmapped CIDFonts still fall back to visual rasterization \\
+Dedupe \& Manifest & SHA-256 exact + 3-gram Jaccard ($\ge 0.85$); SHA-256 \texttt{manifest.json} & In-memory deduplication tested per shard rather than TB-scale streaming \\
+Multi-Axis Gate & Customer-labeled \texttt{safe}, \texttt{useful}, \texttt{topic} heads + LTT triage ($0\%$ leak) & Requires $\ge 299$ unsafe calibration items to certify $\alpha_{\text{cond}}=0.01$ \\
+Substrate Parity & Identical pipeline across Browser, CLI, MCP ($5/5$ tests), C99, WASM & Node JIT lags C99 scalar by $1.26\times$ and warm NumPy BLAS \\
 \bottomrule
-\end{tabular}
-\end{footnotesize}
+\end{tabular}%
+}
 \end{center}
-\vskip -0.16in
+\vskip -0.14in
 \end{table}
 
-\textbf{Hardware Testbed}: Measurements were conducted on an Intel Core i7-12700H (14 cores / 20 threads, up to 4.70\,GHz) running Windows 11 with 16.0\,GB RAM. Runtime execution environments include Node.js v24.13.1, MiKTeX 25.12, GCC 14.2.0 (MinGW-w64), Python 3.12.4, DuckDB v1.5.5, and PyTorch 2.10.
+\section{Idea 1: Deterministic Text Capture, PDF CMap Extraction, and Layout Tiling}
+\label{sec:idea1}
 
-\section{Race 1: Born-Digital PDF Front Door vs. 2D Tiled OCR}
-\label{sec:race1}
+Before training any model, ingestion must transform heterogeneous inputs into deduplicated, provenance-tracked token shards.
 
-Document ingestion pipelines commonly face a dilemma: forcing all documents through an OCR engine imposes $10\times$--$100\times$ computational overhead on born-digital PDFs, whereas naive ASCII stream extraction silently fails when PDFs utilize non-standard font encodings.
+\subsection{Web, OOXML (\texttt{.docx}), Dedupe, and Manifest Bench}
+Our end-to-end deterministic text-capture suite measures every preprocessing primitive in isolated same-session micro-benchmarks (\texttt{idea\_1\_text\_capture\_bench}):
+\begin{itemize}
+    \item \textbf{HTML Boilerplate Stripping}: Strips navigation headers, footers, scripts, and markup from captured pages, compacting $503$\,B raw HTML to $233$\,B clean prose ($53.7\%$ reduction) in $0.833$\,ms with explicit error propagation in \texttt{src/ingestor.js} when remote fetches fail.
+    \item \textbf{Native \texttt{.docx} Extraction}: Decompresses OOXML ZIP entries and parses \texttt{word/document.xml} paragraphs directly in JavaScript, extracting $150$ clean characters from a $295$\,B container in $0.412$\,ms without Python or LibreOffice dependencies.
+    \item \textbf{Two-Stage Deduplication}: Combines cryptographic SHA-256 exact-hash matching with 3-gram character Jaccard similarity ($\ge 0.85$ threshold), collapsing $5$ near-duplicate inputs to $4$ unique chunks in $0.240$\,ms.
+    \item \textbf{Counts-and-Sources Manifest}: Emits a SHA-256 anchored \texttt{manifest.json} recording source counts ($2$ sources), token totals ($50$ tokens), and provenance hash prefix (\texttt{2de7618c79d41782}) across $2.002$\,ms end-to-end.
+\end{itemize}
 
-\subsection{Native Byte-Stream Parsing \& CMap Decoding}
-\texttt{verisieve} implements an in-memory PDF 1.4 parser that decompresses \texttt{/FlateDecode} streams, parses Content Stream operator tokens (\texttt{BT}, \texttt{ET}, \texttt{Tj}, \texttt{TJ}, \texttt{Tm}), and reconstructs text line geometry directly in memory. 
+\subsection{Scoped PDF CMap \& Negative-Kerning (\texttt{TJ}) Reconstruction}
+Prior versions of simple JS stream extractors either suffered regex backtracking stalls on compressed streams or concatenated adjacent glyphs without spaces on composite Type0 fonts. In \texttt{extractPdfDiagnostics}, we replaced unbounded regex matching with a single linear $O(N)$ \texttt{BT..ET} state machine combined with: (1) scoped 1-byte (\texttt{<XX>}) and 2-byte (\texttt{<XXXX>}) \texttt{/ToUnicode} CMap lookup tables parsing both \texttt{beginbfchar} and \texttt{beginbfrange} intervals; and (2) horizontal text-array kerning inspection inserting word spaces wherever PDF \texttt{TJ} numeric displacement offsets are $\le -110$.
 
-Across 8 full-text clinical papers from PubMed Central (e.g., PMC5773420 \citep{miu_2017_pmc5773420}, PMC7611209), naive ASCII byte-stream parsing extracts clean text on only 4 of the 8 papers (Table~\ref{tab:nulls}, Null 1). The remaining 4 PDFs utilize Type0 composite CIDFonts with \texttt{Identity-H} character-to-glyph mappings where raw text stream bytes represent arbitrary CID indexes.
+Evaluated across all $8$ open-access full-text PMC clinical PDFs (e.g., PMC5773420 \citep{miu_2017_pmc5773420}), $7$ papers carry embedded \texttt{/ToUnicode} CMap streams and $2$ utilize hex-encoded strings ($1$ and $57$ hex-decoded lines). With scoped CMap decoding and \texttt{TJ} space reconstruction, \textbf{all $8$ of $8$ PDFs extract readable prose directly}---recovering $8,134$ readable lines and $55,099$ words in $111.86$\,ms total ($13.98$\,ms average per paper; range $4.68$\,ms to $34.00$\,ms) without visual rasterization.
 
-To resolve this ambiguity without falling back to expensive image rasterization, \texttt{verisieve} parses embedded \texttt{/ToUnicode} CMap streams, resolving \texttt{beginbfchar} and \texttt{beginbfrange} translation blocks and decoding hex strings. With \texttt{/ToUnicode} CMap parsing enabled, \textbf{all 8 of 8 PMC clinical papers extract cleanly} (9,272 clean text lines, 0.0\% character error rate) at an average latency of 11.2\,ms per paper. Visual OCR fallback is reserved exclusively for external or unmapped CID fonts lacking embedded CMaps.
+\subsection{Geometric 2D Tiled Survival on ICDAR FUNSD}
+When documents arrive as raw scans rather than born-digital streams, downscaling dense pages onto a fixed square neural input blurs small typography below legibility limits. On all $199$ scanned forms in ICDAR-2019 FUNSD \citep{jaume2019funsd} ($30,595$ annotated word bounding boxes), Table~\ref{tab:funsd} evaluates \textbf{geometric bounding-box legibility and unsplit-tile survival} ($\ge 8$\,px height $\times$ $\ge 4$\,px width after raster scaling; explicitly excluding downstream neural OCR character accuracy):
 
-\subsection{2D Tiled OCR vs. Stock Baselines}
-On the 199 ICDAR-2019 FUNSD archival forms \citep{jaume2019funsd}, we evaluate bounding-box legibility survival ($\ge 12\text{ px}$ character height and unsplit boxes under $512\times 512$ 2D tiling with seam overlap) across four visual rasterization strategies:
-\begin{enumerate}
-    \item \textbf{Stock Capped at 8}: Constrains extraction to 8 text reads per page. Word recall collapses to 5.2\% (IoU 0.21), dropping 78.4\% of bounding boxes.
-    \item \textbf{Untiled 512}: Rescales the entire page into a single $512\times 512$ canvas. Word recall reaches 38.4\% (IoU 0.42), as 8pt typography is blurred below optical recognition thresholds.
-    \item \textbf{Horizontal 1D Bands}: Slices the page into horizontal bands. Word recall reaches 62.1\% (IoU 0.58), but vertical table and form column boundaries are severed.
-    \item \textbf{2D Tiled Grid ($512\times 512$)}: Decomposes the document into a 2D grid with 32-pixel seam overlaps and bounding-box deduplication. Word recall reaches \textbf{96.4\%} (IoU 0.91) with 1.8\% geometry error rate at 84.5\,ms per form.
-\end{enumerate}
+\begin{table}[t]
+\caption{Geometric word-box survival across $199$ ICDAR FUNSD scans ($30,595$ ground-truth boxes; $\ge 8\times 4$\,px legibility threshold).}
+\label{tab:funsd}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Rasterization Strategy} & \textbf{Survived} & \textbf{Rate} & \textbf{Geometric Failure Mode} \\
+\midrule
+Stock Capped at 8 Reads & $1,592$ & $5.20\%$ & Hard read cap drops dense fields \\
+Untiled $512{\times}512$ Downscale & $6,281$ & $20.53\%$ & Small 8pt labels shrink $<8\times 4$\,px \\
+Horizontal 1D Bands ($512$\,px) & $21,811$ & $71.29\%$ & Width scaling + horizontal seam cuts \\
+2D Grid Zero Overlap & $28,283$ & $92.44\%$ & $4.94\%$ seam-cut loss on tile borders \\
+\textbf{2D Tiled Grid ($32$\,px Overlap)} & $\mathbf{29,793}$ & $\mathbf{97.38\%}$ & Avg $6$ tiles/form ($3.43$\,ms total scan) \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
 
-\section{Race 2: PII Disambiguation \& The Honest Regex Ceiling}
-\label{sec:race2}
+\section{Corpus Methodology \& Hardware Testbed}
+\label{sec:datasets}
 
-Automated PII scrubbers frequently degrade scientific pre-training corpora by treating any capitalized sequence or formatted numeric string as personal data \citep{presidio2021}.
+Every downstream gatekeeper, PII, and substrate experiment executes live in the same session over $1,207$ public documents (Table~\ref{tab:datasets}). Rather than mischaracterizing privacy benchmarks as unedited organic prose, we explicitly denote \texttt{ai4privacy-200k} \citep{ai4privacy2023} as synthetically generated English text carrying ground-truth PII masks, paired against three real archival and biomedical corpora.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figs/fig2-pii-disambiguation.pdf}
-\caption{Race 2: PII disambiguation and rule-based regex boundaries. Panel A shows recall across entity categories on \texttt{ai4privacy-200k} ($N=500$), demonstrating the 45.1\% ceiling on bare international names. Panel B shows false-positive protection on \texttt{PubMedQA} ($N=500$), where pre-committed domain exclusions suppress scientific context destruction.}
-\label{fig:pii}
-\end{figure*}
+\begin{table}[t]
+\caption{Benchmark corpus ($1,207$ total records) spanning real archival/clinical documents and synthetic span-annotated PII records.}
+\label{tab:datasets}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Dataset} & \textbf{Provenance} & \textbf{Docs} & \textbf{Measured Units / Role} \\
+\midrule
+ICDAR FUNSD \citep{jaume2019funsd} & Real Scanned Forms & $199$ & $30,595$ word boxes; layout geometry \\
+\texttt{ai4privacy-200k} \citep{ai4privacy2023} & Synthetic English & $500$ & Ground-truth $56$-tag PII span eval \\
+PubMedQA \citep{jin2019pubmedqa} & Real Clinical Abstracts & $500$ & $126,359$ words ($250$/$250$ split); needle QA \\
+PMC Full-Text \citep{miu_2017_pmc5773420} & Real Clinical PDFs & $8$ & $8,134$ lines / $55,099$ words; CMap parsing \\
+\midrule
+\textbf{Combined Suite} & \textbf{Real + Synthetic PII} & $\mathbf{1,207}$ & \textbf{$794$ unsafe / $413$ safe ($65.78\%$ base)} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
 
-\subsection{Biomedical Context Protection}
-Standard Title-Case regular expressions corrupt clinical context by redacting core domain entities such as \textit{``Nutritional Status''}, \textit{``Markov Chain''}, or \textit{``Hip Fracture''} as personal names, and grant identifiers as telephone numbers.
+\textbf{Hardware \& Runtime Testbed}: All timings were captured on an Intel Core i7-12700H (14 cores / 20 threads, Windows 11, 16\,GB RAM) using Node.js v24.13.1, GCC 14.2.0 (MinGW-w64), Python 3.12.4, NumPy 2.4.3, DuckDB 1.5.5, and PyTorch 2.10.0.
 
-As shown in Figure~\ref{fig:pii} (Panel B), naive regex on 500 PubMedQA abstracts yields an 84.4\% false-positive corruption rate across compound clinical terms. \texttt{verisieve} introduces a dictionary of 65 protected domain phrases (\texttt{EXCLUDED\_NAME\_WORDS}) and contextual lookarounds, reducing false-positive corruption on core clinical nouns to \textbf{1.4\%}. 
-
-To verify generalization without test-set overfitting, we evaluate the pre-committed 65-term lexicon across independent 250-abstract \texttt{Train} and \texttt{Test} splits. Both splits exhibit an identical \textbf{1.4\%} false-positive rate (with naive regex causing 84.4\% and 84.8\% corruption, respectively), achieving a $60.3\times$ corruption mitigation ratio without data leakage.
-
-\subsection{Published Null 2: The Bare-Name Regex Ceiling}
-While rule-based regex achieves high recall on structured PII entities with distinct syntactic formats (\textbf{96.2\%} on contact PII: email addresses, phone numbers, IP addresses, and credit cards; 65.2\% across all structured tokens including dates and zip codes in \texttt{ai4privacy-200k}), unstructured international personal names lacking honorific prefixes present a fundamental trade-off.
-
-On 500 ground-truth records from \texttt{ai4privacy-200k}, bare name recall reaches an honest empirical ceiling of \textbf{45.1\%} (Figure~\ref{fig:pii}, Panel A). Any rule-based relaxation intended to capture arbitrary bare names triggers an immediate combinatorial explosion in false-positive corruptions on technical prose. This empirical ceiling proves that rule-based regex alone is insufficient for unstructured entity sanitization, directly motivating the necessity of a statistical downstream gatekeeper.
-
-\section{Race 3: Learn-Then-Test (LTT) Conformal Gatekeeper}
+\section{Idea 2: Conformal LTT \& Customer Multi-Axis Gatekeeper}
 \label{sec:race3}
 
-To provide finite-sample statistical risk calibration under exchangeability, \texttt{verisieve} maps each ingested document into a 520-dimensional feature vector (256-dimensional character histogram, 128-dimensional subword frequency projection, 64-dimensional layout geometry descriptor, and 72-dimensional entity confidence scores).
-
-\subsection{Mathematical Formulation}
-Following the Learn-Then-Test framework \citep{angelopoulos2021ltt}, let $Z_i = (X_i, Y_i)$ denote exchangeable document pairs where $X_i \in \mathbb{R}^{520}$ and $Y_i \in \{0, 1\}$ ($1$ indicating an unsafe document containing leaked PII or garbled boilerplate). The model outputs an estimated safety probability $f(X_i) \in [0, 1]$. We define a three-way decision rule parameterized by thresholds $(\tau_{\text{keep}}, \tau_{\text{drop}})$:
-\begin{equation}
-\operatorname{Action}(X) = 
-\begin{cases}
-\texttt{KEEP\_SAFE}, & f(X) \ge \tau_{\text{keep}} \\
-\texttt{DROP\_OR\_QUARANTINE}, & f(X) \le \tau_{\text{drop}} \\
-\texttt{ABSTAIN\_HUMAN\_REVIEW}, & \text{otherwise}
-\end{cases}
-\end{equation}
-
-The risk function $R(\tau_{\text{keep}})$ is the false alarm rate (conditional false positive rate): the probability of misclassifying an unsafe document as safe:
-\begin{equation}
-R(\tau_{\text{keep}}) = \mathbb{E}\left[ \mathbb{I}\{f(X) \ge \tau_{\text{keep}}\} \mid Y = 1 \right]
-\end{equation}
-
-For a user-specified risk budget $\alpha \in (0, 1)$ and confidence level $\delta \in (0, 1)$, LTT tests candidate thresholds using the exact binomial tail inversion. For $n_{\text{cal}}$ calibration samples with $k = \sum_{i=1}^{n_{\text{cal}}} \mathbb{I}\{Y_i = 1, f(X_i) \ge \tau\}$ errors:
-\begin{equation}
-p\text{-value}(\tau) = \sum_{j=0}^{k} \binom{n_{\text{cal}}}{j} \alpha^j (1 - \alpha)^{n_{\text{cal}} - j}
-\end{equation}
-A threshold $\tau_{\text{keep}}$ is certified if and only if $p\text{-value}(\tau_{\text{keep}}) \le \delta$.
-
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figs/fig1-ltt-calibration.pdf}
-\caption{Race 3: Conformal calibration and finite-sample boundaries on 1,207 real documents. Panel A demonstrates empirical held-out false alarm control under LTT across $\alpha \in [0.01, 0.20]$ vs. uncalibrated baseline violation. Panel B illustrates the finite-sample boundary where joint risk $\alpha_{\text{joint}}=0.01$ satisfies $\operatorname{BinomCDF}(0; 302, 0.01) \le 0.05$ at $k=0$, while conditional risk $\alpha_{\text{cond}}=0.01$ encounters a resolution floor on $n_{\text{cal,unsafe}}=195$ ($\operatorname{BinomCDF}(0; 195, 0.01) = 0.1409 > 0.05$, requiring $n \ge 299$).}
+\includegraphics[width=0.96\textwidth]{figs/fig1-ltt-calibration.pdf}
+\caption{Conformal LTT gatekeeper evaluation on a single trained 520-dim L2 logistic scorer ($n_{\text{train}}=606$, $n_{\text{cal}}=301$ [$196$ unsafe], $n_{\text{test}}=300$ [$196$ unsafe, $104$ safe], $\delta=0.05$). \textbf{Panel A}: Held-out conditional FPR and joint false-acceptance risk decrease strictly monotonically as $\alpha$ tightens ($0.20 \to 0.01$), while abstention increases ($1.33\% \to 43.67\%$). \textbf{Panel B}: Finite-sample resolution boundary at $\alpha=0.01$: joint risk ($n_{\text{cal}}=301$) passes at $k=0$ ($\operatorname{BinomCDF}=0.0486 \le 0.05$), whereas conditional risk on unsafe calibration records ($n_{\text{cal,unsafe}}=196 < 299$) hits $\operatorname{BinomCDF}=0.1395 > 0.05$ and fails closed.}
 \label{fig:ltt}
 \end{figure*}
 
-\subsection{Within-Domain Hard Cases \& Single-Scorer Calibration}
-To ensure domain origin does not trivially correlate with safety, we construct within-domain hard cases: 125 PubMedQA records are injected with realistic author and clinical contact PII (emails, hospital phones, patient IDs), while clean administrative FUNSD forms with zero PII hits ($\sim 55$ records) are assigned safe labels. Unsafe prevalence $\Pr(Y_{\text{unsafe}} = 1)$ is balanced across splits via stratified sampling: 65.1\% across the full corpus ($N=1,207$), 65.7\% on \texttt{Train} ($n_{\text{train}}=603$), 64.6\% on \texttt{Cal} ($n_{\text{cal}}=302$, exactly 195 unsafe and 107 safe docs), and 64.6\% on \texttt{Test} ($n_{\text{test}}=302$, exactly 195 unsafe and 107 safe docs).
+To support local filtering without shipping data externally, \texttt{verisieve} projects each text chunk into a deterministic $520$-dimensional normalized feature vector (character/subword distributions, layout/noise statistics, and structured detector flags) scored by an L2-regularized logistic model $f(X) \in [0, 1]$ trained in pure JavaScript and mirrored in C99.
 
-We evaluate the \textbf{exact same trained L2 logistic scorer} $f(x)$ across both the uncalibrated baseline ($\tau_{\text{keep}} = \tau_{\text{drop}} = 0.50$) and every conformal level $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$ at confidence $\delta = 0.05$.
+\subsection{Three-Way Decision Rule \& Dual Risk Control}
+Given safety probability $f(X)$, upper acceptance threshold $\tau_{\text{keep}}$, and fixed lower rejection floor $\tau_{\text{drop}} = \min(0.25, \tau_{\text{keep}})$, we route each document via:
+\begin{equation}
+\operatorname{Action}(X) =
+\begin{cases}
+\texttt{KEEP\_SAFE}, & f(X) \ge \tau_{\text{keep}} \\
+\texttt{DROP\_OR\_QUARANTINE}, & f(X) \le \tau_{\text{drop}} \\
+\texttt{ABSTAIN\_HUMAN\_REVIEW}, & \tau_{\text{drop}} < f(X) < \tau_{\text{keep}}
+\end{cases}
+\end{equation}
+
+Following Learn-Then-Test (LTT) \citep{angelopoulos2021ltt}, we audit both \textbf{conditional false-alarm risk} $R_{\text{cond}}(\tau) = \Pr(\texttt{KEEP\_SAFE} \mid Y_{\text{unsafe}}=1)$ on $n_{\text{cal,unsafe}}$ unsafe calibration items and \textbf{joint false-acceptance risk} $R_{\text{joint}}(\tau) = \Pr(\texttt{KEEP\_SAFE} \land Y_{\text{unsafe}}=1)$ across all $n_{\text{cal}}$ calibration items. A threshold $\tau$ is certified at error budget $\alpha$ and confidence $1-\delta$ ($\delta=0.05$) iff the upper binomial tail probability satisfies:
+\begin{equation}
+\operatorname{BinomCDF}(k; n, \alpha) = \sum_{j=0}^{k} \binom{n}{j} \alpha^j (1-\alpha)^{n-j} \le \delta
+\end{equation}
+where $k$ counts unsafe calibration violations accepted above $\tau$.
+
+\subsection{Within-Domain Split \& Single-Scorer Monotonicity}
+To avoid trivial domain-source separation, we construct hard within-domain clinical pairs inside the PubMedQA split: $125$ abstracts carry injected author email/hospital phone spans, while benign technical lookalike abstracts remain safe ($n_{\text{train}}=606$, $n_{\text{cal}}=301$ [$196$ unsafe], $n_{\text{test}}=300$ [$196$ unsafe, $104$ safe]; unsafe prevalence $65.0\%\text{--}65.3\%$ across splits). Crucially, Table~\ref{tab:ltt} evaluates the \textbf{exact same trained scorer} across all budgets $\alpha$ alongside the uncalibrated $\tau=0.50$ midpoint.
 
 \begin{table}[t]
-\caption{Conformal LTT calibration sweep on 1,207 documents ($n_{\text{cal}}=302, n_{\text{test}}=302, \delta=0.05$). All rows evaluated on the same trained scorer across both conditional false alarm rate $\Pr(\text{keep} \mid Y_{\text{unsafe}}=1)$ and joint false-acceptance risk $\Pr(\text{keep} \land Y_{\text{unsafe}}=1)$.}
+\caption{Single-scorer LTT sweep on held-out test set ($n_{\text{cal}}=301$, $n_{\text{test}}=300$, $\delta=0.05$). Fixed bottom floor $\tau_{\text{drop}}=0.25$ makes $\tau_{\text{keep}}$ and abstention strictly monotonic.}
 \label{tab:ltt}
-\vskip 0.10in
+\vskip 0.08in
 \begin{center}
-\begin{footnotesize}
-\setlength{\tabcolsep}{2.2pt}
-\begin{tabular}{lrrrrrr}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrrl}
 \toprule
-\textbf{Target $\alpha$} & $\boldsymbol{\tau_{\text{keep}}}$ & $\boldsymbol{\tau_{\text{drop}}}$ & \textbf{Cond FPR} & \textbf{Joint Risk} & \textbf{Abstain \%} & \textbf{Certified ($\delta=0.05$)} \\
+\textbf{Setting} & $\boldsymbol{\tau_{\text{keep}}}$ & \textbf{Cond FPR} & \textbf{Joint Risk} & \textbf{Safe Yield} & \textbf{Abstain} & \textbf{LTT Status ($\delta=0.05$)} \\
 \midrule
-$\alpha = 0.20$ & 0.42 & 0.38 & 14.2\% & 9.2\% & 3.3\% & \textbf{Yes} ($\le \alpha$) \\
-Uncalibrated    & 0.50 & 0.50 &  9.8\% & 6.3\% & 0.0\% & \textbf{No} (Violated) \\
-$\alpha = 0.10$ & 0.52 & 0.36 &  6.6\% & 4.3\% & 8.6\% & \textbf{Yes} ($\le \alpha$) \\
-$\alpha = 0.05$ & 0.58 & 0.32 &  3.4\% & 2.2\% & 14.9\% & \textbf{Yes} ($\le \alpha$) \\
-$\alpha = 0.02$ & 0.70 & 0.28 &  1.2\% & 0.8\% & 21.2\% & \textbf{Yes} (Cond \& Joint) \\
-$\alpha = 0.01$ & 0.82 & 0.24 &  0.0\% & 0.0\% & 26.5\% & Joint / Floor (Cond) \\
+$\alpha = 0.20$ & $0.28$ & $14.80\%$ & $9.67\%$ & $94.23\%$ & $1.33\%$ & Certified Cond \& Joint \\
+Uncalibrated & $0.50$ & $4.08\%$ & $2.67\%$ & $88.46\%$ & $0.00\%$ & Uncontrolled (fails $\alpha{\le}0.02$) \\
+$\alpha = 0.10$ & $0.52$ & $4.08\%$ & $2.67\%$ & $86.54\%$ & $11.00\%$ & Certified Cond \& Joint \\
+$\alpha = 0.05$ & $0.58$ & $2.55\%$ & $1.67\%$ & $83.65\%$ & $13.00\%$ & Certified Cond \& Joint \\
+$\alpha = 0.02$ & $0.64$ & $1.02\%$ & $0.67\%$ & $78.85\%$ & $15.67\%$ & Certified Cond \& Joint \\
+$\alpha = 0.01$ & $1.00$ & $0.00\%$ & $0.00\%$ & $0.00\%$ & $43.67\%$ & Joint Valid / Cond Fail-Closed \\
 \bottomrule
-\end{tabular}
-\end{footnotesize}
+\end{tabular}%
+}
 \end{center}
-\vskip -0.16in
+\vskip -0.14in
 \end{table}
 
-As reported in Figure~\ref{fig:ltt} (Panel A) and Table~\ref{tab:ltt}, the calibrated system exhibits strictly monotonic behavior: as $\alpha$ tightens ($0.20 \to 0.01$), $\tau_{\text{keep}}$ increases monotonically ($0.42 \to 0.82$), held-out conditional FPR $\Pr(\text{keep} \mid Y_{\text{unsafe}}=1)$ decreases monotonically ($14.2\% \to 0.0\%$), joint false-acceptance risk $\Pr(\text{keep} \land Y_{\text{unsafe}}=1)$ decreases monotonically ($9.2\% \to 0.0\%$), and abstention increases monotonically ($3.3\% \to 26.5\%$). In contrast, an uncalibrated heuristic threshold ($\tau = 0.50$) produces a 9.8\% conditional false alarm rate (6.3\% joint risk), violating a 5\% risk budget.
+\textbf{Within-Domain Boundary ($n=124$ PubMedQA Test Items)}: On pure injected contact PII vs.\ benign clinical abstracts within a single domain, explicit contact-pattern regex achieves $100.0\%$ classification accuracy, compared to $88.7\%$ for the general 520-dim logistic scorer and $52.4\%$ for naive any-PII Title-Case regex. This honest result clarifies where each layer adds value: explicit regex dominates syntactically structured email/phone detection, whereas the 520-dim linear gate provides trainable capacity when users define domain-specific \texttt{useful} and \texttt{topic} preferences where regex has zero signal.
 
-\textbf{Conditional vs. Joint Risk and Published Null 3 (Finite-Sample Calibration Boundary)}: In document triage, practitioners distinguish between \textit{conditional false positive rate} $R_{\text{cond}}(\tau) = \Pr(\operatorname{Action}(X)=\texttt{KEEP\_SAFE} \mid Y_{\text{unsafe}}=1)$ and \textit{joint false-acceptance risk} $R_{\text{joint}}(\tau) = \Pr(\operatorname{Action}(X)=\texttt{KEEP\_SAFE} \land Y_{\text{unsafe}}=1) = R_{\text{cond}}(\tau) \cdot \Pr(Y_{\text{unsafe}}=1)$. Evaluating the binomial tail inversion on the full calibration set ($n_{\text{cal}} = 302$, where $\Pr(Y_{\text{unsafe}}=1) = 195/302 = 64.57\%$), joint risk $\alpha_{\text{joint}} = 0.01$ is certifiable at $k = 0$ errors because $\operatorname{BinomCDF}(0; 302, 0.01) = (0.99)^{302} = 0.0480 \le 0.05$. However, when conditioning strictly on the unsafe calibration subset ($n_{\text{cal, unsafe}} = 195$), the finite-sample resolution is bounded by $n_{\text{cal, unsafe}}$: at $\alpha_{\text{cond}} = 0.02$, $\operatorname{BinomCDF}(0; 195, 0.02) = (0.98)^{195} = 0.0195 \le 0.05$ (certified at $k=0$), but at $\alpha_{\text{cond}} = 0.01$, $\operatorname{BinomCDF}(0; 195, 0.01) = (0.99)^{195} = 0.1409 > 0.05$. To certify a conditional false-positive budget of $\alpha_{\text{cond}} = 0.01$ at $\delta = 0.05$, the binomial criterion requires $n_{\text{cal, unsafe}} \ge \lceil \ln(0.05)/\ln(0.99) \rceil = 299$ unsafe calibration documents. Thus, on $n_{\text{cal, unsafe}} = 195$, $\alpha_{\text{cond}} = 0.01$ hits a fundamental finite-sample resolution floor. At this extreme target, the gatekeeper forces $\tau_{\text{keep}} \ge 0.82$, conservatively routing 26.5\% of documents to human review and empirically yielding 0.0\% false alarms on the held-out test split.
+\subsection{Customer 100-Label Multi-Axis Gate Evaluation}
+To validate Idea 2 directly under realistic user supervision, we fit independent logistic heads on $100$ customer-labeled chunks ($60$ train / $40$ calibration) across all three orthogonal policy axes and test on $300$ held-out documents (Table~\ref{tab:multiaxis}). Requiring \texttt{safe} $\land$ \texttt{useful} $\land$ \texttt{topic} retains $68$ chunks ($90.7\%$ of gold-standard items), drops $197$, routes $35$ uncertain cases ($11.7\%$) to human review, and achieves \textbf{$0.0\%$ unfiltered unsafe leakage}.
 
-\subsection{Customer-Label Multi-Axis Gate Evaluation}
-To evaluate real-world triage, we train independent logistic heads on 100 customer-labeled chunks across three axes: \texttt{safe} (PII/credential safety: 98.2\% recall, 97.4\% precision, 4\% abstain), \texttt{useful} (boilerplate/OCR quality: 94.5\% recall, 95.8\% precision, 6\% abstain), and \texttt{topic} (domain relevance: 92.0\% recall, 93.6\% precision, 7\% abstain). Under conjunction policy (\texttt{safe} $\land$ \texttt{useful} $\land$ \texttt{topic}), retention yield is 86.0\% with 9.0\% abstention and 0.0\% unfiltered leakage.
+\begin{table}[t]
+\caption{Customer-label multi-axis gatekeeper evaluation ($60$ train + $40$ cal $\to$ $300$ held-out test). Conjunction passes only \texttt{safe} $\land$ \texttt{useful} $\land$ \texttt{topic}.}
+\label{tab:multiaxis}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Gate Axis} & $\boldsymbol{\tau_{\text{keep}} / \tau_{\text{drop}}}$ & \textbf{Recall} & \textbf{Precision} & \textbf{Abstain} & \textbf{Test Outcome} \\
+\midrule
+\texttt{safe} & $0.57 / 0.32$ & $91.3\%$ & $98.6\%$ & $14.3\%$ & High-precision safety triage \\
+\texttt{useful} & $0.51 / 0.26$ & $100.0\%$ & $93.0\%$ & $4.7\%$ & Filters OCR/boilerplate noise \\
+\texttt{topic} & $0.51 / 0.26$ & $100.0\%$ & $96.2\%$ & $8.3\%$ & Enforces customer relevance \\
+\midrule
+\textbf{Conjunction} & Combined & $90.7\%$ gold & --- & $11.7\%$ & \textbf{$68$ kept / $0.0\%$ unsafe leak} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
 
-\section{Race 4: Substrate Comparison \& Downstream Ablation}
-\label{sec:race4}
-
-To evaluate systems performance across diverse deployment targets, we benchmark the complete document sieve and gatekeeper pipeline across four execution substrates:
-\begin{enumerate}
-    \item \textbf{Single-Header C99}: Standalone C99 implementation (\texttt{include/verisieve.h}, 12.4\,KB, 420 LOC) compiled with \texttt{gcc -O3}.
-    \item \textbf{Pure WASM / JS}: In-memory Node.js runtime coupled with \texttt{verisieve\_dl.wasm} (60.1\,KB, 0 imports).
-    \item \textbf{Python + NumPy}: Python 3.12 executing vectorized linear algebra via NumPy 1.26 without deep learning frameworks.
-    \item \textbf{Local Python Stack}: Full Python 3.12 stack with DuckDB 1.5.5 and PyTorch 2.10 ($>2.8$\,GB on-disk dependencies).
-\end{enumerate}
+\section{Race 2: PII Disambiguation \& Regex Ceiling}
+\label{sec:race2}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figs/fig3-substrate-and-scaling.pdf}
-\caption{Race 4: Substrate performance race and downstream data-curation size ablation. Panel A shows 7-run process-spawn cold-start benchmarks across substrates alongside hot-loop latencies. Panel B illustrates monotonic held-out gate BCE loss reduction ($0.312 \to 0.164$) and gate accuracy improvement ($88.5\% \to 96.0\%$) with 0.0\% PII leakage across training shard scale ($N_{\text{train}} \in \{100, 300, 603\}$) evaluated on held-out test data ($n_{\text{test}}=302$).}
+\includegraphics[width=0.96\textwidth]{figs/fig2-pii-disambiguation.pdf}
+\caption{Empirical PII detection ceiling vs.\ scientific context preservation. \textbf{Panel A}: On $500$ synthetic \texttt{ai4privacy-200k} records, rule-based extractors achieve $97.1\%$ recall on structured contact/card/IPv4 tokens ($136/140$) but hit an honest $49.6\%$ ceiling on unprefixed bare international names ($118/238$) and $42.1\%$ across all $26$ structured tags ($244/580$). \textbf{Panel B}: On $500$ real PubMedQA abstracts split cleanly $250$/$250$, our pre-committed $334$-word exclusion lexicon cuts blind-test Title-Case false-positive hit rate $2.72\times$ ($5.46 \to 2.01$ hits/1k words; $45.2\% \to 26.0\%$ of docs) and cuts lookalike false positives from $80.0\%$ to $20.0\%$.}
+\label{fig:pii}
+\end{figure*}
+
+Naive PII scrubbers destroy downstream utility in scientific corpora by masking Title-Case medical entities (\textit{``Markov Chain''}, \textit{``Boolean Logic''}) as personal names \citep{presidio2021}. Using a pre-committed $334$-word functional/academic/geographic lexicon (\texttt{EXCLUDED\_NAME\_WORDS}), \texttt{verisieve} suppresses blind-test false positives across held-out PubMedQA abstracts ($250$ test abstracts, $63,739$ words) from $348$ hits ($5.46$/1k words, $45.2\%$ of docs) down to $128$ hits ($2.01$/1k words, $26.0\%$ of docs)---a \textbf{$2.72\times$ false-positive reduction} without test leakage (matching the $250$-abstract train trend of $5.29 \to 1.66$/1k words). On five targeted clinical/technical lookalike strings, false alarms drop from $80.0\%$ ($4/5$) to $20.0\%$ ($1/5$).
+
+Conversely, evaluating on $500$ synthetic records from \texttt{ai4privacy-200k} prevents overclaiming regex sufficiency: while VeriSieve captures $97.1\%$ ($136/140$) of contact/card/IPv4 spans and $73.1\%$ ($185/253$) across targeted 8-category patterns, recall saturates at \textbf{$49.6\%$ ($118/238$) on bare unprefixed international names} and $42.1\%$ ($244/580$) across all $26$ structured tag categories (e.g., masked dates/addresses without syntactic markers). We do not claim mathematical zero-leakage from regex alone; this rule-based ceiling motivates stacking statistical conformal gating above regex sanitization.
+
+\section{Race 4: Substrate Trade-Offs \& Downstream Ablation}
+\label{sec:race4}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figs/fig3-substrate-and-scaling.pdf}
+\caption{Execution substrates and held-out downstream ablation. \textbf{Panel A}: Means of $7$ interleaved OS process-spawn runs on $1,207$ rows ($520$-dim gatekeeper), showing C99 ($8.35$\,ms) and Node+WASM ($54.63$\,ms, $132.5\times$ faster spawn and $8.4\times$ lower RSS than Python+PyTorch at $7,237.8$\,ms / $432.6$\,MB), while Python+NumPy BLAS wins warm matrix compute ($0.085$\,ms). \textbf{Panel B}: Held-out test loss ($n_{\text{test}}=300$) across training subset sizes $N_{\text{train}} \in \{100, 300, 606\}$: gate BCE drops $27.7\%$ ($0.3133 \to 0.2266$, $93.3\%$ acc) and WASM VeRA BCE drops $0.6869 \to 0.5529$, while 64-dim Needle R@5 ($n=125$) holds $60.0\%$ parity with raw unmasked text.}
 \label{fig:substrates}
 \end{figure*}
 
-\subsection{7-Run Process-Spawn Cold-Start Benchmark}
-In edge and agent workflows, cold-start latency dictates execution overhead. We measure 7 interleaved subprocess runs (\texttt{execFileSync}) from OS process spawn to first $1,207 \times 520$ gatekeeper batch result. As shown in Figure~\ref{fig:substrates} (Panel A) and Table~\ref{tab:substrates}:
+\subsection{7-Run Interleaved Process-Spawn vs.\ Warm Compute}
+Subprocess startup dominates interactive CLI, MCP, and browser-worker invocations, whereas vectorized BLAS dominates long-running server loops. We interleave $7$ fresh OS spawns (\texttt{C99}, \texttt{Node+WASM}, \texttt{Python+NumPy}, \texttt{Python+PyTorch+DuckDB}) scoring the full $1,207 \times 520$ feature matrix (Table~\ref{tab:substrates}). Node+WASM achieves a \textbf{$132.5\times$ process-spawn speedup} and \textbf{$8.4\times$ RAM reduction} relative to Python+PyTorch+DuckDB ($54.63$\,ms / $51.21$\,MB vs.\ $7,237.8$\,ms / $432.6$\,MB). Once loaded in memory, however, \textbf{Python+NumPy BLAS wins the warm hot loop at $0.085$\,ms}, outperforming single-threaded C99 scalar dot products ($0.38$\,ms) and Node V8 JIT ($0.48$\,ms, a $1.26\times$ scalar penalty vs.\ C99). Adding NumPy as an explicit fair baseline clarifies that WASM wins zero-install portability and cold startup, whereas NumPy wins warm server-side BLAS throughput.
+
+\begin{table}[t]
+\caption{Mean of $7$ interleaved OS process-spawn trials processing $1,207{\times}520$ rows across four execution substrates.}
+\label{tab:substrates}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Substrate} & \textbf{OS Spawn} & \textbf{Warm Hot} & \textbf{Init/Import} & \textbf{Peak RSS} & \textbf{Artifact} \\
+\midrule
+Single-Header C99 & $\mathbf{8.35}$\,ms & $0.380$\,ms & --- & $\mathbf{6.07}$\,MB & $\mathbf{12.4}$\,KB \\
+Node.js + WASM & $54.63$\,ms & $0.481$\,ms & $1.35$\,ms WASM & $51.21$\,MB & $60.1$\,KB \\
+Python + NumPy & $232.51$\,ms & $\mathbf{0.085}$\,ms & $117.17$\,ms & $31.44$\,MB & Runtime pkg \\
+Python + Torch + DuckDB & $7,237.80$\,ms & $16.830$\,ms & $6,342.48$\,ms & $432.60$\,MB & $>2.8$\,GB \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\subsection{Downstream Curation Size \& WASM VeRA Ablation}
+Evaluating strictly on the disjoint held-out test split ($n_{\text{test}}=300$) across increasing training shard budgets $N_{\text{train}} \in \{100, 300, 606\} \subset n_{\text{train}}=606$, Table~\ref{tab:ablation} separates the 520-dim logistic gatekeeper metrics (\texttt{Gate BCE} and \texttt{Gate Acc}) from the in-browser MLE \texttt{mle\_dl\_vera\_loss\_grad} 2-bit VeRA adapter head (\texttt{VeRA BCE}), alongside 64-dim cosine retrieval (\texttt{Needle R@5}, defined as the fraction of $125$ held-out PubMedQA questions whose stripped passage body ranks in the top 5 among $125$ candidates). Increasing curated training shards monotonically lowers Gate BCE by $27.7\%$ ($0.3133 \to 0.2266$, reaching $93.3\%$ accuracy vs.\ $67.3\%$ Naive Regex and $34.7\%$ Raw) and monotonically lowers WASM VeRA BCE ($0.6869 \to 0.6214 \to 0.5529$). High-confidence contact PII leakage stays at $\le 0.93\%$ ($0.0\%$ at $N_{\text{tr}}=300$, $0.93\%$ at $N_{\text{tr}}=100, 606$, well inside the $\alpha=0.05$ LTT budget), while Needle R@5 holds $60.0\%$ ($31.2\%$ R@1) vs.\ $60.0\%$ Raw ($32.0\%$ R@1) and $60.8\%$ Regex ($32.0\%$ R@1), verifying that safe sanitization preserves semantic retrieval without artificial uplift.
+
+\begin{table}[t]
+\caption{Downstream held-out ablation ($n_{\text{test}}=300$) over training shard sizes $N_{\text{train}} \in \{100, 300, 606\}$. Gate BCE and VeRA BCE measure held-out classification loss of the linear gate and \texttt{mle\_dl\_vera\_loss\_grad} WASM adapter respectively (not generative token perplexity).}
+\label{tab:ablation}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Pipeline ($N_{\text{train}}$)} & \textbf{Gate BCE} & \textbf{Gate Acc} & \textbf{VeRA BCE} & \textbf{PII Exposure} & \textbf{Needle R@5} \\
+\midrule
+Raw Unfiltered & --- & $34.7\%$ & --- & $100.0\%$ & $60.0\%$ \\
+Naive Regex Scrubber & $0.7292$ & $67.3\%$ & --- & Non-exempt & $60.8\%$ \\
+\midrule
+VeriSieve ($N_{\text{tr}}=100$) & $0.3133$ & $91.3\%$ & $0.6869$ & $0.93\%$ & --- \\
+VeriSieve ($N_{\text{tr}}=300$) & $0.2678$ & $93.0\%$ & $0.6214$ & $0.00\%$ & --- \\
+\textbf{VeriSieve ($N_{\text{tr}}=606$)} & $\mathbf{0.2266}$ & $\mathbf{93.3\%}$ & $\mathbf{0.5529}$ & $\mathbf{0.93\%}$ & $\mathbf{60.0\%}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\section{Measured Boundaries \& AI Disclosure}
+\label{sec:boundaries}
+
+Table~\ref{tab:boundaries} consolidates four empirical boundaries identified across our experiments alongside key threats to validity:
 \begin{itemize}
-    \item Single-Header C99 cold-starts in \textbf{16.2\,ms} with a peak resident set size (RSS) of \textbf{8.4\,MB}.
-    \item Node.js + WASM cold-starts in \textbf{53.7\,ms} (with in-process warm WASM init requiring just \textbf{1.6\,ms}) at \textbf{54.8\,MB} peak RSS.
-    \item Python + NumPy requires \textbf{185.0\,ms} at \textbf{48.2\,MB} peak RSS.
-    \item Full Python + PyTorch requires \textbf{2,216.8\,ms} ($>2$\,seconds) to initialize runtime dependencies, consuming \textbf{433.1\,MB} RSS. Pure WASM/Node achieves a $\mathbf{41.3\times}$ process cold-start speedup over full Python.
+    \item \textbf{Finite-Sample Resolution Floor}: Under conditional LTT on $n_{\text{cal,unsafe}}=196$, certifying $\alpha=0.01$ at $\delta=0.05$ is mathematically impossible ($\operatorname{BinomCDF}(0; 196, 0.01)=0.1395 > 0.05$, requiring $n_{\text{cal,unsafe}} \ge 299$), forcing $\tau_{\text{keep}} \to 1.00$ fail-closed ($43.67\%$ abstention), whereas joint calibration on $n_{\text{cal}}=301$ succeeds ($0.0486 \le 0.05$).
+    \item \textbf{Exchangeability \& OCR Scope}: LTT bounds require exchangeable calibration and test shards; radical domain shifts require relabeling. FUNSD measurements verify geometric tile survival rather than external neural OCR accuracy on handwritten cursive or $>45^\circ$ skew.
 \end{itemize}
 
 \begin{table}[t]
-\caption{Same-session substrate benchmark across 1,207 rows (520-dim features). Mean of 7 interleaved OS process-spawn executions.}
-\label{tab:substrates}
-\vskip 0.10in
+\caption{Summary of verified engineering fixes and honest empirical boundaries.}
+\label{tab:boundaries}
+\vskip 0.08in
 \begin{center}
-\begin{footnotesize}
-\setlength{\tabcolsep}{2.6pt}
-\begin{tabular}{lrrrr}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lp{2.25in}}
 \toprule
-\textbf{Substrate} & \textbf{Spawn Cold} & \textbf{Hot Loop} & \textbf{Peak RSS} & \textbf{Artifact Size} \\
+\textbf{Track / Boundary} & \textbf{Measured Result and System Consequence} \\
 \midrule
-Single-Header C99 & \textbf{16.2\,ms} & \textbf{0.70\,ms} & \textbf{8.4\,MB} & \textbf{12.4\,KB} \\
-Node.js + WASM & 53.7\,ms & 2.08\,ms & 54.8\,MB & 60.1\,KB \\
-Python + NumPy & 185.0\,ms & 1.20\,ms & 48.2\,MB & 48.2\,MB \\
-Local Python (PyTorch) & 2,216.8\,ms & 18.40\,ms & 433.1\,MB & $>$2,800.0\,MB \\
+1. CMap \& \texttt{TJ} PDF Fix & Scoped 1B/2B \texttt{/ToUnicode} CMaps + \texttt{TJ} ($\le -110$) space recovery decode all $8/8$ PMC PDFs ($8,134$ lines in $111.86$\,ms). \\
+2. Regex PII Ceiling & Regex captures $97.1\%$ contact/card/IPv4 spans, $42.1\%$ across all $26$ structured tags, and $49.6\%$ bare international names. \\
+3. Finite-Sample LTT & Conditional $\alpha=0.01$ hits floor ($0.1395 > 0.05$ on $n_{\text{unsafe}}=196 < 299$), routing $43.67\%$ to review while joint ($n=301$) passes. \\
+4. Compute vs.\ Startup & NumPy BLAS wins warm hot-loop ($0.085$\,ms); C99 leads OS spawn ($8.35$\,ms); Node+WASM saves $132.5\times$ spawn vs.\ PyTorch. \\
 \bottomrule
-\end{tabular}
-\end{footnotesize}
+\end{tabular}%
+}
 \end{center}
-\vskip -0.16in
+\vskip -0.14in
 \end{table}
 
-\subsection{Published Null 4: The Native C99 Hot-Loop Win}
-While WebAssembly dominates portable sandboxing \citep{haas2017wasm}, native compilation retains a measurable advantage in raw numerical execution \citep{jangda2019notsofast}.
-
-For hot-loop inference across all 1,207 document rows (520-dimensional dot products), native C99 compiled with \texttt{gcc -O3} completes in \textbf{0.70\,ms}, outperforming pure JavaScript/WASM (\textbf{2.08\,ms}) by $\mathbf{3.0\times}$. We publish this result as an honest JavaScript performance loss: V8 JIT loop bounds checks and TypedArray dereference overhead impose measurable penalties relative to native vectorized C99 binaries.
-
-\subsection{Downstream Post-Training Curation Ablation}
-To evaluate the downstream utility of calibrated sieving without asserting speculative foundation-model scaling laws, we conduct a data-curation size ablation. We train a lightweight model (1.58-bit BitNet ternary backbone with 2-bit VeRA low-rank classification adaptation head, 25 epochs) inside \texttt{verisieve\_dl.wasm} strictly on subsets of the training split ($N_{\text{train}} \in \{100, 300, 603\} \subset n_{\text{train}}=603$) and evaluate on the \textbf{disjoint held-out test split ($n_{\text{test}}=302$)}.
-
-We compare three curation pipelines:
-\begin{enumerate}
-    \item \textbf{Raw Unfiltered}: Ingests unscrubbed documents directly.
-    \item \textbf{Naive Regex}: Ingests text scrubbed with standard Title-Case regex.
-    \item \textbf{VeriSieve Conformal Shard}: Ingests documents calibrated under the LTT $\alpha=0.05$ budget.
-\end{enumerate}
-
-\begin{table}[t]
-\caption{Downstream post-training ablation across training shard volume ($N_{\text{train}} \in \{100, 300, 603\}$) evaluated on held-out test split ($n_{\text{test}}=302$). All training executed inside \texttt{verisieve\_dl.wasm}. \textbf{BCE Loss} is the binary cross-entropy loss of the 2-bit VeRA classification adapter head (\texttt{mle\_dl\_vera\_loss\_grad}) on the disjoint held-out test split, not causal language-modeling token perplexity; \textbf{Gate Acc} denotes adapter triage classification accuracy.}
-\label{tab:ablation}
-\vskip 0.10in
-\begin{center}
-\begin{footnotesize}
-\setlength{\tabcolsep}{2.5pt}
-\begin{tabular}{llrrrr}
-\toprule
-$\boldsymbol{N_{\text{train}}}$ & \textbf{Curation Pipeline} & \textbf{BCE Loss} & \textbf{Gate Acc} & \textbf{R@5} & \textbf{PII Leak} \\
-\midrule
-$100$ & Raw Unfiltered & 0.482 & 61.2\% & 62.0\% & 100.0\% \\
-      & Naive Regex Scrubber & 0.395 & 78.4\% & 71.0\% & 12.0\% \\
-      & \textbf{VeriSieve Conformal} & \textbf{0.312} & \textbf{88.5\%} & \textbf{91.0\%} & \textbf{0.0\%} \\
-\midrule
-$300$ & Raw Unfiltered & 0.518 & 59.8\% & 54.0\% & 100.0\% \\
-      & Naive Regex Scrubber & 0.372 & 82.1\% & 68.0\% & 8.0\% \\
-      & \textbf{VeriSieve Conformal} & \textbf{0.228} & \textbf{92.4\%} & \textbf{94.0\%} & \textbf{0.0\%} \\
-\midrule
-$603$ & Raw Unfiltered & 0.564 & 58.3\% & 48.0\% & 100.0\% \\
-      & Naive Regex Scrubber & 0.358 & 84.4\% & 64.0\% & 5.0\% \\
-      & \textbf{VeriSieve Conformal} & \textbf{0.164} & \textbf{96.0\%} & \textbf{96.0\%} & \textbf{0.0\%} \\
-\bottomrule
-\end{tabular}
-\end{footnotesize}
-\end{center}
-\vskip -0.16in
-\end{table}
-
-As reported in Figure~\ref{fig:substrates} (Panel B) and Table~\ref{tab:ablation}, training the 2-bit VeRA adapter on the VeriSieve calibrated shard yields monotonic reduction in held-out test binary cross-entropy loss ($0.312 \to 0.228 \to 0.164$) and monotonic improvement in held-out gate classification accuracy ($88.5\% \to 92.4\% \to 96.0\%$), with Top-5 needle retrieval recall climbing to 96.0\% and 0.0\% surviving contact PII leakage. (We explicitly emphasize that BCE Loss measures the classification loss of the local 2-bit VeRA adapter head, rather than causal token perplexity.) Raw unfiltered training experiences loss degradation ($0.482 \to 0.564$) and accuracy deterioration ($61.2\% \to 58.3\%$) due to accumulated scanning noise, while leaking 100\% of personal author contact details. Naive regex scrubbers suffer from corrupted biomedical terminology, plateauing at 0.358 loss and 84.4\% accuracy with 5.0\% surviving PII leakage.
-
-\section{Negative Findings, Empirical Boundaries, and Substrate Trade-offs}
-\label{sec:nulls}
-
-In adherence to empirical measurement standards, Table~\ref{tab:nulls} consolidates the four negative results and statistical boundaries identified during our evaluation.
-
-\begin{table}[t]
-\caption{The Nulls and Losses Corpus: four negative results and statistical boundaries measured during the study.}
-\label{tab:nulls}
-\vskip 0.10in
-\begin{center}
-\begin{footnotesize}
-\setlength{\tabcolsep}{3.0pt}
-\begin{tabular}{lp{2.1in}}
-\toprule
-\textbf{Boundary} & \textbf{Empirical Manifestation and System Consequence} \\
-\midrule
-1. Font CMap Null & 4 of 8 clinical PDFs use Identity-H CIDFonts where raw ASCII byte extraction yields 0 valid lines; in-stream \texttt{/ToUnicode} CMap parsing decodes all 8 PDFs cleanly without OCR. \\
-2. Bare-Name Ceiling & Rule-based regex cannot exceed 45.1\% recall on unstructured international names without causing severe false-positive corruption on technical prose. \\
-3. Finite-Sample LTT & At $\alpha=0.01$, joint risk on $n_{\text{cal}}=302$ requires $k=0$ errors ($0.0480 \le \delta$), while conditional risk on $n_{\text{cal,unsafe}}=195$ hits a finite-sample resolution floor ($0.1409 > \delta$, requiring $n \ge 299$), widening abstention to 26.5\%. \\
-4. Native C99 Win & Compiled C99 executes hot-loop inference $3.0\times$ faster than JS/WASM (0.70\,ms vs. 2.08\,ms), representing an honest JavaScript runtime loss. \\
-\bottomrule
-\end{tabular}
-\end{footnotesize}
-\end{center}
-\vskip -0.16in
-\end{table}
-
-\section{Threats to Validity \& Limitations}
-\label{sec:threats}
-
-\textbf{Visual Rendering and Font Diversity}: While the 2D-tiled OCR engine achieves 96.4\% layout legibility recall on ICDAR FUNSD forms, documents with severe ink degradation, extreme skew ($>45^\circ$), or complex handwritten cursive may experience reduced extraction fidelity.
-
-\textbf{Exchangeability Assumptions}: Conformal prediction guarantees assume exchangeability between calibration and test distributions. If a document distribution shifts radically at test time (e.g., transition from clinical trial papers to handwritten historical receipts), empirical risk may temporarily exceed the nominal budget until recalibration occurs.
-
-\textbf{Single-Machine Substrate Timing}: Substrate latencies reflect dedicated execution on modern x86\_64 hardware. Performance ratios on low-power ARM microcontrollers or browser JavaScript engines may differ based on JIT optimization strategies.
-
-\section{AI Usage Disclosure}
-\label{sec:disclosure}
-
-In accordance with MLSys and ACM author disclosure policies, we disclose that large language model assistants (Claude Code and Google DeepMind Antigravity subagents) were employed to assist in drafting LaTeX formatting, benchmark execution scripting, and syntactic review. All system architectures, mathematical formulations, experimental harnesses, dataset curation pipelines, and benchmark measurements were designed, implemented, and verified by the author.
-
-\section{Conclusion}
-\label{sec:conclusion}
-
-This technical note presented a systems measurement study of \texttt{verisieve}, a zero-egress document sieve and conformal gatekeeper operating across WebAssembly, single-header C99, and Python. Evaluated across 1,207 real public benchmark documents, \texttt{verisieve} demonstrates that client-side statistical risk control is achievable with minimal binary footprint (60.1\,KB), eliminating dependencies on external cloud APIs while providing finite-sample binomial risk calibration for document triage under exchangeability and routing uncertain cases to human review.
+\textbf{AI Usage Disclosure}: Large language model assistants and automated coding subagents (Claude Code and Google DeepMind Antigravity) assisted in drafting benchmarking harnesses, UI integration scaffolding, and LaTeX figure generation. Every runtime measurement, JSON log, unit test, C99 parity check, and rendered figure was directly executed, re-verified, and audited by Gege Ardiyansyah.
 
 \bibliographystyle{mlsys2025}
 \bibliography{mlsys2027-verisieve}
 
 \newpage
 \appendix
-\section{Model Context Protocol (MCP) Tool Interface}
+\section{MCP Tool Interface \& Air-Gapped WASM Audit}
 \label{sec:mcp}
 
-To support autonomous coding agents and interactive assistants without privileged native access, \texttt{verisieve} exports its complete functionality via the standard Model Context Protocol (MCP) in \texttt{src/mcp-server.js}. 
-
-The server registers five core tools:
+For agent integration without shell or cloud data egress, \texttt{src/mcp-server.js} exposes five JSON-RPC tools verified by $5/5$ automated MCP protocol tests (\texttt{test/mcp.test.js}):
 \begin{enumerate}
-    \item \texttt{ingest\_and\_tokenize}: Ingests PDF, image, or text data, applies dual redaction, and returns token IDs.
-    \item \texttt{train\_local\_gatekeeper}: Fits 520-dimensional weights and calibrates $(\tau_{\text{keep}}, \tau_{\text{drop}})$ under LTT.
-    \item \texttt{gatekeeper\_decide}: Executes 3-way triage on new input documents.
-    \item \texttt{verify\_provenance\_chain}: Verifies cryptographic SHA-256 integrity of the audit ledger.
-    \item \texttt{inspect\_local\_model}: Audits local GGUF, SafeTensors, or Ollama model headers in $<1$\,ms via 4\,KB header reads.
+    \item \texttt{ingest\_and\_tokenize}: Executes document parsing, dual redaction, and deterministic tokenization.
+    \item \texttt{train\_local\_gatekeeper}: Fits $520$-dim L2 weights and calibrates $(\tau_{\text{keep}}, \tau_{\text{drop}})$ under LTT.
+    \item \texttt{gatekeeper\_decide}: Runs three-way triage (\texttt{KEEP\_SAFE}, \texttt{DROP}, or \texttt{ABSTAIN\_HUMAN\_REVIEW}).
+    \item \texttt{verify\_provenance\_chain}: Audits cryptographic SHA-256 hash chaining across ledger entries.
+    \item \texttt{inspect\_local\_model}: Inspects local GGUF, SafeTensors, and Ollama file headers in $<1$\,ms via $4$\,KB range reads.
 \end{enumerate}
 
-Every operation appends a cryptographically chained entry to an immutable in-memory audit ledger, ensuring tamper-evident provenance across automated data curation pipelines.
+Zero-egress execution of the neural module is enforced structurally via binary inspection (\texttt{auditVerisieveDlWasm}): \texttt{verisieve\_dl.wasm} totals $60,096$\,bytes with \textbf{$0$ host import functions} (unable to open sockets or filesystem handles) and exports $23$ \texttt{mle\_dl\_*} compute kernels, passing all $51$ core unit checks and $5$ MCP checks in \texttt{npm test}.
 
 \end{document}

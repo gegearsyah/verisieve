@@ -1,230 +1,98 @@
 # VeriSieve
 
-> **VeriSieve — Zero-Egress Unstructured Document Sieve, Dual PII Redactor & Conformal Client-Side Token Gatekeeper**  
-> *Turn raw PDFs, scanned archival forms, HTML, and emails into verified, PII-redacted model tokens with a finite-sample calibrated gatekeeper that runs locally in <15 ms across Browser, CLI, MCP Server, and C99.*
+[![CI](https://img.shields.io/badge/tests-58%2F58%20passing-brightgreen)](#verification) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions)
-[![Node](https://img.shields.io/badge/node-%3E%3D22.0.0-339933.svg)](https://nodejs.org/)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-purple.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Targets](https://img.shields.io/badge/targets-Browser%20%7C%20CLI%20%7C%20MCP%20%7C%20C99-38bdf8.svg)]()
-[![Tests](https://img.shields.io/badge/tests-56%20passed-10b981.svg)]()
+**Zero-Egress Document Curation, Customer-Label Conformal Gatekeeping, and Local WebAssembly Training**  
+*Author: Gege Ardiyansyah*
+
+VeriSieve is the portable curation engine powering the **RTIO** browser sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)), paired with **MLE's `mle_dl_*` WebAssembly kernels** (`verisieve_dl.wasm`, 60.1 KB, 0 host imports) for BitNet 1.58-bit linear layers, 2-bit VeRA adapter training, and 64-dimensional needle retrieval.
 
 ---
 
-> 📄 **Academic Research Paper (MLSys Accepted Technical Note & LaTeX Source)**:  
-> **"Zero-Egress Document Sieve and Conformal Gatekeeper: A Technical Note on Deterministic Document Sieving, Conformal Risk Control, and Substrate Trade-offs across WebAssembly, C99, and Python"**  
-> Author: Geye Ardiansyah (Maincode / Independent Research, Melbourne, Australia).  
-> Read the compiled 8-page publication-grade PDF: [paper/mlsys2027-verisieve.pdf](paper/mlsys2027-verisieve.pdf) (LaTeX: [paper/mlsys2027-verisieve.tex](paper/mlsys2027-verisieve.tex), bib: [paper/mlsys2027-verisieve.bib](paper/mlsys2027-verisieve.bib)).  
-> Extended documentation: [docs/PAPER-VERISIEVE-CONFORMAL-WASM.md](docs/PAPER-VERISIEVE-CONFORMAL-WASM.md).  
->
-> 🧪 **1,207-Document Public Benchmark & Same-Session Substrate Race**:  
-> Run `npm run bench:scale` to execute on the full 1,207-document public corpus (199 ICDAR FUNSD scanned forms + 500 ai4privacy-200k records + 500 PubMedQA abstracts + 8 PMC clinical PDFs) across `Pure WASM/JS (60.1 KB)` vs. `Single-Header C99 (12.4 KB, gcc -O3)` vs. `Python + NumPy` vs. `Local Python (PyTorch 2.10 + DuckDB 1.5.5)`. Zero synthetic documents, zero unmeasured Cloud SLA claims. All 4 honest nulls published. See vector figures in [docs/scale-and-paradigm-benchmark.svg](docs/scale-and-paradigm-benchmark.svg) and [paper/figs/](paper/figs/).
+## Architecture & Honest Separation of Responsibilities
+
+| Layer | Component | Responsibility & Verification |
+|---|---|---|
+| **Interface** | **RTIO** ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Interactive browser workspace for URL/document upload, PII/triage inspection, customer chunk labeling, and local adapter runs. |
+| **Portable Engine** | **VeriSieve** (`src/`, `include/verisieve.h`) | Deterministic text/PDF/`.docx` ingestion, `verisieve_clean.wasm` HTML/boilerplate strip + SHA-256 + 3-gram Jaccard dedupe, PII redaction (`334`-word exclusion lexicon), `520`-dim logistic gatekeeper, LTT conformal calibration, and MCP server (`8` tools). Runs across Browser, Node CLI, MCP, and C99. |
+| **Neural Kernels** | **MLE WASM** (`verisieve_dl.wasm`) | Pure WASM (`0` imports, `60,096` bytes, `23` `mle_dl_*` exports) executing `mle_dl_vera_loss_grad` 2-bit VeRA training and 64-dim needle embeddings. |
+
+Note explicitly: the **520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration execute purely in deterministic JavaScript and C99**, while **MLE's `mle_dl_*` kernels execute the neural adapter and needle retrieval**. Optical recognition in the browser sandbox delegates to the external Mirage/Cactus OCR module, whereas VeriSieve handles geometric 2D seam-overlapping tiling.
 
 ---
 
-## 🏛️ System Architecture: Three-Part Sovereign AI Engine
+## Deliverable Status & Known Scope
 
-VeriSieve operates as a cohesive client-side data hygiene and model post-training stack:
-1. **RTIO** ([https://www.rtio.io/sandbox](https://www.rtio.io/sandbox)): User-facing interactive capture, visual inspection, annotation, and model post-training interface.
-2. **VeriSieve**: Portable deterministic curation, extraction, and conformal gatekeeper engine behind RTIO, deployable across web browsers, CLI automation, MCP servers, and standalone single-header C99.
-3. **MLE WebAssembly Kernels** (`verisieve_dl.wasm`): Pure WebAssembly module (60.1 KB, 0 imports) powering in-place 1.58-bit BitNet ternary operations, VeRA low-rank text adapter training, and 64-dimensional needle retrieval embeddings directly inside the client sandbox.
-
-> **Execution Division**: The **520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration run entirely in deterministic JavaScript and C99**, while **MLE's `mle_dl_*` WASM kernels power the BitNet/VeRA text adapter trainer and needle embeddings**.
-
-```
-[ Ingest: Web / Docx / PDF / Scan ]
-               │
-               ▼
-   1. Front-Door Extraction:
-      ├── Born-Digital PDF (/ToUnicode CMap stream parsing, 11.2 ms)
-      └── 2D Square Tiling (512x512 canvas, 96.4% bbox survival)
-               │
-               ▼
-   2. Deduplication & Hygiene:
-      ├── SHA-256 Exact Hash Deduplication
-      └── 3-Gram Jaccard Near-Duplicate Filtering (>= 0.85)
-               │
-               ▼
-   3. Dual-Layer Redaction:
-      ├── In-Memory Token Masking (<PII:EMAIL>, <PII:PHONE>)
-      └── Canvas Bounding-Box Excision ([x1, y1, x2, y2])
-      └── 65-Term Clinical Lexicon (EXCLUDED_NAME_WORDS)
-               │
-               ▼
-   4. 520-Dim Feature Vectorization & Cryptographic Provenance:
-      ├── 256-dim char hist + 128-dim subword + 64-dim layout + 72-dim PII
-      └── Tamper-Evident SHA-256 Audit Chain (manifest.json)
-               │
-               ▼
-   5. Client-Side Conformal Gatekeeper (LTT Risk Bounds):
-      ├── KEEP_SAFE            ──► Certified Tokens to Model Context Window
-      ├── DROP_OR_QUARANTINE   ──► Blocked Personal Data / Boilerplate
-      └── ABSTAIN_HUMAN_REVIEW ──► Borderline Records to Human Reviewer
-               │
-               ▼
-   6. In-Place Downstream Adapter Training (verisieve_dl.wasm):
-      └── BitNet 1.58-bit / VeRA Low-Rank Text Adapter (0.0% PII Leak)
-```
+| Requirement | Built & Verified in VeriSieve | Honest Gap / Boundary |
+|---|---|---|
+| **Web & Link Capture** | HTML tag/script/nav stripping (`503 -> 233 B`, `53.7%` stripped in `0.833 ms`); `ingestor.js` fails explicitly when unreachable | Legacy `ingestFromUrlOrPath` keeps an opt-in fallback flag tested for offline unit suites |
+| **PDF & `.docx` Capture** | `.docx` OOXML ZIP XML extraction (`295 B -> 150 chars`, `0.412 ms`); linear `BT..ET` PDF parser with scoped 1B/2B `/ToUnicode` CMaps + `TJ` (`<= -110`) spacing (`8/8` PMC PDFs clean) | External/unmapped CIDFonts still fall back to visual rasterization |
+| **Dedupe & Manifest** | SHA-256 exact hash + 3-gram Jaccard ($\ge 0.85$: `5 -> 4` unique in `0.240 ms`); immutable `manifest.json` (`sha256` prefix `2de7618c79d41782`) | Tested per shard in memory rather than distributed TB-scale storage |
+| **Multi-Axis Customer Gate** | Independent `safe`, `useful`, `topic` logistic heads + LTT (`100` customer labels $\to$ `300` test: `90.7%` gold retained, `11.7%` abstain, `0.0%` unsafe leak) | Conditional LTT at $\alpha=0.01, \delta=0.05$ requires $n_{\text{cal,unsafe}} \ge 299$ (`196` unsafe cal items hit fail-closed floor) |
+| **Zero-Egress Runtime** | `verisieve_dl.wasm` audited (`0` host imports); C99 & JS parity verified | Process cold-start favors C99/Node+WASM, while warm matrix compute favors Python+NumPy BLAS |
 
 ---
 
-## ⚡ Why VeriSieve Exists (Comparison vs. Existing Tools)
+## Live 1,207-Document Benchmark Summary
 
-| Capability | **VeriSieve** | Unstructured.io | Microsoft Presidio | Hugging Face Datatrove |
-| :--- | :---: | :---: | :---: | :---: |
-| **Zero Egress / Air-Gapped** | **100% Local (0 npm deps)** | Cloud API or heavy container | Local Python | Cluster / PySpark |
-| **Dual Text + Pixel Redaction** | **Yes (Text + RGB Blackout)** | Text only | Text only | Text only |
-| **Client-Side Conformal Gatekeeper** | **Yes (Exact LTT bounds, <15ms)** | ❌ No | ❌ No | ❌ No |
-| **Execution Targets** | **Browser, CLI, MCP, C99** | Python / Cloud | Python / C# | Python / Spark |
-| **Pluggable Tokenizers** | **Yes (`TokenizerAdapter`)** | ❌ No | ❌ No | Hugging Face Tokenizers |
-| **WASM Zero-Network Audit** | **Verified (0 Network Imports)** | N/A | N/A | N/A |
-| **Audit Provenance Chain** | **Yes (strips `.raw` before SHA-256)** | ❌ No | ❌ No | ❌ No |
-| **Package Weight & Dependencies** | **0 External Dependencies** | ~500 MB+ Python deps | PyTorch / spaCy (~1 GB) | PyArrow / Ray cluster |
+All numbers below are computed directly by `npm run bench:scale` (`results/scale-and-paradigm-benchmark.json`, SVG SHA-256 byte-identical across passes) across ICDAR FUNSD (`199` scans / `30,595` bboxes), `ai4privacy-200k` (`500` synthetic records), PubMedQA (`500` clinical abstracts), and PMC Full-Text (`8` born-digital clinical PDFs).
+
+### 1. PDF CMap + FUNSD 2D Geometric Tiling
+- **PMC Clinical PDFs (`8/8` Clean)**: Scoped `/ToUnicode` CMap tables + negative-kerning `TJ` (`<= -110`) space reconstruction recover `8,134` readable lines (`55,099` words) in `111.86 ms` total (`13.98 ms` avg).
+- **FUNSD Geometric Survival (`199` forms, `30,595` boxes $\ge 8{\times}4$\,px)**:
+  - `stock_capped_8`: `5.2%` (`1,592`)
+  - `untiled_512`: `20.53%` (`6,281`)
+  - `horizontal_1d_band`: `71.29%` (`21,811`)
+  - `tile_2d_zero_overlap`: `92.44%` (`28,283`, `4.94%` seam cut loss)
+  - **`tile_2d` (32px overlap, stride 480)**: **`97.38%` (`29,793`)** in `3.43 ms` geometry scan (excludes external neural OCR recognizer accuracy).
+
+### 2. PII Disambiguation & Honest Regex Ceiling
+- **`ai4privacy-200k` (`500` synthetic span records)**:
+  - Core contact/card/IPv4: **`97.1%`** (`136/140`)
+  - Targeted 8 patterns: **`73.1%`** (`185/253`)
+  - All 26 structured token types: **`42.1%`** (`244/580`)
+  - Bare unprefixed international names: **`49.6%`** (`118/238`, honest regex ceiling)
+- **PubMedQA False-Positive Protection (`250/250` split, pre-committed `334`-word lexicon)**:
+  - Train split (`62,620` words): `44.4%` -> `22.8%` docs (`5.29 -> 1.66` hits/1k words)
+  - Blind test split (`63,739` words): `45.2%` -> `26.0%` docs (`5.46 -> 2.01` hits/1k words, **`2.72x` fewer false positives**)
+  - Lookalike lines (`n=5`): `80.0%` -> `20.0%` false-positive rate
+
+### 3. Single-Scorer Conformal LTT & Customer Multi-Axis Gate
+Stratified split (`n_train=606`, `n_cal=301` [`196` unsafe], `n_test=300` [`196` unsafe, `104` safe], $\delta=0.05$) on the exact same 520-dim logistic scorer with fixed lower floor $\tau_{\text{drop}} = 0.25$:
+
+| Budget / Policy | $\tau_{\text{keep}}$ | Cond FPR | Joint Risk | Safe Yield | Abstain | Status ($\delta=0.05$) |
+|---|---:|---:|---:|---:|---:|---|
+| $\alpha = 0.20$ | `0.28` | `14.8%` | `9.67%` | `94.23%` | `1.33%` | Certified Cond & Joint |
+| **Uncalibrated** | `0.50` | `4.08%` | `2.67%` | `88.46%` | `0.00%` | Uncontrolled (fails $\alpha \le 0.02$) |
+| $\alpha = 0.10$ | `0.52` | `4.08%` | `2.67%` | `86.54%` | `11.00%` | Certified Cond & Joint |
+| $\alpha = 0.05$ | `0.58` | `2.55%` | `1.67%` | `83.65%` | `13.00%` | Certified Cond & Joint |
+| $\alpha = 0.02$ | `0.64` | `1.02%` | `0.67%` | `78.85%` | `15.67%` | Certified Cond & Joint |
+| $\alpha = 0.01$ | `1.00` | `0.00%` | `0.00%` | `0.00%` | `43.67%` | Joint Valid / Cond Fail-Closed ($196 < 299$) |
+
+- **Within-domain PubMedQA (`n=124`)**: Contact regex achieves `100.0%` on injected email/phone cases vs. `88.7%` 520-dim linear gate and `52.4%` naive any-PII regex; multi-axis customer supervision (`100` labels $\to$ `300` test) shows why learned gating matters: `safe` (`91.3% R / 98.6% P`), `useful` (`100% R / 93.0% P`), `topic` (`100% R / 96.2% P`), conjunction `68` kept (`90.7%` gold), `35` abstained (`11.7%`), `0.0%` unsafe leak.
+
+### 4. 7-Trial Interleaved Substrates & Held-Out Ablation
+Means of 7 interleaved OS process spawns scoring `1,207 x 520` rows on Intel Core i7-12700H / Windows 11:
+- **Single-Header C99 (`12.4 KB`)**: `8.35 ms` spawn | `6.07 MB` RSS | `0.380 ms` hot loop
+- **Node.js + WASM (`60.1 KB`)**: `54.63 ms` spawn (`1.352 ms` warm WASM init) | `51.21 MB` RSS | `0.481 ms` hot loop (**`132.5x` faster spawn & `8.4x` lower RSS** than PyTorch+DuckDB)
+- **Python 3.12 + NumPy 2.4.3**: `232.51 ms` spawn (`117.17 ms` import) | `31.44 MB` RSS | **`0.085 ms` BLAS hot loop (warm compute winner)**
+- **Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5**: `7,237.8 ms` spawn (`6,342.48 ms` import) | `432.6 MB` RSS | `16.83 ms` hot loop
+
+On held-out `n_test = 300` across `N_train in {100, 300, 606}`: Gate BCE drops `27.7%` (`0.3133 -> 0.2678 -> 0.2266`, `93.3%` Acc vs. `67.3%` Naive Regex / `34.7%` Raw), WASM VeRA BCE (`mle_dl_vera_loss_grad`) drops `0.6869 -> 0.6214 -> 0.5529`, contact PII leak stays $\le 0.93\%$, and 64-dim Needle R@5 (`125` PubMedQA Q->Body queries) preserves `60.0%` parity (`60.0%` raw, `60.8%` regex).
 
 ---
 
-## 🚀 Bring Your Own Data (BYOD) in 30 Seconds
-
-### 1. Interactive Web UI & MCP Studio
-Launch the zero-dependency local studio:
-```bash
-npm run ui
-```
-Open **`http://localhost:3333`** to drag-and-drop your own PDFs, images, or text documents, inspect live PII masking, train a custom gatekeeper, and export CSV/JSON/SVG bundles.
-
-### 2. 1-Command CLI
-Process any local file, directory, or online URL:
+## Verification & Quickstart
 
 ```bash
-# Process a local clinical or legal PDF:
-npx verisieve run path/to/document.pdf --out-dir ./my-results
+# Run full test suite (52 unit checks + 6 MCP JSON-RPC checks)
+npm test
 
-# Extract and audit an online URL or paper (with boilerplate stripping):
-npx verisieve run "https://arxiv.org/pdf/2012.07805.pdf" --out-dir ./arxiv-results
+# Run deterministic 1,207-document benchmark & 7-trial substrate suite
+npm run bench:scale
 
-# Run on a scanned image with 2D square tiling:
-npx verisieve run "scan.png" --mode tile_2d --alpha 0.05 --out-dir ./scan-results
-
-# Process an entire folder:
-npx verisieve run "./enterprise-data/" --out-dir ./batch-results
+# Compile the Technical Note PDF (paper/mlsys2027-verisieve.pdf)
+cd paper && pdflatex mlsys2027-verisieve && bibtex mlsys2027-verisieve && pdflatex mlsys2027-verisieve && pdflatex mlsys2027-verisieve
 ```
 
-When run with `--out-dir`, VeriSieve automatically exports **6 ready-to-train artifacts**:
-- `results.csv`: Line-by-line classification, extracted text, PII categories, token counts, and gatekeeper decisions.
-- `results.json`: Full structured JSON dataset with cryptographic SHA-256 `AuditChain` provenance receipts.
-- `manifest.json`: Full counts-and-sources manifest with input hashes and triage distribution.
-- `train-qwen-llama-sft.jsonl`: **Ready-to-Train HuggingFace / Qwen2.5 / Llama-3 / Unsloth JSONL** formatted in ChatML.
-- `train-tokens.bin`: **Flat Packed `Uint32` Binary Token Shard** (`np.fromfile("train-tokens.bin", dtype=np.uint32)`), EOS-delimited (`2`).
-- `gatekeeper-bundle.json`: Portable ~8 KB gatekeeper model bundle with calibrated $(\tau_{\text{drop}}, \tau_{\text{keep}})$ thresholds.
-
-### 3. Model Context Protocol (MCP) Server for Agents
-Connect VeriSieve to **Matilda Code**, **Claude Desktop**, or any MCP client:
-
-Add to your `claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "verisieve": {
-      "command": "node",
-      "args": ["path/to/verisieve/src/mcp-server.js"]
-    }
-  }
-}
-```
-
-Available MCP tools:
-- `ingest_and_tokenize`: Parses unstructured documents, strips boilerplate, dual-masks PII, emits tokens and 520-dim features.
-- `train_local_gatekeeper`: Fits and LTT-calibrates an ~8 KB gatekeeper with a cryptographic training receipt.
-- `gatekeeper_decide`: Returns conformal routing (`KEEP_SAFE` / `DROP_OR_QUARANTINE` / `ABSTAIN_HUMAN_REVIEW`).
-- `verify_provenance_chain`: Cryptographically audits an AuditChain log.
-- `inspect_local_model`: Audits local GGUF, SafeTensors, or Ollama model headers in <1 ms via 4 KB header reads.
-
-### 4. Single-Header C99 Parity (`include/verisieve.h`)
-For edge devices, C/C++ services, and embedded runtimes:
-
-```c
-#include "verisieve.h"
-
-verisieve_gatekeeper_t gk = { /* calibrated weights & thresholds */ };
-float features[520] = { /* 520-dim feature vector */ };
-
-float prob = verisieve_predict_prob(&gk, features);
-int action = verisieve_decide(&gk, features);
-
-if (action == 1) {
-    // KEEP_SAFE: forward clean tokens
-} else if (action == 0) {
-    // DROP_OR_QUARANTINE
-} else {
-    // ABSTAIN_HUMAN_REVIEW
-}
-```
-
----
-
-## 🔬 Empirical Measurement Findings & Published Nulls
-
-Evaluated across **1,207 public benchmark documents** (199 ICDAR-2019 FUNSD archival forms, 500 ai4privacy-200k records, 500 PubMedQA abstracts, and 8 full-text PMC clinical papers):
-
-### Race 1: Born-Digital PDF Front Door vs. 2D Tiled OCR
-- **PDF CMap Parsing**: Naive ASCII stream parsing succeeds on only 4 of 8 PMC clinical papers due to CIDFont `Identity-H` character mappings. With in-stream `/ToUnicode` CMap decoding enabled, **all 8 of 8 PMC papers extract cleanly** (9,272 lines, 0.0% CER, 11.2 ms avg latency) without OCR fallback.
-- **2D Tiled Grid OCR**: On FUNSD archival scans, 2D square tiling ($512\times 512$ canvas with seam overlap) achieves **96.4% bounding-box legibility survival** ($\ge 12\text{ px}$ height) and 0.91 IoU at 84.5 ms per form, outperforming untiled $512\times 512$ (38.4%) and stock capped baselines (5.2%).
-
-### Race 2: PII Disambiguation & The Honest Regex Ceiling
-- **Contact PII Recall**: Rule-based regex achieves **96.2% recall** on structured contact tokens (Email, Phone, IP, Credit Card) on `ai4privacy-200k`.
-- **Honest Bare-Name Ceiling**: On bare international names lacking honorific prefixes, regex hits an empirical ceiling of **45.1% recall**. Relaxing rules causes severe false-positive corruption on technical prose.
-- **Biomedical Context Protection**: Pre-committed 65-term clinical dictionary (`EXCLUDED_NAME_WORDS`) reduces clinical false-positive corruption from 84.4% to **1.4%**, demonstrating identical 1.4% FP rates across independent 250-abstract Train and Test splits ($60.3\times$ mitigation ratio with zero test overfitting).
-
-### Race 3: Learn-Then-Test (LTT) Conformal Gatekeeper
-- **Single-Scorer Monotonic Sweep**: A single trained L2 logistic scorer evaluated across $\alpha \in \{0.20, 0.10, 0.05, 0.02, 0.01\}$ exhibits strictly monotonic behavior on held-out test data ($n_{\text{test}}=302$): $\tau_{\text{keep}}$ tightens ($0.42 \to 0.82$), held-out conditional false alarm rate drops ($14.2\% \to 0.0\%$), held-out joint false-acceptance risk drops ($9.2\% \to 0.0\%$), and abstention widens ($3.3\% \to 26.5\%$). Uncalibrated heuristic baseline ($\tau=0.50$) violates risk budgets with a 9.8% conditional false alarm rate (6.3% joint risk).
-- **Conditional vs. Joint Finite-Sample Constraint**:
-  - Joint Risk $\alpha_{\text{joint}}=0.01$: Certifiable at $k=0$ on the full calibration set ($n_{\text{cal}}=302$) because $\operatorname{BinomCDF}(0; 302, 0.01) = 0.99^{302} = 0.0480 \le 0.05$.
-  - Conditional FPR $\alpha_{\text{cond}}=0.01$: Bounded by the unsafe calibration count ($n_{\text{cal,unsafe}}=195$). While $\alpha=0.02$ is certified ($\operatorname{BinomCDF}(0; 195, 0.02) = 0.0195 \le 0.05$), $\alpha=0.01$ encounters a finite-sample resolution floor ($\operatorname{BinomCDF}(0; 195, 0.01) = 0.1409 > 0.05$, requiring $n \ge 299$). The gatekeeper forces $\tau_{\text{keep}} \ge 0.82$, expanding human review abstention to 26.5% and yielding 0.0% empirical test violations.
-- **Multi-Axis Customer Gate**: Evaluated across `safe` (98.2% recall), `useful` (94.5% recall), and `topic` (92.0% recall), achieving 86.0% conjunction retention yield with 0.0% unfiltered leakage.
-
-### Race 4: 7-Run Process-Spawn Cold-Start Substrate Benchmarks
-
-| Substrate | Process Cold Start | Hot Loop (1,207 rows) | Peak RSS | Artifact Size |
-| :--- | :---: | :---: | :---: | :---: |
-| **Single-Header C99 (`gcc -O3`)** | **16.2 ms** | **0.70 ms** | **8.4 MB** | **12.4 KB** |
-| **Node.js + WASM (`verisieve_dl.wasm`)** | 53.7 ms *(1.6 ms warm)* | 2.08 ms | 54.8 MB | 60.1 KB |
-| **Python 3.12 + NumPy 1.26** | 185.0 ms | 1.20 ms | 48.2 MB | 48.2 MB |
-| **Python 3.12 + PyTorch + DuckDB** | 2,216.8 ms | 18.40 ms | 433.1 MB | >2,800.0 MB |
-
-- **Downstream Post-Training Ablation**: Evaluated on held-out test split ($n_{\text{test}}=302$) across $N_{\text{train}} \in \{100, 300, 603\}$:
-  - VeriSieve Conformal Shard achieves monotonic binary cross-entropy loss reduction ($0.312 \to 0.228 \to 0.164$) and gate classification accuracy improvement ($88.5\% \to 92.4\% \to 96.0\%$) for the 2-bit VeRA adapter head (not causal LM token perplexity), with 96.0% Needle R@5 and **0.0% PII leakage**.
-  - Raw unfiltered training suffers loss degradation ($0.482 \to 0.564$) and accuracy deterioration ($61.2\% \to 58.3\%$) with **100% PII exposure**.
-
-### The Published Nulls & Empirical Boundaries (Table 5 of the Paper)
-
-| Boundary | Empirical Manifestation & System Consequence |
-| :--- | :--- |
-| **1. Font CMap Null** | 4 of 8 clinical PDFs use Identity-H CIDFonts where raw ASCII byte extraction yields 0 valid lines; in-stream `/ToUnicode` CMap parsing decodes all 8 PDFs cleanly without OCR. |
-| **2. Bare-Name Regex Ceiling** | Rule-based regex cannot exceed 45.1% recall on unstructured international names without causing severe false-positive corruption on technical prose. |
-| **3. Finite-Sample LTT Boundary** | At $\alpha=0.01$, joint risk on $n_{\text{cal}}=302$ is certifiable at $k=0$ ($0.0480 \le \delta$), while conditional risk on $n_{\text{cal,unsafe}}=195$ hits a finite-sample resolution floor ($0.1409 > \delta$, requiring $n \ge 299$), widening human review abstention to 26.5%. |
-| **4. Native C99 Hot-Loop Win** | Single-header C99 executes hot-loop inference at 0.70 ms vs. 2.08 ms in JS/WASM ($3.0\times$ speedup), representing an honest JavaScript runtime loss. |
-
----
-
-## 📋 Runnable Commands Quick Reference
-
-| Command | Action | Key Artifacts |
-| :--- | :--- | :--- |
-| `npm test` | Run complete 56-test automated suite (51 unit + 5 MCP) | 100% passing across tests & C99 parity |
-| `npm run bench:scale` | Run 1,207-document public benchmark & substrate race | `results/scale-and-paradigm-benchmark.json`<br>`docs/scale-and-paradigm-benchmark.svg` |
-| `npm run compare` | Run 5-test head-to-head baseline comparison suite | `results/head-to-head-comparison.json`<br>`docs/head-to-head-comparison.svg` |
-| `npm run train:model` | Train PyTorch Qwen2 on DuckDB token shard | `results/verisieve_audit.duckdb`<br>`results/open-model-training-results.json` |
-| `node bin/verisieve.mjs selftest` | Run instant CLI verification | Console selftest output |
-| `npm run audit-wasm` | Audit zero-egress WASM imports | JSON report verifying 0 network imports |
-| `npm run demo:real` | Execute 100% real PMC & FUNSD pipeline | `results/real-data-pmc-pdf.csv` |
-| `npm run bench` | Micro-benchmarks across ingestion & training | `results/benchmarks.json` |
-| `npm run ui` | Start interactive UI & MCP server (`:3333`) | Local interactive studio, DuckDB explorer & model training |
-
----
-
-## 🛡️ License & Contributing
-
-VeriSieve is licensed under the [MIT License](LICENSE).  
-For contribution guidelines and zero-dependency rules, see [CONTRIBUTING.md](CONTRIBUTING.md).  
-For security policies and air-gapped guarantees, see [SECURITY.md](SECURITY.md).
+For security policies and air-gapped design guarantees, see [SECURITY.md](SECURITY.md).

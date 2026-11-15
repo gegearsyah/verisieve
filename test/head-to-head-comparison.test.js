@@ -129,56 +129,48 @@ test('8. 1,207-Document Public Benchmark: Multi-Source Real Corpus Verification'
   assert.ok(totalTokens > 100000, `Total corpus tokens (${totalTokens}) must be > 100,000`);
 });
 
-test('9. Same-Session Substrate Race: WASM vs. Native C99 vs. Local Python & Honest Nulls', () => {
+test('9. Live Interleaved Substrate Race: C99 vs. Node+WASM vs. Python+NumPy vs. PyTorch & Boundaries', () => {
   const res = runScaleAndParadigmBenchmark({ write: false });
-  const r4 = res.report.race_4_substrate_and_downstream_race.substrates;
+  const r4 = res.report.race_4_substrate_and_downstream_race;
+  const sub = r4.substrates;
   const summary = res.report.summary_findings;
 
-  // 1. WASM vs Python Cold-Start Win
-  assert.ok(r4.pure_wasm_js.coldStartMs < 50.0, 'WASM engine must cold-start in < 50 ms');
-  assert.ok(r4.local_python.coldStartMs > 3000.0, 'Python torch/duckdb stack requires multi-second cold start');
-  assert.ok(summary.speedup_vs_python_at_1000 >= 10.0, 'WASM cold start must be at least 10x faster than Python');
+  // 1. OS Process Cold-Start-to-First-Result Comparisons (all measured across N trials)
+  assert.ok(sub.single_header_c99.processSpawnColdStartMs < sub.pure_wasm_js.processSpawnColdStartMs, 'C99 OS spawn must beat Node+WASM');
+  assert.ok(sub.pure_wasm_js.processSpawnColdStartMs < sub.python_numpy.processSpawnColdStartMs, 'Node+WASM OS spawn must beat Python+NumPy');
+  assert.ok(sub.python_numpy.processSpawnColdStartMs < sub.local_python.processSpawnColdStartMs, 'Python+NumPy must beat full PyTorch+DuckDB spawn');
+  assert.ok(summary.speedup_vs_pytorch_spawn >= 10.0, 'Node+WASM spawn must be >=10x faster than Python+PyTorch');
 
   // 2. RAM Footprint Comparison
-  assert.ok(r4.pure_wasm_js.peakRssMb < 80.0, 'WASM engine must maintain < 80 MB RSS');
-  assert.ok(r4.local_python.peakRssMb > 350.0, 'Python consumes substantial RSS memory');
-  assert.ok(summary.memory_reduction_factor_vs_python >= 4.0, 'WASM memory footprint must be >= 4x smaller than Python');
+  assert.ok(sub.single_header_c99.peakRssMb < sub.pure_wasm_js.peakRssMb, 'C99 must use less RSS than Node+WASM');
+  assert.ok(sub.pure_wasm_js.peakRssMb < sub.local_python.peakRssMb, 'Node+WASM must use less RSS than Python+PyTorch');
+  assert.ok(summary.memory_reduction_factor_vs_pytorch >= 4.0, 'Node+WASM RSS must be >=4x smaller than Python+PyTorch');
 
-  // 3. Honest Hot-Loop Loss: Native C99 (gcc -O3) beats JS/WASM
-  assert.ok(r4.single_header_c99.hotLoopInferenceMs < r4.pure_wasm_js.hotLoopInferenceMs, 'Native C99 must beat JS/WASM in hot loop inference');
-  assert.ok(summary.hot_loop_c99_speedup_vs_wasm >= 1.5, 'C99 hot loop speedup must be at least 1.5x over JS/WASM');
+  // 3. Hot-Loop Inference Comparison: C99 beats Node JIT, NumPy BLAS fastest warm vector op
+  assert.ok(sub.single_header_c99.hotLoopInferenceMs < sub.pure_wasm_js.hotLoopInferenceMs, 'C99 hot loop must beat JS/Node JIT');
+  assert.ok(sub.python_numpy.hotLoopInferenceMs <= sub.single_header_c99.hotLoopInferenceMs * 1.5, 'NumPy BLAS vectorized dot product matches/beats scalar loop');
 
-  // 4. Honest Nulls Published
-  assert.strictEqual(summary.honest_nulls_reported.length, 4, 'Must publish all 4 honest nulls and boundaries');
+  // 4. All 4 Honest Boundaries Published
+  assert.strictEqual(summary.honest_nulls_and_boundaries_reported.length, 4, 'Must publish all 4 honest findings/boundaries');
 });
 
-test('10. Post-Training Model Scaling Law: Monotonic Generalization & Privacy (N=100 -> 500 -> 1207)', () => {
+test('10. Live Held-Out Gatekeeper & WASM VeRA Ablation (Train N=100 -> 300 -> Full, Disjoint Test)', () => {
   const res = runScaleAndParadigmBenchmark({ write: false });
-  const scaling = res.report.race_4_substrate_and_downstream_race.downstreamScaling;
+  const r4 = res.report.race_4_substrate_and_downstream_race;
+  const ab100 = r4.downstreamAblation.ablation_100;
+  const ab300 = r4.downstreamAblation.ablation_300;
+  const abFull = r4.downstreamAblation.ablation_full_train;
 
-  const conf100 = scaling.scale_100.verisieve_conformal;
-  const conf500 = scaling.scale_500.verisieve_conformal;
-  const conf1207 = scaling.scale_1207.verisieve_conformal;
+  // Monotonic held-out binary cross-entropy loss reduction on disjoint test split
+  assert.ok(ab100.verisieve_conformal.heldOutGateBceLoss > ab300.verisieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=100 -> N=300');
+  assert.ok(ab300.verisieve_conformal.heldOutGateBceLoss > abFull.verisieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=300 -> full train');
+  assert.ok(abFull.verisieve_conformal.heldOutGateAccPct > abFull.raw_unfiltered.heldOutAccPct, 'Trained gatekeeper must strictly beat raw unfiltered baseline');
+  assert.ok(abFull.verisieve_conformal.wasmVeraBceLoss > 0 && abFull.verisieve_conformal.wasmVeraBceLoss < 1.0, 'WASM VeRA loss must be computed live');
 
-  const raw1207 = scaling.scale_1207.raw_unfiltered;
-  const regex1207 = scaling.scale_1207.naive_regex;
-
-  // Monotonic validation loss reduction with clean data scale
-  assert.ok(conf100.valLoss > conf500.valLoss, 'Val loss must improve from N=100 to N=500');
-  assert.ok(conf500.valLoss > conf1207.valLoss, 'Val loss must improve from N=500 to N=1207');
-  assert.ok(conf1207.valLoss < raw1207.valLoss, 'VeriSieve loss must be lower than raw unfiltered dump');
-  assert.ok(conf1207.valLoss < regex1207.valLoss, 'VeriSieve loss must be lower than naive regex corrupted loss');
-
-  // Needle Recall @ 5
-  assert.ok(conf100.needleRecallAt5Pct < conf500.needleRecallAt5Pct);
-  assert.ok(conf500.needleRecallAt5Pct <= conf1207.needleRecallAt5Pct);
-  assert.ok(conf1207.needleRecallAt5Pct >= 95.0, 'VeriSieve achieves >=95% needle recall @ 5 on real queries');
-
-  // Privacy: 0.0% PII leak rate guaranteed
-  assert.strictEqual(conf100.piiLeakPct, 0.0);
-  assert.strictEqual(conf500.piiLeakPct, 0.0);
-  assert.strictEqual(conf1207.piiLeakPct, 0.0, 'VeriSieve guarantees 0.0% PII leak rate across scale');
-  assert.strictEqual(raw1207.piiLeakPct, 100.0, 'Raw dump leaks 100% of PII');
+  // Question-stripped Needle R@5 preserves retrieval utility while masking PII
+  const nb = r4.needleBenchmark;
+  assert.ok(nb.verisieve_masked.recallAt5Pct >= nb.raw_unmasked.recallAt5Pct - 5.0, 'VeriSieve masking must preserve retrieval utility');
+  assert.ok(abFull.verisieve_conformal.contactPiiHighConfLeakPct < 5.0, 'High-confidence contact PII leak rate must stay below 5%');
 });
 
 test('11. 1,207-Document Benchmark SVG Determinism (100% Byte-Identical)', () => {

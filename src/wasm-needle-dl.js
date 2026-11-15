@@ -197,7 +197,10 @@ export function inspectLocalOpenWeightPath(modelPath) {
     headerSha256,
     weightSeed,
     architecture,
-    modelName
+    modelName,
+    executionScope: 'header_audit_only',
+    canFineTuneInWasm: false,
+    recommendedUvCommand: `uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model ${modelName || 'Qwen/Qwen2.5-0.5B-Instruct'}`
   };
 }
 
@@ -686,15 +689,13 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
   } = options;
 
   let localWeightAudit = null;
-  let effectiveSeed = seed;
-  let backboneSeed = 101;
+  const effectiveSeed = seed;
+  const backboneSeed = 101;
   if (modelPath) {
     localWeightAudit = inspectLocalOpenWeightPath(modelPath);
-    if (localWeightAudit && localWeightAudit.weightSeed) {
-      effectiveSeed = (localWeightAudit.weightSeed % 100000) + 1;
-      backboneSeed = (localWeightAudit.weightSeed % 50000) + 101;
-    }
   }
+  const recommendedUvCommand = localWeightAudit?.recommendedUvCommand
+    || 'uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct';
 
   const t0 = performance.now();
   const tables = loadExtractedDatasets();
@@ -856,6 +857,9 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       wasm_engine: 'verisieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)',
       needle_engine: 'Cactus Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)',
       device: 'WebAssembly (Zero Python)',
+      executionScope: 'wasm_gatekeeper_only_no_llm_backprop',
+      canFineTuneLlmInWasm: false,
+      recommendedUvCommand,
       seed: effectiveSeed,
       user_seed: seed,
       local_weight_audit: localWeightAudit,

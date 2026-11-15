@@ -84,52 +84,52 @@ console.log(` Documents With Lookalikes:    ${meta.documents_with_lookalikes.toL
 console.log('------------------------------------------------------------------------');
 
 console.log('\n========================================================================');
-console.log('   RACE 1: BORN-DIGITAL PDF FRONT DOOR VS. 2D TILED OCR                 ');
+console.log('   RACE 1: BORN-DIGITAL PDF FRONT DOOR & 2D TILED LAYOUT GEOMETRY        ');
 console.log('========================================================================');
-console.log(` PMC Clean Stream Extraction:  ${r1.pmc_pdf_eval.cleanAsciiPdfs} / 8 PDFs (${r1.pmc_pdf_eval.totalCleanLines} lines in ${r1.pmc_pdf_eval.avgLatencyPerCleanPdfMs} ms, CER: ${r1.pmc_pdf_eval.characterErrorRatePct}%)`);
-console.log(` CIDFont Identity-H Null:      ${r1.pmc_pdf_eval.cidFontNullPdfs} / 8 PDFs yield 0 ASCII lines (requires OCR fallback!)`);
-console.log(' FUNSD Scanned Forms (N = 199 forms) Layout Modes:');
+console.log(` PMC Clean Stream Extraction:  ${r1.pmc_pdf_eval.cleanExtractedPdfs}/${r1.pmc_pdf_eval.totalPdfs} PDFs (${r1.pmc_pdf_eval.totalReadableLines} lines, ${r1.pmc_pdf_eval.totalReadableWords} words in ${r1.pmc_pdf_eval.totalLatencyMs} ms total / ${r1.pmc_pdf_eval.avgLatencyPerPdfMs} ms avg)`);
+console.log(' FUNSD Scanned Forms (N = 199 forms, 30,595 bboxes) Geometric Survival:');
 for (const [mode, m] of Object.entries(r1.funsd_scanned_eval.modes)) {
-  console.log(`   - ${mode.padEnd(20)}: Word Recall ${String(m.wordRecallPct + '%').padEnd(8)} | Geom IoU ${String(m.geometryIoU).padEnd(6)} | Error Rate ${m.geometryErrorRatePct}%`);
+  console.log(`   - ${mode.padEnd(22)}: Bbox Survival ${String(m.bboxLegibilitySurvivalPct + '%').padEnd(8)} (${m.wordsSurvived} / ${r1.funsd_scanned_eval.totalWordsMeasured} words)`);
 }
 
 console.log('\n========================================================================');
 console.log('   RACE 2: PII DISAMBIGUATION & HONEST REGEX CEILING                    ');
 console.log('========================================================================');
-console.log(` ai4privacy Structured Recall: ${r2.ai4privacy_ground_truth.structured_recall_pct}% (Email, Phone, SSN, Credit Card, IP, Date)`);
-console.log(` ai4privacy Bare-Name Recall:  ${r2.ai4privacy_ground_truth.unstructured_bare_name_recall_pct}% (Unstructured bare international names)`);
-console.log(` PubMedQA Naive FP Rate:       ${r2.pubmedqa_clinical_eval.naive_title_case_fp_rate_pct}% (Capitalized biomedical terms corrupted)`);
-console.log(` PubMedQA VeriSieve FP Rate:   ${r2.pubmedqa_clinical_eval.verisieve_context_aware_fp_rate_pct}% (Preserved with EXCLUDED_NAME_WORDS)`);
+console.log(` ai4privacy Core Contact/IPv4: ${r2.ai4privacy_ground_truth.contact_card_ipv4_recall_pct}% (${r2.ai4privacy_ground_truth.contact_spans})`);
+console.log(` ai4privacy All 26 Struct Tags:${r2.ai4privacy_ground_truth.all_26_structured_pii_recall_pct}% (${r2.ai4privacy_ground_truth.all_structured_spans})`);
+console.log(` ai4privacy Bare-Name Recall:  ${r2.ai4privacy_ground_truth.unstructured_bare_name_recall_pct}% (${r2.ai4privacy_ground_truth.bare_name_spans})`);
+console.log(` PubMedQA Blind Test Title-Case: Naive ${r2.pubmedqa_clinical_eval.test_split_250.naive_hits_per_1k_words}/1k words -> Lexicon ${r2.pubmedqa_clinical_eval.test_split_250.context_hits_per_1k_words}/1k words (${r2.pubmedqa_clinical_eval.hit_reduction_ratio_test}x fewer hits)`);
 
 console.log('\n========================================================================');
 console.log('   RACE 3: LEARN-THEN-TEST (LTT) CONFORMAL GATEKEEPER CALIBRATION       ');
 console.log('========================================================================');
-console.log(` Split: n_train = ${r3.split.nTrain}, n_cal = ${r3.split.nCal} (unsafe = 195), n_test = ${r3.split.nTest} (unsafe = 195)`);
-console.log(' Alpha Budget | tau_keep | Cond FPR (%) | Joint Risk (%) | Safe Yield (%) | Abstain (%) | Status / Guarantee');
+console.log(` Split: n_train = ${r3.split.nTrain}, n_cal = ${r3.split.nCal} (unsafe = ${r3.split.nCalUnsafe}), n_test = ${r3.split.nTest} (unsafe = ${r3.split.nTestUnsafe})`);
+console.log(' Alpha Budget | tau_keep | Cond FPR (%) | Joint Risk (%) | Safe Yield (%) | Abstain (%) | Status');
 console.log('--------------+----------+--------------+----------------+----------------+-------------+-------------------');
-for (const [k, a] of Object.entries(r3.alphaSweep)) {
-  const condFpr = (a.testCondFprPct !== undefined ? a.testCondFprPct : a.testFalseAlarmRatePct) + '%';
-  const jointRisk = (a.testJointRiskPct !== undefined ? a.testJointRiskPct : 0.0) + '%';
-  console.log(` α = ${String(a.alpha).padEnd(6)}  | ${String(a.tauKeep).padEnd(8)} | ${condFpr.padEnd(12)} | ${jointRisk.padEnd(14)} | ${String(a.safeRetentionYieldPct + '%').padEnd(14)} | ${String(a.abstentionRatePct + '%').padEnd(11)} | ${a.status || (a.guaranteeSatisfied ? 'YES (Risk <= α)' : 'NO')}`);
+for (const a of Object.values(r3.alphaSweep)) {
+  console.log(` α = ${String(a.alpha.toFixed(2)).padEnd(5)}   | ${String(a.tauKeep.toFixed(2)).padEnd(8)} | ${String(a.testCondFprPct + '%').padEnd(12)} | ${String(a.testJointRiskPct + '%').padEnd(14)} | ${String(a.safeRetentionYieldPct + '%').padEnd(14)} | ${String(a.abstentionRatePct + '%').padEnd(11)} | ${a.status}`);
 }
-console.log(` Uncalibrated | tau=0.50 | 9.8%         | 6.3%           | 89.2%          | 0.0%        | NO (Uncontrolled!)`);
+const ub = r3.uncalibratedBaseline;
+console.log(` Uncalibrated | tau=${ub.tauKeep.toFixed(2)} | ${String(ub.testCondFprPct + '%').padEnd(12)} | ${String(ub.testJointRiskPct + '%').padEnd(14)} | ${String(ub.safeRetentionYieldPct + '%').padEnd(14)} | ${String(ub.abstentionRatePct + '%').padEnd(11)} | Uncontrolled`);
 
 console.log('\n========================================================================');
-console.log('   RACE 4: SAME-SESSION SUBSTRATE & DOWNSTREAM TRAINING RACE            ');
+console.log(`   RACE 4: ${r4.trialsPerSubstrate}-RUN INTERLEAVED SUBSTRATE & DOWNSTREAM ABLATION               `);
 console.log('========================================================================');
-console.log(` Pure WASM / JS (60.1 KB):     Cold Start ${r4.substrates.pure_wasm_js.coldStartMs} ms | Peak RSS ${r4.substrates.pure_wasm_js.peakRssMb} MB | Hot Loop ${r4.substrates.pure_wasm_js.hotLoopInferenceMs} ms`);
-console.log(` Single-Header C99 (12.4 KB):  Cold Start ${r4.substrates.single_header_c99.coldStartMs} ms | Peak RSS ${r4.substrates.single_header_c99.peakRssMb} MB  | Hot Loop ${r4.substrates.single_header_c99.hotLoopInferenceMs} ms (C99 beats JS by ${r4.substrates.single_header_c99.speedupVsJsHotLoop}x!)`);
-console.log(` Local Python (PyTorch/DuckDB):Cold Start ${r4.substrates.local_python.coldStartMs} ms | Peak RSS ${r4.substrates.local_python.peakRssMb} MB | Hot Loop ${r4.substrates.local_python.hotLoopInferenceMs} ms`);
+console.log(` Single-Header C99 (12.4 KB):  OS Spawn ${r4.substrates.single_header_c99.processSpawnColdStartMs} ms | RSS ${r4.substrates.single_header_c99.peakRssMb} MB | Hot Loop ${r4.substrates.single_header_c99.hotLoopInferenceMs} ms`);
+console.log(` Node + WASM (60.1 KB):        OS Spawn ${r4.substrates.pure_wasm_js.processSpawnColdStartMs} ms (in-proc ${r4.substrates.pure_wasm_js.inProcessWarmWasmInitMs} ms) | RSS ${r4.substrates.pure_wasm_js.peakRssMb} MB | Hot Loop ${r4.substrates.pure_wasm_js.hotLoopInferenceMs} ms`);
+console.log(` Python + NumPy:               OS Spawn ${r4.substrates.python_numpy.processSpawnColdStartMs} ms (import ${r4.substrates.python_numpy.importMs} ms) | RSS ${r4.substrates.python_numpy.peakRssMb} MB | Hot Loop ${r4.substrates.python_numpy.hotLoopInferenceMs} ms`);
+console.log(` Python + PyTorch + DuckDB:    OS Spawn ${r4.substrates.local_python.processSpawnColdStartMs} ms (import ${r4.substrates.local_python.frameworkImportMs} ms) | RSS ${r4.substrates.local_python.peakRssMb} MB`);
 
 console.log('\n========================================================================');
 console.log('                        SUMMARY VERIFICATION                            ');
 console.log('========================================================================');
-console.log(` Speedup vs. Python Cold Start:          ${summary.speedup_vs_python_at_1000}x FASTER (Eliminates Cold Start)`);
-console.log(` RAM Footprint Reduction Factor:         ${summary.memory_reduction_factor_vs_python}x SMALLER (${r4.substrates.pure_wasm_js.peakRssMb} MB vs. ${r4.substrates.local_python.peakRssMb} MB)`);
-console.log(` Hot-Loop C99 Speedup vs. WASM:          ${summary.hot_loop_c99_speedup_vs_wasm}x (Honest JS/WASM Loss vs. Native C99)`);
-console.log(` PII Secret Leak Rate at N = 1,207:      ${summary.post_training_pii_leak_rate_at_1000}% (Zero-Egress Certification)`);
-console.log('\n Honest Nulls and Losses Published:');
-for (const nullReport of summary.honest_nulls_reported) {
+console.log(` OS Spawn Speedup vs. PyTorch:           ${summary.speedup_vs_pytorch_spawn}x faster (${r4.substrates.pure_wasm_js.processSpawnColdStartMs} ms vs. ${r4.substrates.local_python.processSpawnColdStartMs} ms)`);
+console.log(` RAM Reduction vs. PyTorch:              ${summary.memory_reduction_factor_vs_pytorch}x smaller (${r4.substrates.pure_wasm_js.peakRssMb} MB vs. ${r4.substrates.local_python.peakRssMb} MB)`);
+console.log(` C99 Hot-Loop vs. Node JIT:              ${summary.c99_hot_loop_speedup_vs_js}x faster (${r4.substrates.single_header_c99.hotLoopInferenceMs} ms vs. ${r4.substrates.pure_wasm_js.hotLoopInferenceMs} ms; NumPy BLAS: ${summary.numpy_hot_loop_ms} ms)`);
+console.log(` Held-Out Gatekeeper Loss N=100->Full:   -${summary.post_training_gate_bce_loss_reduction_pct}% (${r4.downstreamAblation.ablation_100.verisieve_conformal.heldOutGateBceLoss} -> ${r4.downstreamAblation.ablation_full_train.verisieve_conformal.heldOutGateBceLoss}), Acc ${summary.post_training_gate_acc_full_train}%`);
+console.log(` Held-Out Needle R@5 (125 Q->Body):      ${summary.needle_recall_at_5_verisieve}% (vs Raw ${r4.needleBenchmark.raw_unmasked.recallAt5Pct}%)`);
+console.log('\n Honest Findings & Boundaries:');
+for (const nullReport of summary.honest_nulls_and_boundaries_reported) {
   console.log(`   - ${nullReport}`);
 }
 console.log('========================================================================\n');

@@ -1,0 +1,16 @@
+[package]
+name = "verisieve-clean"
+version = "0.1.0"
+edition = "2021"
+description = "Compact zero-import Rust WebAssembly core for VeriSieve deterministic boilerplate removal, exact/MinHash deduplication, and token-window chunking."
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

@@ -8,62 +8,170 @@
     "pubmedqa_records": 500,
     "pmc_clinical_pdfs": 8,
     "documents_with_pii": 794,
-    "documents_with_lookalikes": 699
+    "documents_with_lookalikes": 328
+  },
+  "idea_1_text_capture_bench": {
+    "htmlBoilerplateStrip": {
+      "rawBytes": 503,
+      "cleanBytes": 233,
+      "strippedPct": 53.7,
+      "latencyMs": 0.833
+    },
+    "docxExtraction": {
+      "docxBytes": 295,
+      "extractedChars": 150,
+      "recoveredCleanly": true,
+      "latencyMs": 0.412
+    },
+    "deduplication": {
+      "inputChunks": 5,
+      "uniqueChunksRetained": 4,
+      "duplicatesRemoved": 1,
+      "jaccardThreshold": 0.85,
+      "latencyMs": 0.24
+    },
+    "manifestVerification": {
+      "totalSources": 2,
+      "totalTokens": 50,
+      "manifestSha256Prefix": "2de7618c79d41782"
+    },
+    "totalIdea1BenchMs": 2.002
   },
   "race_1_born_digital_vs_tiled_ocr": {
-    "race": "Race 1 — Born-Digital PDF Front Door vs. 2D Tiled OCR",
+    "race": "Race 1 — Born-Digital PDF Front Door & 2D Tiled Layout Geometry",
     "pmc_pdf_eval": {
       "totalPdfs": 8,
-      "rawAsciiStreamPdfs": 4,
-      "withToUnicodeCmapPdfs": 8,
-      "externalOrUnmappedCidRequiresOcr": 0,
-      "cleanAsciiPdfs": 8,
-      "cidFontNullPdfs": 0,
-      "totalCleanLines": 9272,
-      "totalLatencyMs": 3231.75,
-      "avgLatencyPerCleanPdfMs": 11.2,
-      "characterErrorRatePct": 0,
-      "publishedNull": "4 of 8 PMC PDFs use CIDFont Type0/Identity-H ToUnicode CMaps where raw stream extraction yields 0 valid ASCII lines, requiring either in-memory /ToUnicode CMap parsing or fallback to 2D-tiled OCR."
+      "withToUnicodeCmapStreams": 7,
+      "withHexDecodedLines": 2,
+      "cleanExtractedPdfs": 8,
+      "totalReadableLines": 8134,
+      "totalReadableWords": 55099,
+      "totalLatencyMs": 111.86,
+      "avgLatencyPerPdfMs": 13.98,
+      "perPdfResults": [
+        {
+          "filename": "miu_2017_PMC5773420.pdf",
+          "extractedLines": 626,
+          "readableLines": 557,
+          "readableWords": 4096,
+          "cmapStreams": 8,
+          "hexDecodedLines": 1,
+          "latencyMs": 4.68,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "goubar_2021_PMC7611209.pdf",
+          "extractedLines": 1094,
+          "readableLines": 748,
+          "readableWords": 5095,
+          "cmapStreams": 4,
+          "hexDecodedLines": 0,
+          "latencyMs": 7.29,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "ikram_2022_PMC9948448.pdf",
+          "extractedLines": 1000,
+          "readableLines": 782,
+          "readableWords": 3987,
+          "cmapStreams": 21,
+          "hexDecodedLines": 57,
+          "latencyMs": 6.75,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "record_PMC4595218.pdf",
+          "extractedLines": 1359,
+          "readableLines": 1254,
+          "readableWords": 10588,
+          "cmapStreams": 1,
+          "hexDecodedLines": 0,
+          "latencyMs": 6.41,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "ma_2022_PMC8984086.pdf",
+          "extractedLines": 904,
+          "readableLines": 856,
+          "readableWords": 4350,
+          "cmapStreams": 0,
+          "hexDecodedLines": 0,
+          "latencyMs": 6.96,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "narula_2020_PMC7667224.pdf",
+          "extractedLines": 951,
+          "readableLines": 842,
+          "readableWords": 3375,
+          "cmapStreams": 16,
+          "hexDecodedLines": 0,
+          "latencyMs": 34,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "norman_2021_PMC8399049.pdf",
+          "extractedLines": 2092,
+          "readableLines": 1653,
+          "readableWords": 11834,
+          "cmapStreams": 1,
+          "hexDecodedLines": 0,
+          "latencyMs": 33.36,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        },
+        {
+          "filename": "multilevel_logistic_PMC5575471.pdf",
+          "extractedLines": 1719,
+          "readableLines": 1442,
+          "readableWords": 11774,
+          "cmapStreams": 9,
+          "hexDecodedLines": 0,
+          "latencyMs": 12.41,
+          "status": "CLEAN_TEXT_STREAM_EXTRACTED"
+        }
+      ],
+      "publishedFinding": "With scoped 1-byte/2-byte /ToUnicode CMap tables and negative-kerning (TJ <= -110) word-space reconstruction, all 8 of 8 born-digital PMC PDFs extract readable prose directly from compressed streams without requiring image OCR."
     },
     "funsd_scanned_eval": {
       "totalFormsMeasured": 199,
-      "metricName": "FUNSD ground-truth bounding-box legibility survival (>= 12 px character height and unsplit boxes under 512x512 2D tiling with seam overlap)",
+      "totalWordsMeasured": 30595,
+      "minHeightPx": 8,
+      "minWidthPx": 4,
+      "geometryScanMs": 3.43,
+      "avgGeometryMsPerForm": 0.0172,
+      "avgTilesPerForm2D": 6,
+      "metricName": "Geometric bounding-box legibility & unsplit-tile survival (>= 8 px height x 4 px width across 30,595 FUNSD word boxes; excludes external neural OCR recognizer accuracy)",
       "modes": {
         "stock_capped_8": {
           "wordRecallPct": 5.2,
-          "layoutLegibilityRecallPct": 5.2,
-          "templateOcrWordRecallPct": 5.2,
-          "geometryIoU": 0.21,
-          "geometryErrorRatePct": 78.4,
-          "avgLatencyMs": 4.8,
-          "notes": "Capped at 8 reads per page; drops dense question-answer pairs"
+          "bboxLegibilitySurvivalPct": 5.2,
+          "wordsSurvived": 1592,
+          "notes": "Capped at 8 text reads per page; drops dense form fields"
         },
         "untiled_512": {
-          "wordRecallPct": 38.4,
-          "layoutLegibilityRecallPct": 38.4,
-          "templateOcrWordRecallPct": 38.4,
-          "geometryIoU": 0.42,
-          "geometryErrorRatePct": 41.5,
-          "avgLatencyMs": 12.3,
-          "notes": "Downsamples to 512x512; small 8pt text is blurred below OCR threshold; 38.4% bbox legibility survival"
+          "wordRecallPct": 20.53,
+          "bboxLegibilitySurvivalPct": 20.53,
+          "wordsSurvived": 6281,
+          "notes": "Uniform downsample to 512x512 blurs small form labels below 8 px legibility threshold"
         },
         "horizontal_1d_band": {
-          "wordRecallPct": 62.1,
-          "layoutLegibilityRecallPct": 62.1,
-          "templateOcrWordRecallPct": 62.1,
-          "geometryIoU": 0.58,
-          "geometryErrorRatePct": 54.2,
-          "avgLatencyMs": 28.6,
-          "notes": "Horizontal bands slice through vertical column boundaries, merging columns"
+          "wordRecallPct": 71.29,
+          "bboxLegibilitySurvivalPct": 71.29,
+          "wordsSurvived": 21811,
+          "notes": "Full-width 512 px horizontal bands suffer horizontal downsample shrinkage and y=512 strip seam splits"
+        },
+        "tile_2d_zero_overlap": {
+          "wordRecallPct": 92.44,
+          "bboxLegibilitySurvivalPct": 92.44,
+          "wordsSurvived": 28283,
+          "seamCutLossPct": 4.94,
+          "notes": "512x512 zero-overlap grid loses boxes sliced across tile seams"
         },
         "tile_2d": {
-          "wordRecallPct": 96.4,
-          "layoutLegibilityRecallPct": 96.4,
-          "templateOcrWordRecallPct": 96.4,
-          "geometryIoU": 0.91,
-          "geometryErrorRatePct": 1.8,
-          "avgLatencyMs": 84.5,
-          "notes": "512x512 2D square canvas tiling + seam deduplication preserves native DPI; 96.4% bbox legibility survival"
+          "wordRecallPct": 97.38,
+          "bboxLegibilitySurvivalPct": 97.38,
+          "wordsSurvived": 29793,
+          "notes": "512x512 native-resolution grid with 32 px overlap (stride 480) + seam deduplication"
         }
       }
     }
@@ -72,164 +180,211 @@
     "race": "Race 2 — PII Disambiguation & Honest Regex Ceiling",
     "ai4privacy_ground_truth": {
       "totalRecords": 500,
-      "contact_pii_recall_pct": 96.2,
-      "all_structured_pii_recall_pct": 65.2,
-      "structured_recall_pct": 96.2,
-      "structured_precision_pct": 97.8,
-      "unstructured_bare_name_recall_pct": 45.1,
-      "honest_regex_ceiling": "Rule-based regex achieves >95% recall on structured tokens (email/phone/IP/card) but cannot exceed ~41-45% recall on bare international names without catastrophic false-positive spikes."
+      "datasetProvenanceNote": "ai4privacy-200k is a synthetically generated English PII benchmark (56 span categories).",
+      "contact_card_ipv4_recall_pct": 97.1,
+      "contact_spans": "136/140",
+      "targeted_8_pattern_recall_pct": 73.1,
+      "targeted_spans": "185/253",
+      "all_26_structured_pii_recall_pct": 42.1,
+      "all_structured_spans": "244/580",
+      "unstructured_bare_name_recall_pct": 49.6,
+      "bare_name_spans": "118/238",
+      "honest_regex_ceiling": "Regex catches 97.1% of core contact/card/IPv4 spans (136/140), 42.1% across all 26 structured token types in ai4privacy (244/580), and 49.6% of bare first/middle/last names (118/238)."
     },
     "pubmedqa_clinical_eval": {
       "totalRecords": 500,
-      "naive_title_case_fp_rate_pct": 84.4,
-      "verisieve_context_aware_fp_rate_pct": 1.4,
-      "corruption_mitigation_ratio": 60.3,
-      "train_fp_rate_pct": {
+      "train_split_250": {
         "abstractsCount": 250,
-        "naive_title_case_fp_rate_pct": 84.4,
-        "verisieve_context_aware_fp_rate_pct": 1.4
+        "totalWords": 62620,
+        "naive_doc_fp_pct": 44.4,
+        "context_doc_fp_pct": 22.8,
+        "naive_hits_count": 331,
+        "context_hits_count": 104,
+        "naive_hits_per_1k_words": 5.29,
+        "context_hits_per_1k_words": 1.66
       },
-      "test_fp_rate_pct": {
+      "test_split_250": {
         "abstractsCount": 250,
-        "naive_title_case_fp_rate_pct": 84.8,
-        "verisieve_context_aware_fp_rate_pct": 1.4
+        "totalWords": 63739,
+        "naive_doc_fp_pct": 45.2,
+        "context_doc_fp_pct": 26,
+        "naive_hits_count": 348,
+        "context_hits_count": 128,
+        "naive_hits_per_1k_words": 5.46,
+        "context_hits_per_1k_words": 2.01
       },
-      "excluded_words_count": 65,
-      "generalization_note": "Pre-committed 65-term clinical lexicon achieves identical 1.4% false-positive rate on held-out test abstracts with zero overfitting."
+      "excluded_words_count": 334,
+      "hit_reduction_ratio_test": 2.72,
+      "lookalike_guard_eval": {
+        "lookalikeLinesTested": 5,
+        "naive_regex_fp_pct": 80,
+        "verisieve_context_fp_pct": 20
+      },
+      "generalization_note": "Pre-committed 334-word functional/biomedical lexicon cuts unprefixed Title-Case false positives on blind test abstracts from 5.46 to 2.01 hits / 1k words (45.2% -> 26% of docs), while achieving 20% FP on Grant ID / Kernel / Markov lookalikes (naive 80%)."
     }
   },
   "race_3_ltt_conformal_calibration": {
     "race": "Race 3 — Learn-Then-Test (LTT) Conformal Gatekeeper Calibration",
     "split": {
       "nTotal": 1207,
-      "nTrain": 603,
-      "nCal": 302,
-      "nTest": 302,
-      "nCalUnsafe": 195,
-      "nTestUnsafe": 195
+      "nTrain": 606,
+      "nCal": 301,
+      "nTest": 300,
+      "nCalUnsafe": 196,
+      "nTestUnsafe": 196,
+      "nTestSafe": 104
     },
     "unsafePrevalence": {
       "fullCorpusPct": 65.12,
-      "trainPct": 65.67,
-      "calPct": 64.57,
-      "testPct": 64.57
+      "trainPct": 65.02,
+      "calPct": 65.12,
+      "testPct": 65.33
     },
     "alphaSweep": {
-      "alpha_0_01": {
-        "alpha": 0.01,
+      "alpha_0_20": {
+        "alpha": 0.2,
         "delta": 0.05,
-        "tauKeep": 0.82,
-        "tauDrop": 0.24,
-        "testCondFprPct": 0,
-        "testJointRiskPct": 0,
-        "testFalseAlarmRatePct": 0,
-        "safeRetentionYieldPct": 75.1,
-        "abstentionRatePct": 26.5,
+        "tauKeep": 0.28,
+        "tauDrop": 0.25,
+        "tauCond": 0.28,
+        "tauJoint": 0.18,
+        "condCertified": true,
+        "jointCertified": true,
+        "testCondFprPct": 14.8,
+        "testJointRiskPct": 9.67,
+        "testFalseAlarmRatePct": 14.8,
+        "safeRetentionYieldPct": 94.23,
+        "abstentionRatePct": 1.33,
         "guaranteeSatisfied": true,
-        "status": "Joint Certified (n_cal=302, k=0); Cond Floor (n_cal_unsafe=195, requires n>=299)"
-      },
-      "alpha_0_02": {
-        "alpha": 0.02,
-        "delta": 0.05,
-        "tauKeep": 0.7,
-        "tauDrop": 0.28,
-        "testCondFprPct": 1.2,
-        "testJointRiskPct": 0.8,
-        "testFalseAlarmRatePct": 1.2,
-        "safeRetentionYieldPct": 82.5,
-        "abstentionRatePct": 21.2,
-        "guaranteeSatisfied": true,
-        "status": "Certified (Cond & Joint)"
-      },
-      "alpha_0_05": {
-        "alpha": 0.05,
-        "delta": 0.05,
-        "tauKeep": 0.58,
-        "tauDrop": 0.32,
-        "testCondFprPct": 3.4,
-        "testJointRiskPct": 2.2,
-        "testFalseAlarmRatePct": 3.4,
-        "safeRetentionYieldPct": 88.4,
-        "abstentionRatePct": 14.9,
-        "guaranteeSatisfied": true,
-        "status": "Certified"
+        "status": "Certified Cond & Joint (n_unsafe=196)"
       },
       "alpha_0_10": {
         "alpha": 0.1,
         "delta": 0.05,
         "tauKeep": 0.52,
-        "tauDrop": 0.36,
-        "testCondFprPct": 6.6,
-        "testJointRiskPct": 4.3,
-        "testFalseAlarmRatePct": 6.6,
-        "safeRetentionYieldPct": 91.2,
-        "abstentionRatePct": 8.6,
+        "tauDrop": 0.25,
+        "tauCond": 0.52,
+        "tauJoint": 0.37,
+        "condCertified": true,
+        "jointCertified": true,
+        "testCondFprPct": 4.08,
+        "testJointRiskPct": 2.67,
+        "testFalseAlarmRatePct": 4.08,
+        "safeRetentionYieldPct": 86.54,
+        "abstentionRatePct": 11,
         "guaranteeSatisfied": true,
-        "status": "Certified"
+        "status": "Certified Cond & Joint (n_unsafe=196)"
       },
-      "alpha_0_20": {
-        "alpha": 0.2,
+      "alpha_0_05": {
+        "alpha": 0.05,
         "delta": 0.05,
-        "tauKeep": 0.42,
-        "tauDrop": 0.38,
-        "testCondFprPct": 14.2,
-        "testJointRiskPct": 9.2,
-        "testFalseAlarmRatePct": 14.2,
-        "safeRetentionYieldPct": 94.6,
-        "abstentionRatePct": 3.3,
+        "tauKeep": 0.58,
+        "tauDrop": 0.25,
+        "tauCond": 0.58,
+        "tauJoint": 0.54,
+        "condCertified": true,
+        "jointCertified": true,
+        "testCondFprPct": 2.55,
+        "testJointRiskPct": 1.67,
+        "testFalseAlarmRatePct": 2.55,
+        "safeRetentionYieldPct": 83.65,
+        "abstentionRatePct": 13,
         "guaranteeSatisfied": true,
-        "status": "Certified"
+        "status": "Certified Cond & Joint (n_unsafe=196)"
+      },
+      "alpha_0_02": {
+        "alpha": 0.02,
+        "delta": 0.05,
+        "tauKeep": 0.64,
+        "tauDrop": 0.25,
+        "tauCond": 0.64,
+        "tauJoint": 0.6,
+        "condCertified": true,
+        "jointCertified": true,
+        "testCondFprPct": 1.02,
+        "testJointRiskPct": 0.67,
+        "testFalseAlarmRatePct": 1.02,
+        "safeRetentionYieldPct": 78.85,
+        "abstentionRatePct": 15.67,
+        "guaranteeSatisfied": true,
+        "status": "Certified Cond & Joint (n_unsafe=196)"
+      },
+      "alpha_0_01": {
+        "alpha": 0.01,
+        "delta": 0.05,
+        "tauKeep": 1,
+        "tauDrop": 0.25,
+        "tauCond": null,
+        "tauJoint": 0.64,
+        "condCertified": false,
+        "jointCertified": true,
+        "testCondFprPct": 0,
+        "testJointRiskPct": 0,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 43.67,
+        "guaranteeSatisfied": true,
+        "status": "Joint Certified (n_cal=301); Cond Uncertifiable (n_unsafe=196 < 299) -> Fail-Closed"
       }
     },
     "uncalibratedBaseline": {
       "tau": 0.5,
       "tauKeep": 0.5,
       "tauDrop": 0.5,
-      "testCondFprPct": 9.8,
-      "testJointRiskPct": 6.3,
-      "testFalseAlarmRatePct": 9.8,
-      "safeRetentionYieldPct": 89.2,
+      "testCondFprPct": 4.08,
+      "testJointRiskPct": 2.67,
+      "testFalseAlarmRatePct": 4.08,
+      "safeRetentionYieldPct": 88.46,
       "abstentionRatePct": 0,
-      "guaranteeSatisfied": false
+      "guaranteeSatisfied": true
+    },
+    "withinDomainPubmedComparison": {
+      "testPubmedCount": 124,
+      "gate520AccPct": 88.7,
+      "contactRegexAccPct": 100,
+      "anyPiiRegexAccPct": 52.4,
+      "finding": "On strict within-domain PubMedQA author-PII vs. benign lookalike abstracts, explicit contact regex (email/phone) captures injected contact strings while excluding clinical Title-Case terms; the 520-dim logistic gatekeeper complements this when non-regex topic/utility axes are trained on customer labels."
     },
     "finiteSampleBoundaryAnalysis": {
-      "nCal": 302,
-      "nCalUnsafe": 195,
+      "nCal": 301,
+      "nCalUnsafe": 196,
       "alpha": 0.01,
       "delta": 0.05,
       "jointRisk": {
         "alpha": 0.01,
-        "n": 302,
+        "n": 301,
         "kPermitted": 0,
-        "binomCdfZero": 0.0481,
+        "binomCdfZero": 0.0486,
         "certified": true,
-        "finding": "On full calibration set (n_cal = 302), joint risk alpha_joint = 0.01 has BinomCDF(0; 302, 0.01) = 0.0480 <= 0.05, certifiable at k = 0."
+        "finding": "On full calibration set (n_cal = 301), joint risk alpha_joint = 0.01 has BinomCDF(0; 301, 0.01) = 0.0486 <= 0.05, certifiable at k = 0."
       },
       "conditionalRisk": {
         "alpha_0_02": {
           "alpha": 0.02,
-          "n": 195,
+          "n": 196,
           "kPermitted": 0,
-          "binomCdfZero": 0.0195,
+          "binomCdfZero": 0.0191,
           "certified": true,
-          "finding": "Conditioning strictly on unsafe calibration subset (n_cal,unsafe = 195), alpha_cond = 0.02 has BinomCDF(0; 195, 0.02) = 0.0195 <= 0.05 (Certified)."
+          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 196), alpha_cond = 0.02 has BinomCDF(0; 196, 0.02) = 0.0191 <= 0.05 (Certified)."
         },
         "alpha_0_01": {
           "alpha": 0.01,
-          "n": 195,
+          "n": 196,
           "kPermitted": 0,
-          "binomCdfZero": 0.1409,
+          "binomCdfZero": 0.1395,
           "certified": false,
           "requiredN": 299,
-          "finding": "Conditioning strictly on unsafe calibration subset (n_cal,unsafe = 195), alpha_cond = 0.01 has BinomCDF(0; 195, 0.01) = 0.1409 > 0.05 (Uncertified / Finite-Sample Resolution Floor, requiring n_cal,unsafe >= 299)."
+          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 196), alpha_cond = 0.01 has BinomCDF(0; 196, 0.01) = 0.1395 > 0.05 (Finite-Sample Resolution Floor; requires n_cal,unsafe >= 299)."
         }
       },
-      "binomCdfZero": 0.0481,
-      "binomCdfOne": 0.1947,
-      "finding": "At n_cal = 302 and delta = 0.05, joint risk alpha_joint = 0.01 is certified at k = 0 (BinomCDF = 0.0480 <= 0.05). Conditioning strictly on unsafe items (n_cal,unsafe = 195), alpha_cond = 0.02 is certified (0.0195 <= 0.05), whereas alpha_cond = 0.01 hits the finite-sample resolution floor (0.1409 > 0.05, requiring n_cal,unsafe >= 299). This forces tau_keep >= 0.82 and expands human review abstention to 26.5%."
+      "binomCdfZero": 0.0486,
+      "binomCdfOne": 0.1962
     },
     "customerLabelMultiAxisEval": {
-      "totalCustomerChunks": 100,
+      "customerLabeledTrainCal": 100,
+      "trainCount": 60,
+      "calCount": 40,
+      "heldOutTestCount": 300,
       "axesEvaluated": [
         "safe",
         "useful",
@@ -237,322 +392,205 @@
       ],
       "axes": {
         "safe": {
-          "description": "PII & credential safety filter",
-          "heldOutRecallPct": 98.2,
-          "heldOutPrecisionPct": 97.4,
-          "abstentionRatePct": 4
+          "tauKeep": 0.57,
+          "tauDrop": 0.32,
+          "heldOutRecallPct": 91.3,
+          "heldOutPrecisionPct": 98.6,
+          "abstentionRatePct": 14.3
         },
         "useful": {
-          "description": "Boilerplate, OCR corruption, and information density gate",
-          "heldOutRecallPct": 94.5,
-          "heldOutPrecisionPct": 95.8,
-          "abstentionRatePct": 6
+          "tauKeep": 0.51,
+          "tauDrop": 0.26,
+          "heldOutRecallPct": 100,
+          "heldOutPrecisionPct": 93,
+          "abstentionRatePct": 4.7
         },
         "topic": {
-          "description": "Domain-specific relevance & clinical/technical alignment",
-          "heldOutRecallPct": 92,
-          "heldOutPrecisionPct": 93.6,
-          "abstentionRatePct": 7
+          "tauKeep": 0.51,
+          "tauDrop": 0.26,
+          "heldOutRecallPct": 100,
+          "heldOutPrecisionPct": 96.2,
+          "abstentionRatePct": 8.3
         }
       },
       "conjunctionPolicy": {
-        "action": "All three axes must pass (safe && useful && topic); any failure drops or quarantines; borderline triggers human review",
-        "conjunctionRetentionYieldPct": 86,
-        "conjunctionAbstentionPct": 9,
-        "unfilteredLeakPct": 0
+        "action": "All three customer axes must pass (safe && useful && topic) for KEEP_SAFE; any failure drops; uncertain triggers ABSTAIN_HUMAN_REVIEW",
+        "keptCount": 68,
+        "abstainedCount": 35,
+        "droppedCount": 197,
+        "conjunctionRetentionOfGoldYieldPct": 90.7,
+        "conjunctionAbstentionPct": 11.7,
+        "unfilteredUnsafeLeakPct": 0
       }
     }
   },
   "race_4_substrate_and_downstream_race": {
     "race": "Race 4 — Same-Session Substrate & Downstream Training Race",
+    "trialsPerSubstrate": 7,
     "substrates": {
-      "pure_wasm_js": {
-        "processSpawnColdStartMs": 53.66,
-        "inProcessWarmWasmInitMs": 1.6,
-        "coldStartMs": 1.7,
-        "peakRssMb": 54.8,
-        "hotLoopInferenceMs": 2.361,
-        "artifactBytes": 60096,
-        "artifactLabel": "verisieve_dl.wasm (60.1 KB)"
-      },
       "single_header_c99": {
-        "processSpawnColdStartMs": 16.2,
-        "coldStartMs": 2.1,
-        "peakRssMb": 8.4,
-        "hotLoopInferenceMs": 0.7,
+        "processSpawnColdStartMs": 8.35,
+        "peakRssMb": 6.07,
+        "hotLoopInferenceMs": 0.38,
+        "spawnSamplesMs": [
+          12,
+          8.2,
+          8.1,
+          8.6,
+          8.7,
+          6.8,
+          8.4
+        ],
         "artifactBytes": 12400,
         "artifactLabel": "verisieve.h (12.4 KB, gcc -O3)",
-        "compiled": true,
-        "speedupVsJsHotLoop": 3.4
+        "compiled": true
+      },
+      "pure_wasm_js": {
+        "processSpawnColdStartMs": 54.63,
+        "inProcessWarmWasmInitMs": 1.352,
+        "coldStartMs": 54.63,
+        "peakRssMb": 51.21,
+        "hotLoopInferenceMs": 0.4806,
+        "spawnSamplesMs": [
+          62.9,
+          52.9,
+          56.3,
+          56.1,
+          49.8,
+          54.6,
+          51.3
+        ],
+        "artifactBytes": 60096,
+        "artifactLabel": "verisieve_dl.wasm (60.1 KB) + Node V8"
       },
       "python_numpy": {
-        "processSpawnColdStartMs": 184.96,
-        "coldStartMs": 184.96,
-        "peakRssMb": 48.2,
-        "hotLoopInferenceMs": 1.2,
-        "artifactLabel": "Python 3.12 + NumPy 1.26"
+        "processSpawnColdStartMs": 232.51,
+        "importMs": 117.17,
+        "peakRssMb": 31.44,
+        "hotLoopInferenceMs": 0.085,
+        "spawnSamplesMs": [
+          232.5,
+          234,
+          227.3,
+          213.9,
+          183.3,
+          236.8,
+          258.4
+        ],
+        "artifactLabel": "Python 3.12.4 + NumPy 2.4.3"
       },
       "local_python": {
-        "processSpawnColdStartMs": 2216.83,
-        "coldStartMs": 6631.39,
-        "peakRssMb": 432.3,
-        "hotLoopInferenceMs": 18.4,
-        "artifactLabel": "Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5 (>2.8 GB)",
+        "processSpawnColdStartMs": 7237.8,
+        "frameworkImportMs": 6342.48,
+        "coldStartMs": 7237.8,
+        "peakRssMb": 432.6,
+        "hotLoopInferenceMs": 16.83,
+        "spawnSamplesMs": [
+          7303,
+          7237.8,
+          7210.2,
+          8549.7,
+          7589.8,
+          7093.4,
+          7149.6
+        ],
+        "artifactLabel": "Python 3.12.4 + PyTorch 2.10 + DuckDB 1.5.5",
         "executed": true
       }
     },
     "honestLossAnalysis": {
-      "native_c99_win": "Native C99 (gcc -O3) beats pure JS/WASM in hot-loop 520-dim dot product inference (0.7 ms vs 2.1 ms), while matching predictions to <1e-7.",
-      "python_cold_start_loss": "Local Python consumes ~6.5 s cold start and ~432 MB RSS vs. 15 ms and 55 MB for WASM/Node."
+      "c99_spawn_and_hotloop": "C99 leads OS process spawn (8.35 ms, 6.07 MB RSS) and scalar hot-loop inference (0.38 ms vs. Node JIT 0.4806 ms).",
+      "numpy_vectorized_win": "Python + NumPy BLAS executes warm 1,207x520 matrix-vector inference fastest (0.085 ms) once loaded, but incurs 232.51 ms OS spawn.",
+      "pytorch_framework_tax": "Node+WASM cuts OS process spawn by 132.5x (54.63 ms vs. 7237.8 ms) and RSS by 8.4x (51.21 MB vs. 432.6 MB) relative to Python+PyTorch+DuckDB."
     },
     "downstreamAblation": {
       "ablation_100": {
         "nTrain": 100,
-        "heldOutGateBceLoss": 0.312,
-        "heldOutGateAccPct": 88.5,
-        "needleRecallAt5Pct": 91,
-        "unmaskedPiiLeakPct": 0
+        "nTest": 300,
+        "verisieve_conformal": {
+          "heldOutGateBceLoss": 0.3133,
+          "heldOutGateAccPct": 91.3,
+          "wasmVeraBceLoss": 0.6869,
+          "contactPiiHighConfLeakPct": 0.93
+        },
+        "naive_regex": {
+          "heldOutBceLoss": 0.7292,
+          "heldOutAccPct": 67.3
+        },
+        "raw_unfiltered": {
+          "heldOutAccPct": 34.7,
+          "contactPiiExposurePct": 100
+        }
       },
       "ablation_300": {
         "nTrain": 300,
-        "heldOutGateBceLoss": 0.228,
-        "heldOutGateAccPct": 92.4,
-        "needleRecallAt5Pct": 94,
-        "unmaskedPiiLeakPct": 0
+        "nTest": 300,
+        "verisieve_conformal": {
+          "heldOutGateBceLoss": 0.2678,
+          "heldOutGateAccPct": 93,
+          "wasmVeraBceLoss": 0.6214,
+          "contactPiiHighConfLeakPct": 0
+        },
+        "naive_regex": {
+          "heldOutBceLoss": 0.7292,
+          "heldOutAccPct": 67.3
+        },
+        "raw_unfiltered": {
+          "heldOutAccPct": 34.7,
+          "contactPiiExposurePct": 100
+        }
       },
-      "ablation_603": {
-        "nTrain": 603,
-        "heldOutGateBceLoss": 0.164,
-        "heldOutGateAccPct": 96,
-        "needleRecallAt5Pct": 96,
-        "unmaskedPiiLeakPct": 0
+      "ablation_full_train": {
+        "nTrain": 606,
+        "nTest": 300,
+        "verisieve_conformal": {
+          "heldOutGateBceLoss": 0.2266,
+          "heldOutGateAccPct": 93.3,
+          "wasmVeraBceLoss": 0.5529,
+          "contactPiiHighConfLeakPct": 0.93
+        },
+        "naive_regex": {
+          "heldOutBceLoss": 0.7292,
+          "heldOutAccPct": 67.3
+        },
+        "raw_unfiltered": {
+          "heldOutAccPct": 34.7,
+          "contactPiiExposurePct": 100
+        }
       }
     },
-    "downstreamScaling": {
-      "scale_100": {
-        "raw_unfiltered": {
-          "valLoss": 0.482,
-          "gateAccPct": 61.2,
-          "needleRecallAt5Pct": 62,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.395,
-          "gateAccPct": 78.4,
-          "needleRecallAt5Pct": 71,
-          "piiLeakPct": 12
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.312,
-          "gateAccPct": 88.5,
-          "needleRecallAt5Pct": 91,
-          "piiLeakPct": 0
-        }
+    "needleBenchmark": {
+      "definition": "Top-5 cosine retrieval over 64-dim WASM bag-of-ngrams embeddings: percentage of 125 held-out PubMedQA questions whose stripped passage body ranks in top-5 of 125 candidates.",
+      "raw_unmasked": {
+        "queriesTested": 125,
+        "recallAt1Pct": 32,
+        "recallAt5Pct": 60
       },
-      "scale_500": {
-        "raw_unfiltered": {
-          "valLoss": 0.518,
-          "gateAccPct": 59.8,
-          "needleRecallAt5Pct": 54,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.372,
-          "gateAccPct": 82.1,
-          "needleRecallAt5Pct": 68,
-          "piiLeakPct": 8
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.228,
-          "gateAccPct": 92.4,
-          "needleRecallAt5Pct": 94,
-          "piiLeakPct": 0
-        }
+      "naive_regex_corrupted": {
+        "queriesTested": 125,
+        "recallAt1Pct": 32,
+        "recallAt5Pct": 60.8
       },
-      "scale_1207": {
-        "raw_unfiltered": {
-          "valLoss": 0.564,
-          "gateAccPct": 58.3,
-          "needleRecallAt5Pct": 48,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.358,
-          "gateAccPct": 84.4,
-          "needleRecallAt5Pct": 64,
-          "piiLeakPct": 5
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.164,
-          "gateAccPct": 96,
-          "needleRecallAt5Pct": 96,
-          "piiLeakPct": 0
-        }
-      }
-    }
-  },
-  "experiment_1": {
-    "experiment_name": "Experiment 1 — Execution Paradigm Comparison Across Scale",
-    "scales": [
-      10,
-      100,
-      1000
-    ],
-    "results": {
-      "scale_10": {
-        "local_wasm": {
-          "paradigm": "local_wasm",
-          "scaleDocs": 10,
-          "totalTokens": 2560,
-          "canonicalMs": 8.4,
-          "peakRssMb": 52.4,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0
-        },
-        "local_python": {
-          "paradigm": "local_python",
-          "scaleDocs": 10,
-          "canonicalMs": 6512,
-          "peakRssMb": 432,
-          "networkEgressBytes": 0
-        },
-        "cloud_api_baseline": {
-          "paradigm": "cloud_api_baseline",
-          "scaleDocs": 10,
-          "canonicalMs": 400,
-          "networkEgressBytes": 420000,
-          "estimatedCloudCostUsd": 1.5
-        }
-      },
-      "scale_100": {
-        "local_wasm": {
-          "paradigm": "local_wasm",
-          "scaleDocs": 100,
-          "totalTokens": 25600,
-          "canonicalMs": 42.1,
-          "peakRssMb": 52.4,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0
-        },
-        "local_python": {
-          "paradigm": "local_python",
-          "scaleDocs": 100,
-          "canonicalMs": 6540,
-          "peakRssMb": 432,
-          "networkEgressBytes": 0
-        },
-        "cloud_api_baseline": {
-          "paradigm": "cloud_api_baseline",
-          "scaleDocs": 100,
-          "canonicalMs": 1780,
-          "networkEgressBytes": 420000,
-          "estimatedCloudCostUsd": 2.2
-        }
-      },
-      "scale_1000": {
-        "local_wasm": {
-          "paradigm": "local_wasm",
-          "scaleDocs": 1000,
-          "totalTokens": 256000,
-          "canonicalMs": 245,
-          "peakRssMb": 54.8,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0
-        },
-        "local_python": {
-          "paradigm": "local_python",
-          "scaleDocs": 1000,
-          "canonicalMs": 6780,
-          "peakRssMb": 432,
-          "networkEgressBytes": 0
-        },
-        "cloud_api_baseline": {
-          "paradigm": "cloud_api_baseline",
-          "scaleDocs": 1000,
-          "canonicalMs": 15280,
-          "networkEgressBytes": 4200000,
-          "estimatedCloudCostUsd": 15.5
-        }
-      }
-    }
-  },
-  "experiment_2": {
-    "experiment_name": "Experiment 2 — Post-Training Model Scaling Law",
-    "scales": [
-      50,
-      250,
-      1000
-    ],
-    "results": {
-      "scale_50": {
-        "raw_unfiltered": {
-          "valLoss": 0.482,
-          "domainAccuracyPct": 61.2,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.395,
-          "domainAccuracyPct": 78.4,
-          "piiLeakPct": 18
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.312,
-          "domainAccuracyPct": 88.5,
-          "needleRecallAt5Pct": 91,
-          "piiLeakPct": 0
-        }
-      },
-      "scale_250": {
-        "raw_unfiltered": {
-          "valLoss": 0.518,
-          "domainAccuracyPct": 59.8,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.372,
-          "domainAccuracyPct": 82.1,
-          "piiLeakPct": 12
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.228,
-          "domainAccuracyPct": 92.4,
-          "needleRecallAt5Pct": 94,
-          "piiLeakPct": 0
-        }
-      },
-      "scale_1000": {
-        "raw_unfiltered": {
-          "valLoss": 0.564,
-          "domainAccuracyPct": 58.3,
-          "piiLeakPct": 100
-        },
-        "naive_regex": {
-          "valLoss": 0.358,
-          "domainAccuracyPct": 84.4,
-          "piiLeakPct": 5
-        },
-        "verisieve_conformal": {
-          "valLoss": 0.164,
-          "domainAccuracyPct": 96,
-          "needleRecallAt5Pct": 96,
-          "piiLeakPct": 0
-        }
+      "verisieve_masked": {
+        "queriesTested": 125,
+        "recallAt1Pct": 31.2,
+        "recallAt5Pct": 60
       }
     }
   },
   "summary_findings": {
-    "speedup_vs_python_at_1000": 3900.8,
-    "memory_reduction_factor_vs_python": 7.9,
-    "post_training_bce_loss_reduction_pct": 66,
-    "post_training_accuracy_at_1000": 96,
-    "post_training_pii_leak_rate_at_1000": 0,
-    "hot_loop_c99_speedup_vs_wasm": 3.4,
-    "pii_leak_rate_guaranteed_pct": 0,
-    "honest_nulls_reported": [
-      "4/8 PMC PDFs use CIDFont Identity-H CMaps where raw streams yield 0 ASCII lines",
-      "Rule-based regex achieves only 45.1% recall on bare unstructured international names",
-      "Native C99 (gcc -O3) beats JS/WASM by ~3x in raw 520-dim dot product hot loop",
-      "At alpha = 0.01, finite-sample guarantee requires k = 0 calibration errors, expanding abstention to 26.5%"
+    "speedup_vs_pytorch_spawn": 132.5,
+    "memory_reduction_factor_vs_pytorch": 8.4,
+    "post_training_gate_bce_loss_reduction_pct": 27.7,
+    "post_training_gate_acc_full_train": 93.3,
+    "needle_recall_at_5_verisieve": 60,
+    "c99_hot_loop_speedup_vs_js": 1.26,
+    "numpy_hot_loop_ms": 0.085,
+    "honest_nulls_and_boundaries_reported": [
+      "1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (8134 readable lines in 111.86 ms), resolving un-kerned word gluing.",
+      "2. Structured vs. bare-name PII ceiling: regex captures 97.1% of core contact/card/IPv4 spans, 42.1% across all 26 structured token types in ai4privacy, and only 49.6% of bare international names.",
+      "3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = 196 (< 299) hits BinomCDF(0) = 0.1395 > 0.05 and fails closed, while joint calibration on n_cal = 301 satisfies BinomCDF(0) = 0.0486 <= 0.05.",
+      "4. Honest warm compute boundary: C99 leads process spawn (8.35 ms, 6.07 MB) and scalar hot-loop inference (0.38 ms vs. Node JIT 0.4806 ms), while Python+NumPy BLAS wins warm batched dot products (0.085 ms) at the cost of 232.51 ms OS startup."
     ]
   }
 }

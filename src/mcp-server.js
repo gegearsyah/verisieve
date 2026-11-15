@@ -1,10 +1,55 @@
 import { runCleanAndTokenizePipeline, extractFeatureRow, scanRecordsForPII } from './clean-and-tokenize.js';
-import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, verifyTrainingReceipt } from './gatekeeper.js';
+import {
+  trainGatekeeper,
+  calibrateGatekeeper,
+  decideGatekeeper,
+  trainMultiAxisGatekeeper,
+  calibrateMultiAxisGatekeeper,
+  decideMultiAxisGatekeeper,
+  verifyTrainingReceipt,
+} from './gatekeeper.js';
 import { AuditChain } from './clean-and-tokenize.js';
 import { inspectLocalOpenWeightPath } from './wasm-needle-dl.js';
+import { ingestUrl, ingestLinkList, buildCorpusManifest } from './ingestor.js';
 
-// Module-level cached gatekeeper bundle for stateful CLI / agent sessions
+// Module-level cached gatekeeper bundles for stateful CLI / agent sessions
 let lastTrainedBundle = null;
+let lastMultiAxisBundle = null;
+
+function extractUrlsList(text) {
+  if (typeof text !== 'string') return [];
+  const matches = text.match(/https?:\/\/[^\s"'<>]+/gi) || [];
+  return Array.from(new Set(matches));
+}
+
+function buildPlanPayload(args = {}) {
+  const modelIdOrPath = String(args.modelIdOrPath || args.modelPath || 'Qwen/Qwen2.5-0.5B-Instruct').trim();
+  const backend = args.backend === 'mlx' ? 'mlx' : 'trl';
+  const datasetFilename = String(args.datasetFilename || 'rtio-train.jsonl').trim();
+  const outputDir = String(args.outputDir || './verisieve-lora-out').trim();
+  const bridgePort = Number.isFinite(args.bridgePort) ? Number(args.bridgePort) : 8765;
+  const epochs = Number.isFinite(args.epochs) ? Math.max(1, Number(args.epochs)) : 1;
+
+  const inspection = inspectLocalOpenWeightPath(modelIdOrPath);
+  const resolvedModel = inspection?.exists && inspection.modelName ? inspection.modelName : modelIdOrPath;
+  const uvCommand =
+    backend === 'mlx'
+      ? `uvx --from mlx-lm mlx_lm.lora --model ${resolvedModel} --train --data . --iters 200 --adapter-path ${outputDir}`
+      : `uv run skills/verisieve-local-train/scripts/verisieve-train.py --data ${datasetFilename} --model ${resolvedModel} --output ${outputDir} --epochs ${epochs} --bridge-port ${bridgePort}`;
+
+  return {
+    canFineTuneInWasm: false,
+    executionScope: 'host_uv_native_training',
+    backend,
+    modelIdOrPath,
+    datasetFilename,
+    outputDir,
+    uvCommand,
+    bridgeUrl: `http://127.0.0.1:${bridgePort}/status`,
+    skillPath: 'skills/verisieve-local-train/SKILL.md',
+    inspection: inspection?.exists ? inspection : null,
+  };
+}
 
 function buildDefaultCalibrationSet() {
   const cleanSamples = [
@@ -113,6 +158,61 @@ export function handleJsonRpcRequest(request) {
               name: 'verify_provenance_chain',
               description: 'Verifies an Rtio-compatible AuditChain and training receipt.',
               inputSchema: { type: 'object', properties: { entries: { type: 'array' } } }
+            },
+            {
+              name: 'train_multiaxis_gatekeeper',
+              description: 'Trains a customer-labeled 3-axis local gatekeeper (safe, useful, topic) and calibrates thresholds.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  samples: { type: 'array' },
+                  featureRows: { type: 'array' },
+                  labelsMap: { type: 'object' },
+                  calibFeatureRows: { type: 'array' },
+                  calibLabelsMap: { type: 'object' },
+                  options: { type: 'object' }
+                }
+              }
+            },
+            {
+              name: 'gatekeeper_decide_multiaxis',
+              description: 'Runs calibrated 3-axis gatekeeper inference (Safe, Useful, Topic) on text or a 520-dim feature row.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  bundle: { type: 'object' },
+                  text: { type: 'string' },
+                  featureRow: { type: 'array' }
+                }
+              }
+            },
+            {
+              name: 'plan_local_open_weight_training',
+              description: 'Inspects a local GGUF/SafeTensors path or HuggingFace ID and builds a zero-setup Astral uv TRL/MLX LoRA training command.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  modelIdOrPath: { type: 'string' },
+                  backend: { type: 'string', enum: ['trl', 'mlx'] },
+                  datasetFilename: { type: 'string' },
+                  outputDir: { type: 'string' },
+                  bridgePort: { type: 'number' },
+                  epochs: { type: 'number' }
+                }
+              }
+            },
+            {
+              name: 'ingest_url_or_links',
+              description: 'Captures inline HTML, link lists, or URLs and cleans them through verisieve_clean.wasm + PII redaction.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  htmlOrLinks: { type: 'string' },
+                  url: { type: 'string' },
+                  urls: { type: 'array' },
+                  options: { type: 'object' }
+                }
+              }
             }
           ]
         };
@@ -208,6 +308,69 @@ export function handleJsonRpcRequest(request) {
         } else if (toolName === 'verify_provenance_chain') {
           const isValid = AuditChain.verifyChain(args.entries);
           result = { content: [{ type: 'text', text: JSON.stringify({ isValid }, null, 2) }] };
+        } else if (toolName === 'train_multiaxis_gatekeeper') {
+          let fRows;
+          let labelsMap;
+          if (Array.isArray(args.samples) && args.samples.length > 0) {
+            fRows = args.samples.map((s) => extractFeatureRow({ text: s.text || '' }));
+            labelsMap = {
+              safe: args.samples.map((s) => (s.safe ? 1 : 0)),
+              useful: args.samples.map((s) => (s.useful ? 1 : 0)),
+              topic: args.samples.map((s) => (s.topic ? 1 : 0)),
+            };
+          } else if (Array.isArray(args.featureRows) && args.labelsMap) {
+            fRows = args.featureRows.map((r) => new Float32Array(r));
+            labelsMap = args.labelsMap;
+          } else {
+            throw new Error('train_multiaxis_gatekeeper requires samples[] or featureRows+labelsMap');
+          }
+          let multiBundle = trainMultiAxisGatekeeper(fRows, labelsMap, args.options || {});
+          const cRows = Array.isArray(args.calibFeatureRows)
+            ? args.calibFeatureRows.map((r) => new Float32Array(r))
+            : fRows;
+          const cLabels = args.calibLabelsMap || labelsMap;
+          multiBundle = calibrateMultiAxisGatekeeper(multiBundle, cRows, cLabels, args.options || {});
+          lastMultiAxisBundle = multiBundle;
+          result = { content: [{ type: 'text', text: JSON.stringify(multiBundle, null, 2) }] };
+        } else if (toolName === 'gatekeeper_decide_multiaxis') {
+          const multiBundle = args.bundle || lastMultiAxisBundle;
+          if (!multiBundle) {
+            throw new Error('No trained multi-axis bundle available; call train_multiaxis_gatekeeper first or pass bundle');
+          }
+          const fRow = args.featureRow
+            ? new Float32Array(args.featureRow)
+            : extractFeatureRow({ text: String(args.text || '') });
+          const decision = decideMultiAxisGatekeeper(multiBundle, fRow);
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    axes: decision.decisions,
+                    conjunctionAction: decision.conjunctionAction,
+                    abstained: decision.abstained,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        } else if (toolName === 'plan_local_open_weight_training') {
+          const plan = buildPlanPayload(args);
+          result = { content: [{ type: 'text', text: JSON.stringify(plan, null, 2) }] };
+        } else if (toolName === 'ingest_url_or_links') {
+          if (typeof args.htmlOrLinks === 'string') {
+            const hasHtml = /<[a-z][\s\S]*>/i.test(args.htmlOrLinks);
+            const pipelineRes = runCleanAndTokenizePipeline(args.htmlOrLinks, {
+              format: hasHtml ? 'html' : 'text',
+              ...(args.options || {}),
+            });
+            result = { content: [{ type: 'text', text: JSON.stringify(pipelineRes, null, 2) }] };
+          } else {
+            throw new Error('URL network fetching requires handleJsonRpcRequestAsync');
+          }
         } else {
           throw new Error(`Unknown tool: ${toolName}`);
         }
@@ -224,11 +387,74 @@ export function handleJsonRpcRequest(request) {
   }
 }
 
+export async function handleJsonRpcRequestAsync(request) {
+  if (
+    request?.method === 'tools/call' &&
+    request?.params?.name === 'ingest_url_or_links'
+  ) {
+    try {
+      const args = request.params?.arguments || {};
+      const opts = args.options || {};
+      const explicitUrls = Array.isArray(args.urls)
+        ? args.urls
+        : typeof args.url === 'string'
+          ? [args.url]
+          : typeof args.htmlOrLinks === 'string' && !/<[a-z][\s\S]*>/i.test(args.htmlOrLinks)
+            ? extractUrlsList(args.htmlOrLinks)
+            : [];
+
+      if (explicitUrls.length > 0) {
+        const fetched =
+          explicitUrls.length === 1
+            ? [Object.assign({ url: explicitUrls[0], success: true }, await ingestUrl(explicitUrls[0], opts))]
+            : await ingestLinkList(explicitUrls, opts);
+        const combinedText = fetched
+          .filter((item) => item.success && item.cleanText)
+          .map((item) => item.cleanText)
+          .join('\n\n');
+        const pipelineRes = runCleanAndTokenizePipeline(combinedText, {
+          format: 'text',
+          ...opts,
+        });
+        const manifest = buildCorpusManifest(
+          fetched.map((f) => ({
+            url: f.url,
+            rawBytes: f.rawBytes || 0,
+            cleanText: f.cleanText || '',
+          })),
+          pipelineRes.tokenizedChunks || []
+        );
+        return {
+          jsonrpc: '2.0',
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ ...pipelineRes, fetched, manifest }, null, 2),
+              },
+            ],
+          },
+          id: request.id ?? null,
+        };
+      }
+
+      return handleJsonRpcRequest(request);
+    } catch (err) {
+      return {
+        jsonrpc: '2.0',
+        error: { code: -32603, message: err.message },
+        id: request?.id ?? null,
+      };
+    }
+  }
+  return handleJsonRpcRequest(request);
+}
+
 // Stdio runner if executed directly
 if (typeof process !== 'undefined' && process.argv[1]?.endsWith('mcp-server.js')) {
   process.stdin.setEncoding('utf8');
   let buffer = '';
-  process.stdin.on('data', chunk => {
+  process.stdin.on('data', async chunk => {
     buffer += chunk;
     let lines = buffer.split('\n');
     buffer = lines.pop(); // Keep incomplete line
@@ -236,7 +462,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('mcp-server.js')
       if (!line.trim()) continue;
       try {
         const req = JSON.parse(line);
-        const res = handleJsonRpcRequest(req);
+        const res = await handleJsonRpcRequestAsync(req);
         if (res) {
           process.stdout.write(JSON.stringify(res) + '\n');
         }

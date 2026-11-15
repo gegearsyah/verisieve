@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { loadCleanWasmSync } from './clean-wasm.js';
 
 // ---------------------------------------------------------------------------
 // 2. Rtio Wire-Compatible Node Hashing
@@ -190,90 +191,70 @@ function decodeHtmlEntities(str) {
 // ---------------------------------------------------------------------------
 // 3. Deterministic Cleaning Chain (`stripBoilerplate`, `dedupBlocks`)
 // ---------------------------------------------------------------------------
-export function stripBoilerplate(blocks) {
+export function stripBoilerplate(blocks, options = {}) {
+  const cleanEngine = loadCleanWasmSync();
   const cleaned = [];
   const dropped = [];
 
-  // Common header/footer patterns
-  const headerFooterRegex = /^(page\s+\d+\s+of\s+\d+|confidential|copyright|all rights reserved|powered by)/i;
-
-  blocks.forEach(block => {
-    const text = block.text.trim();
-    if (headerFooterRegex.test(text) || text.length === 0) {
-      dropped.push({
-        block,
-        reason: text.length === 0 ? 'empty_block' : 'boilerplate_header_footer'
-      });
-    } else {
-      cleaned.push(block);
+  for (const block of blocks) {
+    const rawText = String(block.text || '').trim();
+    if (!rawText) {
+      dropped.push({ block, reason: 'empty_block' });
+      continue;
     }
-  });
+
+    const strippedText = cleanEngine.stripBoilerplate(rawText, {
+      html: options.html,
+      stripChrome: options.stripChrome !== false,
+    });
+
+    if (!strippedText) {
+      dropped.push({ block, reason: 'boilerplate_header_footer' });
+    } else {
+      cleaned.push(strippedText === block.text ? block : { ...block, text: strippedText });
+    }
+  }
 
   return { cleaned, dropped };
 }
 
 export function dedupBlocks(blocks, { jaccardThreshold = 0.85 } = {}) {
-  const seenHashes = new Set();
-  const uniqueBlocks = [];
-
-  // 1. Exact normalized SHA-256 deduplication
-  for (const block of blocks) {
-    const normalizedText = block.text.toLowerCase().replace(/\s+/g, ' ').trim();
-    const hash = crypto.createHash('sha256').update(normalizedText).digest('hex');
-    if (!seenHashes.has(hash)) {
-      seenHashes.add(hash);
-      uniqueBlocks.push(block);
-    }
-  }
-
-  // 2. Deterministic 64-permutation FNV-1a MinHash near-duplicate removal
+  const cleanEngine = loadCleanWasmSync();
+  cleanEngine.dedupReset();
   const distinctBlocks = [];
-  const minHashesList = uniqueBlocks.map(block => computeMinHash(block.text));
 
-  for (let i = 0; i < uniqueBlocks.length; i++) {
-    let isDuplicate = false;
-    for (let j = 0; j < distinctBlocks.length; j++) {
-      const sim = jaccardMinHash(minHashesList[i], minHashesList[seenHashesIndex(uniqueBlocks, distinctBlocks[j])]);
-      if (sim >= jaccardThreshold) {
-        isDuplicate = true;
-        break;
-      }
-    }
-    if (!isDuplicate) {
-      distinctBlocks.push(uniqueBlocks[i]);
+  for (const block of blocks) {
+    const result = cleanEngine.dedupCheck(block.text || '', jaccardThreshold);
+    if (result.action === 'keep') {
+      distinctBlocks.push(block);
     }
   }
 
   return distinctBlocks;
 }
 
-function seenHashesIndex(allBlocks, targetBlock) {
-  return allBlocks.findIndex(b => b.id === targetBlock.id);
-}
-
-function computeMinHash(text, numPermutations = 64) {
-  const tokens = text.toLowerCase().match(/\b[a-z0-9]+\b/g) || [];
-  const hashes = new Array(numPermutations).fill(Infinity);
-
-  for (const token of tokens) {
-    const baseHash = parseInt(fnv1a(token), 16);
-    for (let p = 0; p < numPermutations; p++) {
-      // Linear congruential permutation simulation
-      const permHash = (baseHash ^ (p * 0x9e3779b9)) >>> 0;
-      if (permHash < hashes[p]) {
-        hashes[p] = permHash;
-      }
+export function chunkBlocksByTokenWindow(blocks, { maxSeqLen = 256, overlapTokens = 24 } = {}) {
+  const cleanEngine = loadCleanWasmSync();
+  const out = [];
+  for (const block of blocks) {
+    const chunks = cleanEngine.chunkByTokenWindow(block.text || '', {
+      maxTokens: maxSeqLen,
+      overlapTokens,
+    });
+    if (chunks.length <= 1) {
+      out.push(block);
+    } else {
+      chunks.forEach((chunk, winIdx) => {
+        out.push({
+          ...block,
+          id: `${block.id}_win_${winIdx}`,
+          text: chunk.text,
+          tokenEstimate: chunk.tokenCount,
+        });
+      });
     }
   }
-  return hashes;
-}
-
-function jaccardMinHash(sigA, sigB) {
-  let matches = 0;
-  for (let i = 0; i < sigA.length; i++) {
-    if (sigA[i] === sigB[i]) matches++;
-  }
-  return matches / sigA.length;
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +269,37 @@ export const EXCLUDED_NAME_WORDS = new Set([
   'cover', 'sheet', 'phone', 'number', 'pages', 'including', 'global', 'health',
   'surgical', 'cohort', 'motor', 'assessment', 'telemetry', 'kernel', 'grant',
   'tax', 'invoice', 'maincode', 'report', 'submission', 'competitive', 'product',
-  'introduction', 'progress', 'geography', 'distribution', 'division'
+  'introduction', 'progress', 'geography', 'distribution', 'division',
+  // General English function / sentence-starter words (prevent Title-Case FP at sentence starts)
+  'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'by', 'from', 'with', 'as', 'or', 'and',
+  'but', 'if', 'is', 'are', 'was', 'were', 'be', 'been', 'do', 'does', 'did', 'has', 'have', 'had',
+  'can', 'could', 'will', 'would', 'might', 'should', 'more', 'most', 'less', 'all', 'each',
+  'every', 'some', 'any', 'no', 'not', 'this', 'that', 'these', 'those', 'it', 'its', 'we', 'they',
+  'our', 'such', 'only', 'both', 'between', 'among', 'within', 'across', 'during', 'after', 'before',
+  'until', 'since', 'while', 'when', 'where', 'although', 'however', 'therefore', 'moreover',
+  // Standard academic, statistical, study-design & geographic non-person nouns
+  'january', 'february', 'march', 'april', 'july', 'august', 'september', 'october', 'november', 'december',
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'first', 'second', 'third', 'early', 'late', 'new', 'old', 'high', 'low', 'main', 'major', 'minor',
+  'primary', 'secondary', 'study', 'studies', 'trial', 'trials', 'group', 'groups', 'data', 'analysis',
+  'analyses', 'method', 'methods', 'result', 'results', 'conclusion', 'conclusions', 'background',
+  'objective', 'objectives', 'aim', 'aims', 'table', 'figure', 'panel', 'model', 'models', 'score',
+  'scores', 'scale', 'index', 'rate', 'rates', 'ratio', 'ratios', 'odds', 'risk', 'level', 'levels',
+  'effect', 'effects', 'factor', 'factors', 'mean', 'median', 'total', 'age', 'day', 'days', 'week',
+  'weeks', 'year', 'years', 'time', 'use', 'used', 'using', 'based', 'control', 'controlled',
+  'randomized', 'randomised', 'prospective', 'retrospective', 'sectional', 'medical', 'therapy',
+  'treatment', 'disease', 'syndrome', 'disorder', 'cancer', 'cardiac', 'pulmonary', 'renal',
+  'hepatic', 'neurological', 'perinatal', 'pediatric', 'geriatric', 'mortality', 'morbidity',
+  'incidence', 'prevalence', 'survival', 'diagnosis', 'screening', 'prevention', 'management',
+  'quality', 'life', 'family', 'history', 'education', 'national', 'international', 'world', 'public',
+  'population', 'community', 'institute', 'ministry', 'university', 'college', 'center', 'centre',
+  'clinic', 'service', 'services', 'program', 'programme', 'united', 'states', 'kingdom', 'south',
+  'north', 'east', 'west', 'africa', 'african', 'american', 'european', 'asian', 'zealand',
+  'medicare', 'medicaid', 'association', 'society', 'organization', 'organisation', 'foundation',
+  'committee', 'board', 'guidelines', 'criteria', 'classification', 'review', 'case', 'cases',
+  'evaluation', 'performance', 'administration', 'subject', 'subjects', 'angle', 'classes',
+  'fluent', 'title', 'font', 'potentials', 'hierarchical', 'compound', 'probit', 'ordered', 'bank',
+  'carolina', 'spearman', 'laryngeal', 'mask', 'opioid', 'sedation', 'palliative', 'chines', 'masala'
 ]);
 
 export const PII_PATTERNS = {
@@ -676,13 +687,22 @@ export function runCleanAndTokenizePipeline(input, options = {}) {
   const rawBlocks = ingestUnstructuredText(input, options);
   audit.log('INGEST_COMPLETE', { blockCount: rawBlocks.length });
 
-  const { cleaned, dropped } = stripBoilerplate(rawBlocks);
-  audit.log('STRIP_BOILERPLATE', { cleanedCount: cleaned.length, droppedCount: dropped.length });
+  const { cleaned, dropped } = stripBoilerplate(rawBlocks, options);
+  audit.log('STRIP_BOILERPLATE', { cleanedCount: cleaned.length, droppedCount: dropped.length, wasmCleanActive: true });
 
   const deduped = dedupBlocks(cleaned, options);
   audit.log('DEDUP', { dedupedCount: deduped.length });
 
-  const masked = maskPiiDual(deduped, options);
+  const chunked =
+    options.chunkByTokenWindow === false
+      ? deduped
+      : chunkBlocksByTokenWindow(deduped, {
+          maxSeqLen: options.maxSeqLen || 256,
+          overlapTokens: options.overlapTokens ?? 24,
+        });
+  audit.log('CHUNK_WINDOWS', { windowedCount: chunked.length });
+
+  const masked = maskPiiDual(chunked, options);
   audit.log('MASK_PII', { maskedCount: masked.length });
 
   const tokenizer = options.tokenizer || createTokenizer(options);
@@ -699,6 +719,7 @@ export function runCleanAndTokenizePipeline(input, options = {}) {
     tokenizedChunks,
     features,
     auditEntries: audit.entries,
-    nodeHash
+    nodeHash,
+    wasmCleanActive: true
   };
 }
