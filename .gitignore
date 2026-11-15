@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Untrusted external test artifacts and benchmarks
+results/untrusted-benchmarks/
+results/*.png
+results/test-*
+
+# Binaries and object files
+*.exe
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+.temp/
+tmp/

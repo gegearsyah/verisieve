@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/ui-server.mjs
- * Lightweight zero-dependency HTTP UI server for Matilda Portable.
+ * Lightweight zero-dependency HTTP UI server for VeriSieve.
  * Serves demo/index.html, results/, docs/, and provides /api/run and /api/mcp endpoints.
  */
 
@@ -152,7 +152,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`========================================================================`);
-  console.log(`  MATILDA PORTABLE — INTERACTIVE GATEKEEPER UI & MCP SERVER READY       `);
+  console.log(`  VERISIEVE — INTERACTIVE GATEKEEPER UI & MCP SERVER READY             `);
   console.log(`========================================================================`);
   console.log(`  Local UI URL:        http://localhost:${PORT}`);
   console.log(`  Run Pipeline API:    POST http://localhost:${PORT}/api/run`);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Matilda Portable — Universal Data Gatekeeper & Conformal Risk Routing</title>
+  <title>VeriSieve — Zero-Egress Unstructured Document Sieve & Conformal Gatekeeper Studio</title>
   <style>
     :root {
       --bg: #090d16;
@@ -84,8 +84,8 @@
 <body>
   <div class="container">
     <header>
-      <h1>Matilda Portable <span>Universal Gatekeeper</span></h1>
-      <p class="subtitle">100% Real External Clinical & Archival Data • Zero Mock Strings • Conformal LTT Risk Control</p>
+      <h1>VeriSieve <span>Zero-Egress Document Sieve & Gatekeeper Studio</span></h1>
+      <p class="subtitle">Zero-Egress Ingestion, Dual Text+Pixel PII Redaction & Conformal Risk Control • Compatible with Maincode / Matilda & Claude Code MCP</p>
     </header>
 
     <div class="grid">
@@ -311,13 +311,13 @@ Hip fracture incidence is increasing among the elderly and is associated with in
 
       if (activeTab === 0) {
         // CLI / NPM
-        tabBox.textContent = `npm start -- "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results\n\n# Or via CLI binary:\nnpx matilda-portable run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
+        tabBox.textContent = `npm start -- "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results\n\n# Or via CLI binary:\nnpx verisieve run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
       } else if (activeTab === 1) {
         // MCP Server
-        tabBox.textContent = `// MCP Client Configuration (claude_desktop_config.json / Matilda Code)\n{\n  "mcpServers": {\n    "matilda-portable": {\n      "command": "node",\n      "args": ["src/mcp-server.js"]\n    }\n  }\n}\n\n// Live JSON-RPC 2.0 tool call payload (POST /api/mcp):\n{\n  "jsonrpc": "2.0",\n  "id": 1,\n  "method": "tools/call",\n  "params": {\n    "name": "ingest_and_tokenize",\n    "arguments": {\n      "input": "${target}",\n      "options": { "mode": "${mode}", "piiStrategy": "${pii}", "alpha": ${alpha}, "maxSeqLen": ${seq} }\n    }\n  }\n}`;
+        tabBox.textContent = `// MCP Client Configuration (claude_desktop_config.json / Matilda Code)\n{\n  "mcpServers": {\n    "verisieve": {\n      "command": "node",\n      "args": ["src/mcp-server.js"]\n    }\n  }\n}\n\n// Live JSON-RPC 2.0 tool call payload (POST /api/mcp):\n{\n  "jsonrpc": "2.0",\n  "id": 1,\n  "method": "tools/call",\n  "params": {\n    "name": "ingest_and_tokenize",\n    "arguments": {\n      "input": "${target}",\n      "options": { "mode": "${mode}", "piiStrategy": "${pii}", "alpha": ${alpha}, "maxSeqLen": ${seq} }\n    }\n  }\n}`;
       } else {
         // ESM Library
-        tabBox.textContent = `import { ingestFromUrlOrPath } from 'matilda-portable';\n\nconst result = await ingestFromUrlOrPath("${target}", {\n  mode: "${mode}",\n  piiStrategy: "${pii}",\n  alpha: ${alpha},\n  maxSeqLen: ${seq}\n});\nconsole.log(result.stats);`;
+        tabBox.textContent = `import { ingestFromUrlOrPath } from 'verisieve';\n\nconst result = await ingestFromUrlOrPath("${target}", {\n  mode: "${mode}",\n  piiStrategy: "${pii}",\n  alpha: ${alpha},\n  maxSeqLen: ${seq}\n});\nconsole.log(result.stats);`;
       }
     };
 
@@ -474,17 +474,17 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       let blob, filename;
       if (type === 'csv') {
         blob = new Blob([currentResults.csv || ''], { type: 'text/csv' });
-        filename = 'matilda-gatekeeper-results.csv';
+        filename = 'verisieve-results.csv';
       } else if (type === 'json') {
         blob = new Blob([currentResults.json || JSON.stringify(currentResults.rows, null, 2)], { type: 'application/json' });
-        filename = 'matilda-gatekeeper-results.json';
+        filename = 'verisieve-results.json';
       } else if (type === 'bundle') {
         blob = new Blob([JSON.stringify(currentResults.gatekeeperBundle, null, 2)], { type: 'application/json' });
         filename = 'gatekeeper-bundle.json';
       } else if (type === 'svg') {
         const svgContent = currentResults.summarySvg || generateSummaryReportSvg({ summary: currentResults.stats });
         blob = new Blob([svgContent], { type: 'image/svg+xml' });
-        filename = 'matilda-summary-report.svg';
+        filename = 'verisieve-summary-report.svg';
       }
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);

@@ -1,22 +1,29 @@
 {
-  "name": "matilda-portable",
+  "name": "verisieve",
   "version": "1.0.0",
-  "description": "Zero-dependency portable data gatekeeper: PDF vs. OCR, dual PII masking, tokenization, conformal risk control & single-header C99 parity",
+  "description": "Zero-egress unstructured document sieve, dual text+pixel PII redactor, pluggable tokenization, and client-side LTT conformal gatekeeper across Browser, CLI, MCP, and C99.",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
   },
   "main": "./src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gegearsyah/verisieve.git"
+  },
+  "license": "MIT",
   "bin": {
+    "verisieve": "./bin/verisieve.mjs",
+    "rtio-portable": "./bin/rtio-portable.mjs",
     "matilda-portable": "./bin/matilda-portable.mjs"
   },
   "scripts": {
-    "start": "node bin/matilda-portable.mjs run",
+    "start": "node bin/verisieve.mjs run",
     "test": "node --test test/multi-font-fixture.test.js test/ocr-engine.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-image-pipeline.test.js && node --test test/mcp.test.js",
     "demo:real": "node scripts/run-real-data-benchmark.mjs",
     "demo:pdf-vs-image": "node scripts/run-pdf-vs-image-demo.mjs",
     "bench": "node scripts/run-benchmarks.mjs && node scripts/generate-figures.mjs",
-    "audit-wasm": "node bin/matilda-portable.mjs audit-wasm",
+    "audit-wasm": "node bin/verisieve.mjs audit-wasm",
     "mcp": "node src/mcp-server.js",
     "ui": "node scripts/ui-server.mjs"
   }

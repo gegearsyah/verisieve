@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Run CLI Selftest
+      run: node bin/verisieve.mjs selftest
+
+    - name: Verify Zero-Egress WASM Audit
+      run: node bin/verisieve.mjs audit-wasm
+
+    - name: Run Complete Test Suite
+      run: npm test
