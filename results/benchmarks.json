@@ -41,7 +41,7 @@
       "clean": {
         "scaleFactor": 0.35555555555555557,
         "numPasses": 1,
-        "latencyMs": 58.77,
+        "latencyMs": 57.14,
         "lineRecallPct": 47.1,
         "piiBoxRecallPct": 70,
         "meanCerPct": 39.7,
@@ -56,7 +56,7 @@
       "degraded": {
         "scaleFactor": 0.35555555555555557,
         "numPasses": 1,
-        "latencyMs": 47.79,
+        "latencyMs": 43.36,
         "lineRecallPct": 47.1,
         "piiBoxRecallPct": 70,
         "meanCerPct": 83.5,
@@ -74,7 +74,7 @@
       "clean": {
         "scaleFactor": 0.5,
         "numPasses": 4,
-        "latencyMs": 78.22,
+        "latencyMs": 77.69,
         "lineRecallPct": 100,
         "piiBoxRecallPct": 100,
         "meanCerPct": 8,
@@ -89,7 +89,7 @@
       "degraded": {
         "scaleFactor": 0.5,
         "numPasses": 4,
-        "latencyMs": 67.13,
+        "latencyMs": 56.71,
         "lineRecallPct": 100,
         "piiBoxRecallPct": 100,
         "meanCerPct": 47.7,
@@ -107,7 +107,7 @@
       "clean": {
         "scaleFactor": 1,
         "numPasses": 15,
-        "latencyMs": 155.59,
+        "latencyMs": 143.5,
         "lineRecallPct": 100,
         "piiBoxRecallPct": 100,
         "meanCerPct": 7.7,
@@ -122,7 +122,7 @@
       "degraded": {
         "scaleFactor": 1,
         "numPasses": 15,
-        "latencyMs": 156.76,
+        "latencyMs": 147.59,
         "lineRecallPct": 100,
         "piiBoxRecallPct": 100,
         "meanCerPct": 40.5,

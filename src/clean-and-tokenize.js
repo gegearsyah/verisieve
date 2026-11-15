@@ -281,17 +281,17 @@ function jaccardMinHash(sigA, sigB) {
 // ---------------------------------------------------------------------------
 export const PII_PATTERNS = {
   email: /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g,
-  phone: /(?:\+61\s*4\d{2}\s*\d{3}\s*\d{3}|04\d{2}\s*\d{3}\s*\d{3}|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b)/g,
+  phone: /(?:\+\d{1,3}[-.\s]*)?(?:\(\s*\d{2,4}\s*\)|\b\d{2,4}\b)[-.\s]*\d{3,4}[-.\s]*\d{3,4}\b/g,
   ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
   credit_card: /\b(?:\d[ -]*?){13,16}\b/g,
   ip_address: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
-  date_of_birth: /\b(?:\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\b/g,
-  name_likely: /(?:Patient Name|Name):\s*([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b/g,
-  address_likely: /\d{1,4}\s+[A-Z][a-z0-9\s,.-]+(?:St|Ave|Blvd|Dr|Ln|Rd|Way|Ct|Terrace|Parade|Pl)\b/g
+  date_of_birth: /\b(?:\d{1,2}[\/\s-]\d{1,2}[\/\s-](?:\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/g,
+  name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b/g,
+  address_likely: /(?:\d{1,4}\s+[A-Z][a-zA-Z0-9\s,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)\s+of\s+[A-Z][a-zA-Z\s]+|Wong Tai Sin Hospital|Guy's Campus|King's College London)/gi
 };
 
 export function maskValue(val, type, strategy = 'token') {
-  if (strategy === 'redact') return '[REDACTED]';
+  if (strategy === 'redact' || strategy === 'bullet') return '••••••••';
   if (strategy === 'synthetic') {
     switch (type) {
       case 'email': return 'user@example.com';
@@ -400,6 +400,7 @@ function blackoutRegion(rgb, width, height, x1, y1, x2, y2) {
 // 5. Pluggable Tokenizer & Feature Extractor
 // ---------------------------------------------------------------------------
 export function createTokenizer(options = {}) {
+  const defaultMaxSeqLen = options.maxSeqLen || 256;
   if (options.vocab && options.merges && typeof options.encode === 'function') {
     return {
       encode: options.encode,
@@ -409,7 +410,7 @@ export function createTokenizer(options = {}) {
 
   // Default byte+word BPE-compatible tokenizer ('byte-bpe-default')
   return {
-    encode(text, maxSeqLen = 256) {
+    encode(text, maxSeqLen = defaultMaxSeqLen) {
       // Special tokens: PAD=0, BOS=1, EOS=2, UNK=3, PII(8 tokens)=4..11
       const tokens = [1]; // BOS
       const words = text.split(/\s+/);
