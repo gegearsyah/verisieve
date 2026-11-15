@@ -1,0 +1,14 @@
+{
+  "name": "matilda-portable",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "bin": {
+    "matilda-portable": "./bin/matilda-portable.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
