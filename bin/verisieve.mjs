@@ -113,6 +113,8 @@ if (command === 'audit-wasm') {
       console.log(` Output Written to Folder: ${options.outDir}`);
       console.log(`   - ${path.join(options.outDir, 'results.csv')}`);
       console.log(`   - ${path.join(options.outDir, 'results.json')}`);
+      console.log(`   - ${path.join(options.outDir, 'train-qwen-llama-sft.jsonl')}`);
+      console.log(`   - ${path.join(options.outDir, 'train-tokens.bin')}`);
       console.log(`   - ${path.join(options.outDir, 'gatekeeper-bundle.json')}`);
       console.log(`   - ${path.join(options.outDir, 'summary-report.svg')}`);
     } else {

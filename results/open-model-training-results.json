@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "pipeline": "VeriSieve Open-Weight Model Training (Qwen2 / PyTorch 2.10 / DuckDB 1.5.5)",
+  "timestamp": "2026-11-15T00:00:00.000Z",
+  "duckdb_audit": {
+    "version": "1.5.5",
+    "total_rows_ingested": 67,
+    "pii_detected_rows": 35,
+    "keep_safe_rows": 42,
+    "drop_or_quarantine_rows": 12,
+    "abstain_rows": 13,
+    "breakdown": [
+      {
+        "source_mode": "funsd_scanned_archival_ocr",
+        "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW",
+        "count": 7,
+        "avg_prob": 0.3938,
+        "total_tokens": 135
+      },
+      {
+        "source_mode": "funsd_scanned_archival_ocr",
+        "gatekeeper_action": "DROP_OR_QUARANTINE",
+        "count": 3,
+        "avg_prob": 0.1747,
+        "total_tokens": 119
+      },
+      {
+        "source_mode": "funsd_scanned_archival_ocr",
+        "gatekeeper_action": "KEEP_SAFE",
+        "count": 25,
+        "avg_prob": 0.6748,
+        "total_tokens": 981
+      },
+      {
+        "source_mode": "pmc_clinical_pdf",
+        "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW",
+        "count": 6,
+        "avg_prob": 0.4101,
+        "total_tokens": 344
+      },
+      {
+        "source_mode": "pmc_clinical_pdf",
+        "gatekeeper_action": "DROP_OR_QUARANTINE",
+        "count": 9,
+        "avg_prob": 0.145,
+        "total_tokens": 574
+      },
+      {
+        "source_mode": "pmc_clinical_pdf",
+        "gatekeeper_action": "KEEP_SAFE",
+        "count": 17,
+        "avg_prob": 0.7372,
+        "total_tokens": 1243
+      }
+    ]
+  },
+  "model_training": {
+    "architecture": "Qwen2ForCausalLM (HuggingFace transformers)",
+    "pytorch_version": "2.10.0+cpu",
+    "device": "cpu",
+    "seed": 42,
+    "vocab_size": 512,
+    "hidden_size": 64,
+    "num_hidden_layers": 2,
+    "num_attention_heads": 2,
+    "training_steps": 25,
+    "learning_rate": 0.005,
+    "lossHistoryRaw": [
+      6.2781,
+      6.0098,
+      5.5026,
+      5.1471,
+      4.8351,
+      4.56,
+      4.3362,
+      4.1568,
+      4.0062,
+      3.8883,
+      3.7886,
+      3.6956,
+      3.621,
+      3.5548,
+      3.4983,
+      3.4469,
+      3.3965,
+      3.3555,
+      3.3088,
+      3.272,
+      3.242,
+      3.2088,
+      3.161,
+      3.1411,
+      3.1088
+    ],
+    "lossHistoryVerisieve": [
+      6.2774,
+      5.9997,
+      5.491,
+      5.1284,
+      4.7988,
+      4.5091,
+      4.2654,
+      4.0616,
+      3.9015,
+      3.7713,
+      3.6751,
+      3.5672,
+      3.5086,
+      3.4265,
+      3.3595,
+      3.3126,
+      3.2479,
+      3.2054,
+      3.1654,
+      3.1248,
+      3.1024,
+      3.0692,
+      3.0397,
+      3.0161,
+      2.9923
+    ],
+    "valPerplexityRaw": 18.55,
+    "valPerplexityVerisieve": 17.5,
+    "piiExposureRatePctRaw": 100.0,
+    "piiExposureRatePctVerisieve": 0.0,
+    "testedPiiEntities": [
+      "miuky@ha.org.hk",
+      "614 -466 -5087",
+      "katie.sheehan@kcl.ac.uk",
+      "Betty D. Montgomery"
+    ]
+  }
+}

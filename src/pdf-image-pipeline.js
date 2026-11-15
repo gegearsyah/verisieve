@@ -10,7 +10,7 @@ import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { generateMultiFontDocument, encodePNG, applyScanDegradations, renderGlyphBitmap } from './multi-font-fixture.js';
 import { tileAndRead } from './ocr-engine.js';
-import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual } from './clean-and-tokenize.js';
+import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
 import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper } from './gatekeeper.js';
 
 // --- Real Research PDF Stream Extraction ---
@@ -79,10 +79,19 @@ export async function fetchOrLoadFunsdBenchmark(outDir = 'results/untrusted-benc
   fs.mkdirSync(outDir, { recursive: true });
   const outPath = path.join(outDir, 'funsd-sample.json');
 
+  if (fs.existsSync(outPath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+      if (cached && cached.rows && cached.rows.length > 0 && (cached.rows[0].row?.words?.length >= 50)) {
+        return cached;
+      }
+    } catch {}
+  }
+
   let data = null;
   try {
     const res = await fetch('https://datasets-server.huggingface.co/rows?dataset=nielsr%2Ffunsd&config=default&split=test&offset=0&length=5', {
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(3000)
     });
     if (res.ok) {
       data = await res.json();
@@ -133,11 +142,14 @@ export async function fetchOrLoadFunsdBenchmark(outDir = 'results/untrusted-benc
       split: 'test',
       source: 'offline_local_pmc_decompressed_streams',
       extracted_at: '2026-11-15T00:00:00.000Z',
-      rows: archivalLines.slice(0, 5).map((l, i) => ({
-        row_idx: i,
-        words: l.split(' '),
-        bboxes: [[50, 50 + i * 20, 200, 68 + i * 20]]
-      }))
+      rows: archivalLines.slice(0, 5).map((l, i) => {
+        const wds = l.split(' ');
+        return {
+          row_idx: i,
+          words: wds,
+          bboxes: wds.map((_, j) => [50 + j * 35, 50 + i * 20, 80 + j * 35, 68 + i * 20])
+        };
+      })
     };
   }
 
@@ -739,8 +751,12 @@ export function extractRealFunsdLines(funsdPath = 'results/untrusted-benchmarks/
     throw new Error(`FUNSD sample data not found at ${targetPath}.`);
   }
 
-  const r0 = funsdData.rows[0].row;
-  const items = r0.words.map((w, i) => ({ word: w, bbox: r0.bboxes[i], nerTag: r0.ner_tags ? r0.ner_tags[i] : 0 }));
+  const r0 = funsdData.rows[0].row || funsdData.rows[0];
+  const items = (r0.words || []).map((w, i) => ({
+    word: w,
+    bbox: (r0.bboxes && r0.bboxes[i]) || (r0.bboxes && r0.bboxes[0]) || [50, 50 + i * 20, 200, 68 + i * 20],
+    nerTag: r0.ner_tags ? r0.ner_tags[i] : 0
+  }));
   items.sort((a, b) => {
     const yDiff = a.bbox[1] - b.bbox[1];
     if (Math.abs(yDiff) > 12) return yDiff;
@@ -850,7 +866,7 @@ export function renderRealFunsdFormImages(funsdData, options = {}) {
     }
   }
 
-  const r0 = funsdData.rows ? funsdData.rows[0].row : funsdData;
+  const r0 = funsdData.rows ? (funsdData.rows[0].row || funsdData.rows[0]) : funsdData;
   const words = r0.words || [];
   const bboxes = r0.bboxes || [];
 
@@ -1105,6 +1121,7 @@ export function runRealExternalDataPipeline(options = {}) {
     fs.writeFileSync(path.join(docsDir, 'real-data-pipeline-comparison.svg'), comparisonSvg);
     fs.writeFileSync(path.join(resultsDir, 'real-funsd-form-raw.png'), rawFunsdPng);
     fs.writeFileSync(path.join(resultsDir, 'real-funsd-form-redacted.png'), redactedFunsdPng);
+    exportTrainingArtifacts([...pmcRows, ...funsdRows], resultsDir, { tokenizer, maxSeqLen });
   }
 
   return {
@@ -1289,6 +1306,68 @@ export function generateRealDataComparisonSvg(comparisonJson) {
     }).join('\n')}
   </g>
 </svg>`;
+}
+
+/**
+ * Export ready-to-train HuggingFace / Qwen2.5 / Llama-3 / Unsloth SFT JSONL & packed binary token shard
+ */
+export function exportTrainingArtifacts(rows, outDir, options = {}) {
+  const tokenizer = options.tokenizer || createTokenizer({ maxSeqLen: options.maxSeqLen || 256 });
+  const keepSafeRows = rows.filter(r => r.gatekeeper_action === 'KEEP_SAFE');
+
+  const jsonlLines = [];
+  const packedTokenList = [];
+
+  keepSafeRows.forEach((row, i) => {
+    const text = row.masked_text || row.raw_excerpt || '';
+    const enc = row.enc || tokenizer.encode(text);
+    const validTokens = Array.from(enc.tokenIds.slice(0, enc.tokenCount));
+
+    // Ensure tokens end in EOS (2)
+    if (validTokens.length === 0 || validTokens[validTokens.length - 1] !== 2) {
+      validTokens.push(2);
+    }
+
+    const rowId = row.line_index !== undefined ? row.line_index : i;
+    const nodeHash = computeNodeHash('sft_sample', { id: rowId, text });
+
+    const sftItem = {
+      id: rowId,
+      text: `<|im_start|>user\nExtract verified domain knowledge from document segment.<|im_end|>\n<|im_start|>assistant\n${text}<|im_end|>`,
+      raw_clean_text: text,
+      messages: [
+        { role: 'system', content: 'Verified domain assistant (PII redacted by VeriSieve).' },
+        { role: 'user', content: 'Summarize verified segment.' },
+        { role: 'assistant', content: text }
+      ],
+      input_ids: validTokens,
+      attention_mask: new Array(validTokens.length).fill(1),
+      provenance_node_hash: nodeHash
+    };
+
+    jsonlLines.push(JSON.stringify(sftItem));
+    for (const t of validTokens) {
+      packedTokenList.push(t);
+    }
+  });
+
+  const sftJsonlText = jsonlLines.join('\n') + (jsonlLines.length > 0 ? '\n' : '');
+  const uint32Array = new Uint32Array(packedTokenList);
+  const tokenBinBuffer = Buffer.from(uint32Array.buffer, uint32Array.byteOffset, uint32Array.byteLength);
+
+  if (outDir) {
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, 'train-qwen-llama-sft.jsonl'), sftJsonlText);
+    fs.writeFileSync(path.join(outDir, 'train-tokens.bin'), tokenBinBuffer);
+  }
+
+  return {
+    sftJsonlText,
+    tokenBinBuffer,
+    keepSafeCount: keepSafeRows.length,
+    totalTokens: packedTokenList.length,
+    sftRows: keepSafeRows
+  };
 }
 
 /**
@@ -1517,6 +1596,34 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     else abstainCount++;
   });
 
+  // Audit Chain SHA-256 provenance logging
+  const audit = new AuditChain();
+  audit.log('INGEST', {
+    input_source: typeof inputUrlOrPath === 'string' ? inputUrlOrPath : 'in_memory_buffer',
+    source_format: sourceFormat,
+    lines_ingested: lines.length
+  });
+  audit.log('PII_SCAN_REDACT', {
+    pii_strategy: piiStrategy,
+    pii_lines_detected: piiCount
+  });
+  audit.log('CONFORMAL_GATEKEEPER_CALIBRATE', {
+    alpha,
+    keep_safe_lines: keepCount,
+    drop_lines: dropCount,
+    abstain_lines: abstainCount,
+    tau_keep: calibrated.calibration.tauKeep,
+    tau_drop: calibrated.calibration.tauDrop
+  });
+
+  const trainArtifacts = exportTrainingArtifacts(finalRows, options.outDir, { tokenizer, maxSeqLen });
+
+  audit.log('EXPORT_TRAIN_TOKENS', {
+    sft_rows: trainArtifacts.keepSafeCount,
+    total_tokens: trainArtifacts.totalTokens,
+    eos_token_id: 2
+  });
+
   const csv = exportBlocksToCsv(finalRows);
   const jsonReport = {
     schema_version: '1.0',
@@ -1540,6 +1647,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       tau_keep: calibrated.calibration.tauKeep,
       tau_drop: calibrated.calibration.tauDrop
     },
+    audit_chain: audit.entries,
     rows: finalRows
   };
   const json = JSON.stringify(jsonReport, null, 2);
@@ -1550,6 +1658,8 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     fs.mkdirSync(options.outDir, { recursive: true });
     fs.writeFileSync(path.join(options.outDir, 'results.csv'), csv);
     fs.writeFileSync(path.join(options.outDir, 'results.json'), json);
+    fs.writeFileSync(path.join(options.outDir, 'train-qwen-llama-sft.jsonl'), trainArtifacts.sftJsonlText);
+    fs.writeFileSync(path.join(options.outDir, 'train-tokens.bin'), trainArtifacts.tokenBinBuffer);
     fs.writeFileSync(path.join(options.outDir, 'gatekeeper-bundle.json'), JSON.stringify(calibrated, null, 2));
     fs.writeFileSync(path.join(options.outDir, 'summary-report.svg'), summarySvg);
   }
@@ -1577,7 +1687,10 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     json,
     gatekeeperBundle: calibrated,
     summarySvg,
+    trainArtifacts,
+    auditChain: audit,
     fetchStatus,
+    localFilename,
     stats: jsonReport.summary
   };
 }

@@ -249,7 +249,30 @@ test('10. ingestFromUrlOrPath handles files, flags, and online URL with offline 
   assert.ok(resFile.stats.pii_detected_lines > 0, 'Must detect PII in real PDF');
   assert.ok(fs.existsSync(path.join(outDir, 'results.csv')));
   assert.ok(fs.existsSync(path.join(outDir, 'results.json')));
+  assert.ok(fs.existsSync(path.join(outDir, 'train-qwen-llama-sft.jsonl')));
+  assert.ok(fs.existsSync(path.join(outDir, 'train-tokens.bin')));
+  assert.ok(fs.existsSync(path.join(outDir, 'gatekeeper-bundle.json')));
   assert.ok(fs.existsSync(path.join(outDir, 'summary-report.svg')));
+
+  // Assert AuditChain provenance in results.json
+  const { AuditChain } = await import('../src/clean-and-tokenize.js');
+  const jsonReport = JSON.parse(fs.readFileSync(path.join(outDir, 'results.json'), 'utf8'));
+  assert.ok(Array.isArray(jsonReport.audit_chain), 'results.json must contain audit_chain');
+  assert.strictEqual(AuditChain.verifyChain(jsonReport.audit_chain), true, 'audit_chain must be cryptographically valid');
+
+  // Assert train-tokens.bin is non-empty multiple of 4 bytes
+  const binBuf = fs.readFileSync(path.join(outDir, 'train-tokens.bin'));
+  assert.ok(binBuf.length > 0, 'train-tokens.bin must not be empty');
+  assert.strictEqual(binBuf.length % 4, 0, 'train-tokens.bin must be 32-bit aligned uint32 array');
+
+  // Assert train-qwen-llama-sft.jsonl ChatML structure
+  const sftLines = fs.readFileSync(path.join(outDir, 'train-qwen-llama-sft.jsonl'), 'utf8').trim().split('\n');
+  assert.ok(sftLines.length > 0, 'Must have at least 1 KEEP_SAFE training row');
+  const firstSample = JSON.parse(sftLines[0]);
+  assert.ok(firstSample.text.includes('<|im_start|>user'), 'Must contain ChatML formatting');
+  assert.ok(Array.isArray(firstSample.input_ids), 'Must contain input_ids');
+  assert.ok(Array.isArray(firstSample.messages), 'Must contain messages');
+  assert.ok(typeof firstSample.provenance_node_hash === 'string', 'Must contain provenance_node_hash');
 
   // Test 2: Unreachable online URL triggers offline fallback cleanly without crashing
   const unreachableUrl = 'https://offline-fallback-test.invalid/paper.pdf';
@@ -277,4 +300,50 @@ test('11. UI server endpoints /api/run and /api/mcp forward requests cleanly', a
     }
   });
   assert.ok(callRes.result.content[0].text.includes('<PII:'));
+});
+
+test('12. UI server endpoints /api/duckdb and /api/train-model process SQL and training telemetry', async () => {
+  const { spawn } = await import('node:child_process');
+  const testPort = 3349;
+
+  const child = spawn('node', ['scripts/ui-server.mjs'], {
+    env: { ...process.env, PORT: String(testPort) },
+    stdio: 'pipe'
+  });
+
+  // Wait briefly for server ready
+  await new Promise((r) => setTimeout(r, 800));
+
+  try {
+    // 1. Test /api/duckdb
+    const duckResp = await fetch(`http://localhost:${testPort}/api/duckdb`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql: 'SELECT source_mode, count(*) as count FROM documents GROUP BY source_mode ORDER BY source_mode;' })
+    });
+    assert.strictEqual(duckResp.status, 200);
+    const duckData = await duckResp.json();
+    assert.strictEqual(duckData.ok, true);
+    assert.ok(duckData.columns.includes('source_mode'));
+    assert.ok(duckData.columns.includes('count'));
+    assert.ok(duckData.rows.length >= 2);
+    assert.ok(duckData.engine.includes('DuckDB'));
+
+    // 2. Test /api/train-model
+    const trainResp = await fetch(`http://localhost:${testPort}/api/train-model`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force: false })
+    });
+    assert.strictEqual(trainResp.status, 200);
+    const trainData = await trainResp.json();
+    assert.strictEqual(trainData.ok, true);
+    assert.ok(trainData.model_training, 'Must contain model_training');
+    assert.strictEqual(trainData.model_training.piiExposureRatePctVerisieve, 0.0, 'VeriSieve PII leak rate must be 0.0%');
+    assert.strictEqual(trainData.model_training.piiExposureRatePctRaw, 100.0, 'Raw model PII leak rate must be 100%');
+    assert.ok(trainData.model_training.valPerplexityVerisieve <= trainData.model_training.valPerplexityRaw, 'VeriSieve validation perplexity must be superior');
+    assert.ok(Array.isArray(trainData.sftPreview), 'Must return sftPreview array');
+  } finally {
+    child.kill();
+  }
 });

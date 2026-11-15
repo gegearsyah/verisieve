@@ -25,6 +25,7 @@
     "bench": "node scripts/run-benchmarks.mjs && node scripts/generate-figures.mjs",
     "audit-wasm": "node bin/verisieve.mjs audit-wasm",
     "mcp": "node src/mcp-server.js",
+    "train:model": "node scripts/run-open-model-training.mjs",
     "ui": "node scripts/ui-server.mjs"
   }
 }
