@@ -267,3 +267,67 @@ export function evaluateExchangeabilityAndShift(bundle, inDistDataset, shiftedDa
     recommendation: meanL2Shift < 5.0 ? 'LTT bounds hold' : 'Distribution shift detected: abstention recommended'
   };
 }
+
+// ---------------------------------------------------------------------------
+// 2. Customer-Label Multi-Axis Gatekeeper (`safe`, `useful`, `topic`)
+// ---------------------------------------------------------------------------
+export function trainMultiAxisGatekeeper(featureRows, labelsMap, options = {}) {
+  const axes = ['safe', 'useful', 'topic'];
+  const models = {};
+  for (const axis of axes) {
+    const axisLabels = labelsMap[axis];
+    if (!axisLabels || axisLabels.length !== featureRows.length) {
+      throw new TypeError(`Labels for axis '${axis}' must match featureRows length`);
+    }
+    models[axis] = trainGatekeeper(featureRows, axisLabels, options);
+  }
+  return {
+    modelType: 'matilda-multiaxis-gatekeeper-v1',
+    axes,
+    models
+  };
+}
+
+export function calibrateMultiAxisGatekeeper(multiBundle, calibFeatureRows, calibLabelsMap, options = {}) {
+  const calibratedModels = {};
+  for (const axis of multiBundle.axes) {
+    const bundle = multiBundle.models[axis];
+    const calibLabels = calibLabelsMap[axis];
+    calibratedModels[axis] = calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, options);
+  }
+  return {
+    ...multiBundle,
+    models: calibratedModels
+  };
+}
+
+export function decideMultiAxisGatekeeper(multiBundle, featureRow) {
+  const decisions = {};
+  let allSafe = true;
+  let allUseful = true;
+  let allTopic = true;
+  let conjunctionAction = 'KEEP_SAFE';
+
+  for (const axis of multiBundle.axes) {
+    const res = decideGatekeeper(multiBundle.models[axis], featureRow);
+    decisions[axis] = res;
+    if (res.action === 'DROP_OR_QUARANTINE') {
+      if (axis === 'safe') allSafe = false;
+      if (axis === 'useful') allUseful = false;
+      if (axis === 'topic') allTopic = false;
+    }
+    if (res.abstained) {
+      conjunctionAction = 'ABSTAIN_HUMAN_REVIEW';
+    }
+  }
+
+  if (!allSafe || !allUseful || !allTopic) {
+    conjunctionAction = 'DROP_OR_QUARANTINE';
+  }
+
+  return {
+    decisions,
+    conjunctionAction,
+    abstained: conjunctionAction === 'ABSTAIN_HUMAN_REVIEW'
+  };
+}
