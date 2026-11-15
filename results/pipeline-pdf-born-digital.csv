@@ -1,0 +1,22 @@
+line_index,source_mode,font_style,raw_excerpt,pii_detected,pii_types,hidden_pii_preview,masked_text,token_count,first_8_token_ids,label,pred_prob,gatekeeper_action
+0,pdf_born_digital,display_serif,"MATILDA SECURE CLINICAL RESEARCH REHABILITATION RECORD",false,"","","MATILDA SECURE CLINICAL RESEARCH REHABILITATION RECORD",51,"1;89;77;96;85;88;80;77",0,0.3516,ABSTAIN_HUMAN_REVIEW
+1,pdf_born_digital,display_serif,"Hip fracture incidence is increasing among the elderly",false,"","","Hip fracture incidence is increasing among the elderly",49,"1;84;117;124;114;126;109;111",1,0.6685,KEEP_SAFE
+2,pdf_born_digital,sans_serif,"Malnutrition in the elderly is an important global health",false,"","","Malnutrition in the elderly is an important global health",51,"1;89;109;120;122;129;128;126",1,0.6826,KEEP_SAFE
+3,pdf_born_digital,sans_serif,"Annals of Rehabilitation Medicine",false,"","","Annals of Rehabilitation Medicine",32,"1;77;122;122;109;120;127;123",1,0.6617,KEEP_SAFE
+4,pdf_born_digital,italic,"Effects of Nutritional Status on 6-Month Outcome",false,"","","Effects of Nutritional Status on 6-Month Outcome",44,"1;81;114;114;113;111;128;127",1,0.6423,KEEP_SAFE
+5,pdf_born_digital,italic,"Ka Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP",false,"","","Ka Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP",51,"1;87;109;101;117;122;115;80",1,0.5724,KEEP_SAFE
+6,pdf_born_digital,monospace,"Grant ID 800-555-0199 approved for clinical evaluation.",false,"","","Grant ID 800-555-0199 approved for clinical evaluation.",51,"1;83;126;109;122;128;85;80",1,0.6614,KEEP_SAFE
+7,pdf_born_digital,monospace,"Kernel v10.24.108.3 telemetry verified for motor assessment.",false,"","","Kernel v10.24.108.3 telemetry verified for motor assessment.",56,"1;87;113;126;122;113;120;130",1,0.6678,KEEP_SAFE
+8,pdf_born_digital,monospace,"Markov Chain algorithm deployed for ambulatory trajectory.",false,"","","Markov Chain algorithm deployed for ambulatory trajectory.",54,"1;89;109;126;119;123;130;79",1,0.6330,KEEP_SAFE
+9,pdf_born_digital,display_serif,"CLINICAL OBSERVATIONS AND PATIENT IDENTIFIERS",false,"","","CLINICAL OBSERVATIONS AND PATIENT IDENTIFIERS",43,"1;79;88;85;90;85;79;77",0,0.3499,ABSTAIN_HUMAN_REVIEW
+10,pdf_born_digital,sans_serif,"Patient Name: Ev***ce",true,"name_likely","Ev***ce","Patient Name: <PII:NAME_LIKELY>",15,"1;92;109;128;117;113;122;128",0,0.1448,DROP_OR_QUARANTINE
+11,pdf_born_digital,monospace,"DOB: 14***88",true,"date_of_birth","14***88","DOB: <PII:DATE_OF_BIRTH>",7,"1;80;91;78;70;9;2;0",0,0.1286,DROP_OR_QUARANTINE
+12,pdf_born_digital,italic,"Email: ad***au",true,"email","ad***au","Email: <PII:EMAIL>",9,"1;81;121;109;117;120;70;4",0,0.1422,DROP_OR_QUARANTINE
+13,pdf_born_digital,sans_serif,"Phone: +6***78",true,"phone","+6***78","Phone: <PII:PHONE>",9,"1;92;116;123;122;113;70;5",0,0.1345,DROP_OR_QUARANTINE
+14,pdf_born_digital,monospace,"SSN: 12***89",true,"ssn","12***89","SSN: <PII:SSN>",7,"1;95;95;90;70;6;2;0",0,0.1263,DROP_OR_QUARANTINE
+15,pdf_born_digital,bold_stamp,"Credit Card: 45***66",true,"credit_card","45***66","Credit Card: <PII:CREDIT_CARD>",14,"1;79;126;113;112;117;128;79",0,0.1507,DROP_OR_QUARANTINE
+16,pdf_born_digital,sans_serif,"IP Address: 20***42",true,"ip_address","20***42","IP Address: <PII:IP_ADDRESS>",13,"1;85;92;77;112;112;126;113",0,0.1402,DROP_OR_QUARANTINE
+17,pdf_born_digital,display_serif,"Address: 74***IC",true,"address_likely","74***IC","Address: <PII:ADDRESS_LIKELY>",11,"1;77;112;112;126;113;127;127",0,0.1273,DROP_OR_QUARANTINE
+18,pdf_born_digital,bold_stamp,"Emergency Contact: Ch***ge",true,"name_likely","Ch***ge","Emergency Contact: <PII:NAME_LIKELY>",20,"1;81;121;113;126;115;113;122",0,0.1504,DROP_OR_QUARANTINE
+19,pdf_born_digital,monospace,"Emergency Phone: 55***78",true,"phone","55***78","Emergency Phone: <PII:PHONE>",18,"1;81;121;113;126;115;113;122",0,0.1542,DROP_OR_QUARANTINE
+20,pdf_born_digital,display_serif,"Confidentiality Notice: Restricted Research Archive Access Only",false,"","","Confidentiality Notice: Restricted Research Archive Access Only",59,"1;79;123;122;114;117;112;113",0,0.4940,ABSTAIN_HUMAN_REVIEW

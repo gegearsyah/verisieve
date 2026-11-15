@@ -696,7 +696,7 @@ export function generateMultiFontDocument(options = {}) {
     bold_stamp: [150, 24, 24]
   };
 
-  const rawLinesSpec = [
+  const rawLinesSpec = options.lines || options.rawLinesSpec || [
     { text: "MATILDA SECURE HEALTHCARE RECORD SYSTEM V1.0", fontStyle: "display_serif", routingLabel: "drop_boilerplate" },
     { text: "Patient Name: Evelyn Vance", fontStyle: "sans_serif", routingLabel: "quarantine_pii", piiType: "name_likely" },
     { text: "DOB: 14/03/1988", fontStyle: "monospace", routingLabel: "quarantine_pii", piiType: "date_of_birth" },

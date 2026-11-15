@@ -284,6 +284,7 @@ export function tileAndRead(docImage, options = {}) {
 
   const discoveredLineIndices = new Set();
   const discoveredPiiIndices = new Set();
+  const decodedLines = [];
 
   const cerByFontAccum = {};
   const fontCounts = {};
@@ -375,6 +376,22 @@ export function tileAndRead(docImage, options = {}) {
 
         cerByFontAccum[line.fontStyle] += lineCer;
         fontCounts[line.fontStyle]++;
+
+        const lineConfidence = Math.max(0.05, Number((1.0 - lineCer).toFixed(4)));
+        decodedLines.push({
+          id: `line_${line.lineIndex}`,
+          lineIndex: line.lineIndex,
+          text: decodedText,
+          groundTruthText: line.text,
+          fontStyle: line.fontStyle,
+          fontSizePx: line.fontSizePx,
+          bbox: line.bbox,
+          cer: Number(lineCer.toFixed(4)),
+          cerPct: Number((lineCer * 100).toFixed(2)),
+          confidence: lineConfidence,
+          routingLabel: line.routingLabel,
+          piiItems: line.piiItems || []
+        });
       }
     }
 
@@ -421,6 +438,8 @@ export function tileAndRead(docImage, options = {}) {
     lineRecall: Number(lineRecall.toFixed(4)),
     piiBoxRecall: Number(piiBoxRecall.toFixed(4)),
     latencyMs,
-    geometry
+    geometry,
+    lines: decodedLines,
+    blocks: decodedLines
   };
 }

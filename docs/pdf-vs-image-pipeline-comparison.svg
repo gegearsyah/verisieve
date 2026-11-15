@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="880" fill="url(#bgGrad)" />
+
+  <text x="600" y="42" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" fill="#f8fafc" text-anchor="middle">End-to-End PDF vs. Exported Image -> PII -> Tokens -> Trained Gatekeeper Pipeline</text>
+  <text x="600" y="66" font-family="system-ui, sans-serif" font-size="13" fill="#94a3b8" text-anchor="middle">Multi-Tier Comparative Audit: Born-Digital PDF vs. Clean 2D-Tiled OCR vs. Bad Fax Torture Scan vs. Untiled OCR</text>
+
+  <!-- Top Flow Banner -->
+  <g transform="translate(50, 85)" filter="url(#shadow)">
+    <rect width="1100" height="65" rx="8" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" />
+    <g transform="translate(40, 38)" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#38bdf8">
+      <text x="0" y="0">1. PDF Binary / Clean Image / Bad Scan</text>
+      <text x="270" y="0" fill="#64748b">➔</text>
+      <text x="295" y="0" fill="#a855f7">2. CSV &amp; JSON Extraction</text>
+      <text x="500" y="0" fill="#64748b">➔</text>
+      <text x="525" y="0" fill="#f43f5e">3. Hidden PII Scanned &amp; Redacted</text>
+      <text x="795" y="0" fill="#64748b">➔</text>
+      <text x="820" y="0" fill="#10b981">4. Trained Gatekeeper Certified</text>
+    </g>
+  </g>
+
+  <!-- Panel A: Line & PII Recovery -->
+  <g transform="translate(50, 175)" filter="url(#shadow)">
+    <rect width="345" height="295" rx="8" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#f8fafc">Panel A: Recovery &amp; Fidelity (%)</text>
+    <text x="25" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Across 4 Benchmark Ingestion Regimes</text>
+
+    <!-- Bar 1 -->
+    <text x="25" y="85" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">1. Born-Digital PDF Stream (100%)</text>
+    <rect x="25" y="94" width="295" height="12" rx="3" fill="#1e293b" />
+    <rect x="25" y="94" width="295" height="12" rx="3" fill="#38bdf8" />
+
+    <!-- Bar 2 -->
+    <text x="25" y="135" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">2. Clean 2D-Tiled OCR (100%)</text>
+    <rect x="25" y="144" width="295" height="12" rx="3" fill="#1e293b" />
+    <rect x="25" y="144" width="295" height="12" rx="3" fill="#10b981" />
+
+    <!-- Bar 3 -->
+    <text x="25" y="185" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">3. Untiled 512px Cap (38%)</text>
+    <rect x="25" y="194" width="295" height="12" rx="3" fill="#1e293b" />
+    <rect x="25" y="194" width="112" height="12" rx="3" fill="#fbbf24" />
+
+    <!-- Bar 4 -->
+    <text x="25" y="235" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">4. Bad Fax Torture Scan (53% Accuracy)</text>
+    <rect x="25" y="244" width="295" height="12" rx="3" fill="#1e293b" />
+    <rect x="25" y="244" width="156" height="12" rx="3" fill="#f43f5e" />
+
+    <text x="25" y="278" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">Measured CER on Bad Fax Scan: 47%</text>
+  </g>
+
+  <!-- Panel B: PII Detections by Category -->
+  <g transform="translate(420, 175)" filter="url(#shadow)">
+    <rect width="360" height="295" rx="8" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#f8fafc">Panel B: All 8 Hidden PII Categories</text>
+    <text x="25" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Pre-Mask Scanned &amp; Dual-Redacted to [18,18,22]</text>
+
+    <g transform="translate(25, 78)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">✓ Email: <tspan fill="#38bdf8">ad***@matilda-maincode.au</tspan></text>
+      <text x="0" y="25">✓ Phone: <tspan fill="#38bdf8">+61 412 *** 678</tspan></text>
+      <text x="0" y="50">✓ SSN: <tspan fill="#38bdf8">***-**-6789</tspan></text>
+      <text x="0" y="75">✓ Credit Card: <tspan fill="#38bdf8">45***-0366</tspan></text>
+      <text x="0" y="100">✓ IP Address: <tspan fill="#38bdf8">20***.42</tspan></text>
+      <text x="0" y="125">✓ DOB: <tspan fill="#38bdf8">14***88</tspan></text>
+      <text x="0" y="150">✓ Patient Name: <tspan fill="#38bdf8">Ev***ce</tspan></text>
+      <text x="0" y="175">✓ Address: <tspan fill="#38bdf8">74***IC</tspan></text>
+      <text x="0" y="200" fill="#a855f7" font-weight="bold">Zero unmasked PII leaked in masked_text</text>
+    </g>
+  </g>
+
+  <!-- Panel C: Gatekeeper Routing Outcomes -->
+  <g transform="translate(805, 175)" filter="url(#shadow)">
+    <rect width="345" height="295" rx="8" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#f8fafc">Panel C: Gatekeeper Routing</text>
+    <text x="25" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Logistic Regression + Conformal LTT Risk Control</text>
+
+    <g transform="translate(25, 85)" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">
+      <rect x="0" y="0" width="12" height="12" rx="2" fill="#10b981" />
+      <text x="22" y="10">KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">8 lines (38%)</tspan></text>
+
+      <rect x="0" y="40" width="12" height="12" rx="2" fill="#f43f5e" />
+      <text x="22" y="50">DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">10 lines (48%)</tspan></text>
+
+      <rect x="0" y="80" width="12" height="12" rx="2" fill="#fbbf24" />
+      <text x="22" y="90">ABSTAIN_HUMAN_REVIEW: <tspan font-weight="bold" fill="#fbbf24">3 lines (14%)</tspan></text>
+    </g>
+
+    <text x="25" y="225" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Calibration: alpha = 0.05 (Risk Bound)</text>
+    <text x="25" y="245" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Thresholds: tau_keep = 0.5, tau_drop = 0.25</text>
+    <text x="25" y="272" font-family="system-ui, sans-serif" font-size="12" fill="#10b981" font-weight="bold">Status: CERTIFIED (Zero Leakage)</text>
+  </g>
+
+  <!-- Bottom Panel: Concrete Table Preview -->
+  <g transform="translate(50, 495)" filter="url(#shadow)">
+    <rect width="1100" height="345" rx="8" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#f8fafc">Pipeline Data &amp; Token Extract (Representative Clinical &amp; PII Rows)</text>
+    
+    <g transform="translate(25, 55)" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#64748b">
+      <text x="0" y="0">LINE</text>
+      <text x="45" y="0">MODE</text>
+      <text x="170" y="0">FONT</text>
+      <text x="280" y="0">EXCERPT / MASKED TEXT</text>
+      <text x="770" y="0">TOKENS</text>
+      <text x="860" y="0">PROB</text>
+      <text x="945" y="0">GATEKEEPER ACTION</text>
+    </g>
+    <line x1="25" y1="65" x2="1075" y2="65" stroke="#334155" stroke-width="1" />
+
+    <g transform="translate(25, 88)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">0</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">display_serif</text>
+      <text x="280" y="0" fill="#38bdf8">MATILDA SECURE CLINICAL RESEARCH REHABILITATION RECORD</text>
+      <text x="770" y="0">51 ids</text>
+      <text x="860" y="0">0.3516</text>
+      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
+    </g>
+    <line x1="25" y1="98" x2="1075" y2="98" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 119)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">1</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">display_serif</text>
+      <text x="280" y="0" fill="#38bdf8">Hip fracture incidence is increasing among the elderly</text>
+      <text x="770" y="0">49 ids</text>
+      <text x="860" y="0">0.6685</text>
+      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+    </g>
+    <line x1="25" y1="129" x2="1075" y2="129" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 150)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">2</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">sans_serif</text>
+      <text x="280" y="0" fill="#38bdf8">Malnutrition in the elderly is an important global health</text>
+      <text x="770" y="0">51 ids</text>
+      <text x="860" y="0">0.6826</text>
+      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+    </g>
+    <line x1="25" y1="160" x2="1075" y2="160" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 181)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">6</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">monospace</text>
+      <text x="280" y="0" fill="#38bdf8">Grant ID 800-555-0199 approved for clinical evaluation.</text>
+      <text x="770" y="0">51 ids</text>
+      <text x="860" y="0">0.6614</text>
+      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+    </g>
+    <line x1="25" y1="191" x2="1075" y2="191" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 212)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">10</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">sans_serif</text>
+      <text x="280" y="0" fill="#38bdf8">Patient Name: <PII:NAME_LIKELY></text>
+      <text x="770" y="0">15 ids</text>
+      <text x="860" y="0">0.1448</text>
+      <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
+    </g>
+    <line x1="25" y1="222" x2="1075" y2="222" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 243)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">12</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">italic</text>
+      <text x="280" y="0" fill="#38bdf8">Email: <PII:EMAIL></text>
+      <text x="770" y="0">9 ids</text>
+      <text x="860" y="0">0.1422</text>
+      <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
+    </g>
+    <line x1="25" y1="253" x2="1075" y2="253" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 274)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">14</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">monospace</text>
+      <text x="280" y="0" fill="#38bdf8">SSN: <PII:SSN></text>
+      <text x="770" y="0">7 ids</text>
+      <text x="860" y="0">0.1263</text>
+      <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
+    </g>
+    <line x1="25" y1="284" x2="1075" y2="284" stroke="#1e293b" stroke-width="0.8" />
+  
+    <g transform="translate(25, 305)" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">
+      <text x="0" y="0">20</text>
+      <text x="45" y="0">pdf_born_digital</text>
+      <text x="170" y="0">display_serif</text>
+      <text x="280" y="0" fill="#38bdf8">Confidentiality Notice: Restricted Research Archive Access...</text>
+      <text x="770" y="0">59 ids</text>
+      <text x="860" y="0">0.494</text>
+      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
+    </g>
+    <line x1="25" y1="315" x2="1075" y2="315" stroke="#1e293b" stroke-width="0.8" />
+  
+  </g>
+</svg>
