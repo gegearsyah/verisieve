@@ -8,7 +8,7 @@
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-purple.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Targets](https://img.shields.io/badge/targets-Browser%20%7C%20CLI%20%7C%20MCP%20%7C%20C99-38bdf8.svg)]()
-[![Tests](https://img.shields.io/badge/tests-53%20passed-10b981.svg)]()
+[![Tests](https://img.shields.io/badge/tests-56%20passed-10b981.svg)]()
 
 ---
 
@@ -252,24 +252,32 @@ An empirical training experiment with HuggingFace `transformers` (`Qwen2ForCausa
 | **Held-Out Clinical Perplexity** | 18.55 | **17.50** | **Superior domain generalization** |
 | **PII Memorization Leak Rate** | **100.0% Exposed** | **0.0% LEAKAGE** | Redacted with structural placeholders |
 
-### 3. 1,000-Document Scale Benchmark: Local WASM vs. Local Python vs. Cloud API
-We evaluate VeriSieve on a multi-source corpus of **1,000 distinct document records** (10,170 lines, 255,201 tokens) drawn from 8 PubMed Central studies and the ICDAR-2019 FUNSD archival scan benchmark (`npm run bench:scale`):
+## 🔬 Research Findings, Uniqueness & Published Nulls ([`paper/mlsys2027-verisieve.pdf`](paper/mlsys2027-verisieve.pdf))
 
-| Execution Paradigm | Total 1,000-Doc Latency | Throughput | Peak Process RSS | Public Network Egress | Cloud Cost |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Local WASM (`verisieve_dl.wasm` 60 KB)** | **245.0 ms** | **4,082 docs/sec** | **52.4 MB** | **0 Bytes (Air-Gapped)** | **$0.00** |
-| **Local Python (PyTorch 2.10 + DuckDB 1.5.5)** | 7,161.1 ms | 140 docs/sec | 431.9 MB | 0 Bytes | $0.00 |
-| **Cloud OCR+API Baseline (Textract/LLM SLA)** | 15,280.0 ms | 65 docs/sec | 128.0 MB | 573.6 KB (100% PII) | $2.27 |
+### What Makes This Research Unique (Bridging 3 Disconnected Silos)
+1. *Pre-Training Corpus Curation* (`Dolma`, `FineWeb`, `DataComp-LM`) relies on uncalibrated heuristic thresholds with no finite-sample statistical error guarantee.
+2. *Conformal Risk Control* (`Learn-Then-Test`, Angelopoulos et al., 2021) provides exact binomial false-alarm bounds (\(\operatorname{BinomCDF}(k; n_{\text{cal}}, \alpha) \le \delta\)), but had previously been applied to post-hoc model outputs rather than pre-training/RAG unstructured OCR & PII token ingestion.
+3. *LLM Privacy & PII Scrubbing* (`Presidio`, `Carlini et al.`, `Lukas et al.`) operates on text strings only (leaking visual PII in multimodal image pixels and corrupting biomedical/technical Title-Case vocabulary) and requires heavy Python/cloud runtimes rather than a zero-import `60.1 KB` WebAssembly + `12.4 KB` single-header C99 artifact.
 
-- **Speedup:** Local WASM is **62.4x faster** than Cloud OCR APIs and **29.2x faster** than Python cold-start.
-- **Memory Footprint:** WASM runs within **52.4 MB peak RSS** (8.2x smaller than PyTorch's 431.9 MB).
-- **Post-Training Scaling:** VeriSieve conformal curation induces a monotonic held-out perplexity reduction from 4.18 to **2.36** (-43.5%) and reaches **98.4% clinical domain accuracy** with **0.0% PII memorization leak**.
+### The 4 Measured Research Findings (Across \(N = 1,207\) Real Public Documents: `199` ICDAR-2019 `FUNSD` scanned forms + `500` `ai4privacy-200k` PII records + `500` `PubMedQA` biomedical records + `8` born-digital `PMC` PDFs)
+1. **Finding 1 — Born-Digital PDF Front Door + Square-Canvas (\(512 \times 512\)) 2D Tiling Recovery**: Extracting embedded `/FlateDecode` text streams first runs in ~11.2 ms without OCR noise; on the 199 noisy `FUNSD` scanned forms, square-canvas 2D tiling (`tile_2d`) with vertical-IoU + Levenshtein seam deduplication recovers markedly more ground-truth words than stock `reads: 8` caps or 1D horizontal bands.
+2. **Finding 2 — Context-Aware PII Disambiguation vs. The Rule-Based Regex Ceiling**: On `PubMedQA-500`, context-aware disambiguation (`EXCLUDED_NAME_WORDS` + grant/kernel lookalike guards) prevents naive Title-Case regex from corrupting clinical terminology (`"Nutritional Status"`, `"Markov Chain"`), while on `ai4privacy-500` rule-based regex captures structured PII (`EMAIL`, `PHONE`, `SSN`, `IP`, `CREDIT_CARD`) but hits an honest empirical ceiling on bare unstructured international names—proving why a second-stage learned conformal gatekeeper is required.
+3. **Finding 3 — Finite-Sample Conformal Risk Control (`Learn-Then-Test`)**: Calibrating the 520-dim L2-regularized gatekeeper via exact binomial tail bounds (\(\operatorname{BinomCDF}(k; n_{\text{cal}}, \alpha) \le \delta\)) strictly bounds held-out false alarms below \(\alpha\) across \(\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}\) by routing ambiguous chunks to `ABSTAIN_HUMAN_REVIEW`, whereas uncalibrated \(\tau = 0.50\) violates the risk budget.
+4. **Finding 4 — Same-Session Substrate Race (`WASM` vs. `C99` vs. `Python`) & Downstream Scaling**: The zero-import `60.1 KB` WASM core (`verisieve_dl.wasm`) initializes in milliseconds inside a ~55 MB RSS footprint (eliminating Python's multi-second `torch`+`duckdb` cold-start wall and ~434 MB RSS), while compiled single-header C99 (`include/verisieve.h` under `gcc -O3`) wins the raw per-row hot-loop dot product against JS/WASM at float32 parity. Downstream VeRA/Qwen2 training on VeriSieve-certified shards improves validation loss and Needle retrieval `Recall@5` monotonically across scale with zero PII leakage.
+
+### The Published Nulls & Losses Corpus (Table 5 of the Paper)
+| Published Null / Boundary | Empirical Manifestation & System Consequence |
+| :--- | :--- |
+| **CIDFont Type0 Identity-H ToUnicode CMap Null** | 4 of 8 clinical PDFs use Identity-H CIDFonts where raw stream parsing yields 0 valid ASCII lines, requiring automated fallback to 2D-tiled OCR. |
+| **Bare Unstructured Name Regex Ceiling on ai4privacy-500** | Rule-based regex hits an honest empirical ceiling at 45.1% recall on bare unstructured international names without causing severe false-positive corruption on technical prose. |
+| **Finite-Sample LTT Abstention Wall at $\alpha = 0.01$** | At $n_{\text{cal}} = 301$ and $\alpha = 0.01$, exact binomial bounds permit $k=0$ errors, forcing an expanded 24.2% human review abstention zone. |
+| **JS/WASM Hot-Loop Loss vs. Native C99 gcc -O3** | Native C99 compiled with `gcc -O3` executes hot-loop 520-dim inference in 0.80 ms vs. 2.08 ms in JS/WASM ($2.6\times$ faster), representing an honest JS/WASM runtime loss. |
+
+![5-Test Head-to-Head Comparison](./docs/head-to-head-comparison.svg)
 
 ![1,000-Document Scale and Paradigm Benchmark](./docs/scale-and-paradigm-benchmark.svg)
 
 ![Open-Weight Model Training Comparison](./docs/open-model-training-comparison.svg)
-
-![Multi-Tier Comparative Audit](./docs/pdf-vs-image-pipeline-comparison.svg)
 
 ![Micro-Benchmarks & Parity](./docs/matilda-portable-benchmarks.svg)
 
@@ -279,8 +287,8 @@ We evaluate VeriSieve on a multi-source corpus of **1,000 distinct document reco
 
 | Command | Action | Key Artifacts |
 | :--- | :--- | :--- |
-| `npm test` | Run complete 53-test automated suite + 4 MCP tests | 100% passing across tests & C99 parity |
-| `npm run bench:scale` | Run 1,000-document scale & 3-paradigm execution benchmark | `results/scale-and-paradigm-benchmark.json`<br>`docs/scale-and-paradigm-benchmark.svg` |
+| `npm test` | Run complete 56-test automated suite (51 unit + 5 MCP) | 100% passing across tests & C99 parity |
+| `npm run bench:scale` | Run 1,207-document public benchmark & 3-paradigm execution benchmark | `results/scale-and-paradigm-benchmark.json`<br>`docs/scale-and-paradigm-benchmark.svg` |
 | `npm run compare` | Run 5-test head-to-head baseline comparison suite | `results/head-to-head-comparison.json`<br>`docs/head-to-head-comparison.svg` |
 | `npm run train:model` | Train PyTorch Qwen2 on DuckDB token shard | `results/verisieve_audit.duckdb`<br>`results/open-model-training-results.json`<br>`docs/open-model-training-comparison.svg` |
 | `node bin/verisieve.mjs selftest` | Run instant CLI verification | Console selftest output |
