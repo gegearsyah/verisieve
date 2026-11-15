@@ -14,7 +14,8 @@ import {
   executeJsSql,
   trainWasmSmallModel,
   searchNeedleWasm,
-  loadExtractedDatasets
+  loadExtractedDatasets,
+  chatWithTrainedModelsWasm
 } from '../src/wasm-needle-dl.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333;
@@ -216,6 +217,27 @@ const server = http.createServer(async (req, res) => {
         engine: 'verisieve_dl.wasm (embedNeedleWasm)',
         latencyMs: results[0]?.latencyMs || 1.2
       }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  // API 7: POST /api/chat-ab (In-Place A/B Model Chat Playground)
+  if (req.method === 'POST' && pathname === '/api/chat-ab') {
+    try {
+      const raw = await readBody(req);
+      const payload = raw ? JSON.parse(raw) : {};
+      const { prompt, datasetRows, options = {} } = payload;
+      if (!prompt) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'prompt is required' }));
+        return;
+      }
+      const chatResult = chatWithTrainedModelsWasm(prompt, datasetRows, options);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...chatResult }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: err.message }));

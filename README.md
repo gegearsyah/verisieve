@@ -8,7 +8,7 @@
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-purple.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Targets](https://img.shields.io/badge/targets-Browser%20%7C%20CLI%20%7C%20MCP%20%7C%20C99-38bdf8.svg)]()
-[![Tests](https://img.shields.io/badge/tests-38%20passed-10b981.svg)]()
+[![Tests](https://img.shields.io/badge/tests-45%20passed-10b981.svg)]()
 
 ---
 
@@ -38,6 +38,9 @@ Traditional solutions require sending raw data to third-party cloud APIs, instal
 | **WASM Zero-Network Audit** | **Mathematically Certified** | N/A | N/A | N/A |
 | **Audit Provenance Chain** | **Yes (strips `.raw` before SHA-256)** | ❌ No | ❌ No | ❌ No |
 | **Package Weight & Dependencies** | **0 External Dependencies** | ~500 MB+ Python deps | PyTorch / spaCy (~1 GB) | PyArrow / Ray cluster |
+
+> 🔍 **Read the Full Senior-Engineering Claim Audit & Competitive Moat Analysis**:  
+> See [docs/CLAIM-AUDIT-AND-MOAT-ANALYSIS.md](file:///c:/Users/GEYE%20ARDIANSYAH/Downloads/Innovation%20Hub/matilda-portable/docs/CLAIM-AUDIT-AND-MOAT-ANALYSIS.md) for the complete 5-test empirical head-to-head comparison suite (`npm run compare`), remediation of prior overclaims, and vector SVG benchmark charts.
 
 ---
 
@@ -251,7 +254,8 @@ An empirical training experiment with HuggingFace `transformers` (`Qwen2ForCausa
 
 | Command | Action | Key Artifacts |
 | :--- | :--- | :--- |
-| `npm test` | Run complete 39-test automated suite | 100% passing across tests & C99 parity |
+| `npm test` | Run complete 45-test automated suite + 4 MCP tests | 100% passing across tests & C99 parity |
+| `npm run compare` | Run 5-test head-to-head baseline comparison suite | `results/head-to-head-comparison.json`<br>`docs/head-to-head-comparison.svg` |
 | `npm run train:model` | Train PyTorch Qwen2 on DuckDB token shard | `results/verisieve_audit.duckdb`<br>`results/open-model-training-results.json`<br>`docs/open-model-training-comparison.svg` |
 | `node bin/verisieve.mjs selftest` | Run instant CLI verification | Console selftest output |
 | `npm run audit-wasm` | Audit zero-egress WASM imports | JSON report verifying 0 network imports |

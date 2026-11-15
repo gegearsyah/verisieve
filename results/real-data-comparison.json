@@ -6,15 +6,15 @@
     "pmc_pdf_lines": 32,
     "funsd_ocr_lines": 35,
     "total_real_lines": 67,
-    "pmc_pii_lines": 19,
-    "funsd_pii_lines": 16,
-    "total_pii_detected": 35,
-    "pmc_keep_safe": 17,
-    "pmc_drop_or_quarantine": 9,
-    "pmc_abstain": 6,
-    "funsd_keep_safe": 25,
-    "funsd_drop_or_quarantine": 3,
-    "funsd_abstain": 7,
+    "pmc_pii_lines": 15,
+    "funsd_pii_lines": 15,
+    "total_pii_detected": 30,
+    "pmc_keep_safe": 16,
+    "pmc_drop_or_quarantine": 14,
+    "pmc_abstain": 2,
+    "funsd_keep_safe": 6,
+    "funsd_drop_or_quarantine": 13,
+    "funsd_abstain": 16,
     "pii_categories_detected": [
       "email",
       "phone",
@@ -23,8 +23,8 @@
       "date_of_birth"
     ],
     "ltt_alpha": 0.05,
-    "ltt_tau_keep": 0.5,
-    "ltt_tau_drop": 0.25,
+    "ltt_tau_keep": 0.75,
+    "ltt_tau_drop": 0.5,
     "gatekeeper_status": "CERTIFIED"
   },
   "pmc_dataset": [
@@ -33,13 +33,11 @@
       "source_mode": "pmc_clinical_pdf",
       "font_style": "sans_serif",
       "raw_excerpt": "Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients",
-      "pii_detected": true,
-      "pii_types": [
-        "name_likely"
-      ],
-      "hidden_pii_preview": "Nu***us; Mo***me; El***ip; Fr***ts",
-      "masked_text": "Effects of <PII:NAME_LIKELY> on 6-<PII:NAME_LIKELY> in <PII:NAME_LIKELY> <PII:NAME_LIKELY>",
-      "token_count": 37,
+      "pii_detected": false,
+      "pii_types": [],
+      "hidden_pii_preview": "",
+      "masked_text": "Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients",
+      "token_count": 72,
       "first_8_token_ids": [
         1,
         81,
@@ -51,8 +49,8 @@
         127
       ],
       "label": 1,
-      "pred_prob": 0.1377,
-      "gatekeeper_action": "DROP_OR_QUARANTINE"
+      "pred_prob": 0.7782,
+      "gatekeeper_action": "KEEP_SAFE"
     },
     {
       "line_index": 1,
@@ -77,22 +75,22 @@
         90
       ],
       "label": 0,
-      "pred_prob": 0.2187,
+      "pred_prob": 0.0799,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 2,
       "source_mode": "pmc_clinical_pdf",
       "font_style": "display_serif",
-      "raw_excerpt": "Department of Rehabilitation and Extended Care, Ex***re; Wo***ai; Wo***al; Si***al; Ho***ng",
+      "raw_excerpt": "Department of Rehabilitation and Extended Care, Wo***al; Ho***ng",
       "pii_detected": true,
       "pii_types": [
-        "name_likely",
-        "address_likely"
+        "address_likely",
+        "name_likely"
       ],
-      "hidden_pii_preview": "Ex***re; Wo***ai; Wo***al; Si***al; Ho***ng",
-      "masked_text": "Department of Rehabilitation and <PII:NAME_LIKELY>, <PII:NAME_LIKELY> <PII:NAME_LIKELY>, <PII:NAME_LIKELY>",
-      "token_count": 69,
+      "hidden_pii_preview": "Wo***al; Ho***ng",
+      "masked_text": "Department of Rehabilitation and Extended Care, <PII:ADDRESS_LIKELY>, <PII:NAME_LIKELY>",
+      "token_count": 66,
       "first_8_token_ids": [
         1,
         80,
@@ -104,24 +102,24 @@
         121
       ],
       "label": 0,
-      "pred_prob": 0.0802,
+      "pred_prob": 0.2394,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 3,
       "source_mode": "pmc_clinical_pdf",
       "font_style": "monospace",
-      "raw_excerpt": "Department of Rehabilitation and Extended Care, Wong Tai Sin Hospital, 124 Shatin Pass Road 852, Hong Kong. Tel: +852-3517-3668, Fax: +852-3517-3855, E-mail: Ex***re; Wo***ai; Wo***al; Si***al; 12***ad; Sh***ss; Ho***ng; 85***68; 85***55; mi***hk",
+      "raw_excerpt": "Department of Rehabilitation and Extended Care, Wong Tai Sin Hospital, 124 Shatin Pass Road 852, Hong Kong. Tel: +852-3517-3668, Fax: +852-3517-3855, E-mail: Wo***al; 12***ad; Ho***ng; 85***68; 85***55; mi***hk",
       "pii_detected": true,
       "pii_types": [
-        "name_likely",
         "address_likely",
+        "name_likely",
         "phone",
         "email"
       ],
-      "hidden_pii_preview": "Ex***re; Wo***ai; Wo***al; Si***al; 12***ad; Sh***ss; Ho***ng; 85***68; 85***55; mi***hk",
-      "masked_text": "Department of Rehabilitation and <PII:NAME_LIKELY>, <PII:NAME_LIKELY> <PII:NAME_LIKELY>, <PII:ADDRESS_LIKELY> 852, <PII:NAME_LIKELY>. Tel: +<PII:PHONE>, Fax: +<PII:PHONE>, E-mail: <PII:EMAIL>",
-      "token_count": 133,
+      "hidden_pii_preview": "Wo***al; 12***ad; Ho***ng; 85***68; 85***55; mi***hk",
+      "masked_text": "Department of Rehabilitation and Extended Care, <PII:ADDRESS_LIKELY>, <PII:ADDRESS_LIKELY> 852, <PII:NAME_LIKELY>. Tel: +<PII:PHONE>, Fax: +<PII:PHONE>, E-mail: <PII:EMAIL>",
+      "token_count": 130,
       "first_8_token_ids": [
         1,
         80,
@@ -133,7 +131,7 @@
         121
       ],
       "label": 0,
-      "pred_prob": 0.0031,
+      "pred_prob": 0.0047,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -157,7 +155,7 @@
         114
       ],
       "label": 1,
-      "pred_prob": 0.7948,
+      "pred_prob": 0.7911,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -181,7 +179,7 @@
         111
       ],
       "label": 1,
-      "pred_prob": 0.7954,
+      "pred_prob": 0.7902,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -205,7 +203,7 @@
         123
       ],
       "label": 1,
-      "pred_prob": 0.7984,
+      "pred_prob": 0.7944,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -229,7 +227,7 @@
         126
       ],
       "label": 1,
-      "pred_prob": 0.7855,
+      "pred_prob": 0.78,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -253,7 +251,7 @@
         128
       ],
       "label": 1,
-      "pred_prob": 0.792,
+      "pred_prob": 0.7859,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -277,7 +275,7 @@
         59
       ],
       "label": 1,
-      "pred_prob": 0.7769,
+      "pred_prob": 0.7704,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -285,13 +283,11 @@
       "source_mode": "pmc_clinical_pdf",
       "font_style": "display_serif",
       "raw_excerpt": "This is an open-access article distributed under the terms of the Creative Commons Attribution Non-Commercial License http://creativecommons.org/licenses/by-nc/4.0",
-      "pii_detected": true,
-      "pii_types": [
-        "name_likely"
-      ],
-      "hidden_pii_preview": "Cr***ns; At***on; Co***se",
-      "masked_text": "This is an open-access article distributed under the terms of the <PII:NAME_LIKELY> <PII:NAME_LIKELY>-<PII:NAME_LIKELY> http://creativecommons.org/licenses/by-nc/4.0",
-      "token_count": 138,
+      "pii_detected": false,
+      "pii_types": [],
+      "hidden_pii_preview": "",
+      "masked_text": "This is an open-access article distributed under the terms of the Creative Commons Attribution Non-Commercial License http://creativecommons.org/licenses/by-nc/4.0",
+      "token_count": 149,
       "first_8_token_ids": [
         1,
         96,
@@ -303,8 +299,8 @@
         109
       ],
       "label": 0,
-      "pred_prob": 0.2869,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.759,
+      "gatekeeper_action": "KEEP_SAFE"
     },
     {
       "line_index": 11,
@@ -315,9 +311,9 @@
       "pii_types": [
         "name_likely"
       ],
-      "hidden_pii_preview": "Da***al; Hi***re; Mo***ng; Da***dy",
-      "masked_text": "30-<PII:NAME_LIKELY> and Recovery after <PII:NAME_LIKELY> by <PII:NAME_LIKELY> and Dementia: A UK <PII:NAME_LIKELY>",
-      "token_count": 58,
+      "hidden_pii_preview": "Da***al; Mo***ng; Da***dy",
+      "masked_text": "30-<PII:NAME_LIKELY> and Recovery after Hip Fracture by <PII:NAME_LIKELY> and Dementia: A UK <PII:NAME_LIKELY>",
+      "token_count": 68,
       "first_8_token_ids": [
         1,
         63,
@@ -329,7 +325,7 @@
         85
       ],
       "label": 1,
-      "pred_prob": 0.1496,
+      "pred_prob": 0.1064,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -355,8 +351,8 @@
         77
       ],
       "label": 0,
-      "pred_prob": 0.337,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.1823,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 13,
@@ -383,22 +379,22 @@
         77
       ],
       "label": 0,
-      "pred_prob": 0.1294,
+      "pred_prob": 0.0314,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 14,
       "source_mode": "pmc_clinical_pdf",
       "font_style": "display_serif",
-      "raw_excerpt": "School of Population Health & Environmental Sciences, Po***th; En***es; Ki***on; Co***on",
+      "raw_excerpt": "School of Population Health & Environmental Sciences, En***es; Ki***on",
       "pii_detected": true,
       "pii_types": [
         "name_likely",
         "address_likely"
       ],
-      "hidden_pii_preview": "Po***th; En***es; Ki***on; Co***on",
-      "masked_text": "School of <PII:NAME_LIKELY> & <PII:NAME_LIKELY>, <PII:ADDRESS_LIKELY>, London, UK",
-      "token_count": 60,
+      "hidden_pii_preview": "En***es; Ki***on",
+      "masked_text": "School of Population Health & <PII:NAME_LIKELY>, <PII:ADDRESS_LIKELY>, London, UK",
+      "token_count": 75,
       "first_8_token_ids": [
         1,
         95,
@@ -410,7 +406,7 @@
         123
       ],
       "label": 0,
-      "pred_prob": 0.1387,
+      "pred_prob": 0.2283,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -418,13 +414,11 @@
       "source_mode": "pmc_clinical_pdf",
       "font_style": "sans_serif",
       "raw_excerpt": "Analysis of the National Hip Fracture Database linked to hospitalisation records for 126,897 patients aged 60 years surgically treated for hip fracture in England/Wales between 2014 and 2016.",
-      "pii_detected": true,
-      "pii_types": [
-        "name_likely"
-      ],
-      "hidden_pii_preview": "Na***ip; Fr***se",
-      "masked_text": "Analysis of the <PII:NAME_LIKELY> <PII:NAME_LIKELY> linked to hospitalisation records for 126,897 patients aged 60 years surgically treated for hip fracture in England/Wales between 2014 and 2016.",
-      "token_count": 141,
+      "pii_detected": false,
+      "pii_types": [],
+      "hidden_pii_preview": "",
+      "masked_text": "Analysis of the National Hip Fracture Database linked to hospitalisation records for 126,897 patients aged 60 years surgically treated for hip fracture in England/Wales between 2014 and 2016.",
+      "token_count": 166,
       "first_8_token_ids": [
         1,
         77,
@@ -436,8 +430,8 @@
         117
       ],
       "label": 1,
-      "pred_prob": 0.4904,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.7933,
+      "gatekeeper_action": "KEEP_SAFE"
     },
     {
       "line_index": 16,
@@ -460,7 +454,7 @@
         123
       ],
       "label": 1,
-      "pred_prob": 0.7849,
+      "pred_prob": 0.7786,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -484,7 +478,7 @@
         121
       ],
       "label": 1,
-      "pred_prob": 0.7661,
+      "pred_prob": 0.7558,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -492,13 +486,11 @@
       "source_mode": "pmc_clinical_pdf",
       "font_style": "sans_serif",
       "raw_excerpt": "Can the Clinical Frailty Scale on admission predict outcomes in older patients with hip fracture?",
-      "pii_detected": true,
-      "pii_types": [
-        "name_likely"
-      ],
-      "hidden_pii_preview": "Cl***ty",
-      "masked_text": "Can the <PII:NAME_LIKELY> Scale on admission predict outcomes in older patients with hip fracture?",
-      "token_count": 71,
+      "pii_detected": false,
+      "pii_types": [],
+      "hidden_pii_preview": "",
+      "masked_text": "Can the Clinical Frailty Scale on admission predict outcomes in older patients with hip fracture?",
+      "token_count": 85,
       "first_8_token_ids": [
         1,
         79,
@@ -507,10 +499,10 @@
         128,
         116,
         113,
-        10
+        79
       ],
       "label": 1,
-      "pred_prob": 0.6414,
+      "pred_prob": 0.7825,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -534,8 +526,8 @@
         96
       ],
       "label": 1,
-      "pred_prob": 0.6938,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6885,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 20,
@@ -560,20 +552,19 @@
         126
       ],
       "label": 0,
-      "pred_prob": 0.5579,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4548,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 21,
       "source_mode": "pmc_clinical_pdf",
       "font_style": "display_serif",
-      "raw_excerpt": "From Fr***ty; Un***am, Nottingham, UK",
+      "raw_excerpt": "From Fr***ty, Nottingham, UK",
       "pii_detected": true,
       "pii_types": [
-        "name_likely",
-        "address_likely"
+        "name_likely"
       ],
-      "hidden_pii_preview": "Fr***ty; Un***am",
+      "hidden_pii_preview": "Fr***ty",
       "masked_text": "<PII:NAME_LIKELY> of Nottingham, Nottingham, UK",
       "token_count": 29,
       "first_8_token_ids": [
@@ -587,8 +578,8 @@
         128
       ],
       "label": 0,
-      "pred_prob": 0.3949,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.445,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 22,
@@ -613,8 +604,8 @@
         4
       ],
       "label": 0,
-      "pred_prob": 0.4975,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.4051,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 23,
@@ -639,8 +630,8 @@
         71
       ],
       "label": 1,
-      "pred_prob": 0.6022,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4953,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 24,
@@ -665,8 +656,8 @@
         123
       ],
       "label": 1,
-      "pred_prob": 0.6106,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.503,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 25,
@@ -691,34 +682,33 @@
         77
       ],
       "label": 0,
-      "pred_prob": 0.2106,
+      "pred_prob": 0.076,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 26,
       "source_mode": "pmc_clinical_pdf",
       "font_style": "display_serif",
-      "raw_excerpt": "Ot***al; Re***te; Un***wa, University of Ottawa, Ottawa, Ontario, Canada",
+      "raw_excerpt": "Un***wa, University of Ottawa, Ottawa, Ontario, Canada",
       "pii_detected": true,
       "pii_types": [
-        "name_likely",
         "address_likely"
       ],
-      "hidden_pii_preview": "Ot***al; Re***te; Un***wa",
-      "masked_text": "<PII:NAME_LIKELY> <PII:NAME_LIKELY>, <PII:ADDRESS_LIKELY>, Ottawa, Ontario, Canada",
-      "token_count": 63,
+      "hidden_pii_preview": "Un***wa",
+      "masked_text": "Ottawa Hospital Research Institute, <PII:ADDRESS_LIKELY>, Ottawa, Ontario, Canada",
+      "token_count": 76,
       "first_8_token_ids": [
         1,
-        10,
-        72,
-        92,
-        85,
-        85,
-        70,
-        90
+        91,
+        128,
+        128,
+        109,
+        131,
+        109,
+        84
       ],
       "label": 0,
-      "pred_prob": 0.2369,
+      "pred_prob": 0.4763,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -744,8 +734,8 @@
         0
       ],
       "label": 0,
-      "pred_prob": 0.454,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.3656,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 28,
@@ -768,7 +758,7 @@
         112
       ],
       "label": 1,
-      "pred_prob": 0.7641,
+      "pred_prob": 0.7585,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -792,7 +782,7 @@
         113
       ],
       "label": 1,
-      "pred_prob": 0.7915,
+      "pred_prob": 0.7848,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -816,7 +806,7 @@
         91
       ],
       "label": 1,
-      "pred_prob": 0.7851,
+      "pred_prob": 0.7776,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -840,7 +830,7 @@
         120
       ],
       "label": 1,
-      "pred_prob": 0.792,
+      "pred_prob": 0.7843,
       "gatekeeper_action": "KEEP_SAFE"
     }
   ],
@@ -868,33 +858,31 @@
         90
       ],
       "label": 0,
-      "pred_prob": 0.5141,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4236,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 1,
       "source_mode": "funsd_scanned_archival_ocr",
       "font_style": "monospace",
       "raw_excerpt": "Attorney General",
-      "pii_detected": true,
-      "pii_types": [
-        "name_likely"
-      ],
-      "hidden_pii_preview": "At***al",
-      "masked_text": "<PII:NAME_LIKELY>",
-      "token_count": 3,
+      "pii_detected": false,
+      "pii_types": [],
+      "hidden_pii_preview": "",
+      "masked_text": "Attorney General",
+      "token_count": 17,
       "first_8_token_ids": [
         1,
-        10,
-        2,
-        0,
-        0,
-        0,
-        0,
-        0
+        77,
+        128,
+        128,
+        123,
+        126,
+        122,
+        113
       ],
       "label": 1,
-      "pred_prob": 0.4767,
+      "pred_prob": 0.7373,
       "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
@@ -920,8 +908,8 @@
         0
       ],
       "label": 0,
-      "pred_prob": 0.4767,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.3618,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 3,
@@ -944,8 +932,8 @@
         81
       ],
       "label": 0,
-      "pred_prob": 0.622,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.62,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 4,
@@ -968,8 +956,8 @@
         85
       ],
       "label": 0,
-      "pred_prob": 0.6239,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6228,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 5,
@@ -994,8 +982,8 @@
         5
       ],
       "label": 0,
-      "pred_prob": 0.4552,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.3672,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 6,
@@ -1020,8 +1008,8 @@
         0
       ],
       "label": 0,
-      "pred_prob": 0.4774,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.3668,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 7,
@@ -1046,8 +1034,8 @@
         78
       ],
       "label": 0,
-      "pred_prob": 0.2927,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.1694,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 8,
@@ -1072,8 +1060,8 @@
         62
       ],
       "label": 0,
-      "pred_prob": 0.7034,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6996,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 9,
@@ -1096,8 +1084,8 @@
         91
       ],
       "label": 1,
-      "pred_prob": 0.6732,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6721,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 10,
@@ -1123,7 +1111,7 @@
         59
       ],
       "label": 0,
-      "pred_prob": 0.1968,
+      "pred_prob": 0.0725,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -1147,8 +1135,8 @@
         88
       ],
       "label": 1,
-      "pred_prob": 0.6592,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6574,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 12,
@@ -1171,8 +1159,8 @@
         91
       ],
       "label": 1,
-      "pred_prob": 0.684,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6797,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 13,
@@ -1197,8 +1185,8 @@
         79
       ],
       "label": 0,
-      "pred_prob": 0.6008,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.5993,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 14,
@@ -1221,8 +1209,8 @@
         77
       ],
       "label": 1,
-      "pred_prob": 0.6678,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.666,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 15,
@@ -1245,8 +1233,8 @@
         84
       ],
       "label": 0,
-      "pred_prob": 0.6134,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6093,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 16,
@@ -1269,8 +1257,8 @@
         94
       ],
       "label": 1,
-      "pred_prob": 0.6854,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6808,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 17,
@@ -1293,8 +1281,8 @@
         81
       ],
       "label": 0,
-      "pred_prob": 0.6351,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6288,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 18,
@@ -1317,8 +1305,8 @@
         89
       ],
       "label": 1,
-      "pred_prob": 0.6637,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.6609,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 19,
@@ -1341,8 +1329,8 @@
         128
       ],
       "label": 1,
-      "pred_prob": 0.737,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.7318,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 20,
@@ -1365,7 +1353,7 @@
         127
       ],
       "label": 1,
-      "pred_prob": 0.7861,
+      "pred_prob": 0.7812,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1389,7 +1377,7 @@
         115
       ],
       "label": 1,
-      "pred_prob": 0.7776,
+      "pred_prob": 0.7678,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1413,8 +1401,8 @@
         122
       ],
       "label": 0,
-      "pred_prob": 0.7446,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.7373,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 23,
@@ -1437,7 +1425,7 @@
         113
       ],
       "label": 1,
-      "pred_prob": 0.7832,
+      "pred_prob": 0.7794,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1461,7 +1449,7 @@
         109
       ],
       "label": 1,
-      "pred_prob": 0.7866,
+      "pred_prob": 0.7834,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1487,8 +1475,8 @@
         70
       ],
       "label": 1,
-      "pred_prob": 0.5771,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4676,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 26,
@@ -1511,7 +1499,7 @@
         109
       ],
       "label": 1,
-      "pred_prob": 0.7605,
+      "pred_prob": 0.7538,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1524,7 +1512,7 @@
         "name_likely",
         "address_likely"
       ],
-      "hidden_pii_preview": "St***ce; 30***et; Ea***ad",
+      "hidden_pii_preview": "St***ce; 30***et",
       "masked_text": "<PII:NAME_LIKELY> Tower / <PII:ADDRESS_LIKELY>/ Columbus, Ohio 43215 -3428",
       "token_count": 53,
       "first_8_token_ids": [
@@ -1538,8 +1526,8 @@
         59
       ],
       "label": 1,
-      "pred_prob": 0.2599,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.2291,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 28,
@@ -1562,7 +1550,7 @@
         131
       ],
       "label": 1,
-      "pred_prob": 0.763,
+      "pred_prob": 0.7558,
       "gatekeeper_action": "KEEP_SAFE"
     },
     {
@@ -1588,8 +1576,8 @@
         133
       ],
       "label": 1,
-      "pred_prob": 0.5468,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4334,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 30,
@@ -1612,8 +1600,8 @@
         109
       ],
       "label": 1,
-      "pred_prob": 0.7561,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.7482,
+      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
     },
     {
       "line_index": 31,
@@ -1638,7 +1626,7 @@
         85
       ],
       "label": 0,
-      "pred_prob": 0.1995,
+      "pred_prob": 0.0726,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
@@ -1665,8 +1653,8 @@
         77
       ],
       "label": 0,
-      "pred_prob": 0.318,
-      "gatekeeper_action": "ABSTAIN_HUMAN_REVIEW"
+      "pred_prob": 0.178,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 33,
@@ -1691,21 +1679,20 @@
         92
       ],
       "label": 0,
-      "pred_prob": 0.5051,
-      "gatekeeper_action": "KEEP_SAFE"
+      "pred_prob": 0.4004,
+      "gatekeeper_action": "DROP_OR_QUARANTINE"
     },
     {
       "line_index": 34,
       "source_mode": "funsd_scanned_archival_ocr",
       "font_style": "monospace",
-      "raw_excerpt": "DIVISION: 225 27 15 31 18 19 20 82200067 22***19; 27***31; 18***20; 20***67 10: 55",
+      "raw_excerpt": "DIVISION: 225 27 15 31 18 19 20 82200067 22***19; 20***67 10: 55",
       "pii_detected": true,
       "pii_types": [
         "credit_card",
-        "date_of_birth",
         "phone"
       ],
-      "hidden_pii_preview": "22***19; 27***31; 18***20; 20***67",
+      "hidden_pii_preview": "22***19; 20***67",
       "masked_text": "DIVISION: <PII:CREDIT_CARD> <PII:PHONE> 09/ 17/ 97 10: 55",
       "token_count": 26,
       "first_8_token_ids": [
@@ -1719,7 +1706,7 @@
         91
       ],
       "label": 0,
-      "pred_prob": 0.1278,
+      "pred_prob": 0.2016,
       "gatekeeper_action": "DROP_OR_QUARANTINE"
     }
   ]

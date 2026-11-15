@@ -70,7 +70,7 @@
       <text x="0" y="100">✓ Real Authors: <tspan fill="#38bdf8">Ka Ying Doris Miu, Finbarr C. Martin, MD</tspan></text>
       <text x="0" y="125">✓ Real Memo Names: <tspan fill="#38bdf8">Betty D. Montgomery, George Baroody</tspan></text>
       <text x="0" y="150">✓ Real Dates: <tspan fill="#38bdf8">July 2015 to Dec 2015, Dec 10 '98, 12/10/98</tspan></text>
-      <text x="0" y="175">✓ Total PII Detected: <tspan fill="#f43f5e" font-weight="bold">35 Real Lines Caught</tspan></text>
+      <text x="0" y="175">✓ Total PII Detected: <tspan fill="#f43f5e" font-weight="bold">30 Real Lines Caught</tspan></text>
       <text x="0" y="205" fill="#10b981" font-weight="bold">Zero unmasked personal PII leaked in masked_text</text>
     </g>
   </g>
@@ -83,21 +83,21 @@
 
     <g transform="translate(25, 80)" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">
       <rect x="0" y="0" width="12" height="12" rx="2" fill="#10b981" />
-      <text x="22" y="10">PMC Research KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">17 (53%)</tspan></text>
+      <text x="22" y="10">PMC Research KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">16 (50%)</tspan></text>
 
       <rect x="0" y="30" width="12" height="12" rx="2" fill="#f43f5e" />
-      <text x="22" y="40">PMC PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">9 (28%)</tspan></text>
+      <text x="22" y="40">PMC PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">14 (44%)</tspan></text>
 
       <rect x="0" y="65" width="12" height="12" rx="2" fill="#10b981" />
-      <text x="22" y="75">FUNSD Safe KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">25 (71%)</tspan></text>
+      <text x="22" y="75">FUNSD Safe KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">6 (17%)</tspan></text>
 
       <rect x="0" y="95" width="12" height="12" rx="2" fill="#f43f5e" />
-      <text x="22" y="105">FUNSD PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">3 (9%)</tspan></text>
+      <text x="22" y="105">FUNSD PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">13 (37%)</tspan></text>
     </g>
 
     <g transform="translate(25, 220)" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
       <text x="0" y="0">Calibration: alpha = 0.05 (95% Safety Guarantee)</text>
-      <text x="0" y="20">Thresholds: tau_keep = 0.5, tau_drop = 0.25</text>
+      <text x="0" y="20">Thresholds: tau_keep = 0.75, tau_drop = 0.5</text>
       <text x="0" y="45" font-size="12" fill="#10b981" font-weight="bold">Status: CERTIFIED (Zero Leakage on Real Data)</text>
     </g>
   </g>
@@ -124,9 +124,9 @@
         <text x="180" y="0" fill="#94a3b8">sans_serif</text>
         <text x="270" y="0" fill="#f8fafc">Effects of Nutritional Status on 6-Month Outcome in Elder...</text>
         <text x="790" y="0" fill="#94a3b8">[1,81,114,114]</text>
-        <text x="875" y="0" fill="#f8fafc">0.14</text>
-        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
-        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
+        <text x="875" y="0" fill="#f8fafc">0.78</text>
+        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1" />
+        <text x="962" y="1" font-size="10" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
       </g>
 <g transform="translate(25, 120)" font-family="system-ui, sans-serif" font-size="11">
         <text x="0" y="0" fill="#64748b">3</text>
@@ -154,7 +154,7 @@
         <text x="180" y="0" fill="#94a3b8">monospace</text>
         <text x="270" y="0" fill="#f8fafc">Katie J Sheehan, 2nd Floor Addison House, Guy's Campus, L...</text>
         <text x="790" y="0" fill="#94a3b8">[1,72,92,85]</text>
-        <text x="875" y="0" fill="#f8fafc">0.13</text>
+        <text x="875" y="0" fill="#f8fafc">0.03</text>
         <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
         <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
       </g>
@@ -164,9 +164,9 @@
         <text x="180" y="0" fill="#94a3b8">monospace</text>
         <text x="270" y="0" fill="#f8fafc">ATT. GEN. ADMIN. OFFICE Fax: 614 -466 -5087 Dec 10 '98 17...</text>
         <text x="790" y="0" fill="#94a3b8">[1,77,96,96]</text>
-        <text x="875" y="0" fill="#f8fafc">0.51</text>
-        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1" />
-        <text x="962" y="1" font-size="10" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+        <text x="875" y="0" fill="#f8fafc">0.42</text>
+        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
+        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
       </g>
 <g transform="translate(25, 248)" font-family="system-ui, sans-serif" font-size="11">
         <text x="0" y="0" fill="#64748b">2</text>
@@ -174,9 +174,9 @@
         <text x="180" y="0" fill="#94a3b8">monospace</text>
         <text x="270" y="0" fill="#f8fafc">Betty D. Montgomery</text>
         <text x="790" y="0" fill="#94a3b8">[1,10,2,0]</text>
-        <text x="875" y="0" fill="#f8fafc">0.48</text>
+        <text x="875" y="0" fill="#f8fafc">0.36</text>
         <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
-        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">ABSTAIN_HUMAN_REVIEW</text>
+        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
       </g>
 <g transform="translate(25, 280)" font-family="system-ui, sans-serif" font-size="11">
         <text x="0" y="0" fill="#64748b">9</text>
@@ -185,8 +185,8 @@
         <text x="270" y="0" fill="#f8fafc">NUMBER OF PAGES INCLUDING COVER SHEET: 3</text>
         <text x="790" y="0" fill="#94a3b8">[1,90,97,89]</text>
         <text x="875" y="0" fill="#f8fafc">0.67</text>
-        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1" />
-        <text x="962" y="1" font-size="10" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
+        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">ABSTAIN_HUMAN_REVIEW</text>
       </g>
 <g transform="translate(25, 312)" font-family="system-ui, sans-serif" font-size="11">
         <text x="0" y="0" fill="#64748b">12</text>
@@ -195,8 +195,8 @@
         <text x="270" y="0" fill="#f8fafc">IF YOU DO NOT RECEIVE ANY OF THE PAGES PROPERLY,</text>
         <text x="790" y="0" fill="#94a3b8">[1,85,82,101]</text>
         <text x="875" y="0" fill="#f8fafc">0.68</text>
-        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1" />
-        <text x="962" y="1" font-size="10" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+        <rect x="955" y="-12" width="115" height="18" rx="3" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" />
+        <text x="962" y="1" font-size="10" font-weight="bold" fill="#f43f5e">ABSTAIN_HUMAN_REVIEW</text>
       </g>
   </g>
 </svg>

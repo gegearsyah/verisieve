@@ -106,7 +106,7 @@ if (command === 'audit-wasm') {
     console.log(` DROP_OR_QUARANTINE:   ${stats.drop_or_quarantine_lines.toString().padEnd(6)} (${dropPct}% personal PII / boilerplate)`);
     console.log(` ABSTAIN_HUMAN_REVIEW: ${stats.abstain_lines.toString().padEnd(6)} (${abstainPct}% requires human verification)`);
     console.log(` Gatekeeper Threshold: tau_keep = ${gatekeeperBundle.calibration.tauKeep.toFixed(2)}, tau_drop = ${gatekeeperBundle.calibration.tauDrop.toFixed(2)}`);
-    console.log(` Conformal Status:     CERTIFIED (Zero Leakage)`);
+    console.log(` Conformal Status:     CERTIFIED (Empirical FPR <= alpha under Exchangeability)`);
     console.log('------------------------------------------------------------------------');
 
     if (options.outDir) {

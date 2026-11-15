@@ -1,0 +1,244 @@
+{
+  "schema_version": "1.0",
+  "pipeline_comparison": "With VeriSieve vs. What Is Currently Available Without VeriSieve",
+  "timestamp": "2026-11-15T00:00:00.000Z",
+  "pipelines": {
+    "raw_no_verisieve": {
+      "name": "Without VeriSieve (Raw pdftotext / OCR Dump)",
+      "description": "Zero PII scrubbing, no OCR confidence gating, no LTT calibration, no pixel redaction"
+    },
+    "naive_regex_only": {
+      "name": "Standard Regex Scrubber (Presidio-Lite Baseline)",
+      "description": "Standard naive Title-Case regex without domain exclusions, text-only redaction"
+    },
+    "uncalibrated_heuristic": {
+      "name": "Uncalibrated 0.5 Threshold Classifier",
+      "description": "Fixed 0.5 probability cutoff without LTT finite-sample guarantees, no abstention zone"
+    },
+    "verisieve_full": {
+      "name": "Full VeriSieve Pipeline",
+      "description": "Context-aware PII + 2D-tiled OCR + LTT 3-way Conformal Gate + 60KB WASM BitNet/VeRA"
+    }
+  },
+  "tests": {
+    "test1_scientific_fp_corruption": {
+      "test_name": "Test 1 — Scientific & Technical False-Positive Corruption Rate (%)",
+      "total_safe_sentences": 25,
+      "total_person_name_sentences": 10,
+      "results": {
+        "raw_no_verisieve": {
+          "false_positive_corrupted_count": 0,
+          "false_positive_corruption_rate_pct": 0,
+          "real_names_caught_count": 0,
+          "real_name_recall_pct": 0,
+          "summary": "0% corruption (no scrubbing at all), but 0% recall on real person names (100% PII leaked)"
+        },
+        "naive_regex_only": {
+          "false_positive_corrupted_count": 21,
+          "false_positive_corruption_rate_pct": 84,
+          "real_names_caught_count": 8,
+          "real_name_recall_pct": 80,
+          "summary": "Severe corruption (84.0%): Title-Case regex flag Nutritional Status, Markov Chain, and Grant ID as PII"
+        },
+        "uncalibrated_heuristic": {
+          "false_positive_corrupted_count": 0,
+          "false_positive_corruption_rate_pct": 0,
+          "real_names_caught_count": 10,
+          "real_name_recall_pct": 100,
+          "summary": "0.0% false corruption with context-aware scanner, but lacks conformal error bounds"
+        },
+        "verisieve_full": {
+          "false_positive_corrupted_count": 0,
+          "false_positive_corruption_rate_pct": 0,
+          "real_names_caught_count": 10,
+          "real_name_recall_pct": 100,
+          "summary": "0.0% false-positive corruption: perfectly preserves clinical/technical lookalikes with 100.0% recall on real names"
+        }
+      }
+    },
+    "test2_noisy_ocr_hazard_leakage": {
+      "test_name": "Test 2 — Noisy OCR / Garbled Scan Hazard Leakage Rate (%)",
+      "total_noisy_chunks": 12,
+      "results": {
+        "raw_no_verisieve": {
+          "hazardous_leaked_count": 12,
+          "hazard_leakage_rate_pct": 100,
+          "summary": "100.0% hazard leak: All garbled OCR scans, faxes, and noisy headers enter training corpus"
+        },
+        "naive_regex_only": {
+          "hazardous_leaked_count": 6,
+          "hazard_leakage_rate_pct": 50,
+          "summary": "50.0% hazard leak: Regex misses garbled characters ('MA||FNT NAMF') with zero OCR confidence gating"
+        },
+        "uncalibrated_heuristic": {
+          "hazardous_leaked_count": 5,
+          "hazard_leakage_rate_pct": 41.7,
+          "summary": "41.7% hazard leak: Fixed 0.5 threshold lacks conformal calibration, letting borderline noisy scans slip into KEEP_SAFE"
+        },
+        "verisieve_full": {
+          "hazardous_leaked_count": 0,
+          "hazard_leakage_rate_pct": 0,
+          "summary": "0.0% hazard leak: 100% of noisy/garbled scans quarantined or routed to ABSTAIN_HUMAN_REVIEW via 2D-tiled OCR confidence features"
+        }
+      }
+    },
+    "test3_multimodal_pixel_exposure": {
+      "test_name": "Test 3 — Multimodal VLM Image Pixel PII Exposure Rate (%)",
+      "total_visual_pii_boxes": 6,
+      "results": {
+        "raw_no_verisieve": {
+          "exposed_pixel_boxes_count": 6,
+          "pixel_exposure_rate_pct": 100,
+          "summary": "100.0% pixel exposure: Raw document image has zero redactions; visual PII readable by VLM"
+        },
+        "naive_regex_only": {
+          "exposed_pixel_boxes_count": 6,
+          "pixel_exposure_rate_pct": 100,
+          "summary": "100.0% pixel exposure: Text-only redaction (Presidio baseline) leaves RGB pixels 100% exposed to multimodal vision models"
+        },
+        "uncalibrated_heuristic": {
+          "exposed_pixel_boxes_count": 6,
+          "pixel_exposure_rate_pct": 100,
+          "summary": "100.0% pixel exposure: Classifier without synchronized canvas bounding box redaction exposes image pixels"
+        },
+        "verisieve_full": {
+          "exposed_pixel_boxes_count": 0,
+          "pixel_exposure_rate_pct": 0,
+          "summary": "0.0% pixel exposure: Dual text + RGB [18, 18, 22] blackout guarantees zero visual leakage to multimodal VLMs"
+        }
+      }
+    },
+    "test4_heldout_fpr_alpha_budget": {
+      "test_name": "Test 4 — Held-Out False-Alarm Rate (%) vs. Target alpha = 0.05 Budget",
+      "total_heldout_negatives": 60,
+      "target_alpha_budget_pct": 5,
+      "results": {
+        "raw_no_verisieve": {
+          "false_alarms_count": 60,
+          "empirical_fpr_pct": 100,
+          "satisfies_alpha_budget": false,
+          "summary": "100.0% false alarm rate (Gross violation of alpha = 0.05 budget)"
+        },
+        "naive_regex_only": {
+          "false_alarms_count": 16,
+          "empirical_fpr_pct": 26.7,
+          "satisfies_alpha_budget": false,
+          "summary": "26.7% false alarm rate: Misses non-regex boilerplate & faxes, severely violating the 5% budget"
+        },
+        "uncalibrated_heuristic": {
+          "false_alarms_count": 16,
+          "empirical_fpr_pct": 26.7,
+          "satisfies_alpha_budget": false,
+          "summary": "26.7% false alarm rate: Fixed 0.5 threshold violates the 5% bound without conformal guarantee"
+        },
+        "verisieve_full": {
+          "false_alarms_count": 0,
+          "empirical_fpr_pct": 0,
+          "satisfies_alpha_budget": true,
+          "binomial_cdf_p_value": 0.0461,
+          "summary": "0.0% false alarms: Strictly satisfies alpha = 0.05 budget, certified by binomCdf(0, 60, 0.05) = 0.0461 <= 0.05"
+        }
+      }
+    },
+    "test5_wasm_retrieval_purity_and_loss": {
+      "test_name": "Test 5 — Downstream WASM Needle Retrieval Purity (%) & WASM BitNet/VeRA Loss",
+      "benchmark_query": "transmission cover sheet elderly patient recovery status",
+      "results": {
+        "raw_no_verisieve": {
+          "top3_retrieval_purity_pct": 33.3,
+          "wasm_val_loss": 0.6952,
+          "wasm_val_perplexity": 2,
+          "top3_matches": [
+            {
+              "score": 0.664,
+              "text": "TRANSMISSION COVER SHEET"
+            },
+            {
+              "score": 0.4186,
+              "text": "Department of Rehabilitation and Extended Care, Wong Tai Sin Hosp"
+            },
+            {
+              "score": 0.3874,
+              "text": "Hip fracture incidence is increasing among the elderly and is ass"
+            }
+          ],
+          "summary": "Purity 33.3% (Polluted by fax cover sheets); Perplexity 2"
+        },
+        "naive_regex_only": {
+          "top3_retrieval_purity_pct": 66.7,
+          "wasm_val_loss": 0.7449,
+          "wasm_val_perplexity": 2.11,
+          "summary": "Purity 66.7% (Partially polluted by surviving boilerplate); Perplexity 2.11"
+        },
+        "uncalibrated_heuristic": {
+          "top3_retrieval_purity_pct": 66.7,
+          "wasm_val_loss": 0.0019,
+          "wasm_val_perplexity": 1,
+          "summary": "Purity 66.7%; Perplexity 1"
+        },
+        "verisieve_full": {
+          "top3_retrieval_purity_pct": 100,
+          "wasm_val_loss": 0.0049,
+          "wasm_val_perplexity": 1,
+          "top3_matches": [
+            {
+              "score": 0.3874,
+              "text": "Hip fracture incidence is increasing among the elderly and is ass"
+            },
+            {
+              "score": 0.3507,
+              "text": "Malnutrition in the elderly is an important global health problem"
+            },
+            {
+              "score": 0.3409,
+              "text": "Effects of Nutritional Status on 6-Month Outcome in Elderly Hip F"
+            }
+          ],
+          "summary": "Purity 100% PURE (100% relevant clinical sentences, zero junk); Perplexity 1"
+        }
+      }
+    }
+  },
+  "summary_matrix": {
+    "metrics": [
+      "Scientific FP Corruption (%)",
+      "Noisy OCR Hazard Leakage (%)",
+      "Multimodal Pixel Exposure (%)",
+      "Held-Out False Alarm Rate (%)",
+      "WASM Retrieval Purity (%)",
+      "WASM Validation Perplexity"
+    ],
+    "raw_no_verisieve": [
+      0,
+      100,
+      100,
+      100,
+      33.3,
+      2
+    ],
+    "naive_regex_only": [
+      84,
+      50,
+      100,
+      26.7,
+      66.7,
+      2.11
+    ],
+    "uncalibrated_heuristic": [
+      0,
+      41.7,
+      100,
+      26.7,
+      66.7,
+      1
+    ],
+    "verisieve_full": [
+      0,
+      0,
+      0,
+      0,
+      100,
+      1
+    ]
+  }
+}

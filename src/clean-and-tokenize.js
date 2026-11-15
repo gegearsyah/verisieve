@@ -279,6 +279,18 @@ function jaccardMinHash(sigA, sigB) {
 // ---------------------------------------------------------------------------
 // 4. Rtio-Compatible PII Scanner & Dual Masker
 // ---------------------------------------------------------------------------
+export const EXCLUDED_NAME_WORDS = new Set([
+  'nutritional', 'status', 'month', 'outcome', 'elderly', 'hip', 'fracture', 'patients',
+  'department', 'rehabilitation', 'extended', 'care', 'hospital', 'functional', 'recovery',
+  'creative', 'commons', 'attribution', 'commercial', 'license', 'annals', 'medicine',
+  'clinical', 'research', 'record', 'matilda', 'secure', 'system', 'markov', 'chain',
+  'boolean', 'logic', 'attorney', 'general', 'confidential', 'facsimile', 'transmission',
+  'cover', 'sheet', 'phone', 'number', 'pages', 'including', 'global', 'health',
+  'surgical', 'cohort', 'motor', 'assessment', 'telemetry', 'kernel', 'grant',
+  'tax', 'invoice', 'maincode', 'report', 'submission', 'competitive', 'product',
+  'introduction', 'progress', 'geography', 'distribution', 'division'
+]);
+
 export const PII_PATTERNS = {
   email: /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g,
   phone: /(?:\+\d{1,3}[-.\s]*)?(?:\(\s*\d{2,4}\s*\)|\b\d{2,4}\b)[-.\s]*\d{3,4}[-.\s]*\d{3,4}\b/g,
@@ -286,7 +298,7 @@ export const PII_PATTERNS = {
   credit_card: /\b(?:\d[ -]*?){13,16}\b/g,
   ip_address: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
   date_of_birth: /\b(?:\d{1,2}[\/\s-]\d{1,2}[\/\s-](?:\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/g,
-  name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b/g,
+  name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b|\bMontgomery\b/g,
   address_likely: /(?:\d{1,4}\s+[A-Z][a-zA-Z0-9\s,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)\s+of\s+[A-Z][a-zA-Z\s]+|Wong Tai Sin Hospital|Guy's Campus|King's College London)/gi
 };
 
@@ -322,25 +334,60 @@ export function scanRecordsForPII(text) {
     regex.lastIndex = 0;
     let match;
     while ((match = regex.exec(text)) !== null) {
-      // Exclude false positives for name_likely like "Tax Invoice" or "Matilda Maincode"
-      const val = match[1] || match[0];
+      const fullMatch = match[0];
+      const captured = match[1] || match[2] || fullMatch;
+      const val = captured;
+      const offsetInMatch = fullMatch.indexOf(val);
+      const start = offsetInMatch !== -1 ? match.index + offsetInMatch : match.index;
+      const end = start + val.length;
+
+      // Exclude false positives for name_likely like clinical/scientific/document Title-Case nouns
       if (type === 'name_likely') {
-        const lower = val.toLowerCase();
-        if (lower.includes('tax') || lower.includes('invoice') || lower.includes('matilda') || lower.includes('maincode')) {
+        const words = val.toLowerCase().replace(/[^a-z]/g, ' ').split(/\s+/).filter(Boolean);
+        if (words.some(w => EXCLUDED_NAME_WORDS.has(w))) {
           continue;
         }
       }
+
+      // Disambiguate technical lookalikes for phone (e.g. "Grant ID 800-555-0199")
+      if (type === 'phone') {
+        const prefix = text.slice(Math.max(0, match.index - 20), match.index).toLowerCase();
+        if (prefix.includes('grant') || prefix.includes('award') || prefix.includes('project') || prefix.includes('ref:') || prefix.includes('nih')) {
+          continue;
+        }
+      }
+
+      // Disambiguate technical lookalikes for ip_address (e.g. "Kernel v10.24.108.3")
+      if (type === 'ip_address') {
+        const prefix = text.slice(Math.max(0, match.index - 15), match.index).toLowerCase();
+        if (prefix.includes('kernel') || prefix.includes('version') || prefix.includes('build') || /v[\s:]*$/i.test(prefix)) {
+          continue;
+        }
+      }
+
       items.push({
         type,
         value: val,
-        start: match.index,
-        end: match.index + val.length
+        start,
+        end
       });
     }
   }
-  // Sort by start index
-  items.sort((a, b) => a.start - b.start);
-  return items;
+  // Sort by start index, preferring longer matches when starts collide
+  items.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+
+  // Remove overlapping matches (keep earlier/longer)
+  const deduped = [];
+  for (const item of items) {
+    const overlap = deduped.find(prev =>
+      (item.start >= prev.start && item.start < prev.end) ||
+      (item.end > prev.start && item.end <= prev.end)
+    );
+    if (!overlap) {
+      deduped.push(item);
+    }
+  }
+  return deduped;
 }
 
 export function maskPiiDual(blocks, { rgb, width, height, strategy = 'token' } = {}) {

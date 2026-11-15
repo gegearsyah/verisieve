@@ -31,12 +31,12 @@
     <!-- Funnel Stage 2: PII Redaction -->
     <rect x="20" y="145" width="280" height="60" rx="6" fill="#1e293b" stroke="#f43f5e" stroke-width="1" />
     <text x="35" y="168" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e">DUAL PII REDACTED &amp; QUARANTINED</text>
-    <text x="35" y="192" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#f43f5e">35 rows <tspan font-size="12" font-weight="normal" fill="#fb7185">(52.2%)</tspan></text>
+    <text x="35" y="192" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#f43f5e">30 rows <tspan font-size="12" font-weight="normal" fill="#fb7185">(44.8%)</tspan></text>
 
     <!-- Funnel Stage 3: Certified KEEP_SAFE Shard -->
     <rect x="20" y="220" width="280" height="60" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1" />
     <text x="35" y="243" font-family="system-ui, sans-serif" font-size="11" fill="#10b981">LTT CONFORMAL KEEP_SAFE SHARD</text>
-    <text x="35" y="267" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#10b981">42 rows <tspan font-size="12" font-weight="normal" fill="#6ee7b7">(62.7%)</tspan></text>
+    <text x="35" y="267" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#10b981">22 rows <tspan font-size="12" font-weight="normal" fill="#6ee7b7">(32.8%)</tspan></text>
 
     <text x="20" y="310" font-family="monospace" font-size="10" fill="#38bdf8">WHERE gatekeeper_action = 'KEEP_SAFE'</text>
     <text x="20" y="325" font-family="system-ui, sans-serif" font-size="10" fill="#64748b">Direct WASM input shard (Zero remote egress)</text>
@@ -54,13 +54,13 @@
     <line x1="40" y1="280" x2="330" y2="280" stroke="#334155" stroke-width="1" />
 
     <text x="15" y="85" font-family="monospace" font-size="10" fill="#64748b">6.2</text>
-    <text x="15" y="185" font-family="monospace" font-size="10" fill="#64748b">4.4</text>
-    <text x="15" y="285" font-family="monospace" font-size="10" fill="#64748b">2.6</text>
+    <text x="15" y="185" font-family="monospace" font-size="10" fill="#64748b">4.3</text>
+    <text x="15" y="285" font-family="monospace" font-size="10" fill="#64748b">2.4</text>
 
     <!-- Loss Polylines -->
     <g transform="translate(-380, -95)">
-      <polyline fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4,3" points="420,181 432,202 443,220 455,237 467,251 478,264 490,276 502,285 513,294 525,301 537,309 548,315 560,320 572,325 583,329 595,332 607,336 618,339 630,341 642,343 653,345 665,347 677,348 688,350 700,351" />
-      <polyline fill="none" stroke="#10b981" stroke-width="2.5" points="420,198 432,218 443,235 455,251 467,264 478,277 490,288 502,297 513,305 525,312 537,319 548,325 560,330 572,334 583,338 595,341 607,345 618,347 630,350 642,351 653,353 665,355 677,357 688,358 700,359" />
+      <polyline fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4,3" points="420,180 432,200 443,218 455,233 467,247 478,259 490,270 502,279 513,288 525,295 537,301 548,307 560,312 572,317 583,320 595,324 607,327 618,330 630,332 642,334 653,336 665,338 677,339 688,340 700,342" />
+      <polyline fill="none" stroke="#10b981" stroke-width="2.5" points="420,210 432,229 443,245 455,260 467,272 478,283 490,293 502,302 513,310 525,317 537,322 548,328 560,332 572,336 583,340 595,343 607,346 618,349 630,351 642,353 653,354 665,356 677,357 688,358 700,360" />
     </g>
 
     <!-- Legend -->

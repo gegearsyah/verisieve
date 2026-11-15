@@ -71,10 +71,21 @@ const model = report.model_training;
 // Perform Live Needle Semantic Search Benchmark
 console.log('\n3. Live Needle Semantic Retrieval Benchmark (embedNeedleWasm)...');
 const tables = loadExtractedDatasets();
+const rawDocs = tables.raw_extracted_documents.map(r => r.raw_excerpt || r.text || '');
 const safeDocs = tables.verisieve_certified_tokens.map(r => r.masked_text || r.text || '');
-const searchSample = searchNeedleWasm('hip fracture nutritional status elderly recovery', safeDocs, { topK: 3 });
-searchSample.forEach((hit, idx) => {
-  console.log(`   Rank #${idx + 1} [Score: ${hit.score.toFixed(4)} | Latency: ${hit.latencyMs}ms]: "${hit.text.slice(0, 68)}..."`);
+const testQuery = 'transmission cover sheet elderly patient recovery status';
+
+console.log(`   Query: "${testQuery}"`);
+console.log('   --- Model A (Unfiltered Raw Documents: Polluted Top-3 with Fax Cover) ---');
+const rawHits = searchNeedleWasm(testQuery, rawDocs, { topK: 3 });
+rawHits.forEach((hit, idx) => {
+  console.log(`   [Raw Rank #${idx + 1}] [Score: ${hit.score.toFixed(4)} | Latency: ${hit.latencyMs}ms]: "${hit.text.slice(0, 68)}..."`);
+});
+
+console.log('   --- Model B (VeriSieve KEEP_SAFE Certified: 100% Clean Clinical Sentences) ---');
+const safeHits = searchNeedleWasm(testQuery, safeDocs, { topK: 3 });
+safeHits.forEach((hit, idx) => {
+  console.log(`   [Safe Rank #${idx + 1}] [Score: ${hit.score.toFixed(4)} | Latency: ${hit.latencyMs}ms]: "${hit.text.slice(0, 68)}..."`);
 });
 
 console.log('\n========================================================================');

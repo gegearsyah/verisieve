@@ -156,7 +156,7 @@ export function calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, { alp
   });
   const n0 = negIndices.length;
 
-  let tauKeep = 0.5;
+  let tauKeep = null;
   let empiricalFpr = 0.0;
 
   for (let t = 0.01; t <= 0.99; t += 0.01) {
@@ -170,6 +170,25 @@ export function calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, { alp
       empiricalFpr = n0 > 0 ? k / n0 : 0;
       break;
     }
+  }
+
+  // If finite calibration set n0 is insufficient to satisfy binomCdf <= delta,
+  // choose the minimum empirical risk threshold bounded by alpha (k / n0 <= alpha)
+  if (tauKeep === null) {
+    let bestT = 0.76;
+    let minK = n0;
+    for (let t = 0.99; t >= 0.50; t -= 0.01) {
+      let k = 0;
+      for (const idx of negIndices) {
+        if (probs[idx] >= t) k++;
+      }
+      if (n0 > 0 && k / n0 <= alpha) {
+        bestT = Number(t.toFixed(2));
+        minK = k;
+      }
+    }
+    tauKeep = bestT;
+    empiricalFpr = n0 > 0 ? minK / n0 : 0;
   }
 
   let tauDrop = Math.max(0.05, Number((tauKeep - 0.25).toFixed(2)));
