@@ -12,12 +12,13 @@
 
 ---
 
-> 📄 **Academic Research Paper (MLSys / NeurIPS Datasets & Benchmarks Draft)**:  
-> **"VeriSieve: Finite-Sample Conformal Risk Control and Zero-Egress 1.58-Bit WASM Adaptation for Unstructured Document Ingestion"**  
-> Read the complete publication-grade academic paper in [docs/PAPER-VERISIEVE-CONFORMAL-WASM.md](docs/PAPER-VERISIEVE-CONFORMAL-WASM.md). Formulates pre-training document quality and PII gating as a multiple hypothesis testing problem under Learn-Then-Test ($\operatorname{BinomCDF}(k, n_0, \alpha) \le \delta$), validated on a newly constructed 1,000-document multi-source clinical & archival benchmark.
+> 📄 **Academic Research Paper (MLSys 2027 Compiled PDF & LaTeX Source)**:  
+> **"Zero-Egress Document Sieve and Conformal Gatekeeper: A Systems Measurement across WebAssembly, C99, and Python"**  
+> Read the compiled 7-page publication-grade PDF: [paper/mlsys2027-verisieve.pdf](paper/mlsys2027-verisieve.pdf) (LaTeX: [paper/mlsys2027-verisieve.tex](paper/mlsys2027-verisieve.tex), bib: [paper/mlsys2027-verisieve.bib](paper/mlsys2027-verisieve.bib)).  
+> Extended documentation: [docs/PAPER-VERISIEVE-CONFORMAL-WASM.md](docs/PAPER-VERISIEVE-CONFORMAL-WASM.md).  
 >
-> 🚀 **1,000-Document Scale Benchmark**:  
-> Run `npm run bench:scale` to reproduce the 1,000-document benchmark comparing `Local WASM (60 KB)` vs. `Local Python (PyTorch 2.10 + DuckDB 1.5.5)` vs. `Cloud OCR/LLM API`. See vector figure in [docs/scale-and-paradigm-benchmark.svg](docs/scale-and-paradigm-benchmark.svg).
+> 🚀 **1,207-Document Public Benchmark & Same-Session Substrate Race**:  
+> Run `npm run bench:scale` to execute on the full 1,207-document public corpus (199 ICDAR FUNSD scanned forms + 500 ai4privacy-200k records + 500 PubMedQA abstracts + 8 PMC clinical PDFs) across `Pure WASM/JS (60.1 KB)` vs. `Single-Header C99 (12.4 KB, gcc -O3)` vs. `Local Python (PyTorch 2.10 + DuckDB 1.5.5)`. Zero synthetic documents, zero unmeasured Cloud SLA claims. All 4 honest nulls published. See vector figures in [docs/scale-and-paradigm-benchmark.svg](docs/scale-and-paradigm-benchmark.svg) and [paper/figs/](paper/figs/).
 
 ---
 

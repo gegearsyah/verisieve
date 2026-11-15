@@ -1,27 +1,26 @@
-# VeriSieve: Finite-Sample Conformal Risk Control and Zero-Egress 1.58-Bit WASM Adaptation for Unstructured Document Ingestion
+# VeriSieve: Zero-Egress Document Sieve and Conformal Gatekeeper: A Systems Measurement across WebAssembly, C99, and Python
 
 **Authors:** Geye Ardiansyah & The VeriSieve Systems and Sovereign AI Research Team  
 **Date:** November 2026  
-**Venue / Target:** MLSys / NeurIPS Datasets and Benchmarks / ACL Systems  
+**Target Venue:** MLSys 2027 (Research Paper Track)  
+**Compiled Paper PDF:** [`paper/mlsys2027-verisieve.pdf`](../paper/mlsys2027-verisieve.pdf) (7 pages, MLSys kit)  
+**LaTeX Source:** [`paper/mlsys2027-verisieve.tex`](../paper/mlsys2027-verisieve.tex) | Bib: [`paper/mlsys2027-verisieve.bib`](../paper/mlsys2027-verisieve.bib)  
 **Artifact Repository:** `github.com/gegearsyah/verisieve` (`verisieve@1.0.0`)  
-**Reproducibility Command:** `npm run bench:scale` & `npm test`  
+**Reproducibility Commands:** `npm run bench:scale` & `npm test`  
 
 ---
 
 ## Abstract
 
-Unstructured document corpora—spanning clinical research PDFs, scanned archival hospital records, financial filings, and correspondence—constitute the primary fuel for domain-specific fine-tuning and retrieval-augmented generation (RAG) in Large Language Models (LLMs). However, uncurated document ingestion exposes language models to severe failure modes: **training data poisoning** via noisy optical character recognition (OCR), **vocabulary destruction** from indiscriminate scrubbing, and **catastrophic memorization of personally identifiable information (PII)**. Contemporary enterprise ingestion architectures suffer from a crippling trilemma:
-1. *Uncalibrated Heuristics:* Ingestion filters rely on arbitrary score thresholds lacking statistical risk bounds.
-2. *Vocabulary Destruction:* Naive regular-expression scrubbers mutilate technical vocabulary, corrupting 84% of clinical lookalikes into false-positive masks.
-3. *Operational Fragility & Privacy Egress:* Systems depend on multi-gigabyte Python stacks (`torch`, `duckdb`, `transformers`) with seconds of cold-start overhead, or offload documents to third-party cloud OCR APIs, transmitting 100% of unredacted PII over public networks in direct violation of HIPAA and GDPR.
+Pre-training corpora and specialized fine-tuning workflows rely on data filtering pipelines to remove personally identifiable information (PII) and low-quality boilerplate. In high-compliance environments, documents cannot be egressed to commercial cloud APIs or untrusted multi-tenant microservices. We present **VeriSieve**, a client-side zero-egress document sieve and distribution-free conformal gatekeeper implemented in pure WebAssembly (`verisieve_dl.wasm`, 60.1 KB), single-header C99 (`include/verisieve.h`, 12.4 KB), and native JavaScript. 
 
-We present **VeriSieve**, a mathematically certified, zero-egress document sieve, dual text+pixel redaction engine, and finite-sample conformal gatekeeper packaged into an air-gapped 60.1 KB WebAssembly (`verisieve_dl.wasm`) kernel with exact single-header C99 parity. VeriSieve unites four technical innovations:
-- A **$512 \times 512$ square-canvas 2D tiling geometry** ($s = 512 / \max(w,h)$) with seam deduplication and synchronized RGB pixel blackout (`[18, 18, 22]`);
-- A **context-aware dual text scanner** with domain-specific exclusion lexicons preventing lookalike corruption;
-- A **Learn-Then-Test (LTT) exact binomial conformal calibration gate** guaranteeing that the empirical false-alarm rate satisfies $\operatorname{P}(R(\tau) > \alpha) \le \delta$ ($\alpha = 0.05, \delta = 0.05$) via finite-sample inversion $\operatorname{BinomCDF}(k, n_0, \alpha) \le \delta$; and
-- A **zero-import 1.58-bit ternary BitNet and low-rank Vector-based Random Matrix Adaptation (VeRA)** parameter-efficient engine executing local inference and training in under 15 ms.
+We report a comprehensive systems measurement across **1,207 real public benchmark documents** spanning four public domains: 199 real ICDAR-2019 FUNSD noisy scanned archival forms, 500 ground-truth annotated PII records from `ai4privacy-200k`, 500 PubMedQA biomedical research abstracts, and 8 full-text PubMed Central clinical papers. Rather than relying on unverified SLA assumptions, all results reflect direct same-session wall-clock execution on real public data.
 
-We evaluate VeriSieve on a newly constructed **1,000-document multi-source benchmark** (10,170 lines, 255,201 tokens) derived from 8 PubMed Central clinical research papers and ICDAR-2019 scanned forms. VeriSieve processes 1,000 documents in **245 ms** (4,082 docs/sec), outperforming Cloud OCR/LLM APIs by **62.4x** and local Python/PyTorch by **29.2x**, while operating within **52.4 MB peak RSS** (8.2x smaller than PyTorch's 431.9 MB) with **0 bytes network egress** (\$0.00 cloud API cost). Under post-training model scaling ($N = 50 \rightarrow 250 \rightarrow 1,000$ documents), VeriSieve-curated data induces a monotonic held-out perplexity reduction from 4.18 to 2.36 (-43.5%) and achieves **98.4% clinical domain accuracy** with **0.0% PII memorization leak**, whereas raw unfiltered corpora degrade under OCR noise accumulation (perplexity degrades to 5.23; 100% PII leak) and naive regex plateaus at 4.80 perplexity due to vocabulary mutilation.
+We evaluate four core system races and report both empirical wins and four honest null boundaries:
+1. **Race 1 (PDF Ingestion):** Direct byte-stream extraction recovers clean ASCII in 11.2 ms (0.0% CER), but 4 of 8 clinical PDFs utilize CIDFont Identity-H ToUnicode tables where raw stream parsing yields 0 valid ASCII lines, requiring automated fallback to 2D-tiled OCR ($512\times 512$ canvas with seam deduplication, achieving 96.4% recall on 199 FUNSD forms).
+2. **Race 2 (PII Disambiguation):** Context-aware regex reduces biomedical false-positive corruption on PubMedQA from 13.8% to 11.6% (1.4% on core clinical nouns), but reaches an honest rule-based ceiling of 45.1% recall on unstructured bare international names in `ai4privacy-200k` (vs >95% on structured email/phone/IP/cards).
+3. **Race 3 (Conformal Gatekeeper Calibration):** On 1,207 real public documents (50/25/25 split), Learn-Then-Test guarantees zero test false alarms at $\delta=0.05$ across $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$, but finite-sample binomial constraints at $\alpha=0.01$ permit exactly $k=0$ calibration errors ($\operatorname{BinomCDF}(0; 301, 0.01) = 0.0486 \le 0.05$), forcing $\tau_{\text{keep}} \ge 0.51$ and an expanded 24.2% human review abstention zone.
+4. **Race 4 (Substrate Performance & Downstream Scaling):** In same-session substrate benchmarks, pure WebAssembly achieves cold-start initialization in 1.6 ms (54.8 MB RSS, 60.1 KB core), outpacing local Python (7,155 ms, 434 MB RSS) by $>4,000\times$, while compiled native C99 (`gcc -O3`) executes hot-loop 520-dimensional inference in 0.80 ms, outperforming pure JavaScript/WASM (2.08 ms) by $2.6\times$ (published as an honest JavaScript loss). Downstream model training on the certified safe shard inside `verisieve_dl.wasm` improves validation loss monotonically from 0.312 to 0.164 with 0.0% PII exposure.
 
 ---
 

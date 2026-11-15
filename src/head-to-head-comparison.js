@@ -663,7 +663,7 @@ export function runHeadToHeadComparison(options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. Dynamic Dark-Mode House-Style 4-Panel SVG Generator
+// 8. Standardized MLE Light-Mode Dataviz 4-Panel SVG Generator (W = 720)
 // ---------------------------------------------------------------------------
 
 export function generateHeadToHeadComparisonSvg(report) {
@@ -671,271 +671,144 @@ export function generateHeadToHeadComparisonSvg(report) {
   const t2 = report.tests.test2_noisy_ocr_hazard_leakage.results;
   const t3 = report.tests.test3_multimodal_pixel_exposure.results;
   const t4 = report.tests.test4_heldout_fpr_alpha_budget.results;
-  const t5 = report.tests.test5_wasm_retrieval_purity_and_loss.results;
 
-  const svgWidth = 1200;
-  const svgHeight = 940;
+  // Exact MLE dataviz reference palette, light mode
+  const INK = '#0b0b0b', SUB = '#52514e', MUT = '#898781';
+  const GRID = '#e1e0d9', AXIS = '#c3c2b7', SURF = '#fcfcfb';
+  const BLUE = '#2a78d6', ORANGE = '#eb6834', GRAY = '#c3c2b7';
+  const FONT = 'font-family="Segoe UI, sans-serif"';
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#090d16" />
-      <stop offset="50%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#020617" />
-    </linearGradient>
-    <linearGradient id="panelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.85" />
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
-    </linearGradient>
-    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#06b6d4" />
-      <stop offset="100%" stop-color="#10b981" />
-    </linearGradient>
-    <linearGradient id="roseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f43f5e" />
-      <stop offset="100%" stop-color="#fb7185" />
-    </linearGradient>
-    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f59e0b" />
-      <stop offset="100%" stop-color="#fbbf24" />
-    </linearGradient>
-  </defs>
+  const W = 720, H = 480;
 
-  <!-- Background -->
-  <rect width="${svgWidth}" height="${svgHeight}" fill="url(#bgGrad)" />
+  const txt = (x, y, s, { size = 11, fill = SUB, anchor = 'start', weight = 'normal' } = {}) =>
+    `<text x="${+x.toFixed(1)}" y="${+y.toFixed(1)}" ${FONT} font-size="${size}" fill="${fill}" text-anchor="${anchor}" font-weight="${weight}">${s}</text>`;
 
-  <!-- Master Header -->
-  <g transform="translate(45, 45)">
-    <circle cx="12" cy="12" r="8" fill="#10b981" />
-    <text x="32" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#f8fafc">
-      VeriSieve 5-Test Head-to-Head Comparison Suite
-    </text>
-    <text x="32" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#94a3b8">
-      Measured Empirical Audit: Without VeriSieve vs. Naive Regex Scrubber vs. Uncalibrated Gate vs. Full VeriSieve
-    </text>
-    <rect x="940" y="-8" width="170" height="30" rx="15" fill="#1e293b" stroke="#334155" />
-    <text x="955" y="12" font-family="monospace" font-size="11" fill="#38bdf8">100% EMPIRICAL DATA</text>
-  </g>
+  const vbar = (x, yTop, yBase, w, fill, r = 3) => {
+    const h = yBase - yTop;
+    if (h < r * 2) return `<rect x="${x}" y="${yTop}" width="${w}" height="${Math.max(h, 1)}" rx="2" fill="${fill}"/>`;
+    return `<path d="M${x} ${yBase} L${x} ${yTop + r} Q${x} ${yTop} ${x + r} ${yTop} L${x + w - r} ${yTop} Q${x + w} ${yTop} ${x + w} ${yTop + r} L${x + w} ${yBase} Z" fill="${fill}"/>`;
+  };
 
-  <!-- ========================================================================= -->
-  <!-- PANEL 1: Scientific FP Corruption Rate vs Person Name Recall              -->
-  <!-- ========================================================================= -->
-  <g transform="translate(45, 115)">
-    <rect width="535" height="360" rx="10" fill="url(#panelGrad)" stroke="#334155" stroke-width="1" />
-    <text x="24" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">
-      Panel 1: Scientific Term Corruption vs. Name Recall
-    </text>
-    <text x="24" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
-      Evaluates 25 Clinical/Technical Sentences vs. 10 Real Author/Staff Names
-    </text>
+  const body = [];
+  body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
+  body.push(txt(32, 28, "VeriSieve Head-to-Head Comparison Suite (Measured Empirical Audit)", { size: 13, weight: 'bold', fill: INK }));
+  body.push(txt(32, 44, "Raw Unfiltered vs. Naive Regex Scrubber vs. Uncalibrated Gatekeeper vs. VeriSieve Full", { size: 10, fill: MUT }));
 
-    <!-- Bars for Corruption Rate (Red = bad) -->
-    <text x="24" y="90" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#f43f5e">
-      Scientific Term False-Positive Corruption Rate (%) [Lower is better]
-    </text>
+  // Panel 1: Scientific FP Corruption Rate (%) (x: 50..340, y: 70..240)
+  {
+    const x0 = 50, x1 = 340, yTop = 85, yBase = 220;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel A: Scientific Term FP Corruption (%)", { size: 11, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- Raw -->
-    <text x="24" y="115" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Without VeriSieve (Raw)</text>
-    <rect x="210" y="104" width="4" height="15" rx="3" fill="#64748b" />
-    <text x="225" y="116" font-family="monospace" font-size="11" fill="#94a3b8">0.0% (No scrubbing)</text>
+    for (const tick of [0, 25, 50, 75, 100]) {
+      const y = yBase - (tick / 100) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 8, y + 3.5, `${tick}%`, { size: 9, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- Naive Regex -->
-    <text x="24" y="145" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Naive Regex (Presidio-Lite)</text>
-    <rect x="210" y="134" width="${Math.round(t1.naive_regex_only.false_positive_corruption_rate_pct * 2.8)}" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="${220 + Math.round(t1.naive_regex_only.false_positive_corruption_rate_pct * 2.8)}" y="146" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">
-      ${t1.naive_regex_only.false_positive_corruption_rate_pct}% (${t1.naive_regex_only.false_positive_corrupted_count}/25 corrupted)
-    </text>
+    const bars = [
+      ['Raw', t1.raw_no_verisieve.false_positive_corruption_rate_pct, GRAY],
+      ['Naive Regex', t1.naive_regex_only.false_positive_corruption_rate_pct, ORANGE],
+      ['Uncalibrated', t1.uncalibrated_heuristic.false_positive_corruption_rate_pct, GRAY],
+      ['VeriSieve', t1.verisieve_full.false_positive_corruption_rate_pct, BLUE]
+    ];
+    const bw = 24, band = (x1 - x0) / bars.length;
+    bars.forEach(([name, val, fill], i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const by = yBase - (val / 100) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, fill));
+      body.push(txt(cx, by - 5, `${val.toFixed(1)}%`, { size: 9.5, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, name, { size: 9, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <!-- Full VeriSieve -->
-    <text x="24" y="175" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve Full Pipeline</text>
-    <rect x="210" y="164" width="4" height="15" rx="3" fill="#10b981" />
-    <text x="225" y="176" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">0.0% (Zero false corruptions)</text>
+  // Panel 2: Noisy OCR Hazard Leakage Rate (%) (x: 410..690, y: 70..240)
+  {
+    const x0 = 410, x1 = 690, yTop = 85, yBase = 220;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel B: Noisy OCR Scan Hazard Leakage (%)", { size: 11, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- Separator -->
-    <line x1="24" y1="205" x2="510" y2="205" stroke="#334155" stroke-dasharray="3,3" />
+    for (const tick of [0, 25, 50, 75, 100]) {
+      const y = yBase - (tick / 100) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 8, y + 3.5, `${tick}%`, { size: 9, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- Bars for Real Person Name Recall (%) [Higher is better] -->
-    <text x="24" y="235" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#10b981">
-      Real Person Name Quarantine Recall (%) [Higher is better]
-    </text>
+    const bars = [
+      ['Raw', t2.raw_no_verisieve.hazard_leakage_rate_pct, ORANGE],
+      ['Naive Regex', t2.naive_regex_only.hazard_leakage_rate_pct, ORANGE],
+      ['Uncalibrated', t2.uncalibrated_heuristic.hazard_leakage_rate_pct, GRAY],
+      ['VeriSieve', t2.verisieve_full.hazard_leakage_rate_pct, BLUE]
+    ];
+    const bw = 24, band = (x1 - x0) / bars.length;
+    bars.forEach(([name, val, fill], i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const by = yBase - (val / 100) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, fill));
+      body.push(txt(cx, by - 5, `${val.toFixed(1)}%`, { size: 9.5, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, name, { size: 9, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <!-- Raw -->
-    <text x="24" y="260" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Without VeriSieve (Raw)</text>
-    <rect x="210" y="249" width="4" height="15" rx="3" fill="#64748b" />
-    <text x="225" y="261" font-family="monospace" font-size="11" fill="#f43f5e">0.0% (100% PII Leaked!)</text>
+  // Panel 3: Multimodal Pixel Exposure Rate (%) (x: 50..340, y: 280..440)
+  {
+    const x0 = 50, x1 = 340, yTop = 295, yBase = 430;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel C: VLM Image Pixel PII Exposure (%)", { size: 11, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- Naive Regex -->
-    <text x="24" y="290" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Naive Regex (Presidio-Lite)</text>
-    <rect x="210" y="279" width="${Math.round(t1.naive_regex_only.real_name_recall_pct * 2.8)}" height="15" rx="3" fill="url(#amberGrad)" />
-    <text x="${220 + Math.round(t1.naive_regex_only.real_name_recall_pct * 2.8)}" y="291" font-family="monospace" font-size="11" fill="#fbbf24">100.0% (at cost of 84% FP)</text>
+    for (const tick of [0, 25, 50, 75, 100]) {
+      const y = yBase - (tick / 100) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 8, y + 3.5, `${tick}%`, { size: 9, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- Full VeriSieve -->
-    <text x="24" y="320" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve Full Pipeline</text>
-    <rect x="210" y="309" width="${Math.round(t1.verisieve_full.real_name_recall_pct * 2.8)}" height="15" rx="3" fill="url(#tealGrad)" />
-    <text x="${220 + Math.round(t1.verisieve_full.real_name_recall_pct * 2.8)}" y="321" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">100.0% (Precision + Recall)</text>
-  </g>
+    const bars = [
+      ['Raw', t3.raw_no_verisieve.pixel_exposure_rate_pct, ORANGE],
+      ['Text-Only', t3.naive_regex_only.pixel_exposure_rate_pct, ORANGE],
+      ['Uncalibrated', t3.uncalibrated_heuristic.pixel_exposure_rate_pct, ORANGE],
+      ['Dual Redact', t3.verisieve_full.pixel_exposure_rate_pct, BLUE]
+    ];
+    const bw = 24, band = (x1 - x0) / bars.length;
+    bars.forEach(([name, val, fill], i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const by = yBase - (val / 100) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, fill));
+      body.push(txt(cx, by - 5, `${val.toFixed(1)}%`, { size: 9.5, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, name, { size: 9, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-  <!-- ========================================================================= -->
-  <!-- PANEL 2: Noisy OCR Leakage & Multimodal VLM Image Pixel Exposure          -->
-  <!-- ========================================================================= -->
-  <g transform="translate(620, 115)">
-    <rect width="535" height="360" rx="10" fill="url(#panelGrad)" stroke="#334155" stroke-width="1" />
-    <text x="24" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">
-      Panel 2: Noisy OCR Leakage &amp; Pixel Redaction
-    </text>
-    <text x="24" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
-      Garbled Scans Slipping into Corpus vs. Multimodal VLM Pixel Exposure
-    </text>
+  // Panel 4: Held-Out FPR vs Alpha Budget (%) (x: 410..690, y: 280..440)
+  {
+    const x0 = 410, x1 = 690, yTop = 295, yBase = 430;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel D: Held-Out FPR vs. Alpha Budget (%)", { size: 11, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- Test 2: Noisy OCR Leakage -->
-    <text x="24" y="90" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#f43f5e">
-      Garbled OCR / Fax Hazard Leakage Rate (%) into KEEP_SAFE
-    </text>
+    for (const tick of [0, 25, 50, 75, 100]) {
+      const y = yBase - (tick / 100) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 8, y + 3.5, `${tick}%`, { size: 9, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- Raw -->
-    <text x="24" y="115" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Without VeriSieve (Raw)</text>
-    <rect x="210" y="104" width="280" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="500" y="116" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">100.0%</text>
+    const bars = [
+      ['Raw (No Gate)', t4.raw_no_verisieve.empirical_fpr_pct, ORANGE],
+      ['Naive Regex', t4.naive_regex_only.empirical_fpr_pct, ORANGE],
+      ['Uncal (τ=0.50)', t4.uncalibrated_heuristic.empirical_fpr_pct, ORANGE],
+      ['LTT (α=0.05)', t4.verisieve_full.empirical_fpr_pct, BLUE]
+    ];
+    const bw = 24, band = (x1 - x0) / bars.length;
+    bars.forEach(([name, val, fill], i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const by = yBase - (val / 100) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, fill));
+      body.push(txt(cx, by - 5, `${val.toFixed(1)}%`, { size: 9, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, name, { size: 9, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <!-- Naive Regex -->
-    <text x="24" y="145" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Naive Regex Only</text>
-    <rect x="210" y="134" width="${Math.round(t2.naive_regex_only.hazard_leakage_rate_pct * 2.8)}" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="${220 + Math.round(t2.naive_regex_only.hazard_leakage_rate_pct * 2.8)}" y="146" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">${t2.naive_regex_only.hazard_leakage_rate_pct}%</text>
-
-    <!-- Uncalibrated 0.5 -->
-    <text x="24" y="175" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Uncalibrated 0.5 Gate</text>
-    <rect x="210" y="164" width="${Math.max(10, Math.round(t2.uncalibrated_heuristic.hazard_leakage_rate_pct * 2.8))}" height="15" rx="3" fill="url(#amberGrad)" />
-    <text x="${220 + Math.max(10, Math.round(t2.uncalibrated_heuristic.hazard_leakage_rate_pct * 2.8))}" y="176" font-family="monospace" font-size="11" fill="#fbbf24">${t2.uncalibrated_heuristic.hazard_leakage_rate_pct}%</text>
-
-    <!-- Full VeriSieve -->
-    <text x="24" y="205" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve (2D OCR + LTT)</text>
-    <rect x="210" y="194" width="4" height="15" rx="3" fill="#10b981" />
-    <text x="225" y="206" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">0.0% (Quarantined/Abstained)</text>
-
-    <!-- Separator -->
-    <line x1="24" y1="230" x2="510" y2="230" stroke="#334155" stroke-dasharray="3,3" />
-
-    <!-- Test 3: Multimodal Pixel Exposure -->
-    <text x="24" y="255" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#f43f5e">
-      Multimodal VLM Image Pixel PII Exposure Rate (%)
-    </text>
-
-    <text x="24" y="280" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Raw pdftotext / OCR Dump</text>
-    <rect x="210" y="269" width="280" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="500" y="281" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">100% EXPOSED</text>
-
-    <text x="24" y="305" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Presidio / Text-Only Scrub</text>
-    <rect x="210" y="294" width="280" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="500" y="306" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">100% EXPOSED</text>
-
-    <text x="24" y="330" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve Dual Text+Pixel</text>
-    <rect x="210" y="319" width="4" height="15" rx="3" fill="#10b981" />
-    <text x="225" y="331" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">0.0% (Blackout RGB [18,18,22])</text>
-  </g>
-
-  <!-- ========================================================================= -->
-  <!-- PANEL 3: Held-Out False-Alarm Rate vs. Alpha = 0.05 Budget               -->
-  <!-- ========================================================================= -->
-  <g transform="translate(45, 510)">
-    <rect width="535" height="380" rx="10" fill="url(#panelGrad)" stroke="#334155" stroke-width="1" />
-    <text x="24" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">
-      Panel 3: Held-Out False-Alarm Rate vs. Alpha Budget
-    </text>
-    <text x="24" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
-      Empirical False-Alarm Rate (FPR) on N=60 Unsafe/Boilerplate Test Chunks
-    </text>
-
-    <!-- Target Budget Line -->
-    <rect x="24" y="80" width="486" height="35" rx="6" fill="#1e293b" stroke="#334155" />
-    <text x="36" y="102" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">
-      Statistical Safety Budget: <tspan font-weight="bold" fill="#38bdf8">&alpha; &le; 0.05 (5.0%)</tspan> under Exchangeability
-    </text>
-
-    <!-- Raw -->
-    <text x="24" y="150" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Without VeriSieve (Raw)</text>
-    <rect x="210" y="139" width="280" height="20" rx="3" fill="url(#roseGrad)" />
-    <text x="500" y="154" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">100.0% (Fail)</text>
-
-    <!-- Naive Regex Only -->
-    <text x="24" y="195" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Naive Regex Only</text>
-    <rect x="210" y="184" width="${Math.round(t4.naive_regex_only.empirical_fpr_pct * 2.8)}" height="20" rx="3" fill="url(#roseGrad)" />
-    <text x="${220 + Math.round(t4.naive_regex_only.empirical_fpr_pct * 2.8)}" y="199" font-family="monospace" font-size="11" font-weight="bold" fill="#f43f5e">${t4.naive_regex_only.empirical_fpr_pct}% (Fail)</text>
-
-    <!-- Uncalibrated 0.5 -->
-    <text x="24" y="240" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Uncalibrated 0.5 Gate</text>
-    <rect x="210" y="229" width="${Math.round(t4.uncalibrated_heuristic.empirical_fpr_pct * 2.8)}" height="20" rx="3" fill="url(#amberGrad)" />
-    <text x="${220 + Math.round(t4.uncalibrated_heuristic.empirical_fpr_pct * 2.8)}" y="244" font-family="monospace" font-size="11" font-weight="bold" fill="#fbbf24">${t4.uncalibrated_heuristic.empirical_fpr_pct}% (Violates &alpha;)</text>
-
-    <!-- VeriSieve Full -->
-    <text x="24" y="285" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve LTT Gate</text>
-    <rect x="210" y="274" width="4" height="20" rx="3" fill="#10b981" />
-    <text x="225" y="289" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">
-      0.0% FPR (PASS: binomCdf(0, 60, 0.05) = ${t4.verisieve_full.binomial_cdf_p_value} &le; 0.05)
-    </text>
-
-    <rect x="24" y="320" width="486" height="42" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1" />
-    <text x="36" y="345" font-family="system-ui, sans-serif" font-size="11" fill="#10b981" font-weight="600">
-      &check; Mathematical Guarantee: Finite-sample Binomial LTT certifies FPR &le; &alpha; at 95% confidence
-    </text>
-  </g>
-
-  <!-- ========================================================================= -->
-  <!-- PANEL 4: WASM Needle Semantic Retrieval Purity & Model Perplexity         -->
-  <!-- ========================================================================= -->
-  <g transform="translate(620, 510)">
-    <rect width="535" height="380" rx="10" fill="url(#panelGrad)" stroke="#334155" stroke-width="1" />
-    <text x="24" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#38bdf8">
-      Panel 4: WASM Retrieval Purity &amp; Generalization
-    </text>
-    <text x="24" y="52" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
-      verisieve_dl.wasm (60KB) Needle Cosine Match &amp; BitNet/VeRA Clinical Perplexity
-    </text>
-
-    <!-- Needle Top-3 Retrieval Purity -->
-    <text x="24" y="90" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">
-      Top-3 Clinical Needle Retrieval Purity (%) [Higher is better]
-    </text>
-
-    <text x="24" y="115" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Without VeriSieve (Raw)</text>
-    <rect x="210" y="104" width="${Math.round(t5.raw_no_verisieve.top3_retrieval_purity_pct * 2.8)}" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="${220 + Math.round(t5.raw_no_verisieve.top3_retrieval_purity_pct * 2.8)}" y="116" font-family="monospace" font-size="11" fill="#f43f5e">${t5.raw_no_verisieve.top3_retrieval_purity_pct}% (Fax noise)</text>
-
-    <text x="24" y="145" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Naive Regex Only</text>
-    <rect x="210" y="134" width="${Math.round(t5.naive_regex_only.top3_retrieval_purity_pct * 2.8)}" height="15" rx="3" fill="url(#amberGrad)" />
-    <text x="${220 + Math.round(t5.naive_regex_only.top3_retrieval_purity_pct * 2.8)}" y="146" font-family="monospace" font-size="11" fill="#fbbf24">${t5.naive_regex_only.top3_retrieval_purity_pct}%</text>
-
-    <text x="24" y="175" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">VeriSieve KEEP_SAFE Shard</text>
-    <rect x="210" y="164" width="${Math.round(t5.verisieve_full.top3_retrieval_purity_pct * 2.8)}" height="15" rx="3" fill="url(#tealGrad)" />
-    <text x="${220 + Math.round(t5.verisieve_full.top3_retrieval_purity_pct * 2.8)}" y="176" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">100.0% PURE CLINICAL</text>
-
-    <!-- Separator -->
-    <line x1="24" y1="205" x2="510" y2="205" stroke="#334155" stroke-dasharray="3,3" />
-
-    <!-- Clean Clinical Perplexity -->
-    <text x="24" y="235" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">
-      Downstream WASM Validation Perplexity [Lower is better: exp(valLoss)]
-    </text>
-
-    <text x="24" y="265" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Model A (Trained on Raw)</text>
-    <rect x="210" y="254" width="${Math.round(t5.raw_no_verisieve.wasm_val_perplexity * 90)}" height="15" rx="3" fill="url(#roseGrad)" />
-    <text x="${220 + Math.round(t5.raw_no_verisieve.wasm_val_perplexity * 90)}" y="266" font-family="monospace" font-size="11" fill="#f43f5e">${t5.raw_no_verisieve.wasm_val_perplexity} (Degraded)</text>
-
-    <text x="24" y="295" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Model B (Naive Regex)</text>
-    <rect x="210" y="284" width="${Math.round(t5.naive_regex_only.wasm_val_perplexity * 90)}" height="15" rx="3" fill="url(#amberGrad)" />
-    <text x="${220 + Math.round(t5.naive_regex_only.wasm_val_perplexity * 90)}" y="296" font-family="monospace" font-size="11" fill="#fbbf24">${t5.naive_regex_only.wasm_val_perplexity}</text>
-
-    <text x="24" y="325" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#10b981">Model C (VeriSieve Safe)</text>
-    <rect x="210" y="314" width="${Math.round(t5.verisieve_full.wasm_val_perplexity * 90)}" height="15" rx="3" fill="url(#tealGrad)" />
-    <text x="${220 + Math.round(t5.verisieve_full.wasm_val_perplexity * 90)}" y="326" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">${t5.verisieve_full.wasm_val_perplexity} (Superior Generalization)</text>
-
-    <text x="24" y="358" font-family="system-ui, sans-serif" font-size="10" fill="#64748b">
-      Measured directly from mle_dl_vera_train + mle_dl_vera_loss_grad in pure WebAssembly
-    </text>
-  </g>
-
-  <!-- Footer -->
-  <text x="45" y="915" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">
-    VeriSieve Core Audit • 100% Deterministic &amp; Zero Remote Egress • Generated directly from results/head-to-head-comparison.json
-  </text>
-</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${body.join('')}</svg>`;
 }

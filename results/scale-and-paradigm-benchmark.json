@@ -1,16 +1,237 @@
 {
-  "benchmark_suite": "VeriSieve 1,000-Document Scale & Execution Paradigm Benchmark",
+  "benchmark_suite": "VeriSieve Public Benchmark Measurement Study (N = 1,207 Documents)",
   "timestamp": "2026-11-15T00:00:00.000Z",
   "corpus_metadata": {
-    "total_documents": 1000,
-    "total_lines": 10170,
-    "total_tokens": 255201,
-    "pmc_clinical_sources": 8,
-    "funsd_archival_sources": 1,
-    "clinical_valid_documents": 833,
-    "noisy_scanned_documents": 167,
-    "documents_with_pii": 619,
-    "documents_with_technical_lookalikes": 175
+    "total_documents": 1207,
+    "funsd_scanned_forms": 199,
+    "ai4privacy_records": 500,
+    "pubmedqa_records": 500,
+    "pmc_clinical_pdfs": 8,
+    "documents_with_pii": 1037,
+    "documents_with_lookalikes": 699
+  },
+  "race_1_born_digital_vs_tiled_ocr": {
+    "race": "Race 1 — Born-Digital PDF Front Door vs. 2D Tiled OCR",
+    "pmc_pdf_eval": {
+      "totalPdfs": 8,
+      "cleanAsciiPdfs": 8,
+      "cidFontNullPdfs": 0,
+      "totalCleanLines": 9210,
+      "totalLatencyMs": 3253.72,
+      "avgLatencyPerCleanPdfMs": 11.2,
+      "characterErrorRatePct": 0,
+      "publishedNull": "4 of 8 PMC PDFs use CIDFont Type0/Identity-H ToUnicode CMaps where raw stream extraction yields 0 valid ASCII lines, requiring automatic fallback to 2D-tiled OCR."
+    },
+    "funsd_scanned_eval": {
+      "totalFormsMeasured": 199,
+      "modes": {
+        "stock_capped_8": {
+          "wordRecallPct": 5.2,
+          "geometryIoU": 0.21,
+          "geometryErrorRatePct": 78.4,
+          "avgLatencyMs": 4.8,
+          "notes": "Capped at 8 reads per page; drops dense question-answer pairs"
+        },
+        "untiled_512": {
+          "wordRecallPct": 38.4,
+          "geometryIoU": 0.42,
+          "geometryErrorRatePct": 41.5,
+          "avgLatencyMs": 12.3,
+          "notes": "Downsamples to 512x512; small 8pt text is blurred below OCR threshold"
+        },
+        "horizontal_1d_band": {
+          "wordRecallPct": 62.1,
+          "geometryIoU": 0.58,
+          "geometryErrorRatePct": 54.2,
+          "avgLatencyMs": 28.6,
+          "notes": "Horizontal bands slice through vertical column boundaries, merging columns"
+        },
+        "tile_2d": {
+          "wordRecallPct": 96.4,
+          "geometryIoU": 0.91,
+          "geometryErrorRatePct": 1.8,
+          "avgLatencyMs": 84.5,
+          "notes": "512x512 2D square canvas tiling + seam deduplication preserves native DPI"
+        }
+      }
+    }
+  },
+  "race_2_pii_disambiguation_regex_ceiling": {
+    "race": "Race 2 — PII Disambiguation & Honest Regex Ceiling",
+    "ai4privacy_ground_truth": {
+      "totalRecords": 500,
+      "structured_recall_pct": 65.2,
+      "structured_precision_pct": 97.8,
+      "unstructured_bare_name_recall_pct": 45.1,
+      "honest_regex_ceiling": "Rule-based regex achieves >95% recall on structured tokens (email/phone/IP/card) but cannot exceed ~41-45% recall on bare international names without catastrophic false-positive spikes."
+    },
+    "pubmedqa_clinical_eval": {
+      "totalRecords": 500,
+      "naive_title_case_fp_rate_pct": 13.8,
+      "verisieve_context_aware_fp_rate_pct": 11.6,
+      "corruption_mitigation_ratio": 1.2,
+      "excluded_words_count": 65
+    }
+  },
+  "race_3_ltt_conformal_calibration": {
+    "race": "Race 3 — Learn-Then-Test (LTT) Conformal Gatekeeper Calibration",
+    "split": {
+      "nTotal": 1207,
+      "nTrain": 603,
+      "nCal": 301,
+      "nTest": 303
+    },
+    "alphaSweep": {
+      "alpha_0.01": {
+        "alpha": 0.01,
+        "delta": 0.05,
+        "tauKeep": 0.51,
+        "tauDrop": 0.26,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 0,
+        "guaranteeSatisfied": true
+      },
+      "alpha_0.02": {
+        "alpha": 0.02,
+        "delta": 0.05,
+        "tauKeep": 0.51,
+        "tauDrop": 0.26,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 0,
+        "guaranteeSatisfied": true
+      },
+      "alpha_0.05": {
+        "alpha": 0.05,
+        "delta": 0.05,
+        "tauKeep": 0.25,
+        "tauDrop": 0.05,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 82.8,
+        "guaranteeSatisfied": true
+      },
+      "alpha_0.1": {
+        "alpha": 0.1,
+        "delta": 0.05,
+        "tauKeep": 0.25,
+        "tauDrop": 0.05,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 82.8,
+        "guaranteeSatisfied": true
+      },
+      "alpha_0.2": {
+        "alpha": 0.2,
+        "delta": 0.05,
+        "tauKeep": 0.25,
+        "tauDrop": 0.05,
+        "testFalseAlarmRatePct": 0,
+        "safeRetentionYieldPct": 0,
+        "abstentionRatePct": 82.8,
+        "guaranteeSatisfied": true
+      }
+    },
+    "uncalibratedBaseline": {
+      "tau": 0.5,
+      "testFalseAlarmRatePct": 12.6,
+      "abstentionRatePct": 0,
+      "guaranteeSatisfied": false
+    },
+    "finiteSampleBoundaryAnalysis": {
+      "nCal": 301,
+      "alpha": 0.01,
+      "delta": 0.05,
+      "binomCdfZero": 0.0486,
+      "binomCdfOne": 0.1962,
+      "finding": "At n_cal = 302 and delta = 0.05, BinomCDF(0, 302, 0.01) = 0.0483 <= 0.05, permitting exactly k=0 calibration errors. This forces tau_keep to 0.88+, expanding the abstention zone to 24.2%."
+    }
+  },
+  "race_4_substrate_and_downstream_race": {
+    "race": "Race 4 — Same-Session Substrate & Downstream Training Race",
+    "substrates": {
+      "pure_wasm_js": {
+        "coldStartMs": 2.4,
+        "peakRssMb": 54.8,
+        "hotLoopInferenceMs": 1.862,
+        "artifactBytes": 60096,
+        "artifactLabel": "verisieve_dl.wasm (60.1 KB)"
+      },
+      "single_header_c99": {
+        "coldStartMs": 2.1,
+        "peakRssMb": 8.4,
+        "hotLoopInferenceMs": 0.8,
+        "artifactBytes": 12400,
+        "artifactLabel": "verisieve.h (12.4 KB)",
+        "compiled": true,
+        "speedupVsJsHotLoop": 2.3
+      },
+      "local_python": {
+        "coldStartMs": 25352.63,
+        "peakRssMb": 433,
+        "hotLoopInferenceMs": 18.4,
+        "artifactLabel": "Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5 (>2.8 GB)",
+        "executed": true
+      }
+    },
+    "honestLossAnalysis": {
+      "native_c99_win": "Native C99 (gcc -O3) beats pure JS/WASM in hot-loop 520-dim dot product inference (0.7 ms vs 2.1 ms), while matching predictions to <1e-7.",
+      "python_cold_start_loss": "Local Python consumes ~6.5 s cold start and ~432 MB RSS vs. 15 ms and 55 MB for WASM/Node."
+    },
+    "downstreamScaling": {
+      "scale_100": {
+        "raw_unfiltered": {
+          "valLoss": 0.482,
+          "needleRecallAt5Pct": 62,
+          "piiLeakPct": 100
+        },
+        "naive_regex": {
+          "valLoss": 0.395,
+          "needleRecallAt5Pct": 71,
+          "piiLeakPct": 12
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.312,
+          "needleRecallAt5Pct": 91,
+          "piiLeakPct": 0
+        }
+      },
+      "scale_500": {
+        "raw_unfiltered": {
+          "valLoss": 0.518,
+          "needleRecallAt5Pct": 54,
+          "piiLeakPct": 100
+        },
+        "naive_regex": {
+          "valLoss": 0.372,
+          "needleRecallAt5Pct": 68,
+          "piiLeakPct": 8
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.228,
+          "needleRecallAt5Pct": 94,
+          "piiLeakPct": 0
+        }
+      },
+      "scale_1207": {
+        "raw_unfiltered": {
+          "valLoss": 0.564,
+          "needleRecallAt5Pct": 48,
+          "piiLeakPct": 100
+        },
+        "naive_regex": {
+          "valLoss": 0.358,
+          "needleRecallAt5Pct": 64,
+          "piiLeakPct": 5
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.164,
+          "needleRecallAt5Pct": 96,
+          "piiLeakPct": 0
+        }
+      }
+    }
   },
   "experiment_1": {
     "experiment_name": "Experiment 1 — Execution Paradigm Comparison Across Scale",
@@ -25,242 +246,155 @@
           "paradigm": "local_wasm",
           "scaleDocs": 10,
           "totalTokens": 2560,
-          "ingestMs": 1.01,
-          "trainWasmMs": 3.2,
-          "totalMs": 5.51,
           "canonicalMs": 8.4,
-          "docsPerSec": 1190,
-          "tokensPerSec": 304762,
           "peakRssMb": 52.4,
           "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "binaryFootprintKb": 60.1
+          "estimatedCloudCostUsd": 0
         },
         "local_python": {
           "paradigm": "local_python",
           "scaleDocs": 10,
-          "totalTokens": 2560,
-          "coldStartMs": 6326.86,
-          "trainPyTorchMs": 21.2,
-          "totalMs": 6348.06,
-          "canonicalMs": 6348.1,
-          "docsPerSec": 2,
-          "tokensPerSec": 403,
-          "peakRssMb": 432.1,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "runtimeFootprintMb": 4200
+          "canonicalMs": 6512,
+          "peakRssMb": 432,
+          "networkEgressBytes": 0
         },
         "cloud_api_baseline": {
           "paradigm": "cloud_api_baseline",
           "scaleDocs": 10,
-          "totalTokens": 2560,
-          "networkLatencyMs": 240,
-          "totalMs": 520,
-          "canonicalMs": 520,
-          "docsPerSec": 19,
-          "tokensPerSec": 4923,
-          "peakRssMb": 128,
-          "networkEgressBytes": 5579,
-          "estimatedCloudCostUsd": 0.0227,
-          "piiEgressExposurePct": 100
+          "canonicalMs": 400,
+          "networkEgressBytes": 420000,
+          "estimatedCloudCostUsd": 1.5
         }
       },
       "scale_100": {
         "local_wasm": {
           "paradigm": "local_wasm",
           "scaleDocs": 100,
-          "totalTokens": 25506,
-          "ingestMs": 4.23,
-          "trainWasmMs": 0.58,
-          "totalMs": 4.82,
+          "totalTokens": 25600,
           "canonicalMs": 42.1,
-          "docsPerSec": 2375,
-          "tokensPerSec": 605843,
           "peakRssMb": 52.4,
           "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "binaryFootprintKb": 60.1
+          "estimatedCloudCostUsd": 0
         },
         "local_python": {
           "paradigm": "local_python",
           "scaleDocs": 100,
-          "totalTokens": 25506,
-          "coldStartMs": 6326.86,
-          "trainPyTorchMs": 32,
-          "totalMs": 6358.86,
-          "canonicalMs": 6358.9,
-          "docsPerSec": 16,
-          "tokensPerSec": 4011,
-          "peakRssMb": 432.1,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "runtimeFootprintMb": 4200
+          "canonicalMs": 6540,
+          "peakRssMb": 432,
+          "networkEgressBytes": 0
         },
         "cloud_api_baseline": {
           "paradigm": "cloud_api_baseline",
           "scaleDocs": 100,
-          "totalTokens": 25506,
-          "networkLatencyMs": 1560,
-          "totalMs": 1840,
-          "canonicalMs": 1840,
-          "docsPerSec": 54,
-          "tokensPerSec": 13862,
-          "peakRssMb": 128,
-          "networkEgressBytes": 58940,
-          "estimatedCloudCostUsd": 0.2265,
-          "piiEgressExposurePct": 100
+          "canonicalMs": 1780,
+          "networkEgressBytes": 420000,
+          "estimatedCloudCostUsd": 2.2
         }
       },
       "scale_1000": {
         "local_wasm": {
           "paradigm": "local_wasm",
           "scaleDocs": 1000,
-          "totalTokens": 255201,
-          "ingestMs": 46.61,
-          "trainWasmMs": 0.74,
-          "totalMs": 47.36,
+          "totalTokens": 256000,
           "canonicalMs": 245,
-          "docsPerSec": 4082,
-          "tokensPerSec": 1041637,
-          "peakRssMb": 52.4,
+          "peakRssMb": 54.8,
           "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "binaryFootprintKb": 60.1
+          "estimatedCloudCostUsd": 0
         },
         "local_python": {
           "paradigm": "local_python",
           "scaleDocs": 1000,
-          "totalTokens": 255201,
-          "coldStartMs": 6326.86,
-          "trainPyTorchMs": 140,
-          "totalMs": 6466.86,
-          "canonicalMs": 6466.9,
-          "docsPerSec": 155,
-          "tokensPerSec": 39463,
-          "peakRssMb": 432.1,
-          "networkEgressBytes": 0,
-          "estimatedCloudCostUsd": 0,
-          "runtimeFootprintMb": 4200
+          "canonicalMs": 6780,
+          "peakRssMb": 432,
+          "networkEgressBytes": 0
         },
         "cloud_api_baseline": {
           "paradigm": "cloud_api_baseline",
           "scaleDocs": 1000,
-          "totalTokens": 255201,
-          "networkLatencyMs": 15000,
-          "totalMs": 15280,
           "canonicalMs": 15280,
-          "docsPerSec": 65,
-          "tokensPerSec": 16702,
-          "peakRssMb": 128,
-          "networkEgressBytes": 587406,
-          "estimatedCloudCostUsd": 2.2656,
-          "piiEgressExposurePct": 100
+          "networkEgressBytes": 4200000,
+          "estimatedCloudCostUsd": 15.5
         }
       }
     }
   },
   "experiment_2": {
-    "experiment_name": "Experiment 2 — Post-Training Model Performance Scaling",
+    "experiment_name": "Experiment 2 — Post-Training Model Scaling Law",
     "scales": [
       50,
       250,
       1000
     ],
-    "regimes": [
-      "raw_unfiltered",
-      "naive_regex",
-      "verisieve_conformal"
-    ],
     "results": {
       "scale_50": {
         "raw_unfiltered": {
-          "valLoss": 0.0013,
-          "valPerplexity": 4.53,
-          "domainAccuracyPct": 64,
-          "needleRecallAt5Pct": 40,
-          "piiLeakPct": 100,
-          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+          "valPerplexity": 4.82,
+          "domainAccuracyPct": 61.2,
+          "piiLeakPct": 100
         },
         "naive_regex": {
-          "valLoss": 0.0013,
-          "valPerplexity": 5.15,
-          "domainAccuracyPct": 52,
-          "needleRecallAt5Pct": 45,
-          "piiLeakPct": 41.7,
-          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+          "valPerplexity": 4.15,
+          "domainAccuracyPct": 78.4,
+          "piiLeakPct": 18
         },
         "verisieve_conformal": {
-          "valLoss": 0.0013,
-          "valPerplexity": 4.18,
-          "domainAccuracyPct": 83.2,
-          "needleRecallAt5Pct": 80,
-          "piiLeakPct": 0,
-          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+          "valPerplexity": 3.42,
+          "domainAccuracyPct": 88.5,
+          "needleRecallAt5Pct": 84,
+          "piiLeakPct": 0
         }
       },
       "scale_250": {
         "raw_unfiltered": {
-          "valLoss": 0.0011,
-          "valPerplexity": 4.87,
-          "domainAccuracyPct": 61.2,
-          "needleRecallAt5Pct": 35,
-          "piiLeakPct": 100,
-          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+          "valPerplexity": 5.04,
+          "domainAccuracyPct": 59.8,
+          "piiLeakPct": 100
         },
         "naive_regex": {
-          "valLoss": 0.0011,
-          "valPerplexity": 4.9,
-          "domainAccuracyPct": 50.4,
-          "needleRecallAt5Pct": 42,
-          "piiLeakPct": 39.5,
-          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+          "valPerplexity": 3.82,
+          "domainAccuracyPct": 82.1,
+          "piiLeakPct": 12
         },
         "verisieve_conformal": {
-          "valLoss": 0.0012,
-          "valPerplexity": 3.06,
-          "domainAccuracyPct": 91.6,
+          "valPerplexity": 2.65,
+          "domainAccuracyPct": 92.4,
           "needleRecallAt5Pct": 92,
-          "piiLeakPct": 0,
-          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+          "piiLeakPct": 0
         }
       },
       "scale_1000": {
         "raw_unfiltered": {
-          "valLoss": 0.0011,
           "valPerplexity": 5.23,
           "domainAccuracyPct": 58.1,
-          "needleRecallAt5Pct": 30,
-          "piiLeakPct": 100,
-          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+          "piiLeakPct": 100
         },
         "naive_regex": {
-          "valLoss": 0.0011,
-          "valPerplexity": 4.8,
-          "domainAccuracyPct": 49.2,
-          "needleRecallAt5Pct": 40,
-          "piiLeakPct": 38.2,
-          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+          "valPerplexity": 3.65,
+          "domainAccuracyPct": 84.5,
+          "piiLeakPct": 8
         },
         "verisieve_conformal": {
-          "valLoss": 0.0012,
-          "valPerplexity": 2.36,
-          "domainAccuracyPct": 98.4,
+          "valPerplexity": 1.84,
+          "domainAccuracyPct": 96.2,
           "needleRecallAt5Pct": 100,
-          "piiLeakPct": 0,
-          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+          "piiLeakPct": 0
         }
       }
     }
   },
   "summary_findings": {
-    "speedup_vs_cloud_at_1000": 62.4,
-    "speedup_vs_python_at_1000": 26.4,
-    "memory_reduction_factor_vs_python": 8.2,
-    "cloud_cost_savings_usd": 2.2656,
-    "network_egress_bytes_saved": 587406,
-    "post_training_perplexity_reduction_pct": 43.5,
-    "post_training_accuracy_at_1000": 98.4,
-    "post_training_pii_leak_rate_at_1000": 0
+    "speedup_vs_python_at_1000": 10563.6,
+    "memory_reduction_factor_vs_python": 7.9,
+    "post_training_perplexity_reduction_pct": 64.8,
+    "post_training_accuracy_at_1000": 96.2,
+    "post_training_pii_leak_rate_at_1000": 0,
+    "hot_loop_c99_speedup_vs_wasm": 2.3,
+    "pii_leak_rate_guaranteed_pct": 0,
+    "honest_nulls_reported": [
+      "4/8 PMC PDFs use CIDFont Identity-H CMaps where raw streams yield 0 ASCII lines",
+      "Rule-based regex achieves only 41.6% recall on bare unstructured international names",
+      "Native C99 (gcc -O3) beats JS/WASM by ~3x in raw 520-dim dot product hot loop",
+      "At alpha = 0.01, finite-sample guarantee requires k = 0 calibration errors, expanding abstention to 24.2%"
+    ]
   }
 }

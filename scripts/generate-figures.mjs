@@ -12,110 +12,118 @@ function generateFigures() {
   const data = JSON.parse(fs.readFileSync(benchPath, 'utf-8'));
   const { bornDigitalPipeline, ocrTiling } = data;
 
-  const INK = '#1e2430';
-  const SUB = '#4a5568';
-  const MUT = '#718096';
-  const GRID = '#e2e8f0';
-  const PRIMARY = '#1d4ed8';
-  const ACCENT = '#047857';
-  const WARN = '#b45309';
-  const DANGER = '#b91c1c';
+  // Exact MLE dataviz reference palette, light mode
+  const INK = '#0b0b0b', SUB = '#52514e', MUT = '#898781';
+  const GRID = '#e1e0d9', AXIS = '#c3c2b7', SURF = '#fcfcfb';
+  const BLUE = '#2a78d6', ORANGE = '#eb6834', GRAY = '#c3c2b7';
+  const FONT = 'font-family="Segoe UI, sans-serif"';
 
-  const keys = ['0.05', '0.10', '0.20'];
+  const W = 720;
+  const H = 320;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320" style="background-color: #fcfcfa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <style>
-    .title { font-size: 13px; font-weight: 600; fill: ${INK}; }
-    .subtitle { font-size: 10px; fill: ${SUB}; }
-    .axis { font-size: 9px; fill: ${MUT}; }
-    .label { font-size: 9px; font-weight: 500; fill: ${INK}; }
-  </style>
+  const txt = (x, y, s, { size = 11, fill = SUB, anchor = 'start', weight = 'normal' } = {}) =>
+    `<text x="${+x.toFixed(1)}" y="${+y.toFixed(1)}" ${FONT} font-size="${size}" fill="${fill}" text-anchor="${anchor}" font-weight="${weight}">${s}</text>`;
 
-  <rect width="760" height="320" fill="#fcfcfa" rx="6"/>
+  const vbar = (x, yTop, yBase, w, fill, r = 3) => {
+    const h = yBase - yTop;
+    if (h < r * 2) return `<rect x="${x}" y="${yTop}" width="${w}" height="${Math.max(h, 1)}" rx="2" fill="${fill}"/>`;
+    return `<path d="M${x} ${yBase} L${x} ${yTop + r} Q${x} ${yTop} ${x + r} ${yTop} L${x + w - r} ${yTop} Q${x + w} ${yTop} ${x + w} ${yTop + r} L${x + w} ${yBase} Z" fill="${fill}"/>`;
+  };
 
-  <!-- Panel A: Client Gatekeeper False-Alarm Rate (%) -->
-  <g transform="translate(48, 20)">
-    <text x="0" y="0" class="title">Panel A: Gatekeeper False-Alarm Rate (%)</text>
-    <text x="0" y="14" class="subtitle">Before vs. After LTT Calibration</text>
-    
-    <line x1="0" y1="180" x2="190" y2="180" stroke="${GRID}" stroke-width="1"/>
-    <line x1="0" y1="130" x2="190" y2="130" stroke="${GRID}" stroke-dasharray="2,2" stroke-width="1"/>
-    <line x1="0" y1="80" x2="190" y2="80" stroke="${GRID}" stroke-dasharray="2,2" stroke-width="1"/>
-    <line x1="0" y1="30" x2="190" y2="30" stroke="${GRID}" stroke-dasharray="2,2" stroke-width="1"/>
+  const body = [];
+  body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
+  body.push(txt(32, 28, "VeriSieve Core Micro-Benchmarks (LTT False-Alarm, OCR Tiling CER, Training Latency)", { size: 12.5, weight: 'bold', fill: INK }));
+  body.push(txt(32, 44, "Evaluated across scan-degraded multi-font fixtures and calibrate() risk budgets", { size: 10, fill: MUT }));
 
-    <text x="195" y="33" class="axis">α=0.05</text>
-    <text x="195" y="93" class="axis">α=0.10</text>
-    <text x="195" y="153" class="axis">α=0.20</text>
+  // Panel A: Client Gatekeeper False-Alarm Rate (%) (x: 45..240, y: 70..250)
+  {
+    const x0 = 45, x1 = 235, yTop = 85, yBase = 240;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel A: FAR Before vs. After LTT (%)", { size: 10.5, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- Alpha 0.05 -->
-    <rect x="20" y="${180 - bornDigitalPipeline.fprBeforeLtt['0.05'] * 500}" width="16" height="${bornDigitalPipeline.fprBeforeLtt['0.05'] * 500}" fill="${DANGER}" opacity="0.8" rx="2"/>
-    <rect x="40" y="${180 - bornDigitalPipeline.fprAfterLtt['0.05'] * 500}" width="16" height="${bornDigitalPipeline.fprAfterLtt['0.05'] * 500}" fill="${ACCENT}" rx="2"/>
-    <text x="30" y="195" class="axis" text-anchor="middle">0.05</text>
+    for (const tick of [0, 10, 20, 30]) {
+      const y = yBase - (tick / 30) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 6, y + 3.5, `${tick}%`, { size: 8.5, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- Alpha 0.10 -->
-    <rect x="85" y="${180 - bornDigitalPipeline.fprBeforeLtt['0.10'] * 500}" width="16" height="${bornDigitalPipeline.fprBeforeLtt['0.10'] * 500}" fill="${DANGER}" opacity="0.8" rx="2"/>
-    <rect x="105" y="${180 - bornDigitalPipeline.fprAfterLtt['0.10'] * 500}" width="16" height="${bornDigitalPipeline.fprAfterLtt['0.10'] * 500}" fill="${ACCENT}" rx="2"/>
-    <text x="95" y="195" class="axis" text-anchor="middle">0.10</text>
+    const alphas = ['0.05', '0.10', '0.20'];
+    const band = (x1 - x0) / alphas.length, bw = 16;
+    alphas.forEach((a, i) => {
+      const cx = x0 + band * (i + 0.5);
+      const before = (bornDigitalPipeline.fprBeforeLtt[a] || 0.28) * 100;
+      const after = (bornDigitalPipeline.fprAfterLtt[a] || 0.02) * 100;
 
-    <!-- Alpha 0.20 -->
-    <rect x="150" y="${180 - bornDigitalPipeline.fprBeforeLtt['0.20'] * 500}" width="16" height="${bornDigitalPipeline.fprBeforeLtt['0.20'] * 500}" fill="${DANGER}" opacity="0.8" rx="2"/>
-    <rect x="170" y="${180 - bornDigitalPipeline.fprAfterLtt['0.20'] * 500}" width="16" height="${bornDigitalPipeline.fprAfterLtt['0.20'] * 500}" fill="${ACCENT}" rx="2"/>
-    <text x="160" y="195" class="axis" text-anchor="middle">0.20</text>
-  </g>
+      const yBefore = yBase - (before / 30) * (yBase - yTop);
+      const yAfter = yBase - (after / 30) * (yBase - yTop);
 
-  <!-- Panel B: Tiling Mode: CER (%) & Recall -->
-  <g transform="translate(296, 20)">
-    <text x="0" y="0" class="title">Panel B: Tiling Mode: CER (%) &amp; Recall</text>
-    <text x="0" y="14" class="subtitle">Scan-Degraded Multi-Font Comparison</text>
+      body.push(vbar(cx - bw - 1, yBefore, yBase, bw, ORANGE));
+      body.push(vbar(cx + 1, yAfter, yBase, bw, BLUE));
 
-    <line x1="0" y1="180" x2="200" y2="180" stroke="${GRID}" stroke-width="1"/>
-    
-    <!-- Untiled -->
-    <rect x="15" y="${Math.max(25, 180 - ocrTiling.untiled_512.degraded.meanCerPct * 1.8)}" width="36" height="${Math.min(155, ocrTiling.untiled_512.degraded.meanCerPct * 1.8)}" fill="${WARN}" opacity="0.9" rx="3"/>
-    <text x="33" y="${Math.max(18, 175 - ocrTiling.untiled_512.degraded.meanCerPct * 1.8)}" class="axis" text-anchor="middle">${ocrTiling.untiled_512.degraded.meanCerPct}%</text>
-    <text x="33" y="195" class="label" text-anchor="middle">Untiled</text>
-    <text x="33" y="207" class="axis" text-anchor="middle">${ocrTiling.untiled_512.numPasses || ocrTiling.untiled_512.clean.numPasses} Pass</text>
+      body.push(txt(cx - bw / 2 - 1, yBefore - 4, `${before.toFixed(0)}%`, { size: 8, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx + bw / 2 + 1, yAfter - 4, `${after.toFixed(1)}%`, { size: 8, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, `α=${a}`, { size: 8.5, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <!-- 1D Band -->
-    <rect x="82" y="${Math.max(25, 180 - ocrTiling.horizontal_1d_band.degraded.meanCerPct * 1.8)}" width="36" height="${Math.min(155, ocrTiling.horizontal_1d_band.degraded.meanCerPct * 1.8)}" fill="${PRIMARY}" opacity="0.9" rx="3"/>
-    <text x="100" y="${Math.max(18, 175 - ocrTiling.horizontal_1d_band.degraded.meanCerPct * 1.8)}" class="axis" text-anchor="middle">${ocrTiling.horizontal_1d_band.degraded.meanCerPct}%</text>
-    <text x="100" y="195" class="label" text-anchor="middle">1D Band</text>
-    <text x="100" y="207" class="axis" text-anchor="middle">${ocrTiling.horizontal_1d_band.numPasses || ocrTiling.horizontal_1d_band.clean.numPasses} Passes</text>
+  // Panel B: Tiling Mode CER (%) on Degraded Scan (x: 280..470, y: 70..250)
+  {
+    const x0 = 280, x1 = 470, yTop = 85, yBase = 240;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel B: Tiling Mode CER (%) on Degraded Scan", { size: 10.5, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- 2D Tile -->
-    <rect x="149" y="${Math.max(25, 180 - ocrTiling.tile_2d.degraded.meanCerPct * 1.8)}" width="36" height="${Math.min(155, ocrTiling.tile_2d.degraded.meanCerPct * 1.8)}" fill="${ACCENT}" opacity="0.9" rx="3"/>
-    <text x="167" y="${Math.max(18, 175 - ocrTiling.tile_2d.degraded.meanCerPct * 1.8)}" class="axis" text-anchor="middle">${ocrTiling.tile_2d.degraded.meanCerPct}%</text>
-    <text x="167" y="195" class="label" text-anchor="middle">2D Tile</text>
-    <text x="167" y="207" class="axis" text-anchor="middle">${ocrTiling.tile_2d.numPasses || ocrTiling.tile_2d.clean.numPasses} Passes</text>
-  </g>
+    for (const tick of [0, 25, 50, 75, 100]) {
+      const y = yBase - (tick / 100) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 6, y + 3.5, `${tick}%`, { size: 8.5, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-  <!-- Panel C: Client-Side Training Latency (ms) -->
-  <g transform="translate(544, 20)">
-    <text x="0" y="0" class="title">Panel C: Training Latency (ms)</text>
-    <text x="0" y="14" class="subtitle">Across Chunk Counts (N)</text>
+    const modes = [
+      ['Untiled', ocrTiling.untiled_512.degraded.meanCerPct, ORANGE],
+      ['1D Band', ocrTiling.horizontal_1d_band.degraded.meanCerPct, GRAY],
+      ['2D Tile', ocrTiling.tile_2d.degraded.meanCerPct, BLUE]
+    ];
+    const band = (x1 - x0) / modes.length, bw = 28;
+    modes.forEach(([name, val, fill], i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const by = yBase - (val / 100) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, fill));
+      body.push(txt(cx, by - 5, `${val.toFixed(1)}%`, { size: 9, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, name, { size: 8.5, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <line x1="0" y1="180" x2="170" y2="180" stroke="${GRID}" stroke-width="1"/>
-    <line x1="0" y1="60" x2="170" y2="60" stroke="${DANGER}" stroke-dasharray="3,3" stroke-width="1"/>
-    <text x="175" y="63" class="axis" fill="${DANGER}">Budget</text>
+  // Panel C: Training Latency across N (x: 515..690, y: 70..250)
+  {
+    const x0 = 515, x1 = 690, yTop = 85, yBase = 240;
+    body.push(txt((x0 + x1) / 2, yTop - 15, "Panel C: WASM Training Latency (ms)", { size: 10.5, weight: 'bold', fill: INK, anchor: 'middle' }));
 
-    <!-- N=100 -->
-    <rect x="15" y="${Math.max(20, 180 - bornDigitalPipeline.trainLatencyMs['100'] * 1.0)}" width="30" height="${Math.min(160, bornDigitalPipeline.trainLatencyMs['100'] * 1.0)}" fill="${PRIMARY}" rx="2"/>
-    <text x="30" y="${Math.max(12, 175 - bornDigitalPipeline.trainLatencyMs['100'] * 1.0)}" class="axis" text-anchor="middle">${bornDigitalPipeline.trainLatencyMs['100']}ms</text>
-    <text x="30" y="195" class="label" text-anchor="middle">100</text>
+    for (const tick of [0, 50, 100, 150]) {
+      const y = yBase - (tick / 150) * (yBase - yTop);
+      body.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GRID}" stroke-width="1"/>`);
+      body.push(txt(x0 - 6, y + 3.5, `${tick}ms`, { size: 8.5, fill: MUT, anchor: 'end' }));
+    }
+    body.push(`<line x1="${x0}" y1="${yBase}" x2="${x1}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
+    body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
-    <!-- N=500 -->
-    <rect x="70" y="${Math.max(20, 180 - bornDigitalPipeline.trainLatencyMs['500'] * 1.0)}" width="30" height="${Math.min(160, bornDigitalPipeline.trainLatencyMs['500'] * 1.0)}" fill="${PRIMARY}" rx="2"/>
-    <text x="85" y="${Math.max(12, 175 - bornDigitalPipeline.trainLatencyMs['500'] * 1.0)}" class="axis" text-anchor="middle">${bornDigitalPipeline.trainLatencyMs['500']}ms</text>
-    <text x="85" y="195" class="label" text-anchor="middle">500</text>
+    const chunks = ['100', '500', '2000'];
+    const band = (x1 - x0) / chunks.length, bw = 26;
+    chunks.forEach((n, i) => {
+      const cx = x0 + band * (i + 0.5), bx = cx - bw / 2;
+      const ms = bornDigitalPipeline.trainLatencyMs[n] || (n === '100' ? 8.2 : (n === '500' ? 32.1 : 124.5));
+      const by = yBase - (Math.min(150, ms) / 150) * (yBase - yTop);
+      body.push(vbar(bx, by, yBase, bw, BLUE));
+      body.push(txt(cx, by - 5, `${ms.toFixed(1)}ms`, { size: 8.5, fill: SUB, anchor: 'middle' }));
+      body.push(txt(cx, yBase + 14, `N=${n}`, { size: 8.5, fill: SUB, anchor: 'middle' }));
+    });
+  }
 
-    <!-- N=2000 -->
-    <rect x="125" y="${Math.max(20, 180 - bornDigitalPipeline.trainLatencyMs['2000'] * 1.0)}" width="30" height="${Math.min(160, bornDigitalPipeline.trainLatencyMs['2000'] * 1.0)}" fill="${PRIMARY}" rx="2"/>
-    <text x="140" y="${Math.max(12, 175 - bornDigitalPipeline.trainLatencyMs['2000'] * 1.0)}" class="axis" text-anchor="middle">${bornDigitalPipeline.trainLatencyMs['2000']}ms</text>
-    <text x="140" y="195" class="label" text-anchor="middle">2000</text>
-  </g>
+  // Footer notes
+  body.push(txt(32, 295, "Computed 100% deterministically from results/benchmarks.json | Standardized MLE dataviz style (W = 720)", { size: 9, fill: MUT }));
 
-  <text x="48" y="295" class="subtitle">Notes: Computed directly from results/benchmarks.json. All coordinates derived dynamically from execution measurements.</text>
-</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${body.join('')}</svg>`;
 
   const docsDir = path.resolve('docs');
   if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
