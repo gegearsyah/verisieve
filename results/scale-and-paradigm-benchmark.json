@@ -17,7 +17,7 @@
       "cleanAsciiPdfs": 8,
       "cidFontNullPdfs": 0,
       "totalCleanLines": 9210,
-      "totalLatencyMs": 3253.72,
+      "totalLatencyMs": 3536.46,
       "avgLatencyPerCleanPdfMs": 11.2,
       "characterErrorRatePct": 0,
       "publishedNull": "4 of 8 PMC PDFs use CIDFont Type0/Identity-H ToUnicode CMaps where raw stream extraction yields 0 valid ASCII lines, requiring automatic fallback to 2D-tiled OCR."
@@ -152,9 +152,9 @@
     "race": "Race 4 — Same-Session Substrate & Downstream Training Race",
     "substrates": {
       "pure_wasm_js": {
-        "coldStartMs": 2.4,
+        "coldStartMs": 1.7,
         "peakRssMb": 54.8,
-        "hotLoopInferenceMs": 1.862,
+        "hotLoopInferenceMs": 2.516,
         "artifactBytes": 60096,
         "artifactLabel": "verisieve_dl.wasm (60.1 KB)"
       },
@@ -165,11 +165,11 @@
         "artifactBytes": 12400,
         "artifactLabel": "verisieve.h (12.4 KB)",
         "compiled": true,
-        "speedupVsJsHotLoop": 2.3
+        "speedupVsJsHotLoop": 3.1
       },
       "local_python": {
-        "coldStartMs": 25352.63,
-        "peakRssMb": 433,
+        "coldStartMs": 6420.15,
+        "peakRssMb": 433.2,
         "hotLoopInferenceMs": 18.4,
         "artifactLabel": "Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5 (>2.8 GB)",
         "executed": true
@@ -383,12 +383,12 @@
     }
   },
   "summary_findings": {
-    "speedup_vs_python_at_1000": 10563.6,
+    "speedup_vs_python_at_1000": 3776.6,
     "memory_reduction_factor_vs_python": 7.9,
     "post_training_perplexity_reduction_pct": 64.8,
     "post_training_accuracy_at_1000": 96.2,
     "post_training_pii_leak_rate_at_1000": 0,
-    "hot_loop_c99_speedup_vs_wasm": 2.3,
+    "hot_loop_c99_speedup_vs_wasm": 3.1,
     "pii_leak_rate_guaranteed_pct": 0,
     "honest_nulls_reported": [
       "4/8 PMC PDFs use CIDFont Identity-H CMaps where raw streams yield 0 ASCII lines",
