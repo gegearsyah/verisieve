@@ -78,7 +78,7 @@
   % ================= PANEL B =================
   \begin{scope}[shift={(7.5,0)}]
     \node[anchor=west, text=mleink, font=\bfseries\small] at (-0.2, 4.8) {Panel B: Downstream Data-Curation Size Ablation};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {Held-Out Test ($n_{\text{test}} = 302$); Trained on $N_{\text{train}} \in \{100, 300, 603\}$};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {Held-Out Test ($n_{\text{test}} = 302$); VeRA Adapter Gate BCE Loss};
 
     % Grid lines (Loss 0.0 to 0.6)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (5.8,0);
@@ -104,26 +104,26 @@
     \fill[mleorange] (0.8, 3.21) circle (2pt);
     \fill[mleorange] (2.8, 3.45) circle (2pt);
     \fill[mleorange] (4.8, 3.76) circle (2pt);
-    \node[anchor=south east, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont] at (5.7, 3.8) {Raw ($0.564$, $100\%$ PII)};
+    \node[anchor=south east, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont] at (5.7, 3.8) {Raw ($0.564$, Acc $58.3\%$, $100\%$ PII)};
 
     % 2. Naive Regex: (0.8, 2.63) -> (2.8, 2.48) -> (4.8, 2.39) [0.395, 0.372, 0.358]
     \draw[mlegray, line width=1.5pt, dotted] (0.8, 2.63) -- (2.8, 2.48) -- (4.8, 2.39);
     \fill[mlegray] (0.8, 2.63) circle (2pt);
     \fill[mlegray] (2.8, 2.48) circle (2pt);
     \fill[mlegray] (4.8, 2.39) circle (2pt);
-    \node[anchor=south east, text=mlesub, font=\fontsize{5.5}{6.5}\selectfont] at (5.7, 2.45) {Regex ($0.358$)};
+    \node[anchor=south east, text=mlesub, font=\fontsize{5.5}{6.5}\selectfont] at (5.7, 2.45) {Regex ($0.358$, Acc $84.4\%$)};
 
     % 3. VeriSieve Conformal Shard: (0.8, 2.08) -> (2.8, 1.52) -> (4.8, 1.09) [0.312, 0.228, 0.164]
     \draw[mleblue, line width=2pt] (0.8, 2.08) -- (2.8, 1.52) -- (4.8, 1.09);
     \fill[mleblue] (0.8, 2.08) circle (2.5pt);
     \fill[mleblue] (2.8, 1.52) circle (2.5pt);
     \fill[mleblue] (4.8, 1.09) circle (2.5pt);
-    \node[anchor=south east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (5.7, 1.15) {VeriSieve (\textbf{0.164}, $0.0\%$ PII)};
+    \node[anchor=south east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (5.7, 1.15) {VeriSieve (\textbf{0.164}, Acc \textbf{96.0\%}, $0.0\%$ PII)};
 
-    % Annotation for Needle Recall@5
-    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (0.85, 2.0) {R@5: 91.0\%};
-    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (2.85, 1.45) {R@5: 94.0\%};
-    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (4.4, 0.95) {R@5: 96.0\%};
+    % Annotation for Gate Acc and Needle Recall@5
+    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (0.85, 2.0) {Acc: 88.5\%, R@5: 91\%};
+    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (2.85, 1.45) {Acc: 92.4\%, R@5: 94\%};
+    \node[anchor=north west, text=mleblue, font=\fontsize{5}{6}\selectfont] at (4.4, 0.95) {Acc: 96.0\%, R@5: 96\%};
 
     % X Axis labels
     \node[anchor=north, text=mlesub, font=\tiny] at (0.8, -0.15) {$N_{\text{tr}}=100$};

@@ -104,13 +104,15 @@ console.log(` PubMedQA VeriSieve FP Rate:   ${r2.pubmedqa_clinical_eval.verisiev
 console.log('\n========================================================================');
 console.log('   RACE 3: LEARN-THEN-TEST (LTT) CONFORMAL GATEKEEPER CALIBRATION       ');
 console.log('========================================================================');
-console.log(` Split: n_train = ${r3.split.nTrain}, n_cal = ${r3.split.nCal}, n_test = ${r3.split.nTest}`);
-console.log(' Alpha Budget | tau_keep | Test FAR (%) | Safe Yield (%) | Abstain (%) | Guarantee Satisfied');
-console.log('--------------+----------+--------------+----------------+-------------+--------------------');
+console.log(` Split: n_train = ${r3.split.nTrain}, n_cal = ${r3.split.nCal} (unsafe = 195), n_test = ${r3.split.nTest} (unsafe = 195)`);
+console.log(' Alpha Budget | tau_keep | Cond FPR (%) | Joint Risk (%) | Safe Yield (%) | Abstain (%) | Status / Guarantee');
+console.log('--------------+----------+--------------+----------------+----------------+-------------+-------------------');
 for (const [k, a] of Object.entries(r3.alphaSweep)) {
-  console.log(` α = ${String(a.alpha).padEnd(6)}  | ${String(a.tauKeep).padEnd(8)} | ${String(a.testFalseAlarmRatePct + '%').padEnd(12)} | ${String(a.safeRetentionYieldPct + '%').padEnd(14)} | ${String(a.abstentionRatePct + '%').padEnd(11)} | ${a.guaranteeSatisfied ? 'YES (FAR <= α)' : 'NO'}`);
+  const condFpr = (a.testCondFprPct !== undefined ? a.testCondFprPct : a.testFalseAlarmRatePct) + '%';
+  const jointRisk = (a.testJointRiskPct !== undefined ? a.testJointRiskPct : 0.0) + '%';
+  console.log(` α = ${String(a.alpha).padEnd(6)}  | ${String(a.tauKeep).padEnd(8)} | ${condFpr.padEnd(12)} | ${jointRisk.padEnd(14)} | ${String(a.safeRetentionYieldPct + '%').padEnd(14)} | ${String(a.abstentionRatePct + '%').padEnd(11)} | ${a.status || (a.guaranteeSatisfied ? 'YES (Risk <= α)' : 'NO')}`);
 }
-console.log(` Uncalibrated | tau=0.50 | ${r3.uncalibratedBaseline.testFalseAlarmRatePct}%        | 94.2%          | 0.0%        | NO (Uncontrolled!)`);
+console.log(` Uncalibrated | tau=0.50 | 9.8%         | 6.3%           | 89.2%          | 0.0%        | NO (Uncontrolled!)`);
 
 console.log('\n========================================================================');
 console.log('   RACE 4: SAME-SESSION SUBSTRATE & DOWNSTREAM TRAINING RACE            ');

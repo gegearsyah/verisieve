@@ -83,8 +83,8 @@
 
   % ================= PANEL B =================
   \begin{scope}[shift={(7.5,0)}]
-    \node[anchor=west, text=mleink, font=\bfseries\small] at (-0.2, 4.8) {Panel B: Finite-Sample Calibration Boundary};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {$N_{\text{cal}} = 302, \delta = 0.05$; $\operatorname{BinomCDF}(k, 302, \alpha=0.01)$};
+    \node[anchor=west, text=mleink, font=\bfseries\small] at (-0.2, 4.8) {Panel B: Finite-Sample Resolution Boundary};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.45) {Joint certified on $N_{\text{cal}}=302$; conditional floor on $N_{\text{cal,unsafe}}=195$};
 
     % Grid lines
     \draw[mlegrid, line width=0.5pt] (0,0) -- (5.8,0);
@@ -109,22 +109,24 @@
     \node[anchor=south east, text=mleorange, font=\tiny\bfseries] at (5.7, 1.05) {Confidence Threshold $\delta = 0.05$};
 
     % Bars for Binomial CDF at alpha = 0.01:
-    % k = 0: BinomCDF(0, 302, 0.01) = 0.0483 <= 0.05 (Valid!)
-    % k = 1: BinomCDF(1, 302, 0.01) = 0.1956 > 0.05 (Violates delta!)
-    \fill[mleblue, rounded corners=2pt] (0.8, 0) rectangle (1.8, 0.966);
-    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (1.3, 1.02) {$0.0483 \le \delta$};
+    % k = 0: BinomCDF(0, 302, 0.01) = 0.0480 <= 0.05 (Valid!)
+    % k = 1: BinomCDF(1, 302, 0.01) = 0.1947 > 0.05 (Violates delta!)
+    \fill[mleblue, rounded corners=2pt] (0.8, 0) rectangle (1.8, 0.960);
+    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (1.3, 1.02) {$0.0480 \le \delta$};
     \node[anchor=north, text=mlesub, font=\tiny] at (1.3, -0.15) {$k=0$ Errors};
-    \node[anchor=north, text=mleblue, font=\tiny\bfseries] at (1.3, -0.45) {CERTIFIED};
+    \node[anchor=north, text=mleblue, font=\tiny\bfseries] at (1.3, -0.45) {JOINT CERTIFIED};
 
-    \fill[mleorange, rounded corners=2pt] (2.8, 0) rectangle (3.8, 3.912);
-    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (3.3, 3.97) {$0.1956 > \delta$};
+    \fill[mleorange, rounded corners=2pt] (2.8, 0) rectangle (3.8, 3.894);
+    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (3.3, 3.97) {$0.1947 > \delta$};
     \node[anchor=north, text=mlesub, font=\tiny] at (3.3, -0.15) {$k=1$ Error};
     \node[anchor=north, text=mleorange, font=\tiny\bfseries] at (3.3, -0.45) {REJECTED};
 
     % Consequence annotation box
-    \draw[mlegray, fill=white, rounded corners=3pt, line width=0.6pt] (4.1, 1.8) rectangle (5.7, 3.7);
-    \node[anchor=north west, text=mleink, font=\tiny\bfseries] at (4.15, 3.65) {Consequence:};
-    \node[anchor=north west, text=mlesub, font=\fontsize{5}{6}\selectfont, text width=1.45cm] at (4.15, 3.35) {At $\alpha=0.01$, finite sample forces $k=0$. Thus $\tau_{\text{keep}} \ge 0.82$, widening abstention to 26.5\%.};
+    \draw[mlegray, fill=white, rounded corners=3pt, line width=0.6pt] (4.0, 1.6) rectangle (5.75, 3.8);
+    \node[anchor=north west, text=mleink, font=\tiny\bfseries] at (4.05, 3.75) {Resolution Floor:};
+    \node[anchor=north west, text=mlesub, font=\fontsize{5}{5.8}\selectfont, text width=1.6cm] at (4.05, 3.45) {Joint $\alpha=0.01$ valid at $k=0$ ($0.0480 \le \delta$).\\
+    Cond $\alpha=0.01$ on $N_{\text{cal,unsafe}}=195$ hits floor ($0.1409 > \delta$, requires $N \ge 299$).\\
+    $\tau_{\text{keep}} \ge 0.82$, review $26.5\%$.};
   \end{scope}
 \end{tikzpicture}
 \end{document}

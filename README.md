@@ -78,7 +78,7 @@ VeriSieve operates as a cohesive client-side data hygiene and model post-trainin
 | **Client-Side Conformal Gatekeeper** | **Yes (Exact LTT bounds, <15ms)** | ❌ No | ❌ No | ❌ No |
 | **Execution Targets** | **Browser, CLI, MCP, C99** | Python / Cloud | Python / C# | Python / Spark |
 | **Pluggable Tokenizers** | **Yes (`TokenizerAdapter`)** | ❌ No | ❌ No | Hugging Face Tokenizers |
-| **WASM Zero-Network Audit** | **Mathematically Certified** | N/A | N/A | N/A |
+| **WASM Zero-Network Audit** | **Verified (0 Network Imports)** | N/A | N/A | N/A |
 | **Audit Provenance Chain** | **Yes (strips `.raw` before SHA-256)** | ❌ No | ❌ No | ❌ No |
 | **Package Weight & Dependencies** | **0 External Dependencies** | ~500 MB+ Python deps | PyTorch / spaCy (~1 GB) | PyArrow / Ray cluster |
 
@@ -177,8 +177,10 @@ Evaluated across **1,207 public benchmark documents** (199 ICDAR-2019 FUNSD arch
 - **Biomedical Context Protection**: Pre-committed 65-term clinical dictionary (`EXCLUDED_NAME_WORDS`) reduces clinical false-positive corruption from 84.4% to **1.4%**, demonstrating identical 1.4% FP rates across independent 250-abstract Train and Test splits ($60.3\times$ mitigation ratio with zero test overfitting).
 
 ### Race 3: Learn-Then-Test (LTT) Conformal Gatekeeper
-- **Single-Scorer Monotonic Sweep**: A single trained L2 logistic scorer evaluated across $\alpha \in \{0.20, 0.10, 0.05, 0.02, 0.01\}$ exhibits strictly monotonic behavior: $\tau_{\text{keep}}$ tightens ($0.42 \to 0.82$), held-out test false alarm rate drops ($14.2\% \to 0.0\%$), and abstention widens ($3.3\% \to 26.5\%$). Uncalibrated heuristic baseline ($\tau=0.50$) violates risk budgets with a 9.8% false alarm rate.
-- **Finite-Sample Constraint**: At $n_{\text{cal}}=302$ and $\delta=0.05$, $\operatorname{BinomCDF}(0; 302, 0.01) = 0.0483 \le 0.05$, whereas $k=1$ yields $0.1947 > 0.05$. Exact binomial bounds permit zero errors, forcing $\tau_{\text{keep}} \ge 0.82$ and 26.5% human review abstention.
+- **Single-Scorer Monotonic Sweep**: A single trained L2 logistic scorer evaluated across $\alpha \in \{0.20, 0.10, 0.05, 0.02, 0.01\}$ exhibits strictly monotonic behavior on held-out test data ($n_{\text{test}}=302$): $\tau_{\text{keep}}$ tightens ($0.42 \to 0.82$), held-out conditional false alarm rate drops ($14.2\% \to 0.0\%$), held-out joint false-acceptance risk drops ($9.2\% \to 0.0\%$), and abstention widens ($3.3\% \to 26.5\%$). Uncalibrated heuristic baseline ($\tau=0.50$) violates risk budgets with a 9.8% conditional false alarm rate (6.3% joint risk).
+- **Conditional vs. Joint Finite-Sample Constraint**:
+  - Joint Risk $\alpha_{\text{joint}}=0.01$: Certifiable at $k=0$ on the full calibration set ($n_{\text{cal}}=302$) because $\operatorname{BinomCDF}(0; 302, 0.01) = 0.99^{302} = 0.0480 \le 0.05$.
+  - Conditional FPR $\alpha_{\text{cond}}=0.01$: Bounded by the unsafe calibration count ($n_{\text{cal,unsafe}}=195$). While $\alpha=0.02$ is certified ($\operatorname{BinomCDF}(0; 195, 0.02) = 0.0195 \le 0.05$), $\alpha=0.01$ encounters a finite-sample resolution floor ($\operatorname{BinomCDF}(0; 195, 0.01) = 0.1409 > 0.05$, requiring $n \ge 299$). The gatekeeper forces $\tau_{\text{keep}} \ge 0.82$, expanding human review abstention to 26.5% and yielding 0.0% empirical test violations.
 - **Multi-Axis Customer Gate**: Evaluated across `safe` (98.2% recall), `useful` (94.5% recall), and `topic` (92.0% recall), achieving 86.0% conjunction retention yield with 0.0% unfiltered leakage.
 
 ### Race 4: 7-Run Process-Spawn Cold-Start Substrate Benchmarks
@@ -191,8 +193,8 @@ Evaluated across **1,207 public benchmark documents** (199 ICDAR-2019 FUNSD arch
 | **Python 3.12 + PyTorch + DuckDB** | 2,216.8 ms | 18.40 ms | 433.1 MB | >2,800.0 MB |
 
 - **Downstream Post-Training Ablation**: Evaluated on held-out test split ($n_{\text{test}}=302$) across $N_{\text{train}} \in \{100, 300, 603\}$:
-  - VeriSieve Conformal Shard achieves monotonic validation loss reduction ($0.312 \to 0.228 \to 0.164$) and clinical token perplexity improvement ($3.42 \to 2.65 \to 1.84$) with 96.0% Needle R@5 and **0.0% PII leakage**.
-  - Raw unfiltered training suffers loss degradation ($0.482 \to 0.564$) with **100% PII exposure**.
+  - VeriSieve Conformal Shard achieves monotonic binary cross-entropy loss reduction ($0.312 \to 0.228 \to 0.164$) and gate classification accuracy improvement ($88.5\% \to 92.4\% \to 96.0\%$) for the 2-bit VeRA adapter head (not causal LM token perplexity), with 96.0% Needle R@5 and **0.0% PII leakage**.
+  - Raw unfiltered training suffers loss degradation ($0.482 \to 0.564$) and accuracy deterioration ($61.2\% \to 58.3\%$) with **100% PII exposure**.
 
 ### The Published Nulls & Empirical Boundaries (Table 5 of the Paper)
 
@@ -200,7 +202,7 @@ Evaluated across **1,207 public benchmark documents** (199 ICDAR-2019 FUNSD arch
 | :--- | :--- |
 | **1. Font CMap Null** | 4 of 8 clinical PDFs use Identity-H CIDFonts where raw ASCII byte extraction yields 0 valid lines; in-stream `/ToUnicode` CMap parsing decodes all 8 PDFs cleanly without OCR. |
 | **2. Bare-Name Regex Ceiling** | Rule-based regex cannot exceed 45.1% recall on unstructured international names without causing severe false-positive corruption on technical prose. |
-| **3. Finite-Sample LTT Boundary** | At $n_{\text{cal}}=302$ and $\alpha=0.01$, binomial confidence permits exactly $k=0$ errors, forcing $\tau_{\text{keep}} \ge 0.82$ and widening human review abstention to 26.5%. |
+| **3. Finite-Sample LTT Boundary** | At $\alpha=0.01$, joint risk on $n_{\text{cal}}=302$ is certifiable at $k=0$ ($0.0480 \le \delta$), while conditional risk on $n_{\text{cal,unsafe}}=195$ hits a finite-sample resolution floor ($0.1409 > \delta$, requiring $n \ge 299$), widening human review abstention to 26.5%. |
 | **4. Native C99 Hot-Loop Win** | Single-header C99 executes hot-loop inference at 0.70 ms vs. 2.08 ms in JS/WASM ($3.0\times$ speedup), representing an honest JavaScript runtime loss. |
 
 ---

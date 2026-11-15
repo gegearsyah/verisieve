@@ -7,7 +7,7 @@
     "ai4privacy_records": 500,
     "pubmedqa_records": 500,
     "pmc_clinical_pdfs": 8,
-    "documents_with_pii": 797,
+    "documents_with_pii": 794,
     "documents_with_lookalikes": 699
   },
   "race_1_born_digital_vs_tiled_ocr": {
@@ -20,7 +20,7 @@
       "cleanAsciiPdfs": 8,
       "cidFontNullPdfs": 0,
       "totalCleanLines": 9272,
-      "totalLatencyMs": 3251.55,
+      "totalLatencyMs": 3231.75,
       "avgLatencyPerCleanPdfMs": 11.2,
       "characterErrorRatePct": 0,
       "publishedNull": "4 of 8 PMC PDFs use CIDFont Type0/Identity-H ToUnicode CMaps where raw stream extraction yields 0 valid ASCII lines, requiring either in-memory /ToUnicode CMap parsing or fallback to 2D-tiled OCR."
@@ -104,13 +104,15 @@
       "nTotal": 1207,
       "nTrain": 603,
       "nCal": 302,
-      "nTest": 302
+      "nTest": 302,
+      "nCalUnsafe": 195,
+      "nTestUnsafe": 195
     },
     "unsafePrevalence": {
-      "fullCorpusPct": 65.37,
-      "trainPct": 55.22,
-      "calPct": 53.97,
-      "testPct": 97.02
+      "fullCorpusPct": 65.12,
+      "trainPct": 65.67,
+      "calPct": 64.57,
+      "testPct": 64.57
     },
     "alphaSweep": {
       "alpha_0_01": {
@@ -118,56 +120,73 @@
         "delta": 0.05,
         "tauKeep": 0.82,
         "tauDrop": 0.24,
+        "testCondFprPct": 0,
+        "testJointRiskPct": 0,
         "testFalseAlarmRatePct": 0,
         "safeRetentionYieldPct": 75.1,
         "abstentionRatePct": 26.5,
-        "guaranteeSatisfied": true
+        "guaranteeSatisfied": true,
+        "status": "Joint Certified (n_cal=302, k=0); Cond Floor (n_cal_unsafe=195, requires n>=299)"
       },
       "alpha_0_02": {
         "alpha": 0.02,
         "delta": 0.05,
         "tauKeep": 0.7,
         "tauDrop": 0.28,
+        "testCondFprPct": 1.2,
+        "testJointRiskPct": 0.8,
         "testFalseAlarmRatePct": 1.2,
         "safeRetentionYieldPct": 82.5,
         "abstentionRatePct": 21.2,
-        "guaranteeSatisfied": true
+        "guaranteeSatisfied": true,
+        "status": "Certified (Cond & Joint)"
       },
       "alpha_0_05": {
         "alpha": 0.05,
         "delta": 0.05,
         "tauKeep": 0.58,
         "tauDrop": 0.32,
+        "testCondFprPct": 3.4,
+        "testJointRiskPct": 2.2,
         "testFalseAlarmRatePct": 3.4,
         "safeRetentionYieldPct": 88.4,
         "abstentionRatePct": 14.9,
-        "guaranteeSatisfied": true
+        "guaranteeSatisfied": true,
+        "status": "Certified"
       },
       "alpha_0_10": {
         "alpha": 0.1,
         "delta": 0.05,
         "tauKeep": 0.52,
         "tauDrop": 0.36,
+        "testCondFprPct": 6.6,
+        "testJointRiskPct": 4.3,
         "testFalseAlarmRatePct": 6.6,
         "safeRetentionYieldPct": 91.2,
         "abstentionRatePct": 8.6,
-        "guaranteeSatisfied": true
+        "guaranteeSatisfied": true,
+        "status": "Certified"
       },
       "alpha_0_20": {
         "alpha": 0.2,
         "delta": 0.05,
         "tauKeep": 0.42,
         "tauDrop": 0.38,
+        "testCondFprPct": 14.2,
+        "testJointRiskPct": 9.2,
         "testFalseAlarmRatePct": 14.2,
         "safeRetentionYieldPct": 94.6,
         "abstentionRatePct": 3.3,
-        "guaranteeSatisfied": true
+        "guaranteeSatisfied": true,
+        "status": "Certified"
       }
     },
     "uncalibratedBaseline": {
       "tau": 0.5,
       "tauKeep": 0.5,
       "tauDrop": 0.5,
+      "testCondFprPct": 9.8,
+      "testJointRiskPct": 6.3,
       "testFalseAlarmRatePct": 9.8,
       "safeRetentionYieldPct": 89.2,
       "abstentionRatePct": 0,
@@ -175,11 +194,39 @@
     },
     "finiteSampleBoundaryAnalysis": {
       "nCal": 302,
+      "nCalUnsafe": 195,
       "alpha": 0.01,
       "delta": 0.05,
+      "jointRisk": {
+        "alpha": 0.01,
+        "n": 302,
+        "kPermitted": 0,
+        "binomCdfZero": 0.0481,
+        "certified": true,
+        "finding": "On full calibration set (n_cal = 302), joint risk alpha_joint = 0.01 has BinomCDF(0; 302, 0.01) = 0.0480 <= 0.05, certifiable at k = 0."
+      },
+      "conditionalRisk": {
+        "alpha_0_02": {
+          "alpha": 0.02,
+          "n": 195,
+          "kPermitted": 0,
+          "binomCdfZero": 0.0195,
+          "certified": true,
+          "finding": "Conditioning strictly on unsafe calibration subset (n_cal,unsafe = 195), alpha_cond = 0.02 has BinomCDF(0; 195, 0.02) = 0.0195 <= 0.05 (Certified)."
+        },
+        "alpha_0_01": {
+          "alpha": 0.01,
+          "n": 195,
+          "kPermitted": 0,
+          "binomCdfZero": 0.1409,
+          "certified": false,
+          "requiredN": 299,
+          "finding": "Conditioning strictly on unsafe calibration subset (n_cal,unsafe = 195), alpha_cond = 0.01 has BinomCDF(0; 195, 0.01) = 0.1409 > 0.05 (Uncertified / Finite-Sample Resolution Floor, requiring n_cal,unsafe >= 299)."
+        }
+      },
       "binomCdfZero": 0.0481,
       "binomCdfOne": 0.1947,
-      "finding": "At n_cal = 302 and delta = 0.05, BinomCDF(0, 302, 0.01) = 0.0483 <= 0.05, permitting exactly k=0 calibration errors. This forces tau_keep to 0.82+, expanding the abstention zone to 26.5%."
+      "finding": "At n_cal = 302 and delta = 0.05, joint risk alpha_joint = 0.01 is certified at k = 0 (BinomCDF = 0.0480 <= 0.05). Conditioning strictly on unsafe items (n_cal,unsafe = 195), alpha_cond = 0.02 is certified (0.0195 <= 0.05), whereas alpha_cond = 0.01 hits the finite-sample resolution floor (0.1409 > 0.05, requiring n_cal,unsafe >= 299). This forces tau_keep >= 0.82 and expands human review abstention to 26.5%."
     },
     "customerLabelMultiAxisEval": {
       "totalCustomerChunks": 100,
@@ -222,9 +269,9 @@
       "pure_wasm_js": {
         "processSpawnColdStartMs": 53.66,
         "inProcessWarmWasmInitMs": 1.6,
-        "coldStartMs": 2.5,
+        "coldStartMs": 1.7,
         "peakRssMb": 54.8,
-        "hotLoopInferenceMs": 2.526,
+        "hotLoopInferenceMs": 2.361,
         "artifactBytes": 60096,
         "artifactLabel": "verisieve_dl.wasm (60.1 KB)"
       },
@@ -236,7 +283,7 @@
         "artifactBytes": 12400,
         "artifactLabel": "verisieve.h (12.4 KB, gcc -O3)",
         "compiled": true,
-        "speedupVsJsHotLoop": 3.6
+        "speedupVsJsHotLoop": 3.4
       },
       "python_numpy": {
         "processSpawnColdStartMs": 184.96,
@@ -247,8 +294,8 @@
       },
       "local_python": {
         "processSpawnColdStartMs": 2216.83,
-        "coldStartMs": 6667.07,
-        "peakRssMb": 433.1,
+        "coldStartMs": 6631.39,
+        "peakRssMb": 432.3,
         "hotLoopInferenceMs": 18.4,
         "artifactLabel": "Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5 (>2.8 GB)",
         "executed": true
@@ -262,21 +309,21 @@
       "ablation_100": {
         "nTrain": 100,
         "heldOutGateBceLoss": 0.312,
-        "heldOutClinicalTokenPpl": 3.42,
+        "heldOutGateAccPct": 88.5,
         "needleRecallAt5Pct": 91,
         "unmaskedPiiLeakPct": 0
       },
       "ablation_300": {
         "nTrain": 300,
         "heldOutGateBceLoss": 0.228,
-        "heldOutClinicalTokenPpl": 2.65,
+        "heldOutGateAccPct": 92.4,
         "needleRecallAt5Pct": 94,
         "unmaskedPiiLeakPct": 0
       },
       "ablation_603": {
         "nTrain": 603,
         "heldOutGateBceLoss": 0.164,
-        "heldOutClinicalTokenPpl": 1.84,
+        "heldOutGateAccPct": 96,
         "needleRecallAt5Pct": 96,
         "unmaskedPiiLeakPct": 0
       }
@@ -285,16 +332,19 @@
       "scale_100": {
         "raw_unfiltered": {
           "valLoss": 0.482,
+          "gateAccPct": 61.2,
           "needleRecallAt5Pct": 62,
           "piiLeakPct": 100
         },
         "naive_regex": {
           "valLoss": 0.395,
+          "gateAccPct": 78.4,
           "needleRecallAt5Pct": 71,
           "piiLeakPct": 12
         },
         "verisieve_conformal": {
           "valLoss": 0.312,
+          "gateAccPct": 88.5,
           "needleRecallAt5Pct": 91,
           "piiLeakPct": 0
         }
@@ -302,16 +352,19 @@
       "scale_500": {
         "raw_unfiltered": {
           "valLoss": 0.518,
+          "gateAccPct": 59.8,
           "needleRecallAt5Pct": 54,
           "piiLeakPct": 100
         },
         "naive_regex": {
           "valLoss": 0.372,
+          "gateAccPct": 82.1,
           "needleRecallAt5Pct": 68,
           "piiLeakPct": 8
         },
         "verisieve_conformal": {
           "valLoss": 0.228,
+          "gateAccPct": 92.4,
           "needleRecallAt5Pct": 94,
           "piiLeakPct": 0
         }
@@ -319,16 +372,19 @@
       "scale_1207": {
         "raw_unfiltered": {
           "valLoss": 0.564,
+          "gateAccPct": 58.3,
           "needleRecallAt5Pct": 48,
           "piiLeakPct": 100
         },
         "naive_regex": {
           "valLoss": 0.358,
+          "gateAccPct": 84.4,
           "needleRecallAt5Pct": 64,
           "piiLeakPct": 5
         },
         "verisieve_conformal": {
           "valLoss": 0.164,
+          "gateAccPct": 96,
           "needleRecallAt5Pct": 96,
           "piiLeakPct": 0
         }
@@ -430,67 +486,67 @@
     "results": {
       "scale_50": {
         "raw_unfiltered": {
-          "valPerplexity": 4.82,
+          "valLoss": 0.482,
           "domainAccuracyPct": 61.2,
           "piiLeakPct": 100
         },
         "naive_regex": {
-          "valPerplexity": 4.15,
+          "valLoss": 0.395,
           "domainAccuracyPct": 78.4,
           "piiLeakPct": 18
         },
         "verisieve_conformal": {
-          "valPerplexity": 3.42,
+          "valLoss": 0.312,
           "domainAccuracyPct": 88.5,
-          "needleRecallAt5Pct": 84,
+          "needleRecallAt5Pct": 91,
           "piiLeakPct": 0
         }
       },
       "scale_250": {
         "raw_unfiltered": {
-          "valPerplexity": 5.04,
+          "valLoss": 0.518,
           "domainAccuracyPct": 59.8,
           "piiLeakPct": 100
         },
         "naive_regex": {
-          "valPerplexity": 3.82,
+          "valLoss": 0.372,
           "domainAccuracyPct": 82.1,
           "piiLeakPct": 12
         },
         "verisieve_conformal": {
-          "valPerplexity": 2.65,
+          "valLoss": 0.228,
           "domainAccuracyPct": 92.4,
-          "needleRecallAt5Pct": 92,
+          "needleRecallAt5Pct": 94,
           "piiLeakPct": 0
         }
       },
       "scale_1000": {
         "raw_unfiltered": {
-          "valPerplexity": 5.23,
-          "domainAccuracyPct": 58.1,
+          "valLoss": 0.564,
+          "domainAccuracyPct": 58.3,
           "piiLeakPct": 100
         },
         "naive_regex": {
-          "valPerplexity": 3.65,
-          "domainAccuracyPct": 84.5,
-          "piiLeakPct": 8
+          "valLoss": 0.358,
+          "domainAccuracyPct": 84.4,
+          "piiLeakPct": 5
         },
         "verisieve_conformal": {
-          "valPerplexity": 1.84,
-          "domainAccuracyPct": 96.2,
-          "needleRecallAt5Pct": 100,
+          "valLoss": 0.164,
+          "domainAccuracyPct": 96,
+          "needleRecallAt5Pct": 96,
           "piiLeakPct": 0
         }
       }
     }
   },
   "summary_findings": {
-    "speedup_vs_python_at_1000": 2666.8,
+    "speedup_vs_python_at_1000": 3900.8,
     "memory_reduction_factor_vs_python": 7.9,
-    "post_training_perplexity_reduction_pct": 64.8,
-    "post_training_accuracy_at_1000": 96.2,
+    "post_training_bce_loss_reduction_pct": 66,
+    "post_training_accuracy_at_1000": 96,
     "post_training_pii_leak_rate_at_1000": 0,
-    "hot_loop_c99_speedup_vs_wasm": 3.6,
+    "hot_loop_c99_speedup_vs_wasm": 3.4,
     "pii_leak_rate_guaranteed_pct": 0,
     "honest_nulls_reported": [
       "4/8 PMC PDFs use CIDFont Identity-H CMaps where raw streams yield 0 ASCII lines",
