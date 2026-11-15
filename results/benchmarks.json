@@ -1,0 +1,147 @@
+{
+  "seed": 20261115,
+  "bornDigitalPipeline": {
+    "docsPerSec": 7450,
+    "tokensPerSec": 624500,
+    "peakRssMb": 48.5,
+    "trainLatencyMs": {
+      "100": 7.8,
+      "500": 38.5,
+      "2000": 145
+    },
+    "alphaLevels": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "fprBeforeLtt": {
+      "0.05": 0.14,
+      "0.10": 0.28,
+      "0.20": 0.56
+    },
+    "fprAfterLtt": {
+      "0.05": 0.0033,
+      "0.10": 0.0033,
+      "0.20": 0.04
+    },
+    "shiftedFpr": {
+      "0.05": 0.075,
+      "0.10": 0.15,
+      "0.20": 0.3
+    },
+    "abstainRate": {
+      "0.05": 0.135,
+      "0.10": 0.12,
+      "0.20": 0.09
+    }
+  },
+  "ocrTiling": {
+    "untiled_512": {
+      "numPasses": 1,
+      "clean": {
+        "scaleFactor": 0.35555555555555557,
+        "numPasses": 1,
+        "latencyMs": 58.77,
+        "lineRecallPct": 47.1,
+        "piiBoxRecallPct": 70,
+        "meanCerPct": 39.7,
+        "cerByFontPct": {
+          "display_serif": 15.9,
+          "sans_serif": 43.6,
+          "monospace": 55,
+          "italic": 59,
+          "bold_stamp": 25
+        }
+      },
+      "degraded": {
+        "scaleFactor": 0.35555555555555557,
+        "numPasses": 1,
+        "latencyMs": 47.79,
+        "lineRecallPct": 47.1,
+        "piiBoxRecallPct": 70,
+        "meanCerPct": 83.5,
+        "cerByFontPct": {
+          "display_serif": 88.6,
+          "sans_serif": 84.5,
+          "monospace": 90.4,
+          "italic": 97.4,
+          "bold_stamp": 56.3
+        }
+      }
+    },
+    "horizontal_1d_band": {
+      "numPasses": 4,
+      "clean": {
+        "scaleFactor": 0.5,
+        "numPasses": 4,
+        "latencyMs": 78.22,
+        "lineRecallPct": 100,
+        "piiBoxRecallPct": 100,
+        "meanCerPct": 8,
+        "cerByFontPct": {
+          "display_serif": 19.7,
+          "sans_serif": 6.4,
+          "monospace": 2.6,
+          "italic": 4.1,
+          "bold_stamp": 7.4
+        }
+      },
+      "degraded": {
+        "scaleFactor": 0.5,
+        "numPasses": 4,
+        "latencyMs": 67.13,
+        "lineRecallPct": 100,
+        "piiBoxRecallPct": 100,
+        "meanCerPct": 47.7,
+        "cerByFontPct": {
+          "display_serif": 25.9,
+          "sans_serif": 68,
+          "monospace": 63.5,
+          "italic": 62.8,
+          "bold_stamp": 18.1
+        }
+      }
+    },
+    "tile_2d": {
+      "numPasses": 15,
+      "clean": {
+        "scaleFactor": 1,
+        "numPasses": 15,
+        "latencyMs": 155.59,
+        "lineRecallPct": 100,
+        "piiBoxRecallPct": 100,
+        "meanCerPct": 7.7,
+        "cerByFontPct": {
+          "display_serif": 19.7,
+          "sans_serif": 6.4,
+          "monospace": 2.6,
+          "italic": 4.1,
+          "bold_stamp": 6
+        }
+      },
+      "degraded": {
+        "scaleFactor": 1,
+        "numPasses": 15,
+        "latencyMs": 156.76,
+        "lineRecallPct": 100,
+        "piiBoxRecallPct": 100,
+        "meanCerPct": 40.5,
+        "cerByFontPct": {
+          "display_serif": 29.3,
+          "sans_serif": 46.8,
+          "monospace": 56.9,
+          "italic": 53,
+          "bold_stamp": 16.6
+        }
+      }
+    }
+  },
+  "wasmAudit": {
+    "sha256": "2de0a4459ed427c258157fcb6128265f72f405e7464b25d713bbd336b15bcacf",
+    "byteLength": 1240671,
+    "importCount": 16,
+    "exportCount": 21,
+    "networkImportCount": 0,
+    "zeroEgressVerified": true
+  }
+}

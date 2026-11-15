@@ -58,6 +58,7 @@ test('tileAndRead comparison across modes and scan degradations', () => {
 
   const untiledResult = tileAndRead(degradedDoc, { mode: 'untiled_512' });
   assert.strictEqual(untiledResult.numPasses, 1);
+  assert.strictEqual(untiledResult.lineRecall < 1.0, true);
 
   const bandResult = tileAndRead(degradedDoc, { mode: 'horizontal_1d_band' });
   assert.strictEqual(bandResult.numPasses > 1, true);

@@ -602,9 +602,9 @@ export function applyScanDegradations(rgb, width, height, { seed = 42, skewDeg =
 
       // Block quantization (JPEG-like compression quantization across blockQuant x blockQuant blocks)
       if (blockQuant > 1) {
-        r = Math.round(r / blockQuant) * blockQuant;
-        g = Math.round(g / blockQuant) * blockQuant;
-        b = Math.round(b / blockQuant) * blockQuant;
+        r = Math.min(255, Math.max(0, Math.round(r / blockQuant) * blockQuant));
+        g = Math.min(255, Math.max(0, Math.round(g / blockQuant) * blockQuant));
+        b = Math.min(255, Math.max(0, Math.round(b / blockQuant) * blockQuant));
       }
 
       degraded[dstIdx] = r;

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320" style="background-color: #fcfcfa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <style>
+    .title { font-size: 13px; font-weight: 600; fill: #1e2430; }
+    .subtitle { font-size: 10px; fill: #4a5568; }
+    .axis { font-size: 9px; fill: #718096; }
+    .label { font-size: 9px; font-weight: 500; fill: #1e2430; }
+  </style>
+
+  <rect width="760" height="320" fill="#fcfcfa" rx="6"/>
+
+  <!-- Panel A: Client Gatekeeper False-Alarm Rate (%) -->
+  <g transform="translate(48, 20)">
+    <text x="0" y="0" class="title">Panel A: Gatekeeper False-Alarm Rate (%)</text>
+    <text x="0" y="14" class="subtitle">Before vs. After LTT Calibration</text>
+    
+    <line x1="0" y1="180" x2="190" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+    <line x1="0" y1="130" x2="190" y2="130" stroke="#e2e8f0" stroke-dasharray="2,2" stroke-width="1"/>
+    <line x1="0" y1="80" x2="190" y2="80" stroke="#e2e8f0" stroke-dasharray="2,2" stroke-width="1"/>
+    <line x1="0" y1="30" x2="190" y2="30" stroke="#e2e8f0" stroke-dasharray="2,2" stroke-width="1"/>
+
+    <text x="195" y="33" class="axis">α=0.05</text>
+    <text x="195" y="93" class="axis">α=0.10</text>
+    <text x="195" y="153" class="axis">α=0.20</text>
+
+    <!-- Alpha 0.05 -->
+    <rect x="20" y="110" width="16" height="70" fill="#b91c1c" opacity="0.8" rx="2"/>
+    <rect x="40" y="178.35" width="16" height="1.65" fill="#047857" rx="2"/>
+    <text x="30" y="195" class="axis" text-anchor="middle">0.05</text>
+
+    <!-- Alpha 0.10 -->
+    <rect x="85" y="40" width="16" height="140" fill="#b91c1c" opacity="0.8" rx="2"/>
+    <rect x="105" y="178.35" width="16" height="1.65" fill="#047857" rx="2"/>
+    <text x="95" y="195" class="axis" text-anchor="middle">0.10</text>
+
+    <!-- Alpha 0.20 -->
+    <rect x="150" y="-100" width="16" height="280" fill="#b91c1c" opacity="0.8" rx="2"/>
+    <rect x="170" y="160" width="16" height="20" fill="#047857" rx="2"/>
+    <text x="160" y="195" class="axis" text-anchor="middle">0.20</text>
+  </g>
+
+  <!-- Panel B: Tiling Mode: CER (%) & Recall -->
+  <g transform="translate(296, 20)">
+    <text x="0" y="0" class="title">Panel B: Tiling Mode: CER (%) &amp; Recall</text>
+    <text x="0" y="14" class="subtitle">Scan-Degraded Multi-Font Comparison</text>
+
+    <line x1="0" y1="180" x2="200" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <!-- Untiled -->
+    <rect x="15" y="29.69999999999999" width="36" height="150.3" fill="#b45309" opacity="0.9" rx="3"/>
+    <text x="33" y="24.69999999999999" class="axis" text-anchor="middle">83.5%</text>
+    <text x="33" y="195" class="label" text-anchor="middle">Untiled</text>
+    <text x="33" y="207" class="axis" text-anchor="middle">1 Pass</text>
+
+    <!-- 1D Band -->
+    <rect x="82" y="94.13999999999999" width="36" height="85.86000000000001" fill="#1d4ed8" opacity="0.9" rx="3"/>
+    <text x="100" y="89.13999999999999" class="axis" text-anchor="middle">47.7%</text>
+    <text x="100" y="195" class="label" text-anchor="middle">1D Band</text>
+    <text x="100" y="207" class="axis" text-anchor="middle">4 Passes</text>
+
+    <!-- 2D Tile -->
+    <rect x="149" y="107.1" width="36" height="72.9" fill="#047857" opacity="0.9" rx="3"/>
+    <text x="167" y="102.1" class="axis" text-anchor="middle">40.5%</text>
+    <text x="167" y="195" class="label" text-anchor="middle">2D Tile</text>
+    <text x="167" y="207" class="axis" text-anchor="middle">15 Passes</text>
+  </g>
+
+  <!-- Panel C: Client-Side Training Latency (ms) -->
+  <g transform="translate(544, 20)">
+    <text x="0" y="0" class="title">Panel C: Training Latency (ms)</text>
+    <text x="0" y="14" class="subtitle">Across Chunk Counts (N)</text>
+
+    <line x1="0" y1="180" x2="170" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+    <line x1="0" y1="60" x2="170" y2="60" stroke="#b91c1c" stroke-dasharray="3,3" stroke-width="1"/>
+    <text x="175" y="63" class="axis" fill="#b91c1c">Budget</text>
+
+    <!-- N=100 -->
+    <rect x="15" y="172.2" width="30" height="7.8" fill="#1d4ed8" rx="2"/>
+    <text x="30" y="167.2" class="axis" text-anchor="middle">7.8ms</text>
+    <text x="30" y="195" class="label" text-anchor="middle">100</text>
+
+    <!-- N=500 -->
+    <rect x="70" y="141.5" width="30" height="38.5" fill="#1d4ed8" rx="2"/>
+    <text x="85" y="136.5" class="axis" text-anchor="middle">38.5ms</text>
+    <text x="85" y="195" class="label" text-anchor="middle">500</text>
+
+    <!-- N=2000 -->
+    <rect x="125" y="35" width="30" height="145" fill="#1d4ed8" rx="2"/>
+    <text x="140" y="30" class="axis" text-anchor="middle">145ms</text>
+    <text x="140" y="195" class="label" text-anchor="middle">2000</text>
+  </g>
+
+  <text x="48" y="295" class="subtitle">Notes: Computed directly from results/benchmarks.json. All coordinates derived dynamically from execution measurements.</text>
+</svg>

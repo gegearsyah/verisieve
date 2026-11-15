@@ -19,7 +19,7 @@ if (!command || command === 'selftest') {
 
 if (command === 'audit-wasm') {
   try {
-    const report = auditCactusWasmArtifact();
+    const report = await auditCactusWasmArtifact();
     console.log(JSON.stringify(report, null, 2));
   } catch (err) {
     console.error('Error auditing WASM artifact:', err.message);
