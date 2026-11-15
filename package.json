@@ -23,6 +23,7 @@
     "demo:real": "node scripts/run-real-data-benchmark.mjs",
     "demo:pdf-vs-image": "node scripts/run-pdf-vs-image-demo.mjs",
     "bench": "node scripts/run-benchmarks.mjs && node scripts/generate-figures.mjs",
+    "bench:scale": "node scripts/run-scale-benchmark.mjs",
     "compare": "node scripts/run-head-to-head-comparison.mjs",
     "audit-wasm": "node bin/verisieve.mjs audit-wasm",
     "mcp": "node src/mcp-server.js",

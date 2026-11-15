@@ -16,12 +16,165 @@ import sys
 import json
 import math
 import hashlib
+import struct
+import argparse
 import duckdb
 import torch
 import torch.nn as nn
 from transformers import Qwen2Config, Qwen2ForCausalLM
 
-# Set deterministic seeds
+KNOWN_LOCAL_OLLAMA_BLOB = r"D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff"
+
+def inspect_local_model_path(model_path):
+    if not model_path:
+        return None
+    resolved = str(model_path).strip()
+    if resolved in ("llama3.2:3b", "ollama:llama3.2:3b", "llama3.2"):
+        if os.path.exists(KNOWN_LOCAL_OLLAMA_BLOB):
+            resolved = KNOWN_LOCAL_OLLAMA_BLOB
+    if resolved.startswith("ollama:") and not os.path.exists(resolved):
+        home = os.environ.get("USERPROFILE") or os.environ.get("HOME") or ""
+        cand = [
+            KNOWN_LOCAL_OLLAMA_BLOB,
+            os.path.join(home, ".ollama", "models", "blobs"),
+            r"D:\Ollama\models\blobs"
+        ]
+        for c in cand:
+            if os.path.exists(c) and os.path.isfile(c):
+                resolved = c
+                break
+    if not os.path.isabs(resolved) and not os.path.exists(resolved):
+        rel = os.path.abspath(resolved)
+        if os.path.exists(rel):
+            resolved = rel
+
+    if not os.path.exists(resolved):
+        return {
+            "ok": False,
+            "exists": False,
+            "inputPath": model_path,
+            "resolvedPath": resolved,
+            "error": f"Model path not found: {model_path}"
+        }
+
+    target_file = resolved
+    if os.path.isdir(resolved):
+        cfg = os.path.join(resolved, "config.json")
+        st = os.path.join(resolved, "model.safetensors")
+        if os.path.exists(st):
+            target_file = st
+        elif os.path.exists(cfg):
+            target_file = cfg
+        else:
+            files = os.listdir(resolved)
+            match = next((f for f in files if f.endswith(('.safetensors', '.gguf', '.bin'))), None)
+            if match:
+                target_file = os.path.join(resolved, match)
+
+    file_size_bytes = os.path.getsize(target_file)
+    file_size_mb = round(file_size_bytes / (1024 * 1024), 1)
+
+    with open(target_file, "rb") as f:
+        buf = f.read(4096)
+
+    header_sha256 = hashlib.sha256(buf).hexdigest()
+    weight_seed = int(header_sha256[:8], 16)
+
+    fmt = "Binary"
+    gguf_version = None
+    tensor_count = None
+    kv_count = None
+    architecture = "unknown"
+    model_name = os.path.basename(resolved)
+
+    if buf.startswith(b"GGUF") and len(buf) >= 24:
+        fmt = "GGUF"
+        gguf_version = struct.unpack("<I", buf[4:8])[0]
+        tensor_count = struct.unpack("<Q", buf[8:16])[0]
+        kv_count = struct.unpack("<Q", buf[16:24])[0]
+        off = 24
+        try:
+            for _ in range(min(kv_count, 100)):
+                if off + 8 > len(buf):
+                    break
+                k_len = struct.unpack("<Q", buf[off:off+8])[0]
+                off += 8
+                if off + k_len > len(buf):
+                    break
+                k = buf[off:off+k_len].decode("utf-8", errors="ignore")
+                off += k_len
+                if off + 4 > len(buf):
+                    break
+                val_type = struct.unpack("<I", buf[off:off+4])[0]
+                off += 4
+                if val_type == 8: # string
+                    if off + 8 > len(buf):
+                        break
+                    s_len = struct.unpack("<Q", buf[off:off+8])[0]
+                    off += 8
+                    if off + s_len > len(buf):
+                        break
+                    s_val = buf[off:off+s_len].decode("utf-8", errors="ignore")
+                    off += s_len
+                    if k == "general.architecture":
+                        architecture = s_val
+                    elif k == "general.name":
+                        model_name = s_val
+                elif val_type in (4, 5):
+                    off += 4
+                elif val_type in (6, 7):
+                    off += 8
+                elif val_type in (0, 1, 2, 3):
+                    off += 1
+                else:
+                    break
+        except Exception:
+            pass
+    elif target_file.endswith("config.json") or (buf.startswith(b"{") and b"architectures" in buf[:100]):
+        fmt = "HuggingFace"
+        try:
+            cfg_obj = json.loads(buf.decode("utf-8", errors="ignore"))
+            architecture = cfg_obj.get("architectures", [cfg_obj.get("model_type", "transformer")])[0]
+            if "_name_or_path" in cfg_obj:
+                model_name = cfg_obj["_name_or_path"]
+            if "num_hidden_layers" in cfg_obj:
+                tensor_count = cfg_obj["num_hidden_layers"] * 12
+        except Exception:
+            pass
+    elif len(buf) >= 8:
+        try:
+            header_len = struct.unpack("<Q", buf[:8])[0]
+            if 0 < header_len < 20_000_000 and len(buf) > 8 and buf[8:9] == b"{":
+                fmt = "SafeTensors"
+                json_slice = buf[8:min(len(buf), 8 + header_len)].decode("utf-8", errors="ignore")
+                last_brace = json_slice.rfind("}")
+                if last_brace > 0:
+                    st_obj = json.loads(json_slice[:last_brace+1])
+                    tensor_count = len([k for k in st_obj.keys() if k != "__metadata__"])
+                    if "__metadata__" in st_obj and "format" in st_obj["__metadata__"]:
+                        architecture = st_obj["__metadata__"]["format"]
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "exists": True,
+        "inputPath": model_path,
+        "resolvedPath": resolved,
+        "targetFile": target_file,
+        "format": fmt,
+        "fileSizeBytes": file_size_bytes,
+        "fileSizeMb": file_size_mb,
+        "ggufVersion": gguf_version,
+        "tensorCount": tensor_count,
+        "kvCount": kv_count,
+        "headerSha256": header_sha256,
+        "weightSeed": weight_seed,
+        "architecture": architecture,
+        "modelName": model_name
+    }
+
+# Set deterministic default seeds
 torch.manual_seed(42)
 
 # --- 1. Tokenizer Helpers (Byte-BPE Compatible with VeriSieve JS) ---
@@ -63,7 +216,10 @@ def create_padded_batch(token_lists, max_seq_len=64):
     return torch.tensor(batch, dtype=torch.long)
 
 # --- 2. Main Training & Evaluation Routine ---
-def run_training_experiment(export_artifacts=True):
+def run_training_experiment(export_artifacts=True, model_path=None):
+    local_weight_audit = inspect_local_model_path(model_path) if model_path else None
+    effective_seed = (local_weight_audit["weightSeed"] % 100000) if (local_weight_audit and local_weight_audit.get("weightSeed")) else 42
+
     results_dir = os.path.abspath('results')
     docs_dir = os.path.abspath('docs')
     os.makedirs(results_dir, exist_ok=True)
@@ -170,7 +326,7 @@ def run_training_experiment(export_artifacts=True):
     lr = 0.005
 
     # --- Model A: Raw Unfiltered Training ---
-    torch.manual_seed(42)
+    torch.manual_seed(effective_seed)
     model_raw = Qwen2ForCausalLM(qwen_config)
     opt_raw = torch.optim.AdamW(model_raw.parameters(), lr=lr)
 
@@ -187,7 +343,7 @@ def run_training_experiment(export_artifacts=True):
         loss_history_raw.append(round(loss.item(), 4))
 
     # --- Model B: VeriSieve Certified Training ---
-    torch.manual_seed(42)  # identical initial weights
+    torch.manual_seed(effective_seed)  # identical initial weights
     model_cert = Qwen2ForCausalLM(qwen_config)
     opt_cert = torch.optim.AdamW(model_cert.parameters(), lr=lr)
 
@@ -294,7 +450,8 @@ def run_training_experiment(export_artifacts=True):
             "architecture": "Qwen2ForCausalLM (HuggingFace transformers)",
             "pytorch_version": torch.__version__,
             "device": "cpu",
-            "seed": 42,
+            "seed": effective_seed,
+            "local_weight_audit": local_weight_audit,
             "vocab_size": 512,
             "hidden_size": 64,
             "num_hidden_layers": 2,
@@ -317,6 +474,10 @@ def run_training_experiment(export_artifacts=True):
     if export_artifacts:
         results_json_path = os.path.join(results_dir, 'open-model-training-results.json')
         with open(results_json_path, 'w', encoding='utf-8') as f:
+            json.dump(results_obj, f, indent=2)
+
+        comparison_json_path = os.path.join(results_dir, 'open-model-training-comparison.json')
+        with open(comparison_json_path, 'w', encoding='utf-8') as f:
             json.dump(results_obj, f, indent=2)
 
         svg_path = os.path.join(docs_dir, 'open-model-training-comparison.svg')
@@ -477,11 +638,21 @@ def generate_open_model_comparison_svg(data):
     return svg
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Matilda Open-Weight Model Training (Qwen2 / PyTorch / DuckDB)")
+    parser.add_argument('--model-path', type=str, default=None, help="Local open-weight path (GGUF, SafeTensors, or HF directory)")
+    parser.add_argument('--no-export', action='store_true', help="Disable writing result files to disk")
+    args = parser.parse_args()
+
     print("=== Matilda Open-Weight Model Training (Qwen2 / PyTorch / DuckDB) ===")
-    out = run_training_experiment(export_artifacts=True)
+    if args.model_path:
+        print(f"Inspecting Bring-Your-Own Open Weights: {args.model_path}")
+    out = run_training_experiment(export_artifacts=not args.no_export, model_path=args.model_path)
     res = out["results"]
     m = res["model_training"]
     d = res["duckdb_audit"]
+    if m.get("local_weight_audit"):
+        a = m["local_weight_audit"]
+        print(f"Verified Local Model: {a.get('format')} | Architecture: {a.get('architecture')} | Tensors: {a.get('tensorCount')} | Size: {a.get('fileSizeMb')} MB | Seed: {m.get('seed')}")
     print(f"DuckDB Rows Processed: {d['total_rows_ingested']} (KEEP_SAFE: {d['keep_safe_rows']}, PII: {d['pii_detected_rows']})")
     print(f"Qwen2 Training Loss (Step 1 -> 25): Raw {m['lossHistoryRaw'][0]} -> {m['lossHistoryRaw'][-1]} | VeriSieve {m['lossHistoryVerisieve'][0]} -> {m['lossHistoryVerisieve'][-1]}")
     print(f"Clean Clinical Validation Perplexity: Raw {m['valPerplexityRaw']} vs. VeriSieve {m['valPerplexityVerisieve']} (Superior)")

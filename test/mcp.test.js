@@ -107,3 +107,87 @@ test('MCP Server tool call: verify_provenance_chain (valid and tampered)', () =>
   const tamperedResult = JSON.parse(tamperedRes.result.content[0].text);
   assert.strictEqual(tamperedResult.isValid, false);
 });
+
+test('MCP Server text-based autonomous gatekeeper calibration and decision', () => {
+  // 1. Autonomous calibration with modelPath inspection
+  const trainReq = {
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: {
+      name: 'train_local_gatekeeper',
+      arguments: {
+        alpha: 0.05,
+        modelPath: 'llama3.2:3b'
+      }
+    },
+    id: 8
+  };
+  const trainRes = handleJsonRpcRequest(trainReq);
+  assert.strictEqual(trainRes.id, 8);
+  const bundle = JSON.parse(trainRes.result.content[0].text);
+  assert.ok(bundle.weights);
+  assert.ok(bundle.tau_keep);
+  assert.ok(bundle.tau_drop);
+  if (bundle.localWeightAudit?.exists) {
+    assert.strictEqual(bundle.localWeightAudit.format, 'GGUF');
+    assert.ok(bundle.localWeightAudit.tensorCount >= 200);
+  }
+
+  // 2. Decide on clean clinical text (bundle omitted -> auto uses lastTrainedBundle)
+  const cleanReq = {
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: {
+      name: 'gatekeeper_decide',
+      arguments: {
+        text: 'Multidisciplinary geriatric nutritional assessment significantly improves six-month survival in elderly hip fracture patients.'
+      }
+    },
+    id: 9
+  };
+  const cleanRes = handleJsonRpcRequest(cleanReq);
+  assert.strictEqual(cleanRes.id, 9);
+  const cleanDecision = JSON.parse(cleanRes.result.content[0].text);
+  assert.ok(['KEEP_SAFE', 'ABSTAIN_HUMAN_REVIEW'].includes(cleanDecision.action));
+  assert.strictEqual(cleanDecision.piiDetected, false);
+
+  // 3. Decide on PII-laden text
+  const piiReq = {
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: {
+      name: 'gatekeeper_decide',
+      arguments: {
+        text: 'CONFIDENTIAL FACSIMILE To: George Baroody Fax: (336) 335-7392 Phone: (336) 335-7363 Evelyn Vance'
+      }
+    },
+    id: 10
+  };
+  const piiRes = handleJsonRpcRequest(piiReq);
+  assert.strictEqual(piiRes.id, 10);
+  const piiDecision = JSON.parse(piiRes.result.content[0].text);
+  assert.strictEqual(piiDecision.piiDetected, true);
+  assert.ok(piiDecision.piiItems.length > 0);
+
+  // 4. Batch decision mode
+  const batchReq = {
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: {
+      name: 'gatekeeper_decide',
+      arguments: {
+        texts: [
+          'Patients with hip fracture frequently experience poor nutritional intake.',
+          'Direct physician inquiry to miuky@ha.org.hk or telephone +852-3517-3668'
+        ]
+      }
+    },
+    id: 11
+  };
+  const batchRes = handleJsonRpcRequest(batchReq);
+  assert.strictEqual(batchRes.id, 11);
+  const batchData = JSON.parse(batchRes.result.content[0].text);
+  assert.strictEqual(batchData.decisions.length, 2);
+  assert.strictEqual(batchData.decisions[0].piiDetected, false);
+  assert.strictEqual(batchData.decisions[1].piiDetected, true);
+});

@@ -22,7 +22,9 @@ import {
   auditVerisieveDlWasm,
   embedNeedleWasm,
   searchNeedleWasm,
-  trainWasmSmallModel
+  trainWasmSmallModel,
+  chatWithTrainedModelsWasm,
+  inspectLocalOpenWeightPath
 } from '../src/wasm-needle-dl.js';
 
 
@@ -430,5 +432,69 @@ test('15. trainWasmSmallModel completes in <100 ms in pure WASM with decreasing 
   assert.strictEqual(m.piiExposureRatePctRaw, 100.0, 'PII exposure rate on raw shard must be 100%');
   assert.ok(m.valPerplexityVerisieve <= m.valPerplexityRaw, 'Validation perplexity must be superior on VeriSieve shard');
   assert.strictEqual(m.needleRetrievalPurityPctVerisieve, 100.0, 'Needle retrieval purity must be 100% on certified shard');
+});
+
+test('16. inspectLocalOpenWeightPath inspects local GGUF/Ollama/SafeTensors in <1 ms with 4KB header read', () => {
+  // Test 16A: Ollama tag alias or real blob path
+  const audit = inspectLocalOpenWeightPath('llama3.2:3b');
+  assert.strictEqual(typeof audit, 'object');
+  if (audit.exists) {
+    assert.strictEqual(audit.ok, true);
+    assert.strictEqual(audit.format, 'GGUF');
+    assert.strictEqual(audit.ggufVersion, 3);
+    assert.strictEqual(audit.tensorCount, 255);
+    assert.strictEqual(audit.kvCount, 30);
+    assert.ok(audit.fileSizeMb > 1900, 'Llama 3.2 3B GGUF file size > 1.9 GB');
+    assert.ok(audit.headerSha256.length === 64, 'Header SHA-256 must be 64-char hex string');
+    assert.ok(audit.weightSeed > 0, 'Weight seed must be positive integer derived from header bytes');
+  }
+
+  // Test 16B: Synthetic GGUF v3 binary buffer written to temp file
+  const tmpGguf = path.resolve('results/test-synthetic.gguf');
+  const buf = Buffer.alloc(4096);
+  buf.write('GGUF', 0, 4, 'ascii');
+  buf.writeUInt32LE(3, 4); // version 3
+  buf.writeBigUInt64LE(128n, 8); // 128 tensors
+  buf.writeBigUInt64LE(16n, 16); // 16 KV pairs
+  fs.writeFileSync(tmpGguf, buf);
+
+  try {
+    const synAudit = inspectLocalOpenWeightPath(tmpGguf);
+    assert.strictEqual(synAudit.ok, true);
+    assert.strictEqual(synAudit.exists, true);
+    assert.strictEqual(synAudit.format, 'GGUF');
+    assert.strictEqual(synAudit.ggufVersion, 3);
+    assert.strictEqual(synAudit.tensorCount, 128);
+    assert.strictEqual(synAudit.kvCount, 16);
+    assert.ok(synAudit.weightSeed > 0);
+  } finally {
+    if (fs.existsSync(tmpGguf)) fs.unlinkSync(tmpGguf);
+  }
+
+  // Test 16C: Non-existent path returns exists: false gracefully without crashing
+  const missing = inspectLocalOpenWeightPath('./non-existent-model.safetensors');
+  assert.strictEqual(missing.ok, false);
+  assert.strictEqual(missing.exists, false);
+});
+
+test('17. trainWasmSmallModel and chatWithTrainedModelsWasm accept modelPath and attach local_weight_audit', () => {
+  const { results } = trainWasmSmallModel(null, {
+    epochs: 10,
+    exportArtifacts: false,
+    modelPath: 'llama3.2:3b'
+  });
+
+  const m = results.model_training;
+  assert.ok(m.local_weight_audit, 'Training results must include local_weight_audit');
+  if (m.local_weight_audit.exists) {
+    assert.strictEqual(m.local_weight_audit.format, 'GGUF');
+    assert.ok(m.seed !== 42, 'Seed must be derived from open weights');
+  }
+
+  const chat = chatWithTrainedModelsWasm('Who is the author?', null, {
+    modelPath: 'llama3.2:3b'
+  });
+  assert.ok(chat.telemetry.localWeightAudit, 'Chat telemetry must include localWeightAudit');
+  assert.ok(chat.models.model_verisieve.localWeightAudit, 'VeriSieve model must include localWeightAudit');
 });
 

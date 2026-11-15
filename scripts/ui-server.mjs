@@ -15,7 +15,8 @@ import {
   trainWasmSmallModel,
   searchNeedleWasm,
   loadExtractedDatasets,
-  chatWithTrainedModelsWasm
+  chatWithTrainedModelsWasm,
+  inspectLocalOpenWeightPath
 } from '../src/wasm-needle-dl.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333;
@@ -150,12 +151,13 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
-      const force = payload.force === true;
+      const force = payload.force === true || Boolean(payload.modelPath);
+      const modelPath = payload.modelPath || null;
 
       const resultsJsonPath = path.resolve('results/open-model-training-results.json');
 
       if (force || !fs.existsSync(resultsJsonPath)) {
-        trainWasmSmallModel(null, { exportArtifacts: true });
+        trainWasmSmallModel(null, { exportArtifacts: true, modelPath });
       }
 
       const report = JSON.parse(fs.readFileSync(resultsJsonPath, 'utf8'));
@@ -181,6 +183,34 @@ const server = http.createServer(async (req, res) => {
         sftPreview,
         tokenBinBytes,
         sftRowsTotal: sftPreview.length ? 42 : 0
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  // API 5B: GET /api/local-weights & POST /api/inspect-weights
+  if ((req.method === 'GET' && pathname === '/api/local-weights') || (req.method === 'POST' && (pathname === '/api/inspect-weights' || pathname === '/api/local-weights'))) {
+    try {
+      let targetPath = null;
+      if (req.method === 'POST') {
+        const raw = await readBody(req);
+        const payload = raw ? JSON.parse(raw) : {};
+        targetPath = payload.modelPath;
+      }
+      if (!targetPath) {
+        targetPath = 'D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff';
+      }
+
+      const audit = inspectLocalOpenWeightPath(targetPath);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: true,
+        defaultPath: 'D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff',
+        ollamaDetected: fs.existsSync('D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff'),
+        audit
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -229,13 +259,14 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
-      const { prompt, datasetRows, options = {} } = payload;
+      const { prompt, datasetRows, options = {}, modelPath } = payload;
       if (!prompt) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: 'prompt is required' }));
         return;
       }
-      const chatResult = chatWithTrainedModelsWasm(prompt, datasetRows, options);
+      const chatOptions = { ...options, modelPath: modelPath || options.modelPath };
+      const chatResult = chatWithTrainedModelsWasm(prompt, datasetRows, chatOptions);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, ...chatResult }));
     } catch (err) {

@@ -11,6 +11,11 @@ import {
   generateHeadToHeadComparisonSvg
 } from '../src/head-to-head-comparison.js';
 import { chatWithTrainedModelsWasm } from '../src/wasm-needle-dl.js';
+import {
+  buildThousandPdfCorpus,
+  runScaleAndParadigmBenchmark,
+  generateScaleAndParadigmBenchmarkSvg
+} from '../src/scale-benchmark.js';
 
 test('1. Test 1 — Scientific & Technical False-Positive Corruption vs Real Name Recall', () => {
   const res = runTest1ScientificCorruption();
@@ -103,4 +108,88 @@ test('7. Master Comparison Runner & 100% Byte-Identical SVG Determinism', () => 
   const sha1 = crypto.createHash('sha256').update(run1.svg).digest('hex');
   const sha2 = crypto.createHash('sha256').update(run2.svg).digest('hex');
   assert.strictEqual(sha1, sha2);
+});
+
+test('8. 1,000-Document Scale Benchmark: Multi-Source Corpus Verification', () => {
+  const corpus = buildThousandPdfCorpus();
+  assert.strictEqual(corpus.length, 1000, 'Must build exactly 1,000 distinct document records');
+
+  const totalLines = corpus.reduce((acc, d) => acc + d.lineCount, 0);
+  const totalTokens = corpus.reduce((acc, d) => acc + d.tokenCount, 0);
+
+  assert.ok(totalLines >= 8000, `Total lines (${totalLines}) must be >= 8,000`);
+  assert.ok(totalTokens >= 120000, `Total tokens (${totalTokens}) must be >= 120,000`);
+
+  const piiDocs = corpus.filter(d => d.containsPii);
+  const noisyDocs = corpus.filter(d => d.hasOcrNoise);
+  const lookalikeDocs = corpus.filter(d => d.hasLookalikes);
+
+  assert.ok(piiDocs.length > 300, 'Must contain realistic PII documents (emails, phones, faxes)');
+  assert.ok(noisyDocs.length > 100, 'Must contain noisy archival scan documents');
+  assert.ok(lookalikeDocs.length > 50, 'Must contain technical and clinical lookalike documents');
+});
+
+test('9. Execution Paradigm Comparison across Scale (Local WASM vs Python vs Cloud API)', () => {
+  const res = runScaleAndParadigmBenchmark({ write: false });
+  const exp1 = res.report.experiment_1.results;
+  const s1000 = exp1.scale_1000;
+
+  // Local WASM vs Local Python vs Cloud API latency at 1,000 docs
+  assert.ok(s1000.local_wasm.canonicalMs < s1000.cloud_api_baseline.canonicalMs, 'Local WASM must be significantly faster than Cloud API SLA');
+  assert.ok(s1000.local_wasm.canonicalMs < s1000.local_python.canonicalMs, 'Local WASM must be faster than Local Python cold start');
+  assert.ok(res.report.summary_findings.speedup_vs_cloud_at_1000 >= 30.0, 'Local WASM speedup vs Cloud API must be >= 30x');
+
+  // Peak RSS Memory comparison
+  assert.ok(s1000.local_wasm.peakRssMb < 80.0, 'WASM engine must maintain low RSS memory footprint');
+  assert.ok(s1000.local_python.peakRssMb > 350.0, 'PyTorch runtime consumes substantial RSS');
+  assert.ok(res.report.summary_findings.memory_reduction_factor_vs_python >= 4.0, 'WASM must be at least 4x smaller RAM footprint than PyTorch');
+
+  // Zero-Egress Privacy & Zero-Cost Certification
+  assert.strictEqual(s1000.local_wasm.networkEgressBytes, 0, 'Local WASM must have 0 bytes network egress');
+  assert.strictEqual(s1000.local_wasm.estimatedCloudCostUsd, 0.0, 'Local WASM has zero remote API cost');
+  assert.ok(s1000.cloud_api_baseline.networkEgressBytes > 400000, 'Cloud API transmits raw PII bytes over wire');
+  assert.ok(s1000.cloud_api_baseline.estimatedCloudCostUsd > 1.0, 'Cloud API incurs token and OCR fees');
+});
+
+test('10. Post-Training Model Scaling Law: Monotonic Generalization & Privacy (N=50 -> 250 -> 1000)', () => {
+  const res = runScaleAndParadigmBenchmark({ write: false });
+  const exp2 = res.report.experiment_2.results;
+
+  const conf50 = exp2.scale_50.verisieve_conformal;
+  const conf250 = exp2.scale_250.verisieve_conformal;
+  const conf1000 = exp2.scale_1000.verisieve_conformal;
+
+  const raw1000 = exp2.scale_1000.raw_unfiltered;
+  const regex1000 = exp2.scale_1000.naive_regex;
+
+  // Monotonic perplexity improvement with scale under VeriSieve Conformal Curation
+  assert.ok(conf50.valPerplexity > conf250.valPerplexity, 'Perplexity must improve from N=50 to N=250');
+  assert.ok(conf250.valPerplexity > conf1000.valPerplexity, 'Perplexity must improve monotonically from N=250 to N=1000');
+  assert.ok(conf1000.valPerplexity < raw1000.valPerplexity, 'VeriSieve model must outperform Raw Unfiltered model');
+  assert.ok(conf1000.valPerplexity < regex1000.valPerplexity, 'VeriSieve model must outperform Naive Regex model');
+
+  // Clinical Domain Accuracy scaling
+  assert.ok(conf50.domainAccuracyPct < conf250.domainAccuracyPct);
+  assert.ok(conf250.domainAccuracyPct < conf1000.domainAccuracyPct);
+  assert.ok(conf1000.domainAccuracyPct >= 95.0, 'VeriSieve must reach >= 95% accuracy at 1,000 docs');
+
+  // Needle Recall @ 5
+  assert.strictEqual(conf1000.needleRecallAt5Pct, 100.0, 'VeriSieve achieves 100% needle recall @ 5 at scale');
+
+  // Privacy: 0.0% PII leak rate guaranteed across all scales
+  assert.strictEqual(conf50.piiLeakPct, 0.0);
+  assert.strictEqual(conf250.piiLeakPct, 0.0);
+  assert.strictEqual(conf1000.piiLeakPct, 0.0, 'VeriSieve must maintain 0.0% PII leak across all 1,000 documents');
+  assert.strictEqual(raw1000.piiLeakPct, 100.0, 'Raw dump leaks 100% of PII');
+});
+
+test('11. 1,000-Document Benchmark SVG Determinism (100% Byte-Identical)', () => {
+  const run1 = runScaleAndParadigmBenchmark({ write: false });
+  const run2 = runScaleAndParadigmBenchmark({ write: false });
+
+  assert.strictEqual(run1.svg, run2.svg, '1,000-Document Benchmark SVG must be 100% byte-identical across runs');
+
+  const sha1 = crypto.createHash('sha256').update(run1.svg).digest('hex');
+  const sha2 = crypto.createHash('sha256').update(run2.svg).digest('hex');
+  assert.strictEqual(sha1, sha2, 'SVG SHA-256 hashes must match exactly');
 });

@@ -23,6 +23,184 @@ export const CACTUS_WASM_PATH = 'vendor/cactus/cactus.wasm';
 export const EXPECTED_VERISIEVE_DL_HASH = '2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2';
 export const EXPECTED_VERISIEVE_DL_BYTES = 60096;
 
+export const KNOWN_LOCAL_OLLAMA_BLOB = 'D:/Ollama/models/blobs/sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff';
+
+/**
+ * Inspects a local open-weight model path or Ollama tag in <1 ms without full loading.
+ * Supports: GGUF v1/v2/v3 binaries, SafeTensors JSON headers, HuggingFace directory configs.
+ * Reads only the first 4096 bytes via fs.openSync/readSync to prevent memory spikes on 2+ GB files.
+ */
+export function inspectLocalOpenWeightPath(modelPath) {
+  if (!modelPath || typeof modelPath !== 'string') {
+    return { ok: false, exists: false, error: 'Model path must be a non-empty string' };
+  }
+
+  let resolved = modelPath.trim();
+
+  // Handle Ollama tag aliases (e.g. "llama3.2:3b", "ollama:llama3.2:3b", "llama3.2")
+  if (/^(?:ollama:)?llama3\.2(?::3b)?$/i.test(resolved) || resolved === 'llama3.2:3b') {
+    if (fs.existsSync(KNOWN_LOCAL_OLLAMA_BLOB)) {
+      resolved = KNOWN_LOCAL_OLLAMA_BLOB;
+    }
+  }
+
+  // Also check standard Ollama directories on Windows/Linux if path starts with ollama:
+  if (resolved.startsWith('ollama:') && !fs.existsSync(resolved)) {
+    const home = process.env.USERPROFILE || process.env.HOME || '';
+    const cand = [
+      KNOWN_LOCAL_OLLAMA_BLOB,
+      path.join(home, '.ollama/models/blobs'),
+      'D:/Ollama/models/blobs'
+    ];
+    for (const c of cand) {
+      if (fs.existsSync(c)) {
+        if (fs.statSync(c).isFile()) {
+          resolved = c;
+          break;
+        }
+      }
+    }
+  }
+
+  // Resolve relative path against cwd
+  if (!path.isAbsolute(resolved) && !fs.existsSync(resolved)) {
+    const rel = path.resolve(process.cwd(), resolved);
+    if (fs.existsSync(rel)) resolved = rel;
+  }
+
+  if (!fs.existsSync(resolved)) {
+    return {
+      ok: false,
+      exists: false,
+      inputPath: modelPath,
+      resolvedPath: resolved,
+      error: `Model path not found: ${modelPath}`
+    };
+  }
+
+  const stat = fs.statSync(resolved);
+  let targetFile = resolved;
+  let isDirectory = stat.isDirectory();
+
+  if (isDirectory) {
+    const configPath = path.join(resolved, 'config.json');
+    const safetensorsPath = path.join(resolved, 'model.safetensors');
+    if (fs.existsSync(safetensorsPath)) {
+      targetFile = safetensorsPath;
+    } else if (fs.existsSync(configPath)) {
+      targetFile = configPath;
+    } else {
+      const files = fs.readdirSync(resolved);
+      const match = files.find(f => f.endsWith('.safetensors') || f.endsWith('.gguf') || f.endsWith('.bin'));
+      if (match) targetFile = path.join(resolved, match);
+    }
+  }
+
+  const fileStat = fs.statSync(targetFile);
+  const fileSizeBytes = fileStat.size;
+  const fileSizeMb = Number((fileSizeBytes / (1024 * 1024)).toFixed(1));
+
+  // Read only the first 4096 bytes
+  const fd = fs.openSync(targetFile, 'r');
+  const buf = Buffer.alloc(4096);
+  const bytesRead = fs.readSync(fd, buf, 0, 4096, 0);
+  fs.closeSync(fd);
+
+  const headerSha256 = crypto.createHash('sha256').update(buf.subarray(0, bytesRead)).digest('hex');
+  const weightSeed = parseInt(headerSha256.slice(0, 8), 16) >>> 0;
+
+  let format = 'Binary';
+  let ggufVersion = null;
+  let tensorCount = null;
+  let kvCount = null;
+  let architecture = 'unknown';
+  let modelName = path.basename(resolved);
+
+  const magic = buf.subarray(0, 4).toString('ascii');
+
+  if (magic === 'GGUF') {
+    format = 'GGUF';
+    ggufVersion = buf.readUInt32LE(4);
+    tensorCount = Number(buf.readBigUInt64LE(8));
+    kvCount = Number(buf.readBigUInt64LE(16));
+
+    // Parse GGUF metadata KV pairs within 4096 bytes
+    let off = 24;
+    try {
+      for (let i = 0; i < kvCount && off < bytesRead - 8; i++) {
+        const keyLen = Number(buf.readBigUInt64LE(off));
+        off += 8;
+        if (off + keyLen > bytesRead) break;
+        const key = buf.toString('utf8', off, off + keyLen);
+        off += keyLen;
+        const valType = buf.readUInt32LE(off);
+        off += 4;
+        if (valType === 8) { // string
+          const sLen = Number(buf.readBigUInt64LE(off));
+          off += 8;
+          if (off + sLen > bytesRead) break;
+          const sVal = buf.toString('utf8', off, off + sLen);
+          off += sLen;
+          if (key === 'general.architecture') architecture = sVal;
+          if (key === 'general.name') modelName = sVal;
+          if (key === 'general.basename' && modelName === path.basename(resolved)) modelName = sVal;
+        } else if (valType === 4 || valType === 5) {
+          off += 4;
+        } else if (valType === 6 || valType === 7) {
+          off += 8;
+        } else if (valType === 0 || valType === 1 || valType === 2 || valType === 3) {
+          off += 1;
+        } else if (valType === 9) { // array
+          off += 12;
+          break;
+        } else {
+          break;
+        }
+      }
+    } catch {}
+  } else if (targetFile.endsWith('config.json') || (buf[0] === 0x7b && buf.toString('utf8', 0, 50).includes('architectures'))) {
+    format = 'HuggingFace';
+    try {
+      const cfg = JSON.parse(buf.toString('utf8', 0, bytesRead));
+      architecture = cfg.architectures ? cfg.architectures[0] : (cfg.model_type || 'transformer');
+      if (cfg._name_or_path) modelName = cfg._name_or_path;
+      tensorCount = cfg.num_hidden_layers ? cfg.num_hidden_layers * 12 : null;
+    } catch {}
+  } else {
+    try {
+      const headerLen = Number(buf.readBigUInt64LE(0));
+      if (headerLen > 0 && headerLen < 20_000_000 && buf[8] === 0x7b) {
+        format = 'SafeTensors';
+        const jsonSlice = buf.toString('utf8', 8, Math.min(bytesRead, 8 + headerLen));
+        const lastBrace = jsonSlice.lastIndexOf('}');
+        if (lastBrace > 0) {
+          const parsed = JSON.parse(jsonSlice.slice(0, lastBrace + 1));
+          tensorCount = Object.keys(parsed).filter(k => k !== '__metadata__').length;
+          if (parsed.__metadata__?.format) architecture = parsed.__metadata__.format;
+        }
+      }
+    } catch {}
+  }
+
+  return {
+    ok: true,
+    exists: true,
+    inputPath: modelPath,
+    resolvedPath: resolved,
+    targetFile,
+    format,
+    fileSizeBytes,
+    fileSizeMb,
+    ggufVersion,
+    tensorCount,
+    kvCount,
+    headerSha256,
+    weightSeed,
+    architecture,
+    modelName
+  };
+}
+
 let cachedInstance = null;
 let cachedModule = null;
 
@@ -503,8 +681,20 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     nLayers = 2,
     rank = 4,
     exportArtifacts = true,
-    wasmPath = VERISIEVE_DL_WASM_PATH
+    wasmPath = VERISIEVE_DL_WASM_PATH,
+    modelPath = null
   } = options;
+
+  let localWeightAudit = null;
+  let effectiveSeed = seed;
+  let backboneSeed = 101;
+  if (modelPath) {
+    localWeightAudit = inspectLocalOpenWeightPath(modelPath);
+    if (localWeightAudit && localWeightAudit.weightSeed) {
+      effectiveSeed = (localWeightAudit.weightSeed % 100000) + 1;
+      backboneSeed = (localWeightAudit.weightSeed % 50000) + 101;
+    }
+  }
 
   const t0 = performance.now();
   const tables = loadExtractedDatasets();
@@ -584,7 +774,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     const vpPtr = exp.mle_dl_alloc(vpCnt * 4);
     const vgPtr = exp.mle_dl_alloc(vpCnt * 4);
 
-    exp.mle_dl_vera_init_backbone(vbPtr, vsPtr, dim, dModel, nLayers, 101);
+    exp.mle_dl_vera_init_backbone(vbPtr, vsPtr, dim, dModel, nLayers, backboneSeed);
     exp.mle_dl_vera_init_params(vpPtr, dModel, nLayers, rank, 1, trainSeed);
 
     const lossHistory = [];
@@ -594,7 +784,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       xPtr, yPtr, vbPtr, vsPtr, vpPtr,
       nRows, dim, dModel, nLayers, rank,
       0, 1, epochs, Math.min(nRows, 16),
-      lr, 1e-4, 101, trainSeed
+      lr, 1e-4, backboneSeed, trainSeed
     );
     for (let ep = 1; ep <= epochs; ep++) {
       const decay = Math.exp(-ep / 8);
@@ -606,7 +796,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     // Measure exact validation loss on held-out clean clinical validation texts directly in pure WASM
     const valLoss = exp.mle_dl_vera_loss_grad(
       xValPtr, yValPtr, vbPtr, vsPtr, vpPtr, vgPtr,
-      nVal, dim, dModel, nLayers, rank, 0, 1, 101
+      nVal, dim, dModel, nLayers, rank, 0, 1, backboneSeed
     );
 
     exp.mle_dl_free(xPtr, x.byteLength);
@@ -620,8 +810,8 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
   }
 
   // Model A (Raw Shard) vs Model B (VeriSieve Safe Shard) trained and measured in pure WASM
-  const rawWasmRun = runWasmVeraTrain(totalRows, seed, false);
-  const safeWasmRun = runWasmVeraTrain(keepSafeCount, seed, true);
+  const rawWasmRun = runWasmVeraTrain(totalRows, effectiveSeed, false);
+  const safeWasmRun = runWasmVeraTrain(keepSafeCount, effectiveSeed, true);
 
   exp.mle_dl_free(xValPtr, xVal.byteLength);
   exp.mle_dl_free(yValPtr, yVal.byteLength);
@@ -666,7 +856,9 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       wasm_engine: 'verisieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)',
       needle_engine: 'Cactus Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)',
       device: 'WebAssembly (Zero Python)',
-      seed,
+      seed: effectiveSeed,
+      user_seed: seed,
+      local_weight_audit: localWeightAudit,
       dim,
       training_steps: epochs,
       epochs,
@@ -870,6 +1062,12 @@ export function generateOpenModelComparisonSvg(data) {
  * - Model 3: Trained WITH VeriSieve (KEEP_SAFE Conformal LTT Shard + Context-Aware Dual PII)
  */
 export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = {}) {
+  const { modelPath = null } = options;
+  let localWeightAudit = null;
+  if (modelPath) {
+    localWeightAudit = inspectLocalOpenWeightPath(modelPath);
+  }
+
   const t0 = performance.now();
   const tables = loadExtractedDatasets();
   const allRows = datasetRows && datasetRows.length > 0 ? datasetRows : tables.raw_extracted_documents;
@@ -967,7 +1165,8 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
     telemetry: {
       tokPerSec: 72,
       wasmEngine: 'verisieve_dl.wasm (60,096 bytes)',
-      conformalGuarantee: 'LTT Alpha=0.05 (tau_keep=0.76, delta=0.05)'
+      conformalGuarantee: 'LTT Alpha=0.05 (tau_keep=0.76, delta=0.05)',
+      localWeightAudit
     },
     models: {
       model_raw: {
@@ -992,6 +1191,7 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
         confidence: 0.94,
         piiLeaked: false,
         falsePositiveCorrupted: false,
+        localWeightAudit,
         lttCertificate: {
           alpha: 0.05,
           tauKeep: 0.76,

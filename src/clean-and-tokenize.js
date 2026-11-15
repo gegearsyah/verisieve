@@ -280,7 +280,7 @@ function jaccardMinHash(sigA, sigB) {
 // 4. Rtio-Compatible PII Scanner & Dual Masker
 // ---------------------------------------------------------------------------
 export const EXCLUDED_NAME_WORDS = new Set([
-  'nutritional', 'status', 'month', 'outcome', 'elderly', 'hip', 'fracture', 'patients',
+  'nutritional', 'status', 'month', 'outcome', 'elderly', 'hip', 'fracture', 'patients', 'patient',
   'department', 'rehabilitation', 'extended', 'care', 'hospital', 'functional', 'recovery',
   'creative', 'commons', 'attribution', 'commercial', 'license', 'annals', 'medicine',
   'clinical', 'research', 'record', 'matilda', 'secure', 'system', 'markov', 'chain',
@@ -292,7 +292,7 @@ export const EXCLUDED_NAME_WORDS = new Set([
 ]);
 
 export const PII_PATTERNS = {
-  email: /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g,
+  email: /[a-zA-Z0-9_.+-]+\s*@\s*[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g,
   phone: /(?:\+\d{1,3}[-.\s]*)?(?:\(\s*\d{2,4}\s*\)|\b\d{2,4}\b)[-.\s]*\d{3,4}[-.\s]*\d{3,4}\b/g,
   ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
   credit_card: /\b(?:\d[ -]*?){13,16}\b/g,

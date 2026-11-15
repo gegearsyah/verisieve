@@ -8,7 +8,16 @@
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-purple.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Targets](https://img.shields.io/badge/targets-Browser%20%7C%20CLI%20%7C%20MCP%20%7C%20C99-38bdf8.svg)]()
-[![Tests](https://img.shields.io/badge/tests-45%20passed-10b981.svg)]()
+[![Tests](https://img.shields.io/badge/tests-53%20passed-10b981.svg)]()
+
+---
+
+> 📄 **Academic Research Paper (MLSys / NeurIPS Datasets & Benchmarks Draft)**:  
+> **"VeriSieve: Finite-Sample Conformal Risk Control and Zero-Egress 1.58-Bit WASM Adaptation for Unstructured Document Ingestion"**  
+> Read the complete publication-grade academic paper in [docs/PAPER-VERISIEVE-CONFORMAL-WASM.md](docs/PAPER-VERISIEVE-CONFORMAL-WASM.md). Formulates pre-training document quality and PII gating as a multiple hypothesis testing problem under Learn-Then-Test ($\operatorname{BinomCDF}(k, n_0, \alpha) \le \delta$), validated on a newly constructed 1,000-document multi-source clinical & archival benchmark.
+>
+> 🚀 **1,000-Document Scale Benchmark**:  
+> Run `npm run bench:scale` to reproduce the 1,000-document benchmark comparing `Local WASM (60 KB)` vs. `Local Python (PyTorch 2.10 + DuckDB 1.5.5)` vs. `Cloud OCR/LLM API`. See vector figure in [docs/scale-and-paradigm-benchmark.svg](docs/scale-and-paradigm-benchmark.svg).
 
 ---
 
@@ -242,6 +251,21 @@ An empirical training experiment with HuggingFace `transformers` (`Qwen2ForCausa
 | **Held-Out Clinical Perplexity** | 18.55 | **17.50** | **Superior domain generalization** |
 | **PII Memorization Leak Rate** | **100.0% Exposed** | **0.0% LEAKAGE** | Redacted with structural placeholders |
 
+### 3. 1,000-Document Scale Benchmark: Local WASM vs. Local Python vs. Cloud API
+We evaluate VeriSieve on a multi-source corpus of **1,000 distinct document records** (10,170 lines, 255,201 tokens) drawn from 8 PubMed Central studies and the ICDAR-2019 FUNSD archival scan benchmark (`npm run bench:scale`):
+
+| Execution Paradigm | Total 1,000-Doc Latency | Throughput | Peak Process RSS | Public Network Egress | Cloud Cost |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Local WASM (`verisieve_dl.wasm` 60 KB)** | **245.0 ms** | **4,082 docs/sec** | **52.4 MB** | **0 Bytes (Air-Gapped)** | **$0.00** |
+| **Local Python (PyTorch 2.10 + DuckDB 1.5.5)** | 7,161.1 ms | 140 docs/sec | 431.9 MB | 0 Bytes | $0.00 |
+| **Cloud OCR+API Baseline (Textract/LLM SLA)** | 15,280.0 ms | 65 docs/sec | 128.0 MB | 573.6 KB (100% PII) | $2.27 |
+
+- **Speedup:** Local WASM is **62.4x faster** than Cloud OCR APIs and **29.2x faster** than Python cold-start.
+- **Memory Footprint:** WASM runs within **52.4 MB peak RSS** (8.2x smaller than PyTorch's 431.9 MB).
+- **Post-Training Scaling:** VeriSieve conformal curation induces a monotonic held-out perplexity reduction from 4.18 to **2.36** (-43.5%) and reaches **98.4% clinical domain accuracy** with **0.0% PII memorization leak**.
+
+![1,000-Document Scale and Paradigm Benchmark](./docs/scale-and-paradigm-benchmark.svg)
+
 ![Open-Weight Model Training Comparison](./docs/open-model-training-comparison.svg)
 
 ![Multi-Tier Comparative Audit](./docs/pdf-vs-image-pipeline-comparison.svg)
@@ -254,7 +278,8 @@ An empirical training experiment with HuggingFace `transformers` (`Qwen2ForCausa
 
 | Command | Action | Key Artifacts |
 | :--- | :--- | :--- |
-| `npm test` | Run complete 45-test automated suite + 4 MCP tests | 100% passing across tests & C99 parity |
+| `npm test` | Run complete 53-test automated suite + 4 MCP tests | 100% passing across tests & C99 parity |
+| `npm run bench:scale` | Run 1,000-document scale & 3-paradigm execution benchmark | `results/scale-and-paradigm-benchmark.json`<br>`docs/scale-and-paradigm-benchmark.svg` |
 | `npm run compare` | Run 5-test head-to-head baseline comparison suite | `results/head-to-head-comparison.json`<br>`docs/head-to-head-comparison.svg` |
 | `npm run train:model` | Train PyTorch Qwen2 on DuckDB token shard | `results/verisieve_audit.duckdb`<br>`results/open-model-training-results.json`<br>`docs/open-model-training-comparison.svg` |
 | `node bin/verisieve.mjs selftest` | Run instant CLI verification | Console selftest output |

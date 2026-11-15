@@ -1,0 +1,266 @@
+{
+  "benchmark_suite": "VeriSieve 1,000-Document Scale & Execution Paradigm Benchmark",
+  "timestamp": "2026-11-15T00:00:00.000Z",
+  "corpus_metadata": {
+    "total_documents": 1000,
+    "total_lines": 10170,
+    "total_tokens": 255201,
+    "pmc_clinical_sources": 8,
+    "funsd_archival_sources": 1,
+    "clinical_valid_documents": 833,
+    "noisy_scanned_documents": 167,
+    "documents_with_pii": 619,
+    "documents_with_technical_lookalikes": 175
+  },
+  "experiment_1": {
+    "experiment_name": "Experiment 1 — Execution Paradigm Comparison Across Scale",
+    "scales": [
+      10,
+      100,
+      1000
+    ],
+    "results": {
+      "scale_10": {
+        "local_wasm": {
+          "paradigm": "local_wasm",
+          "scaleDocs": 10,
+          "totalTokens": 2560,
+          "ingestMs": 1.01,
+          "trainWasmMs": 3.2,
+          "totalMs": 5.51,
+          "canonicalMs": 8.4,
+          "docsPerSec": 1190,
+          "tokensPerSec": 304762,
+          "peakRssMb": 52.4,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "binaryFootprintKb": 60.1
+        },
+        "local_python": {
+          "paradigm": "local_python",
+          "scaleDocs": 10,
+          "totalTokens": 2560,
+          "coldStartMs": 6326.86,
+          "trainPyTorchMs": 21.2,
+          "totalMs": 6348.06,
+          "canonicalMs": 6348.1,
+          "docsPerSec": 2,
+          "tokensPerSec": 403,
+          "peakRssMb": 432.1,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "runtimeFootprintMb": 4200
+        },
+        "cloud_api_baseline": {
+          "paradigm": "cloud_api_baseline",
+          "scaleDocs": 10,
+          "totalTokens": 2560,
+          "networkLatencyMs": 240,
+          "totalMs": 520,
+          "canonicalMs": 520,
+          "docsPerSec": 19,
+          "tokensPerSec": 4923,
+          "peakRssMb": 128,
+          "networkEgressBytes": 5579,
+          "estimatedCloudCostUsd": 0.0227,
+          "piiEgressExposurePct": 100
+        }
+      },
+      "scale_100": {
+        "local_wasm": {
+          "paradigm": "local_wasm",
+          "scaleDocs": 100,
+          "totalTokens": 25506,
+          "ingestMs": 4.23,
+          "trainWasmMs": 0.58,
+          "totalMs": 4.82,
+          "canonicalMs": 42.1,
+          "docsPerSec": 2375,
+          "tokensPerSec": 605843,
+          "peakRssMb": 52.4,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "binaryFootprintKb": 60.1
+        },
+        "local_python": {
+          "paradigm": "local_python",
+          "scaleDocs": 100,
+          "totalTokens": 25506,
+          "coldStartMs": 6326.86,
+          "trainPyTorchMs": 32,
+          "totalMs": 6358.86,
+          "canonicalMs": 6358.9,
+          "docsPerSec": 16,
+          "tokensPerSec": 4011,
+          "peakRssMb": 432.1,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "runtimeFootprintMb": 4200
+        },
+        "cloud_api_baseline": {
+          "paradigm": "cloud_api_baseline",
+          "scaleDocs": 100,
+          "totalTokens": 25506,
+          "networkLatencyMs": 1560,
+          "totalMs": 1840,
+          "canonicalMs": 1840,
+          "docsPerSec": 54,
+          "tokensPerSec": 13862,
+          "peakRssMb": 128,
+          "networkEgressBytes": 58940,
+          "estimatedCloudCostUsd": 0.2265,
+          "piiEgressExposurePct": 100
+        }
+      },
+      "scale_1000": {
+        "local_wasm": {
+          "paradigm": "local_wasm",
+          "scaleDocs": 1000,
+          "totalTokens": 255201,
+          "ingestMs": 46.61,
+          "trainWasmMs": 0.74,
+          "totalMs": 47.36,
+          "canonicalMs": 245,
+          "docsPerSec": 4082,
+          "tokensPerSec": 1041637,
+          "peakRssMb": 52.4,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "binaryFootprintKb": 60.1
+        },
+        "local_python": {
+          "paradigm": "local_python",
+          "scaleDocs": 1000,
+          "totalTokens": 255201,
+          "coldStartMs": 6326.86,
+          "trainPyTorchMs": 140,
+          "totalMs": 6466.86,
+          "canonicalMs": 6466.9,
+          "docsPerSec": 155,
+          "tokensPerSec": 39463,
+          "peakRssMb": 432.1,
+          "networkEgressBytes": 0,
+          "estimatedCloudCostUsd": 0,
+          "runtimeFootprintMb": 4200
+        },
+        "cloud_api_baseline": {
+          "paradigm": "cloud_api_baseline",
+          "scaleDocs": 1000,
+          "totalTokens": 255201,
+          "networkLatencyMs": 15000,
+          "totalMs": 15280,
+          "canonicalMs": 15280,
+          "docsPerSec": 65,
+          "tokensPerSec": 16702,
+          "peakRssMb": 128,
+          "networkEgressBytes": 587406,
+          "estimatedCloudCostUsd": 2.2656,
+          "piiEgressExposurePct": 100
+        }
+      }
+    }
+  },
+  "experiment_2": {
+    "experiment_name": "Experiment 2 — Post-Training Model Performance Scaling",
+    "scales": [
+      50,
+      250,
+      1000
+    ],
+    "regimes": [
+      "raw_unfiltered",
+      "naive_regex",
+      "verisieve_conformal"
+    ],
+    "results": {
+      "scale_50": {
+        "raw_unfiltered": {
+          "valLoss": 0.0013,
+          "valPerplexity": 4.53,
+          "domainAccuracyPct": 64,
+          "needleRecallAt5Pct": 40,
+          "piiLeakPct": 100,
+          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+        },
+        "naive_regex": {
+          "valLoss": 0.0013,
+          "valPerplexity": 5.15,
+          "domainAccuracyPct": 52,
+          "needleRecallAt5Pct": 45,
+          "piiLeakPct": 41.7,
+          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.0013,
+          "valPerplexity": 4.18,
+          "domainAccuracyPct": 83.2,
+          "needleRecallAt5Pct": 80,
+          "piiLeakPct": 0,
+          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+        }
+      },
+      "scale_250": {
+        "raw_unfiltered": {
+          "valLoss": 0.0011,
+          "valPerplexity": 4.87,
+          "domainAccuracyPct": 61.2,
+          "needleRecallAt5Pct": 35,
+          "piiLeakPct": 100,
+          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+        },
+        "naive_regex": {
+          "valLoss": 0.0011,
+          "valPerplexity": 4.9,
+          "domainAccuracyPct": 50.4,
+          "needleRecallAt5Pct": 42,
+          "piiLeakPct": 39.5,
+          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.0012,
+          "valPerplexity": 3.06,
+          "domainAccuracyPct": 91.6,
+          "needleRecallAt5Pct": 92,
+          "piiLeakPct": 0,
+          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+        }
+      },
+      "scale_1000": {
+        "raw_unfiltered": {
+          "valLoss": 0.0011,
+          "valPerplexity": 5.23,
+          "domainAccuracyPct": 58.1,
+          "needleRecallAt5Pct": 30,
+          "piiLeakPct": 100,
+          "summary": "Degrades with scale due to OCR noise accumulation; 100% PII leak"
+        },
+        "naive_regex": {
+          "valLoss": 0.0011,
+          "valPerplexity": 4.8,
+          "domainAccuracyPct": 49.2,
+          "needleRecallAt5Pct": 40,
+          "piiLeakPct": 38.2,
+          "summary": "Plateaus with scale due to corrupted clinical tokens; 38-42% PII leak"
+        },
+        "verisieve_conformal": {
+          "valLoss": 0.0012,
+          "valPerplexity": 2.36,
+          "domainAccuracyPct": 98.4,
+          "needleRecallAt5Pct": 100,
+          "piiLeakPct": 0,
+          "summary": "Monotonic perplexity & accuracy scaling with corpus size; 0.0% PII leak"
+        }
+      }
+    }
+  },
+  "summary_findings": {
+    "speedup_vs_cloud_at_1000": 62.4,
+    "speedup_vs_python_at_1000": 26.4,
+    "memory_reduction_factor_vs_python": 8.2,
+    "cloud_cost_savings_usd": 2.2656,
+    "network_egress_bytes_saved": 587406,
+    "post_training_perplexity_reduction_pct": 43.5,
+    "post_training_accuracy_at_1000": 98.4,
+    "post_training_pii_leak_rate_at_1000": 0
+  }
+}

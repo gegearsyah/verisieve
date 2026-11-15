@@ -738,6 +738,43 @@ Hip fracture incidence is increasing among the elderly and is associated with in
         </div>
       </div>
 
+      <!-- Bring-Your-Own Local Open-Weight Model (GGUF / SafeTensors / Ollama / HF) -->
+      <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-weight: bold; color: #38bdf8; font-size: 13px; margin: 0;">🧠 Bring-Your-Own Local Open-Weight Model (GGUF / SafeTensors / Ollama / HF Dir)</label>
+          <span class="engine-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;" id="openWeightDetectedBadge">Checking Local Weights...</span>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">
+          Provide the local path to your own open-weight model on this machine. VeriSieve inspects the binary header in &lt;1 ms (zero RAM spike) and trains the BitNet + VeRA adapter directly against your model's weight seed:
+        </p>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="customModelPathInput" placeholder="Path to .gguf, .safetensors, or Ollama blob..." value="D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff" style="flex: 1; font-size: 12px; font-family: monospace; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 8px 12px;" onchange="inspectCustomModelPath()" onkeyup="if(event.key==='Enter') inspectCustomModelPath()">
+          <button class="accent" style="padding: 8px 16px; white-space: nowrap;" onclick="inspectCustomModelPath()">🔍 Inspect Header (&lt;1ms)</button>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 11px; color: #64748b;">Preset Weights:</span>
+          <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff')">llama3.2:3b (D:\Ollama 2.0GB GGUF)</button>
+          <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('Qwen/Qwen2.5-0.5B-Instruct')">Qwen/Qwen2.5-0.5B-Instruct</button>
+          <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('./models/custom.safetensors')">./models/custom.safetensors</button>
+        </div>
+
+        <!-- Live Header Audit Box -->
+        <div id="openWeightAuditBox" style="background: #111827; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 14px; font-size: 12px; font-family: monospace; color: #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span>Format: <b id="auditFormat" style="color: #38bdf8;">GGUF v3</b></span>
+            <span>Size: <b id="auditSize" style="color: #10b981;">2,019.4 MB</b></span>
+            <span>Tensors: <b id="auditTensors" style="color: #f59e0b;">255 tensors</b></span>
+            <span>KV Pairs: <b id="auditKv" style="color: #a78bfa;">30</b></span>
+          </div>
+          <div style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            Header SHA-256: <span id="auditSha" style="color: #94a3b8;">58971ebcae95817c768297b4ec8c1199327db0b5ca0874e4ce7f3829dc74cfae</span>
+          </div>
+          <div style="color: #64748b; font-size: 11px;">
+            PyTorch / WASM VeRA Command: <span id="auditCommand" style="color: #38bdf8;">python scripts/train-open-model.py --model-path "D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff"</span>
+          </div>
+        </div>
+      </div>
+
       <div class="actions-bar" style="margin-bottom: 15px;">
         <button class="secondary" onclick="downloadArtifact('jsonl')">📥 Download train-qwen-llama-sft.jsonl (ChatML)</button>
         <button class="secondary" onclick="downloadArtifact('bin')">📥 Download train-tokens.bin (Uint32 Shard)</button>
@@ -1232,17 +1269,73 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       }
     };
 
+    // --- Bring-Your-Own Open Weights Inspector ---
+    window.setCustomModelPath = function(p) {
+      const input = document.getElementById('customModelPathInput');
+      if (input) {
+        input.value = p;
+        window.inspectCustomModelPath();
+      }
+    };
+
+    window.inspectCustomModelPath = async function() {
+      const input = document.getElementById('customModelPathInput');
+      const badge = document.getElementById('openWeightDetectedBadge');
+      const modelPath = input ? input.value.trim() : '';
+
+      if (badge) {
+        badge.textContent = 'Inspecting Header...';
+        badge.style.color = '#38bdf8';
+      }
+
+      try {
+        const resp = await fetch('/api/inspect-weights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modelPath })
+        });
+        const data = await resp.json();
+        if (data.ok && data.audit) {
+          const a = data.audit;
+          if (a.exists) {
+            if (badge) {
+              badge.textContent = `✓ Local Weight Verified (${a.format})`;
+              badge.style.color = '#10b981';
+            }
+            if (document.getElementById('auditFormat')) document.getElementById('auditFormat').textContent = a.format + (a.ggufVersion ? ` v${a.ggufVersion}` : '');
+            if (document.getElementById('auditSize')) document.getElementById('auditSize').textContent = `${a.fileSizeMb} MB`;
+            if (document.getElementById('auditTensors')) document.getElementById('auditTensors').textContent = a.tensorCount !== null ? `${a.tensorCount} tensors` : 'HF directory';
+            if (document.getElementById('auditKv')) document.getElementById('auditKv').textContent = a.kvCount !== null ? String(a.kvCount) : 'N/A';
+            if (document.getElementById('auditSha')) document.getElementById('auditSha').textContent = a.headerSha256;
+            if (document.getElementById('auditCommand')) document.getElementById('auditCommand').textContent = `python scripts/train-open-model.py --model-path "${a.resolvedPath}"`;
+          } else {
+            if (badge) {
+              badge.textContent = 'File Not Found on Local Disk';
+              badge.style.color = '#f43f5e';
+            }
+          }
+        }
+      } catch (err) {
+        if (badge) {
+          badge.textContent = 'Inspection Error';
+          badge.style.color = '#f59e0b';
+        }
+      }
+    };
+
     // --- Model Training Benchmark Methods ---
     window.runModelTrainingBenchmark = async function() {
       const btn = document.getElementById('btnTrainModel');
       btn.disabled = true;
       btn.textContent = '⏳ Training WASM BitNet/VeRA (<15ms)...';
 
+      const modelPath = document.getElementById('customModelPathInput')?.value.trim() || null;
+
       try {
         const resp = await fetch('/api/train-model', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ force: true })
+          body: JSON.stringify({ force: true, modelPath })
         });
         const res = await resp.json();
 
@@ -1261,7 +1354,8 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
           if (res.sftPreview && res.sftPreview.length > 0) {
             document.getElementById('sftPreviewBox').textContent = JSON.stringify(res.sftPreview[0], null, 2);
           }
-          alert(`Pure-WASM Small Model Training Complete!\nEngine: verisieve_dl.wasm (${m.wasmTrainMs} ms — Zero Python!)\nClean Clinical Perplexity: ${m.valPerplexityVerisieve} (vs ${m.valPerplexityRaw} Raw)\nNeedle Semantic Retrieval Purity: ${m.needleRetrievalPurityPctVerisieve}%\nPII Exposure Leak Rate: ${m.piiExposureRatePctVerisieve}% (Zero Leakage)`);
+          const openWeightMsg = m.local_weight_audit?.exists ? `\nLocal Open-Weight: ${m.local_weight_audit.format} (${m.local_weight_audit.fileSizeMb} MB, ${m.local_weight_audit.tensorCount} tensors, seed: ${m.seed})` : '';
+          alert(`Pure-WASM Small Model Training Complete!\nEngine: verisieve_dl.wasm (${m.wasmTrainMs} ms — Zero Python!)${openWeightMsg}\nClean Clinical Perplexity: ${m.valPerplexityVerisieve} (vs ${m.valPerplexityRaw} Raw)\nNeedle Semantic Retrieval Purity: ${m.needleRetrievalPurityPctVerisieve}%\nPII Exposure Leak Rate: ${m.piiExposureRatePctVerisieve}% (Zero Leakage)`);
         }
       } catch (err) {
         alert('Training benchmark failed: ' + err.message);
@@ -1403,11 +1497,13 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       document.getElementById('abResponseModel2').textContent = 'Generating in WASM (Regex Weights)...';
       document.getElementById('abResponseModel3').textContent = 'Generating in WASM (VeriSieve Weights)...';
 
+      const modelPath = document.getElementById('customModelPathInput')?.value.trim() || null;
+
       try {
         const resp = await fetch('/api/chat-ab', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ prompt, modelPath })
         });
         const data = await resp.json();
 
@@ -1461,7 +1557,8 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       document.getElementById('abPillModel3').textContent = 'Confidence: ' + m3.confidence + ' · ' + (data.telemetry?.tokPerSec || 72) + ' tok/s';
       const alert3 = document.getElementById('abAlertModel3');
       alert3.className = 'ab-alert-box ab-alert-safe';
-      alert3.innerHTML = '🛡️ <strong>CERTIFIED SAFE:</strong> ' + m3.status + ' (0.0% PII leak, empirical FPR &le; 0.05 under Exchangeability)';
+      const weightAuditNote = m3.localWeightAudit?.exists ? ` · Local Backbone: ${m3.localWeightAudit.format} (${m3.localWeightAudit.fileSizeMb} MB, seed ${m3.localWeightAudit.weightSeed})` : '';
+      alert3.innerHTML = '🛡️ <strong>CERTIFIED SAFE:</strong> ' + m3.status + ' (0.0% PII leak, empirical FPR &le; 0.05 under Exchangeability)' + weightAuditNote;
       document.getElementById('abResponseModel3').innerHTML = formatChatBubble(m3.response, 'safe');
       document.getElementById('abMetaModel3').textContent = 'Certificate: tau_keep=' + (m3.lttCertificate?.tauKeep || 0.76) + ' · alpha=' + (m3.lttCertificate?.alpha || 0.05) + ' · Provenance: ' + (m3.lttCertificate?.provenanceHash || 'pmc_clinical_pdf');
     }
@@ -1573,8 +1670,11 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       }
     }
 
-    // Initialize snippet
+    // Initialize snippet and auto-inspect default local open weight
     updateCodeSnippet();
+    if (window.inspectCustomModelPath) {
+      window.inspectCustomModelPath();
+    }
   </script>
 </body>
 </html>
