@@ -1,6 +1,7 @@
 {
   "name": "matilda-portable",
   "version": "1.0.0",
+  "description": "Zero-dependency portable data gatekeeper: PDF vs. OCR, dual PII masking, tokenization, conformal risk control & single-header C99 parity",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
@@ -10,6 +11,13 @@
     "matilda-portable": "./bin/matilda-portable.mjs"
   },
   "scripts": {
-    "test": "node --test"
+    "start": "node bin/matilda-portable.mjs run",
+    "test": "node --test test/multi-font-fixture.test.js test/ocr-engine.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-image-pipeline.test.js && node --test test/mcp.test.js",
+    "demo:real": "node scripts/run-real-data-benchmark.mjs",
+    "demo:pdf-vs-image": "node scripts/run-pdf-vs-image-demo.mjs",
+    "bench": "node scripts/run-benchmarks.mjs && node scripts/generate-figures.mjs",
+    "audit-wasm": "node bin/matilda-portable.mjs audit-wasm",
+    "mcp": "node src/mcp-server.js",
+    "ui": "node scripts/ui-server.mjs"
   }
 }

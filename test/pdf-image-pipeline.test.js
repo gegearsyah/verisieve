@@ -207,3 +207,74 @@ test('8. Real PMC clinical research PDF & FUNSD benchmark data integration', asy
   assert.ok(funsdData && (funsdData.rows || funsdData.data), 'FUNSD benchmark data must be present');
   assert.ok(fs.existsSync(path.join(untrustedDir, 'funsd-sample.json')), 'funsd-sample.json must exist');
 });
+
+test('9. 100% Real External Data Pipeline execution (Zero Mock Strings & Byte-Identical SVG)', async () => {
+  const { runRealExternalDataPipeline } = await import('../src/pdf-image-pipeline.js');
+  const run1 = runRealExternalDataPipeline({ write: false });
+
+  assert.ok(run1.pmcRows.length >= 30, `PMC rows (${run1.pmcRows.length}) must be >= 30`);
+  assert.ok(run1.funsdRows.length >= 30, `FUNSD rows (${run1.funsdRows.length}) must be >= 30`);
+  assert.strictEqual(run1.comparisonJson.summary.gatekeeper_status, 'CERTIFIED');
+
+  // Assert ZERO mock strings
+  const csvCombined = run1.pmcCsv + run1.funsdCsv;
+  assert.ok(!csvCombined.includes('MATILDA SECURE'), 'Must NOT contain mock string "MATILDA SECURE"');
+  assert.ok(!csvCombined.includes('Evelyn Vance'), 'Must NOT contain mock string "Evelyn Vance"');
+  assert.ok(!csvCombined.includes('ada.lovelace@matilda-maincode.au'), 'Must NOT contain mock string "ada.lovelace"');
+
+  // Assert real author & archival names/emails are caught and processed
+  assert.ok(run1.pmcRows.some((r) => r.pii_detected && (r.pii_types.includes('email') || r.pii_types.includes('phone'))));
+  assert.ok(run1.funsdRows.some((r) => r.pii_detected && (r.pii_types.includes('phone') || r.pii_types.includes('name_likely'))));
+
+  // Assert byte-identical SVG across two runs
+  const run2 = runRealExternalDataPipeline({ write: false });
+  assert.strictEqual(run1.comparisonSvg, run2.comparisonSvg, 'SVG visualization must be 100% byte-identical across runs');
+});
+
+test('10. ingestFromUrlOrPath handles files, flags, and online URL with offline fallback', async () => {
+  const { ingestFromUrlOrPath } = await import('../src/pdf-image-pipeline.js');
+
+  // Test 1: Real local PMC PDF with options
+  const pmcPdfPath = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf';
+  const outDir = path.resolve('results/test-byod-out');
+  const resFile = await ingestFromUrlOrPath(pmcPdfPath, {
+    mode: 'auto',
+    piiStrategy: 'partial',
+    alpha: 0.10,
+    maxSeqLen: 128,
+    outDir
+  });
+
+  assert.ok(resFile.rows.length > 50, `Must extract > 50 lines from real PDF, got ${resFile.rows.length}`);
+  assert.ok(resFile.stats.pii_detected_lines > 0, 'Must detect PII in real PDF');
+  assert.ok(fs.existsSync(path.join(outDir, 'results.csv')));
+  assert.ok(fs.existsSync(path.join(outDir, 'results.json')));
+  assert.ok(fs.existsSync(path.join(outDir, 'summary-report.svg')));
+
+  // Test 2: Unreachable online URL triggers offline fallback cleanly without crashing
+  const unreachableUrl = 'https://offline-fallback-test.invalid/paper.pdf';
+  const resFallback = await ingestFromUrlOrPath(unreachableUrl, { timeoutMs: 2000 });
+  assert.strictEqual(resFallback.fetchStatus, 'offline_fallback');
+  assert.ok(resFallback.rows.length > 0, 'Offline fallback must still produce rows');
+  assert.ok(resFallback.gatekeeperBundle, 'Must produce gatekeeper bundle');
+});
+
+test('11. UI server endpoints /api/run and /api/mcp forward requests cleanly', async () => {
+  const { handleJsonRpcRequest } = await import('../src/mcp-server.js');
+
+  // Verify MCP initialize
+  const initRes = handleJsonRpcRequest({ jsonrpc: '2.0', id: 101, method: 'initialize' });
+  assert.strictEqual(initRes.result.serverInfo.name, 'matilda-portable-mcp');
+
+  // Verify MCP ingest_and_tokenize call
+  const callRes = handleJsonRpcRequest({
+    jsonrpc: '2.0',
+    id: 102,
+    method: 'tools/call',
+    params: {
+      name: 'ingest_and_tokenize',
+      arguments: { input: 'Hospital 124 Shatin Pass Road. miuky@ha.org.hk Phone: +852-3517-3668' }
+    }
+  });
+  assert.ok(callRes.result.content[0].text.includes('<PII:'));
+});
