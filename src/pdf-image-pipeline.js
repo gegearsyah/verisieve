@@ -11,67 +11,49 @@ import crypto from 'node:crypto';
 import { generateMultiFontDocument, encodePNG, applyScanDegradations, renderGlyphBitmap } from './multi-font-fixture.js';
 import { tileAndRead } from './ocr-engine.js';
 import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
-import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper } from './gatekeeper.js';
+import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from './gatekeeper.js';
+import { extractPdfDetailed } from './pdf-parser.js';
+import { extractDocxText } from './ingestor.js';
+
+export { extractPdfDetailed } from './pdf-parser.js';
+
+function resolveDefaultPmcPaths() {
+  return [
+    path.resolve('fixtures/pmc/miu_2017_PMC5773420.pdf'),
+    path.resolve('../Health-Research/references/papers/miu_2017_PMC5773420.pdf'),
+    'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf'
+  ];
+}
 
 // --- Real Research PDF Stream Extraction ---
-export function extractPmcClinicalSentences(pdfPath = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf') {
+export function extractPmcClinicalSentences(pdfPath) {
   let targetPath = pdfPath;
-  if (!fs.existsSync(targetPath)) {
-    // Relative fallback
-    const altPath = path.resolve('../Health-Research/references/papers/miu_2017_PMC5773420.pdf');
-    if (fs.existsSync(altPath)) targetPath = altPath;
-  }
-
-  const sentences = [];
-  if (fs.existsSync(targetPath)) {
-    try {
-      const buf = fs.readFileSync(targetPath);
-      let streamStart = 0;
-      while ((streamStart = buf.indexOf('stream', streamStart)) !== -1) {
-        let dataStart = streamStart + 6;
-        if (buf[dataStart] === 0x0d && buf[dataStart + 1] === 0x0a) dataStart += 2;
-        else if (buf[dataStart] === 0x0a || buf[dataStart] === 0x0d) dataStart += 1;
-        const streamEnd = buf.indexOf('endstream', dataStart);
-        if (streamEnd === -1) break;
-        const rawStream = buf.subarray(dataStart, streamEnd);
-        try {
-          const uncompressed = zlib.inflateSync(rawStream);
-          const text = uncompressed.toString('latin1');
-          const tjMatches = text.matchAll(/\[(.*?)\]\s*TJ/gs);
-          for (const m of tjMatches) {
-            const inner = m[1];
-            const strMatches = inner.matchAll(/\((.*?)\)/g);
-            let s = '';
-            for (const sm of strMatches) s += sm[1];
-            s = s.replace(/\\([()\\])/g, '$1')
-                 .replace(/\\\d{3}/g, '-')
-                 .replace(/\s+/g, ' ')
-                 .trim();
-            if (s.length >= 25 && s.length <= 75 && !s.includes('http') && /^[A-Z]/.test(s)) {
-              sentences.push(s);
-            }
-          }
-        } catch {
-          // not a compressed text stream
-        }
-        streamStart = streamEnd + 9;
-      }
-    } catch {
-      // ignore read errors
+  if (targetPath !== undefined && targetPath !== null) {
+    if (!fs.existsSync(targetPath)) {
+      throw new Error(`PMC_PDF_NOT_FOUND: Real PDF file does not exist at ${targetPath}`);
+    }
+  } else {
+    targetPath = resolveDefaultPmcPaths().find((p) => fs.existsSync(p));
+    if (!targetPath) {
+      throw new Error('PMC_PDF_NOT_FOUND: No local PMC reference PDF found (pass explicit pdfPath or add fixtures/pmc/)');
     }
   }
 
-  const unique = [...new Set(sentences)];
-  if (unique.length > 0) return unique;
+  const buf = fs.readFileSync(targetPath);
+  const diag = extractPdfDetailed(buf);
+  const unique = [];
+  const seen = new Set();
+  for (const s of diag.lines) {
+    if (s.length >= 25 && s.length <= 160 && !/https?:\/\//i.test(s) && /^[A-Z]/.test(s) && !seen.has(s)) {
+      seen.add(s);
+      unique.push(s);
+    }
+  }
 
-  // Reliable hardcoded fallback clinical research sentences from PMC5773420
-  return [
-    'Effects of Nutritional Status on 6-Month Outcome in Elderly',
-    'Hip fracture incidence is increasing among the elderly.',
-    'Functional recovery after hip fracture is an important health issue.',
-    'Malnutrition in the elderly is an important global health problem.',
-    'Ka Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP'
-  ];
+  if (unique.length === 0) {
+    throw new Error(`PMC_EXTRACTION_EMPTY: Zero clinical sentences extracted from ${targetPath}`);
+  }
+  return unique;
 }
 
 // --- Fetch or Load Real Noisy Archival Benchmark (FUNSD) ---
@@ -160,11 +142,15 @@ export async function fetchOrLoadFunsdBenchmark(outDir = 'results/untrusted-benc
 // --- Combined Document Line Specifications ---
 export function getResearchDocumentLineSpecs() {
   const clinical = extractPmcClinicalSentences();
-  const c1 = clinical[0] || 'Effects of Nutritional Status on 6-Month Outcome in Elderly';
-  const c2 = clinical[1] || 'Hip fracture incidence is increasing among the elderly.';
-  const c3 = clinical[2] || 'Functional recovery after hip fracture is an important health issue.';
-  const c4 = clinical[3] || 'Malnutrition in the elderly is an important global health problem.';
-  const c5 = clinical[4] || 'Ka Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP';
+  const safeClinical = clinical.filter((s) => scanRecordsForPII(s).length === 0);
+  const picked = safeClinical.length >= 5 ? safeClinical.slice(0, 5) : clinical.slice(0, 5);
+  const [c1, c2, c3, c4, c5] = [
+    picked[0] || clinical[0],
+    picked[1] || clinical[0],
+    picked[2] || clinical[0],
+    picked[3] || clinical[0],
+    picked[4] || clinical[0],
+  ];
 
   return [
     { text: 'MATILDA SECURE CLINICAL RESEARCH REHABILITATION RECORD', fontStyle: 'display_serif', routingLabel: 'drop_boilerplate', label: 0 },
@@ -287,42 +273,38 @@ export function generateResearchPdfAndImage(options = {}) {
   };
 }
 
+export function redactExcerptWithSha256(rawText, maskedText) {
+  const textStr = String(rawText ?? '');
+  const sha = crypto.createHash('sha256').update(textStr, 'utf8').digest('hex').slice(0, 16);
+  let safePreview = maskedText ? String(maskedText) : textStr;
+  if (!maskedText || safePreview === textStr) {
+    const items = scanRecordsForPII(textStr);
+    for (const item of items) {
+      safePreview = safePreview.replace(item.value, maskValue(item.value, item.type, 'token'));
+    }
+  }
+  return `[REDACTED sha256:${sha}] ${safePreview}`.trim();
+}
+
+function computeGatekeeperStatus(bundle, nNegatives, alpha = 0.05, delta = 0.05) {
+  const cal = bundle?.calibration;
+  if (!cal) return 'UNCERTIFIED_FAIL_CLOSED';
+  if (typeof cal.certified === 'boolean') {
+    return cal.certified ? 'CERTIFIED' : 'UNCERTIFIED_FAIL_CLOSED';
+  }
+  if (!nNegatives || nNegatives <= 0 || cal.tauKeep >= 1.0) return 'UNCERTIFIED_FAIL_CLOSED';
+  const zeroFprPval = binomCdf(0, nNegatives, alpha);
+  return zeroFprPval <= delta && cal.empiricalFpr <= alpha ? 'CERTIFIED' : 'UNCERTIFIED_FAIL_CLOSED';
+}
+
 // --- PDF Text Layer Extraction ---
 export function extractPdfTextLayer(pdfBuffer) {
-  const content = pdfBuffer.toString('latin1');
-  const results = [];
-  const lineRegex = /(?:(\/F[1-5])\s+\d+\s+Tf[\s\S]*?)?\(([\s\S]*?)\)\s*Tj/g;
-  let match;
-  let lineIdx = 0;
-
-  const fontNameMap = {
-    '/F1': 'display_serif',
-    '/F2': 'sans_serif',
-    '/F3': 'monospace',
-    '/F4': 'italic',
-    '/F5': 'bold_stamp'
-  };
-
-  while ((match = lineRegex.exec(content)) !== null) {
-    const fontRef = match[1] || '/F2';
-    const rawText = match[2]
-      .replace(/\\([()\\])/g, '$1')
-      .replace(/\\n/g, '\n');
-
-    results.push({
-      lineIndex: lineIdx++,
-      text: rawText,
-      fontStyle: fontNameMap[fontRef] || 'sans_serif',
-      fontSizePx: fontRef === '/F1' ? 18 : 11,
-      sourceFormat: 'pdf_born_digital'
-    });
-  }
-
-  return results;
+  return extractPdfDetailed(pdfBuffer).lineRecords;
 }
 
 // --- CSV & JSON Exporters ---
-export function exportBlocksToCsv(rows) {
+export function exportBlocksToCsv(rows, options = {}) {
+  const includeRawExcerpt = options.includeRawExcerpt === true;
   const headers = [
     'line_index',
     'source_mode',
@@ -341,7 +323,10 @@ export function exportBlocksToCsv(rows) {
 
   const csvRows = [headers.join(',')];
   rows.forEach((r) => {
-    const escapedExcerpt = `"${(r.raw_excerpt || '').replace(/"/g, '""')}"`;
+    const excerptVal = includeRawExcerpt
+      ? String(r.raw_excerpt || '')
+      : redactExcerptWithSha256(r.raw_excerpt || r.masked_text || '', r.masked_text);
+    const escapedExcerpt = `"${excerptVal.replace(/"/g, '""')}"`;
     const escapedMasked = `"${(r.masked_text || '').replace(/"/g, '""')}"`;
     const escapedHidden = `"${(r.hidden_pii_preview || '').replace(/"/g, '""')}"`;
     const piiTypesStr = `"${(r.pii_types || []).join(';')}"`;
@@ -360,7 +345,7 @@ export function exportBlocksToCsv(rows) {
       tokenIdsStr,
       r.label ?? 0,
       r.pred_prob !== undefined ? Number(r.pred_prob).toFixed(4) : '0.0000',
-      r.gatekeeper_action || 'KEEP_SAFE'
+      r.gatekeeper_action || 'ABSTAIN_HUMAN_REVIEW'
     ];
     csvRows.push(line.join(','));
   });
@@ -369,12 +354,23 @@ export function exportBlocksToCsv(rows) {
 }
 
 export function exportBlocksToJson(rows, options = {}) {
+  const includeRawExcerpt = options.includeRawExcerpt === true;
+  const safeRows = rows.map((r) => {
+    if (includeRawExcerpt) return r;
+    const rawSha = crypto.createHash('sha256').update(String(r.raw_excerpt || r.masked_text || ''), 'utf8').digest('hex');
+    return {
+      ...r,
+      raw_excerpt_sha256: rawSha,
+      raw_excerpt: redactExcerptWithSha256(r.raw_excerpt || r.masked_text || '', r.masked_text),
+    };
+  });
   return JSON.stringify({
     schema_version: '1.0',
     pipeline: 'PDF vs Image -> CSV/JSON -> Hidden PII -> Tokens -> Trained Gatekeeper',
     timestamp: options.timestamp || '2026-11-15T00:00:00.000Z',
-    total_lines: rows.length,
-    rows
+    total_lines: safeRows.length,
+    raw_excerpt_redacted: !includeRawExcerpt,
+    rows: safeRows
   }, null, 2);
 }
 
@@ -604,7 +600,12 @@ export function runPdfVsImageComparison(options = {}) {
       ltt_alpha: 0.05,
       ltt_tau_keep: calibratedGatekeeper.calibration.tauKeep,
       ltt_tau_drop: calibratedGatekeeper.calibration.tauDrop,
-      gatekeeper_status: 'CERTIFIED'
+      gatekeeper_status: computeGatekeeperStatus(
+        calibratedGatekeeper,
+        trainingLabels.filter((y) => y === 0).length,
+        0.05,
+        0.05
+      )
     },
     paths: {
       pdf_binary: finalPdfRows,
@@ -632,164 +633,84 @@ export function runPdfVsImageComparison(options = {}) {
 // ---------------------------------------------------------------------------
 
 /**
- * Extract decompressed text streams from PDF binary buffer
+ * Extract decompressed content streams from a PDF binary buffer
  */
 export function extractPdfTextStreams(buf) {
-  const texts = [];
-  let sStart = 0;
-  while ((sStart = buf.indexOf('stream', sStart)) !== -1) {
-    let dStart = sStart + 6;
-    if (buf[dStart] === 0x0d && buf[dStart + 1] === 0x0a) dStart += 2;
-    else if (buf[dStart] === 0x0a || buf[dStart] === 0x0d) dStart += 1;
-    const sEnd = buf.indexOf('endstream', dStart);
-    if (sEnd === -1) break;
-    try {
-      const unc = zlib.inflateSync(buf.subarray(dStart, sEnd));
-      texts.push(unc.toString('latin1'));
-    } catch {}
-    sStart = sEnd + 9;
-  }
-  return texts;
+  return extractPdfDetailed(buf).streams;
 }
 
 /**
- * Extract verbatim lines from any PDF buffer
+ * Extract verbatim lines from any PDF buffer (honest parser: no dedup loss, no 8-char filter, scoped ToUnicode CMaps)
  */
 export function extractLinesFromPdfBuffer(buf) {
-  const streams = extractPdfTextStreams(buf);
-  const lines = [];
-
-  // Parse ToUnicode CMaps if present across streams
-  const cmap = new Map();
-  for (const s of streams) {
-    if (s.includes('beginbfchar') || s.includes('beginbfrange')) {
-      const bfcharMatches = s.matchAll(/beginbfchar([\s\S]*?)endbfchar/g);
-      for (const m of bfcharMatches) {
-        const pairs = m[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g);
-        for (const p of pairs) {
-          const src = p[1].toUpperCase();
-          const dst = String.fromCharCode(parseInt(p[2], 16));
-          cmap.set(src, dst);
-        }
-      }
-      const bfrangeMatches = s.matchAll(/beginbfrange([\s\S]*?)endbfrange/g);
-      for (const m of bfrangeMatches) {
-        const ranges = m[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g);
-        for (const r of ranges) {
-          const start = parseInt(r[1], 16);
-          const end = parseInt(r[2], 16);
-          const dstStart = parseInt(r[3], 16);
-          const padLen = r[1].length;
-          for (let i = 0; i <= end - start; i++) {
-            const srcHex = (start + i).toString(16).toUpperCase().padStart(padLen, '0');
-            const dstChar = String.fromCharCode(dstStart + i);
-            cmap.set(srcHex, dstChar);
-          }
-        }
-      }
-    }
-  }
-
-  const decodeHex = (hex) => {
-    if (!hex || cmap.size === 0) return '';
-    const step = cmap.has(hex.slice(0, 2).toUpperCase()) ? 2 : (cmap.has(hex.slice(0, 4).toUpperCase()) ? 4 : 2);
-    let out = '';
-    for (let j = 0; j < hex.length; j += step) {
-      const code = hex.slice(j, j + step).toUpperCase();
-      if (cmap.has(code)) out += cmap.get(code);
-    }
-    return out;
-  };
-
-  for (const s of streams) {
-    const tjMatches = s.matchAll(/\[(.*?)\]\s*TJ/gs);
-    for (const m of tjMatches) {
-      const parts = [];
-      const strMatches = m[1].matchAll(/\((.*?)\)/g);
-      for (const sm of strMatches) parts.push(sm[1]);
-      let line = parts.join('').replace(/\\([()\\])/g, '$1').replace(/\s+/g, ' ').trim();
-      if (line.length >= 8 && !lines.includes(line)) lines.push(line);
-
-      // Also decode hex strings in TJ arrays if literal strings yielded short text
-      if (line.length < 8 && cmap.size > 0) {
-        const hexMatches = m[1].matchAll(/<([0-9a-fA-F]+)>/g);
-        let hLine = '';
-        for (const hm of hexMatches) {
-          hLine += decodeHex(hm[1]);
-        }
-        hLine = hLine.replace(/\s+/g, ' ').trim();
-        if (hLine.length >= 8 && !lines.includes(hLine)) lines.push(hLine);
-      }
-    }
-    const singleTj = s.matchAll(/(?<!\[\s*)\((.*?)\)\s*Tj/gs);
-    for (const m of singleTj) {
-      let line = m[1].replace(/\\([()\\])/g, '$1').replace(/\s+/g, ' ').trim();
-      if (line.length >= 8 && !lines.includes(line)) lines.push(line);
-    }
-
-    if (cmap.size > 0) {
-      const hexTjMatches = s.matchAll(/(?<!\[\s*)<([0-9a-fA-F]+)>\s*Tj/gs);
-      for (const m of hexTjMatches) {
-        let line = decodeHex(m[1]).replace(/\s+/g, ' ').trim();
-        if (line.length >= 8 && !lines.includes(line)) lines.push(line);
-      }
-    }
-  }
-  return lines;
+  return extractPdfDetailed(buf).lines;
 }
 
 /**
- * Returns 100% verbatim lines from the 4 PubMed Central Clinical Research PDFs on disk
+ * Resolve and extract verbatim lines from real PubMed Central PDFs on disk. Fails closed if absent.
  */
-export function getRealPmcDocumentLines(pdfDir = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers') {
+export function getRealPmcDocumentLines(pdfDir) {
   let targetDir = pdfDir;
-  if (!fs.existsSync(targetDir)) {
-    const altDir = path.resolve('../Health-Research/references/papers');
-    if (fs.existsSync(altDir)) targetDir = altDir;
+  if (targetDir !== undefined && targetDir !== null) {
+    if (!fs.existsSync(targetDir)) {
+      throw new Error(`PMC_PDF_SOURCE_NOT_FOUND: Real PMC directory does not exist at ${targetDir}`);
+    }
+  } else {
+    const candidates = [
+      path.resolve('fixtures/pmc'),
+      path.resolve('../Health-Research/references/papers'),
+      'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers'
+    ];
+    targetDir = candidates.find((d) => fs.existsSync(d) && fs.readdirSync(d).some((f) => f.toLowerCase().endsWith('.pdf')));
+    if (!targetDir) {
+      throw new Error('PMC_PDF_SOURCE_NOT_FOUND: No directory containing real PMC PDFs found');
+    }
   }
 
-  // Verbatim extracted lines from the 4 PMC clinical research papers
-  return [
-    // miu_2017_PMC5773420.pdf
-    { text: 'Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Ka Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP', fontStyle: 'italic', routingLabel: 'quarantine_pii', piiType: 'name_likely', piiVal: 'Ka Ying Doris Miu', label: 0, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Department of Rehabilitation and Extended Care, Wong Tai Sin Hospital, Hong Kong', fontStyle: 'display_serif', routingLabel: 'quarantine_pii', piiType: 'address_likely', piiVal: 'Wong Tai Sin Hospital, Hong Kong', label: 0, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Department of Rehabilitation and Extended Care, Wong Tai Sin Hospital, 124 Shatin Pass Road 852, Hong Kong. Tel: +852-3517-3668, Fax: +852-3517-3855, E-mail: miuky@ha.org.hk', fontStyle: 'monospace', routingLabel: 'quarantine_pii', piiType: 'email', piiVal: 'miuky@ha.org.hk', label: 0, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'All hip fracture patients age >65 years admitted to a rehabilitation unit were recruited from July 2015 to December 2015.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Hip fracture incidence is increasing among the elderly and is associated with increase in mortality, disability and dependency [1,2].', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Functional recovery after hip fracture is an important health issue.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Malnutrition in the elderly is an important global health problem.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'Patients were reassessed at 6 months for functional status and place of residence.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'https://doi.org/10.5535/arm.2017.41.6.888', fontStyle: 'monospace', routingLabel: 'keep_safe', label: 1, source: 'miu_2017_PMC5773420.pdf' },
-    { text: 'This is an open-access article distributed under the terms of the Creative Commons Attribution Non-Commercial License http://creativecommons.org/licenses/by-nc/4.0', fontStyle: 'display_serif', routingLabel: 'drop_boilerplate', label: 0, source: 'miu_2017_PMC5773420.pdf' },
+  const pdfFiles = fs.readdirSync(targetDir).filter((f) => f.toLowerCase().endsWith('.pdf')).sort();
+  if (pdfFiles.length === 0) {
+    throw new Error(`PMC_PDF_SOURCE_NOT_FOUND: Directory contains no PDF files: ${targetDir}`);
+  }
 
-    // goubar_2021_PMC7611209.pdf
-    { text: '30-Day Survival and Recovery after Hip Fracture by Mobilisation Timing and Dementia: A UK Database Study', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'Finbarr C. Martin, MD, Katie J Sheehan', fontStyle: 'italic', routingLabel: 'quarantine_pii', piiType: 'name_likely', piiVal: 'Katie J Sheehan', label: 0, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'Katie J Sheehan, 2nd Floor Addison House, Guy\'s Campus, London, SE1 1UL, katie.sheehan@kcl.ac.uk', fontStyle: 'monospace', routingLabel: 'quarantine_pii', piiType: 'email', piiVal: 'katie.sheehan@kcl.ac.uk', label: 0, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'School of Population Health & Environmental Sciences, King\'s College London, London, UK', fontStyle: 'display_serif', routingLabel: 'quarantine_pii', piiType: 'address_likely', piiVal: 'King\'s College London, London, UK', label: 0, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'Analysis of the National Hip Fracture Database linked to hospitalisation records for 126,897 patients aged 60 years surgically treated for hip fracture in England/Wales between 2014 and 2016.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'Using logistic regression, we adjusted for covariates with a propensity score to estimate the association with mortality.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'goubar_2021_PMC7611209.pdf' },
-    { text: 'Author manuscript; available in PMC 2021 July 12.', fontStyle: 'monospace', routingLabel: 'keep_safe', label: 1, source: 'goubar_2021_PMC7611209.pdf' },
+  const out = [];
+  for (const fname of pdfFiles) {
+    const buf = fs.readFileSync(path.join(targetDir, fname));
+    const diag = extractPdfDetailed(buf);
+    for (const rec of diag.lineRecords) {
+      const text = rec.text;
+      if (text.length < 20) continue;
+      const piiItems = scanRecordsForPII(text);
+      let routingLabel = 'keep_safe';
+      let label = 1;
+      let piiType = null;
+      let piiVal = null;
 
-    // ikram_2022_PMC9948448.pdf
-    { text: 'Can the Clinical Frailty Scale on admission predict outcomes in older patients with hip fracture?', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'ikram_2022_PMC9948448.pdf' },
-    { text: 'A COHORT STUDY OF 1,255 PATIENTS', fontStyle: 'display_serif', routingLabel: 'keep_safe', label: 1, source: 'ikram_2022_PMC9948448.pdf' },
-    { text: 'B. A. Marson, S. Craxford, J. R. F. Gladman, B. J. Ollivere', fontStyle: 'italic', routingLabel: 'quarantine_pii', piiType: 'name_likely', piiVal: 'B. J. Ollivere', label: 0, source: 'ikram_2022_PMC9948448.pdf' },
-    { text: 'From University of Nottingham, Nottingham, UK', fontStyle: 'display_serif', routingLabel: 'quarantine_pii', piiType: 'address_likely', piiVal: 'University of Nottingham', label: 0, source: 'ikram_2022_PMC9948448.pdf' },
-    { text: 'email: benjamin.ollivere@nottingham.ac.uk', fontStyle: 'monospace', routingLabel: 'quarantine_pii', piiType: 'email', piiVal: 'benjamin.ollivere@nottingham.ac.uk', label: 0, source: 'ikram_2022_PMC9948448.pdf' },
-    { text: 'Bone Joint J 2022;104-B(8):980-986. BJJ-2020-1835.R2', fontStyle: 'monospace', routingLabel: 'keep_safe', label: 1, source: 'ikram_2022_PMC9948448.pdf' },
+      if (piiItems.length > 0) {
+        routingLabel = 'quarantine_pii';
+        label = 0;
+        piiType = piiItems[0].type;
+        piiVal = piiItems[0].value;
+      } else if (/\b(?:copyright|creative commons|all rights reserved|author manuscript|available in pmc|open[- ]access)\b|https?:\/\/|\bdoi:/i.test(text)) {
+        routingLabel = 'drop_boilerplate';
+        label = 0;
+      }
 
-    // record_PMC4595218.pdf
-    { text: 'The REporting of studies Conducted using Observational Routinely-collected health Data (RECORD) Statement', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'record_PMC4595218.pdf' },
-    { text: 'Eric I. Benchimol, Liam Smeeth, Astrid Guttmann', fontStyle: 'italic', routingLabel: 'quarantine_pii', piiType: 'name_likely', piiVal: 'Eric I. Benchimol', label: 0, source: 'record_PMC4595218.pdf' },
-    { text: 'Ottawa Hospital Research Institute, University of Ottawa, Ottawa, Ontario, Canada', fontStyle: 'display_serif', routingLabel: 'quarantine_pii', piiType: 'address_likely', piiVal: 'Ottawa Hospital Research Institute', label: 0, source: 'record_PMC4595218.pdf' },
-    { text: 'ebenchimol@cheo.on.ca', fontStyle: 'monospace', routingLabel: 'quarantine_pii', piiType: 'email', piiVal: 'ebenchimol@cheo.on.ca', label: 0, source: 'record_PMC4595218.pdf' },
-    { text: 'PLOS Medicine | DOI:10.1371/journal.pmed.1001885 October 6, 2015', fontStyle: 'monospace', routingLabel: 'keep_safe', label: 1, source: 'record_PMC4595218.pdf' },
-    { text: 'Routinely collected health data are defined as data collected without specific a priori research questions developed.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'record_PMC4595218.pdf' },
-    { text: 'The RECORD statement provides reporting guidelines for studies conducted using routinely-collected health data.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'record_PMC4595218.pdf' },
-    { text: 'Incomplete or inadequate reporting of research based on routinely collected data exacerbates these challenges.', fontStyle: 'sans_serif', routingLabel: 'keep_safe', label: 1, source: 'record_PMC4595218.pdf' }
-  ];
+      out.push({
+        text,
+        fontStyle: rec.fontStyle || 'sans_serif',
+        routingLabel,
+        piiType,
+        piiVal,
+        label,
+        source: fname
+      });
+    }
+  }
+
+  if (out.length === 0) {
+    throw new Error(`PMC_EXTRACTION_EMPTY: Zero lines extracted from PDFs in ${targetDir}`);
+  }
+  return out;
 }
 
 /**
@@ -1028,13 +949,30 @@ export function runRealExternalDataPipeline(options = {}) {
     };
   });
 
-  const trainFeats = trainingBlocks.map((b) =>
+  const allFeats = trainingBlocks.map((b) =>
     extractFeatureRow({ text: b.masked, confidence: 1.0, piiItems: b.piiItems }, b.enc.tokenIds)
   );
-  const trainLabels = trainingBlocks.map((b) => b.label);
+  const allLabels = trainingBlocks.map((b) => b.label);
+
+  const trainFeats = [];
+  const trainLabels = [];
+  const calFeats = [];
+  const calLabels = [];
+  for (let i = 0; i < allFeats.length; i++) {
+    if (i % 2 === 0) {
+      trainFeats.push(allFeats[i]);
+      trainLabels.push(allLabels[i]);
+    } else {
+      calFeats.push(allFeats[i]);
+      calLabels.push(allLabels[i]);
+    }
+  }
+  const effectiveCalFeats = calFeats.length >= 2 ? calFeats : trainFeats;
+  const effectiveCalLabels = calLabels.length >= 2 ? calLabels : trainLabels;
+  const nCalNeg = effectiveCalLabels.filter((l) => l === 0).length;
 
   const model = trainGatekeeper(trainFeats, trainLabels, { lr: 0.15, epochs: 90, seed: 42 });
-  const calibrated = calibrateGatekeeper(model, trainFeats, trainLabels, { alpha, delta: 0.05 });
+  const calibrated = calibrateGatekeeper(model, effectiveCalFeats, effectiveCalLabels, { alpha, delta: 0.05 });
 
   // 4. Process PMC Rows
   const pmcRows = pmcLines.map((spec, idx) => {
@@ -1062,7 +1000,7 @@ export function runRealExternalDataPipeline(options = {}) {
       line_index: idx,
       source_mode: 'pmc_clinical_pdf',
       font_style: spec.fontStyle,
-      raw_excerpt: isPii && hiddenPreview ? spec.text.replace(spec.piiVal, hiddenPreview) : spec.text,
+      raw_excerpt: isPii ? redactExcerptWithSha256(spec.text, masked) : spec.text,
       pii_detected: isPii || piiItems.length > 0,
       pii_types: piiItems.length > 0 ? [...new Set(piiItems.map((p) => p.type))] : (spec.piiType ? [spec.piiType] : []),
       hidden_pii_preview: hiddenPreview,
@@ -1101,7 +1039,7 @@ export function runRealExternalDataPipeline(options = {}) {
       line_index: idx,
       source_mode: 'funsd_scanned_archival_ocr',
       font_style: spec.fontStyle,
-      raw_excerpt: isPii && hiddenPreview ? spec.text.replace(spec.piiVal, hiddenPreview) : spec.text,
+      raw_excerpt: isPii ? redactExcerptWithSha256(spec.text, masked) : spec.text,
       pii_detected: isPii || piiItems.length > 0,
       pii_types: piiItems.length > 0 ? [...new Set(piiItems.map((p) => p.type))] : (spec.piiType ? [spec.piiType] : []),
       hidden_pii_preview: hiddenPreview,
@@ -1160,7 +1098,7 @@ export function runRealExternalDataPipeline(options = {}) {
       ltt_alpha: alpha,
       ltt_tau_keep: calibrated.calibration.tauKeep,
       ltt_tau_drop: calibrated.calibration.tauDrop,
-      gatekeeper_status: 'CERTIFIED'
+      gatekeeper_status: computeGatekeeperStatus(calibrated, nCalNeg, alpha, 0.05)
     },
     pmc_dataset: pmcRows,
     funsd_dataset: funsdRows
@@ -1313,22 +1251,22 @@ export function generateRealDataComparisonSvg(comparisonJson) {
 
     <g transform="translate(25, 80)" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">
       <rect x="0" y="0" width="12" height="12" rx="2" fill="#10b981" />
-      <text x="22" y="10">PMC Research KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">${summary.pmc_keep_safe || 16} (${pmcKeepPct}%)</tspan></text>
+      <text x="22" y="10">PMC Research KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">${summary.pmc_keep_safe ?? 0} (${pmcKeepPct}%)</tspan></text>
 
       <rect x="0" y="30" width="12" height="12" rx="2" fill="#f43f5e" />
-      <text x="22" y="40">PMC PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">${summary.pmc_drop_or_quarantine || 16} (${pmcDropPct}%)</tspan></text>
+      <text x="22" y="40">PMC PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">${summary.pmc_drop_or_quarantine ?? 0} (${pmcDropPct}%)</tspan></text>
 
       <rect x="0" y="65" width="12" height="12" rx="2" fill="#10b981" />
-      <text x="22" y="75">FUNSD Safe KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">${summary.funsd_keep_safe || 14} (${funsdKeepPct}%)</tspan></text>
+      <text x="22" y="75">FUNSD Safe KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">${summary.funsd_keep_safe ?? 0} (${funsdKeepPct}%)</tspan></text>
 
       <rect x="0" y="95" width="12" height="12" rx="2" fill="#f43f5e" />
-      <text x="22" y="105">FUNSD PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">${summary.funsd_drop_or_quarantine || 21} (${funsdDropPct}%)</tspan></text>
+      <text x="22" y="105">FUNSD PII DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">${summary.funsd_drop_or_quarantine ?? 0} (${funsdDropPct}%)</tspan></text>
     </g>
 
     <g transform="translate(25, 220)" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">
-      <text x="0" y="0">Calibration: alpha = ${summary.ltt_alpha || 0.05} (95% Safety Guarantee)</text>
-      <text x="0" y="20">Thresholds: tau_keep = ${summary.ltt_tau_keep || 0.50}, tau_drop = ${summary.ltt_tau_drop || 0.25}</text>
-      <text x="0" y="45" font-size="12" fill="#10b981" font-weight="bold">Status: CERTIFIED (Zero Leakage on Real Data)</text>
+      <text x="0" y="0">Calibration: alpha = ${summary.ltt_alpha ?? 0.05} (${Math.round((1 - (summary.ltt_alpha ?? 0.05)) * 100)}% Safety Guarantee)</text>
+      <text x="0" y="20">Thresholds: tau_keep = ${summary.ltt_tau_keep ?? 1.0}, tau_drop = ${summary.ltt_tau_drop ?? 0.0}</text>
+      <text x="0" y="45" font-size="12" fill="${summary.gatekeeper_status === 'CERTIFIED' ? '#10b981' : '#f59e0b'}" font-weight="bold">Status: ${summary.gatekeeper_status || 'UNCERTIFIED_FAIL_CLOSED'}</text>
     </g>
   </g>
 
@@ -1447,6 +1385,34 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   let sourceFormat = 'text';
   let fetchStatus = 'local_file';
   let localFilename = typeof inputUrlOrPath === 'string' ? path.basename(inputUrlOrPath) : 'input_data';
+  let pdfDiagnostics = null;
+
+  const extractPdfOrFail = async (pdfBuf, filename) => {
+    const diag = extractPdfDetailed(pdfBuf);
+    pdfDiagnostics = {
+      pageCount: diag.pageCount,
+      streamCount: diag.streamCount,
+      imageXObjectCount: diag.imageXObjectCount,
+      isLikelyScanned: diag.isLikelyScanned,
+      encrypted: diag.encrypted,
+      diagnosticReason: diag.diagnosticReason,
+    };
+    if (diag.encrypted) {
+      throw new Error(`PDF_ENCRYPTED_UNSUPPORTED: ${filename} uses encrypted streams/strings`);
+    }
+    if (diag.lines.length > 0) {
+      return diag.lines.join('\n');
+    }
+    if (diag.isLikelyScanned) {
+      if (typeof options.ocrProvider === 'function') {
+        const ocrOut = await options.ocrProvider(pdfBuf, { filename, sourceFormat: 'pdf', images: diag.images });
+        const ocrLines = Array.isArray(ocrOut) ? ocrOut : String(ocrOut || '').split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (ocrLines.length > 0) return ocrLines.join('\n');
+      }
+      throw new Error(`PDF_IMAGE_ONLY_REQUIRES_OCR: ${filename} contains ${diag.imageXObjectCount} image XObject(s) and zero born-digital text`);
+    }
+    throw new Error(`PDF_EMPTY_TEXT_LAYER: ${filename} yielded zero extractable text lines`);
+  };
 
   // 1. Check if input is an online URL or arxiv id
   const isOnlineUrl = typeof inputUrlOrPath === 'string' && (
@@ -1462,6 +1428,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       url = `https://arxiv.org/pdf/${arxivId}.pdf`;
     }
 
+    let fetched = false;
     try {
       const controller = new AbortController();
       const timeoutMs = options.timeoutMs || 8000;
@@ -1469,52 +1436,59 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
 
       const resp = await fetch(url, {
         headers: {
-          'User-Agent': 'Matilda-Portable/1.0.0 (Research Audit Pipeline; https://github.com/matilda/matilda-portable)'
+          'User-Agent': 'Matilda-Portable/1.0.0 (Research Audit Pipeline)'
         },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
 
-      if (resp.ok) {
-        const cType = resp.headers.get('content-type') || '';
-        const buf = Buffer.from(await resp.arrayBuffer());
-
-        if (cType.includes('pdf') || url.endsWith('.pdf')) {
-          sourceFormat = 'pdf';
-          const cachedPdf = path.join(untrustedDir, 'downloaded-online.pdf');
-          fs.writeFileSync(cachedPdf, buf);
-          rawContent = extractLinesFromPdfBuffer(buf).join('\n');
-        } else if (cType.includes('html') || url.endsWith('.html')) {
-          sourceFormat = 'html';
-          rawContent = buf.toString('utf8');
-        } else if (cType.includes('json') || url.endsWith('.json')) {
-          sourceFormat = 'json';
-          rawContent = buf.toString('utf8');
-        } else {
-          sourceFormat = 'text';
-          rawContent = buf.toString('utf8');
-        }
-        fetchStatus = 'online_live';
-        localFilename = path.basename(new URL(url).pathname) || 'downloaded-paper';
-      } else {
+      if (!resp.ok) {
         throw new Error(`HTTP status ${resp.status}`);
       }
-    } catch (err) {
-      // Offline fallback
-      console.log('Network unavailable or URL unreachable — falling back to local cached research PDF / benchmark:', err.message);
-      fetchStatus = 'offline_fallback';
 
-      // Load local real PMC PDF fallback
-      const fallbackPdf = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf';
-      if (fs.existsSync(fallbackPdf)) {
+      const cType = resp.headers.get('content-type') || '';
+      const buf = Buffer.from(await resp.arrayBuffer());
+      localFilename = path.basename(new URL(url).pathname) || 'downloaded-paper';
+
+      if (cType.includes('pdf') || url.toLowerCase().endsWith('.pdf')) {
         sourceFormat = 'pdf';
-        const buf = fs.readFileSync(fallbackPdf);
-        rawContent = extractLinesFromPdfBuffer(buf).join('\n');
-        localFilename = 'miu_2017_PMC5773420.pdf (Offline Fallback)';
+        const cachedPdf = path.join(untrustedDir, 'downloaded-online.pdf');
+        fs.writeFileSync(cachedPdf, buf);
+        rawContent = await extractPdfOrFail(buf, localFilename);
+      } else if (cType.includes('wordprocessingml') || url.toLowerCase().endsWith('.docx')) {
+        sourceFormat = 'docx';
+        rawContent = extractDocxText(buf, options).lines.join('\n');
+      } else if (cType.includes('html') || url.toLowerCase().endsWith('.html')) {
+        sourceFormat = 'html';
+        rawContent = buf.toString('utf8');
+      } else if (cType.includes('json') || url.toLowerCase().endsWith('.json')) {
+        sourceFormat = 'json';
+        rawContent = buf.toString('utf8');
       } else {
         sourceFormat = 'text';
-        rawContent = getRealPmcDocumentLines().map((l) => l.text).join('\n');
-        localFilename = 'pmc-research-sentences (Offline Fallback)';
+        rawContent = buf.toString('utf8');
+      }
+      fetchStatus = 'online_live';
+      fetched = true;
+    } catch (err) {
+      if (!fetched && options.allowOfflineFallback === true && options.offlineFallbackPath && fs.existsSync(options.offlineFallbackPath)) {
+        const fbPath = path.resolve(options.offlineFallbackPath);
+        const fbBuf = fs.readFileSync(fbPath);
+        const fbExt = path.extname(fbPath).toLowerCase();
+        localFilename = path.basename(fbPath);
+        fetchStatus = 'offline_fallback';
+        if (fbExt === '.pdf') {
+          sourceFormat = 'pdf';
+          rawContent = await extractPdfOrFail(fbBuf, localFilename);
+        } else if (fbExt === '.docx') {
+          sourceFormat = 'docx';
+          rawContent = extractDocxText(fbBuf, options).lines.join('\n');
+        } else {
+          sourceFormat = 'text';
+          rawContent = fbBuf.toString('utf8');
+        }
+      } else {
+        throw new Error(`URL_FETCH_FAILED: ${err.message}`);
       }
     }
   } else {
@@ -1527,19 +1501,20 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     const stat = fs.statSync(resolvedPath);
     if (stat.isDirectory()) {
       sourceFormat = 'directory';
-      const files = fs.readdirSync(resolvedPath);
+      const files = fs.readdirSync(resolvedPath).sort();
       const parts = [];
       for (const f of files) {
         const full = path.join(resolvedPath, f);
         if (fs.statSync(full).isFile()) {
-          try {
-            if (f.endsWith('.pdf')) {
-              const b = fs.readFileSync(full);
-              parts.push(...extractLinesFromPdfBuffer(b));
-            } else {
-              parts.push(fs.readFileSync(full, 'utf8'));
-            }
-          } catch {}
+          const fl = f.toLowerCase();
+          const b = fs.readFileSync(full);
+          if (fl.endsWith('.pdf')) {
+            parts.push(...(await extractPdfOrFail(b, f)).split('\n'));
+          } else if (fl.endsWith('.docx')) {
+            parts.push(...extractDocxText(b, options).lines);
+          } else {
+            parts.push(b.toString('utf8'));
+          }
         }
       }
       rawContent = parts.join('\n');
@@ -1549,10 +1524,20 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       if (ext === '.pdf') {
         sourceFormat = 'pdf';
         const b = fs.readFileSync(resolvedPath);
-        rawContent = extractLinesFromPdfBuffer(b).join('\n');
+        rawContent = await extractPdfOrFail(b, localFilename);
+      } else if (ext === '.docx') {
+        sourceFormat = 'docx';
+        const b = fs.readFileSync(resolvedPath);
+        rawContent = extractDocxText(b, options).lines.join('\n');
       } else if (ext === '.png' || ext === '.bmp') {
         sourceFormat = 'image';
-        rawContent = `[IMAGE OCR EXTRACTED from ${localFilename}]`;
+        const b = fs.readFileSync(resolvedPath);
+        if (typeof options.ocrProvider === 'function') {
+          const ocrOut = await options.ocrProvider(b, { filename: localFilename, sourceFormat: 'image' });
+          rawContent = Array.isArray(ocrOut) ? ocrOut.join('\n') : String(ocrOut || '');
+        } else {
+          throw new Error(`IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an OCR provider`);
+        }
       } else if (ext === '.html' || ext === '.htm') {
         sourceFormat = 'html';
         rawContent = fs.readFileSync(resolvedPath, 'utf8');
@@ -1572,20 +1557,19 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     }
   }
 
-  // 3. Extract & Clean Blocks
-  const rawLines = rawContent
+  // 3. Extract & Clean Blocks (fail closed on empty inputs)
+  const lines = rawContent
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  const lines = rawLines.length > 0 ? rawLines : [
-    'Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients',
-    'Ka Ying Doris Miu, Wong Tai Sin Hospital 124 Shatin Pass Road. miuky@ha.org.hk Tel: +852-3517-3668',
-    'Functional recovery after hip fracture is an important health issue.'
-  ];
+  if (lines.length === 0) {
+    throw new Error(`EMPTY_DOCUMENT_NO_LINES: ${localFilename} produced zero non-empty text lines`);
+  }
 
   // 4. Run Tokenization & Gatekeeper Calibration
   const tokenizer = createTokenizer({ maxSeqLen });
+  const includeRawExcerpt = options.includeRawExcerpt === true;
   const blocks = lines.map((text, idx) => {
     const piiItems = scanRecordsForPII(text);
     let masked = text;
@@ -1607,7 +1591,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       line_index: idx,
       source_mode: sourceFormat,
       font_style: 'sans_serif',
-      raw_excerpt: isPii && hiddenPreview ? text : text,
+      raw_excerpt: includeRawExcerpt ? text : redactExcerptWithSha256(text, masked),
       pii_detected: isPii,
       pii_types: [...new Set(piiItems.map((p) => p.type))],
       hidden_pii_preview: hiddenPreview,
@@ -1620,14 +1604,32 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     };
   });
 
-  // Train and calibrate on the blocks
+  // Train and calibrate on disjoint feature/label splits
   const features = blocks.map((b) =>
     extractFeatureRow({ text: b.masked_text, confidence: 1.0, piiItems: b.piiItems }, b.enc.tokenIds)
   );
   const labels = blocks.map((b) => b.label);
 
-  const model = trainGatekeeper(features, labels, { lr: 0.15, epochs: 60, seed: 42 });
-  const calibrated = calibrateGatekeeper(model, features, labels, { alpha, delta: 0.05 });
+  const trainFeatures = [];
+  const trainLabels = [];
+  const calFeatures = [];
+  const calLabels = [];
+  for (let i = 0; i < features.length; i++) {
+    if (i % 2 === 0) {
+      trainFeatures.push(features[i]);
+      trainLabels.push(labels[i]);
+    } else {
+      calFeatures.push(features[i]);
+      calLabels.push(labels[i]);
+    }
+  }
+  const effectiveCalFeatures = calFeatures.length >= 2 ? calFeatures : trainFeatures;
+  const effectiveCalLabels = calLabels.length >= 2 ? calLabels : trainLabels;
+  const nCalNeg = effectiveCalLabels.filter((l) => l === 0).length;
+
+  const model = trainGatekeeper(trainFeatures, trainLabels, { lr: 0.15, epochs: 60, seed: 42 });
+  const calibrated = calibrateGatekeeper(model, effectiveCalFeatures, effectiveCalLabels, { alpha, delta: 0.05 });
+  const gatekeeperStatus = computeGatekeeperStatus(calibrated, nCalNeg, alpha, 0.05);
 
   const finalRows = blocks.map((b, idx) => {
     const feat = features[idx];
@@ -1686,7 +1688,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     eos_token_id: 2
   });
 
-  const csv = exportBlocksToCsv(finalRows);
+  const csv = exportBlocksToCsv(finalRows, { includeRawExcerpt });
   const jsonReport = {
     schema_version: '1.0',
     pipeline: 'Matilda Portable BYOD Ingest & Gatekeeper Pipeline',
@@ -1694,6 +1696,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     input_source: inputUrlOrPath,
     local_filename: localFilename,
     fetch_status: fetchStatus,
+    ...(pdfDiagnostics ? { pdf_diagnostics: pdfDiagnostics } : {}),
     settings: {
       mode,
       pii_strategy: piiStrategy,
@@ -1707,7 +1710,8 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       drop_or_quarantine_lines: dropCount,
       abstain_lines: abstainCount,
       tau_keep: calibrated.calibration.tauKeep,
-      tau_drop: calibrated.calibration.tauDrop
+      tau_drop: calibrated.calibration.tauDrop,
+      gatekeeper_status: gatekeeperStatus
     },
     audit_chain: audit.entries,
     rows: finalRows
@@ -1825,7 +1829,7 @@ export function generateSummaryReportSvg(report) {
     <rect x="180" y="93" width="650" height="14" rx="3" fill="#1e293b"/>
     <rect x="180" y="93" width="${Math.round(6.5 * dropPct)}" height="14" rx="3" fill="#f43f5e"/>
 
-    <text x="25" y="132" font-family="system-ui, sans-serif" font-size="10" fill="#64748b">LTT Conformal Risk Level: alpha = ${settings.alpha || 0.05} • Certified Status: PASS</text>
+    <text x="25" y="132" font-family="system-ui, sans-serif" font-size="10" fill="#64748b">LTT Conformal Risk Level: alpha = ${settings.alpha ?? 0.05} • Certified Status: ${summary.gatekeeper_status || 'UNCERTIFIED_FAIL_CLOSED'}</text>
   </g>
 
   <!-- Footer Info -->
