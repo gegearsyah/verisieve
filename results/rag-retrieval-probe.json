@@ -1,0 +1,60 @@
+{
+  "task": "sandbox ranker on the needle's 125 held-out PubMedQA questions",
+  "text": "verisieve_masked_body",
+  "dim": 64,
+  "seed": 42,
+  "candidateCount": 125,
+  "slice": [
+    375,
+    500
+  ],
+  "rankers": {
+    "cosine": {
+      "queriesTested": 125,
+      "recallAt1": {
+        "hits": 39,
+        "pct": 31.2
+      },
+      "recallAt5": {
+        "hits": 75,
+        "pct": 60
+      }
+    },
+    "lexical": {
+      "queriesTested": 125,
+      "recallAt1": {
+        "hits": 119,
+        "pct": 95.2
+      },
+      "recallAt5": {
+        "hits": 123,
+        "pct": 98.4
+      }
+    },
+    "hybrid_055_045": {
+      "queriesTested": 125,
+      "cosineWeight": 0.55,
+      "lexicalWeight": 0.45,
+      "recallAt1": {
+        "hits": 117,
+        "pct": 93.6
+      },
+      "recallAt5": {
+        "hits": 120,
+        "pct": 96
+      },
+      "recallAt6": {
+        "hits": 121,
+        "pct": 96.8
+      },
+      "bestScoreBelow0_15": {
+        "count": 0,
+        "pct": 0
+      },
+      "bestScoreBelow0_30": {
+        "count": 1,
+        "pct": 0.8
+      }
+    }
+  }
+}
