@@ -388,19 +388,19 @@
         <span class="sandbox-engine">verisieve_dl.wasm 60KB + cactus.wasm</span>
       </div>
       <div class="sandbox-tabs">
-        <button class="sandbox-tab active" onclick="switchSandboxSection('ingest')">1. Ingest &amp; Camera/Image (Mirage)</button>
-        <button class="sandbox-tab" onclick="switchSandboxSection('duckdb')">2. DuckDB SQL Table</button>
-        <button class="sandbox-tab" onclick="switchSandboxSection('train')">3. Train WASM Model</button>
-        <button class="sandbox-tab" onclick="switchSandboxSection('chat-ab')">4. In-Place A/B Model Chat Playground</button>
+        <button class="sandbox-tab active" onclick="switchSandboxSection('ingest', this)">1. Ingest &amp; Camera/Image (Mirage)</button>
+        <button class="sandbox-tab" onclick="switchSandboxSection('duckdb', this)">2. WASM SQL Table</button>
+        <button class="sandbox-tab" onclick="switchSandboxSection('train', this)">3. Train WASM Model</button>
+        <button class="sandbox-tab" onclick="switchSandboxSection('chat-ab', this)">4. In-Place A/B Model Chat Playground</button>
       </div>
     </div>
 
     <!-- Live Telemetry Ticker -->
     <div class="telemetry-bar" id="telemetryTickerBar">
       <div class="telemetry-item"><span class="t-label">ENGINE:</span> <span class="t-val">VERISIEVE WASM (60KB)</span></div>
-      <div class="telemetry-item"><span class="t-label">CONFIDENCE:</span> <span class="t-val safe" id="tickerConfidence">0.94</span></div>
-      <div class="telemetry-item"><span class="t-label">THROUGHPUT:</span> <span class="t-val" id="tickerThroughput">72 TOK/S IN THIS TAB</span></div>
-      <div class="telemetry-item"><span class="t-label">TRAIN LATENCY:</span> <span class="t-val" id="tickerTrainLatency">&lt;15 MS</span></div>
+      <div class="telemetry-item"><span class="t-label">CONFIDENCE:</span> <span class="t-val safe" id="tickerConfidence">PENDING</span></div>
+      <div class="telemetry-item"><span class="t-label">THROUGHPUT:</span> <span class="t-val" id="tickerThroughput">LIVE MEASURED</span></div>
+      <div class="telemetry-item"><span class="t-label">TRAIN LATENCY:</span> <span class="t-val" id="tickerTrainLatency">LIVE MEASURED</span></div>
       <div class="telemetry-item"><span class="t-label">ROUTED BY:</span> <span class="t-val accent">LTT CONFORMAL GATE (α=0.05)</span></div>
     </div>
 
@@ -487,7 +487,7 @@
           <option value="pmc_7611209">Real UK Database Study — 126k Patient Cohort (PMC7611209)</option>
           <option value="bad_fax">Facsimile Torture Scan (Degraded Fax Benchmark)</option>
           <option value="custom_url">Online URL / arXiv Extraction</option>
-          <option value="custom_upload">Upload Your Own File (.pdf, .png, .html, .csv, .txt)</option>
+          <option value="custom_upload">Upload Your Own File (.pdf, .docx, .png, .bmp, .html, .csv, .txt)</option>
         </select>
 
         <div id="urlInputContainer" style="display: none;">
@@ -501,8 +501,8 @@
         <div id="uploadContainer" style="display: none;">
           <div class="drop-zone" id="dropZone" onclick="document.getElementById('filePicker').click()">
             <p><strong>Click to choose file</strong> or drag &amp; drop here</p>
-            <span>Supports .pdf, .png, .bmp, .html, .eml, .csv, .json, .txt</span>
-            <input type="file" id="filePicker" style="display: none;" onchange="onFilePicked(event)">
+            <span>Supports .pdf, .docx, .png, .bmp, .html, .eml, .csv, .json, .txt</span>
+            <input type="file" id="filePicker" accept=".pdf,.docx,.png,.bmp,.html,.htm,.eml,.csv,.json,.txt" style="display: none;" onchange="onFilePicked(event)">
           </div>
         </div>
 
@@ -578,6 +578,8 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       </div>
     </div>
 
+    <div id="pipelineErrorBanner" class="ab-alert-box ab-alert-danger" role="alert" style="display: none; margin-bottom: 16px;"></div>
+
     <!-- Results Section (Pipeline Execution Audit & Decisions) -->
     <div class="card" id="resultsCard" style="display: none;">
       <h3>
@@ -636,14 +638,14 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       </div>
     </div>
 
-    <!-- DuckDB SQL Data Explorer -->
+    <!-- WASM SQL Data Explorer -->
     <div class="card" id="section-duckdb">
       <h3>
-        <span>🦆 DuckDB SQL Data Explorer (Raw PDF/Image → Structured CSV Transformation)</span>
-        <span class="engine-badge" id="duckdbEngineBadge">DuckDB v1.5.5 Ready</span>
+        <span>🧮 VeriSieve SQL Data Explorer (Raw PDF/Image → Structured CSV Transformation)</span>
+        <span class="engine-badge" id="duckdbEngineBadge">VeriSieve WASM SQL Subset v1 Ready</span>
       </h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-        See exactly how unstructured PDF text and noisy OCR scans transform into clean, auditable SQL tables. Query live in-memory via DuckDB v1.5.5 engine.
+        See exactly how unstructured PDF text and noisy OCR scans transform into clean, auditable SQL tables. Query live via zero-import <code style="color: #38bdf8;">verisieve_sql.wasm</code> subset engine.
       </p>
       
       <div class="sql-preset-bar">
@@ -659,7 +661,7 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       </div>
 
       <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
-        <button class="accent" onclick="runDuckDbQuery()">⚡ Run DuckDB SQL</button>
+        <button class="accent" onclick="runDuckDbQuery()">⚡ Run WASM SQL</button>
         <span id="sqlStatusText" style="font-size: 12px; color: var(--text-muted);">Ready to query active extracted dataset</span>
       </div>
 
@@ -748,12 +750,12 @@ Hip fracture incidence is increasing among the elderly and is associated with in
           Provide the local path to your own open-weight model on this machine. VeriSieve inspects the binary header in &lt;1 ms (zero RAM spike) and trains the BitNet + VeRA adapter directly against your model's weight seed:
         </p>
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <input type="text" id="customModelPathInput" placeholder="Path to .gguf, .safetensors, or Ollama blob..." value="D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff" style="flex: 1; font-size: 12px; font-family: monospace; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 8px 12px;" onchange="inspectCustomModelPath()" onkeyup="if(event.key==='Enter') inspectCustomModelPath()">
+          <input type="text" id="customModelPathInput" placeholder="Optional path to .gguf, .safetensors, ollama:tag, or HF model ID..." value="" style="flex: 1; font-size: 12px; font-family: monospace; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 8px 12px;" onchange="inspectCustomModelPath()" onkeyup="if(event.key==='Enter') inspectCustomModelPath()">
           <button class="accent" style="padding: 8px 16px; white-space: nowrap;" onclick="inspectCustomModelPath()">🔍 Inspect Header (&lt;1ms)</button>
         </div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
           <span style="font-size: 11px; color: #64748b;">Preset Weights:</span>
-          <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff')">llama3.2:3b (D:\Ollama 2.0GB GGUF)</button>
+          <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('ollama:llama3.2:3b')">ollama:llama3.2:3b</button>
           <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('Qwen/Qwen2.5-0.5B-Instruct')">Qwen/Qwen2.5-0.5B-Instruct</button>
           <button class="outline" style="padding: 3px 8px; font-size: 11px;" onclick="setCustomModelPath('./models/custom.safetensors')">./models/custom.safetensors</button>
         </div>
@@ -761,16 +763,16 @@ Hip fracture incidence is increasing among the elderly and is associated with in
         <!-- Live Header Audit Box -->
         <div id="openWeightAuditBox" style="background: #111827; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 14px; font-size: 12px; font-family: monospace; color: #e2e8f0;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span>Format: <b id="auditFormat" style="color: #38bdf8;">GGUF v3</b></span>
-            <span>Size: <b id="auditSize" style="color: #10b981;">2,019.4 MB</b></span>
-            <span>Tensors: <b id="auditTensors" style="color: #f59e0b;">255 tensors</b></span>
-            <span>KV Pairs: <b id="auditKv" style="color: #a78bfa;">30</b></span>
+            <span>Format: <b id="auditFormat" style="color: #38bdf8;">-</b></span>
+            <span>Size: <b id="auditSize" style="color: #10b981;">-</b></span>
+            <span>Tensors: <b id="auditTensors" style="color: #f59e0b;">-</b></span>
+            <span>KV Pairs: <b id="auditKv" style="color: #a78bfa;">-</b></span>
           </div>
           <div style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            Header SHA-256: <span id="auditSha" style="color: #94a3b8;">58971ebcae95817c768297b4ec8c1199327db0b5ca0874e4ce7f3829dc74cfae</span>
+            Header SHA-256: <span id="auditSha" style="color: #94a3b8;">Enter a model path above to inspect its binary header</span>
           </div>
           <div style="color: #64748b; font-size: 11px;">
-            PyTorch / WASM VeRA Command: <span id="auditCommand" style="color: #38bdf8;">python scripts/train-open-model.py --model-path "D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff"</span>
+            PyTorch / WASM VeRA Command: <span id="auditCommand" style="color: #38bdf8;">uv run scripts/train-open-model.py</span>
           </div>
         </div>
       </div>
@@ -864,6 +866,7 @@ safe_rows = con.execute("SELECT masked_text FROM verisieve_certified_tokens").fe
         <input type="text" id="abPromptInput" placeholder="Enter prompt to query all 3 trained models..." value="Domain Test: What is the effect of nutritional status on 6-month hip fracture recovery?" style="flex: 1; font-size: 13px; background: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 10px 14px; margin-bottom: 0;">
         <button class="accent" id="btnSendAbChat" onclick="sendAbChat()" style="padding: 10px 20px; white-space: nowrap;">⚡ Send to All 3 Models</button>
       </div>
+      <div id="abErrorBanner" class="ab-alert-box ab-alert-danger" role="alert" style="display: none; margin-bottom: 12px;"></div>
 
       <!-- 3-Column Models Output Grid -->
       <div class="ab-models-grid" id="abModelsGrid">
@@ -912,17 +915,14 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
               <div class="ab-model-title" style="color: #10b981;">Model 3: VeriSieve Certified</div>
               <div class="ab-model-sub">LTT Conformal Gate + Context-Aware Dual PII</div>
             </div>
-            <span class="ab-telemetry-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;" id="abPillModel3">Confidence: 0.94 · 72 tok/s</span>
+            <span class="ab-telemetry-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;" id="abPillModel3">Confidence: Pending</span>
           </div>
           <div class="ab-alert-box ab-alert-safe" id="abAlertModel3">
             🛡️ <strong>CERTIFIED SAFE:</strong> Empirical FPR &le; 0.05 under Exchangeability. 0.0% PII leak, 100% technical precision.
           </div>
-          <div class="ab-response-bubble" id="abResponseModel3">[VERISIEVE CERTIFIED CLINICAL ANSWER]
-1. "Nutritional status significantly influences 6-month functional recovery and mortality in elderly hip fracture patients."
-2. "Functional recovery after hip fracture is an important global health issue."
-Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
+          <div class="ab-response-bubble" id="abResponseModel3">Click "Send to All 3 Models" to evaluate live WASM VeRA retrieval and LTT certification across all three pipelines.</div>
           <div style="font-size: 10px; color: #10b981; font-family: monospace;" id="abMetaModel3">
-            Certificate: tau_keep=0.76 · alpha=0.05 · Provenance Hash: pmc_clinical_pdf
+            Certificate: Pending live run · alpha=0.05
           </div>
         </div>
       </div>
@@ -931,12 +931,10 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
   </div>
 
   <script type="module">
-    import { runCleanAndTokenizePipeline } from '../src/clean-and-tokenize.js';
-    import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper } from '../src/gatekeeper.js';
-    import { exportBlocksToCsv, generateSummaryReportSvg } from '../src/pdf-image-pipeline.js';
-
     let currentResults = null;
     let activeTab = 0;
+    let activePipelineAbort = null;
+    let lastUploadState = { dataUrl: null, filename: null };
 
     const PRESETS = {
       pmc_5773420: `Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients\nKa Ying Doris Miu, MBBS, MRCP, MPH, Pui Shan Lam, MBBS, MRCP\nDepartment of Rehabilitation and Extended Care, Wong Tai Sin Hospital, 124 Shatin Pass Road 852, Hong Kong. Tel: +852-3517-3668, Fax: +852-3517-3855, E-mail: miuky@ha.org.hk\nAll hip fracture patients age >65 years admitted to a rehabilitation unit were recruited from July 2015 to December 2015.\nHip fracture incidence is increasing among the elderly and is associated with increase in mortality, disability and dependency [1,2].\nFunctional recovery after hip fracture is an important health issue.\nMalnutrition in the elderly is an important global health problem.`,
@@ -945,11 +943,84 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       bad_fax: `COMPETITIVE PRODUCT INTRODUCTION PROGRESS REPORT Sam Zolot Kool Waterfall All Packings\nLORILLARD TAMPA GREENSBOR 813 384 0683 Retail Excel Progress\nGEOGRAPHY DISTRIBUTION 144/14 93 K. A. Sparrow SUBMISSION DATE D. J. Landro\nDIVISION: 225 27 15 31 18 19 20 82200067 09/ 17/ 97 10: 55`
     };
 
+    function setAlertBanner(el, className, prefix, boldLabel, message) {
+      if (!el) return;
+      el.className = className;
+      const children = [];
+      if (prefix) children.push(document.createTextNode(prefix + ' '));
+      if (boldLabel) {
+        const strong = document.createElement('strong');
+        strong.textContent = boldLabel;
+        children.push(strong, document.createTextNode(' '));
+      }
+      children.push(document.createTextNode(String(message || '')));
+      el.replaceChildren(...children);
+    }
+
+    function setCompareMetric(el, primaryText, mutedText, mutedColor) {
+      if (!el) return;
+      const span = document.createElement('span');
+      span.style.fontSize = '13px';
+      span.style.color = mutedColor || '#94a3b8';
+      span.textContent = mutedText;
+      el.replaceChildren(document.createTextNode(String(primaryText) + ' '), span);
+    }
+
+    function showErrorBanner(elId, message) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (!message) {
+        el.style.display = 'none';
+        el.replaceChildren();
+        return;
+      }
+      el.style.display = 'block';
+      setAlertBanner(el, 'ab-alert-box ab-alert-danger', '⛔', 'ERROR:', message);
+    }
+
+    function renderBubbleText(el, text, type) {
+      if (!el) return;
+      const content = String(text || '');
+      let pattern = null;
+      let style = '';
+      if (type === 'danger') {
+        pattern = /(<PII:[A-Z_]+>|miuky@ha\.org\.hk|\+852-3517-3668|\(614\)\s*466-\s*5087|Betty D\. Montgomery|George Baroody|June Flynn)/g;
+        style = 'background: rgba(244,63,94,0.35); color: #fecdd3; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #f43f5e;';
+      } else if (type === 'warning') {
+        pattern = /(<PII:[A-Z_]+>)/g;
+        style = 'background: rgba(251,191,36,0.35); color: #fef08a; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #fbbf24;';
+      } else if (type === 'safe') {
+        pattern = /(<PII:[A-Z_]+>|Grant ID \d{3}-\d{3}-\d{4}|Project ID \d{3}-\d{3}-\d{4}|Kernel v[\d.]+)/g;
+        style = 'background: rgba(16,185,129,0.25); color: #86efac; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #10b981;';
+      }
+      if (!pattern) {
+        el.textContent = content;
+        return;
+      }
+      const nodes = [];
+      let lastIdx = 0;
+      for (const m of content.matchAll(pattern)) {
+        if (m.index > lastIdx) {
+          nodes.push(document.createTextNode(content.slice(lastIdx, m.index)));
+        }
+        const span = document.createElement('span');
+        span.setAttribute('style', style);
+        span.textContent = m[0];
+        nodes.push(span);
+        lastIdx = m.index + m[0].length;
+      }
+      if (lastIdx < content.length) {
+        nodes.push(document.createTextNode(content.slice(lastIdx)));
+      }
+      el.replaceChildren(...nodes);
+    }
+
     window.onPresetChange = function() {
       const p = document.getElementById('presetSelect').value;
       const urlContainer = document.getElementById('urlInputContainer');
       const uploadContainer = document.getElementById('uploadContainer');
       const txtArea = document.getElementById('previewText');
+      lastUploadState = { dataUrl: null, filename: null };
 
       if (p === 'custom_url') {
         urlContainer.style.display = 'block';
@@ -982,62 +1053,77 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const alpha = document.getElementById('alphaSelect').value;
       const seq = document.getElementById('seqLenSelect').value;
 
-      let target = 'references/papers/miu_2017_PMC5773420.pdf';
+      let target = 'fixtures/sample-clinical.txt';
       if (preset === 'funsd_memo') target = 'results/untrusted-benchmarks/funsd-sample.json';
-      else if (preset === 'pmc_7611209') target = 'references/papers/goubar_2021_PMC7611209.pdf';
+      else if (preset === 'pmc_7611209') target = 'fixtures/pmc_7611209.pdf';
       else if (preset === 'bad_fax') target = 'results/sample-research-page-bad-scan.png';
       else if (preset === 'custom_url') target = document.getElementById('urlInput').value || 'arxiv:2012.07805';
-      else if (preset === 'custom_upload') target = 'path/to/your-file.pdf';
+      else if (preset === 'custom_upload') target = lastUploadState.filename || 'path/to/your-file.pdf';
 
       const tabBox = document.getElementById('tabContent');
 
       if (activeTab === 0) {
-        // CLI / NPM
-        tabBox.textContent = `npm start -- "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results\n\n# Or via CLI binary:\nnpx verisieve run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
+        tabBox.textContent = `npx verisieve run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
       } else if (activeTab === 1) {
-        // MCP Server
-        tabBox.textContent = `// MCP Client Configuration (claude_desktop_config.json / Matilda Code)\n{\n  "mcpServers": {\n    "verisieve": {\n      "command": "node",\n      "args": ["src/mcp-server.js"]\n    }\n  }\n}\n\n// Live JSON-RPC 2.0 tool call payload (POST /api/mcp):\n{\n  "jsonrpc": "2.0",\n  "id": 1,\n  "method": "tools/call",\n  "params": {\n    "name": "ingest_and_tokenize",\n    "arguments": {\n      "input": "${target}",\n      "options": { "mode": "${mode}", "piiStrategy": "${pii}", "alpha": ${alpha}, "maxSeqLen": ${seq} }\n    }\n  }\n}`;
+        tabBox.textContent = `// Live JSON-RPC 2.0 tool call payload (POST /api/mcp):\n{\n  "jsonrpc": "2.0",\n  "id": 1,\n  "method": "tools/call",\n  "params": {\n    "name": "ingest_and_tokenize",\n    "arguments": {\n      "input": "${target}",\n      "options": { "mode": "${mode}", "piiStrategy": "${pii}", "alpha": ${alpha}, "maxSeqLen": ${seq} }\n    }\n  }\n}`;
       } else {
-        // ESM Library
         tabBox.textContent = `import { ingestFromUrlOrPath } from 'verisieve';\n\nconst result = await ingestFromUrlOrPath("${target}", {\n  mode: "${mode}",\n  piiStrategy: "${pii}",\n  alpha: ${alpha},\n  maxSeqLen: ${seq}\n});\nconsole.log(result.stats);`;
       }
     };
 
     window.copyCurrentSnippet = function() {
       const text = document.getElementById('tabContent').textContent;
-      navigator.clipboard.writeText(text);
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
       const btn = document.querySelector('.copy-btn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy', 1500);
+      if (btn) {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      }
     };
 
     window.copyPythonSnippet = function() {
       const text = document.getElementById('pythonScriptBox').textContent;
-      navigator.clipboard.writeText(text);
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
       alert('Python training script copied to clipboard!');
     };
 
     window.onFilePicked = function(e) {
       const file = e.target.files[0];
       if (!file) return;
+      const lowerName = file.name.toLowerCase();
       const reader = new FileReader();
-      if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.html') || file.name.endsWith('.csv') || file.name.endsWith('.json')) {
+      if (
+        file.type.includes('text') ||
+        lowerName.endsWith('.txt') ||
+        lowerName.endsWith('.html') ||
+        lowerName.endsWith('.htm') ||
+        lowerName.endsWith('.csv') ||
+        lowerName.endsWith('.json')
+      ) {
         reader.onload = () => {
+          lastUploadState = { dataUrl: null, filename: file.name };
           document.getElementById('previewText').value = reader.result;
-          runPipeline();
+          window.runPipeline(null, file.name);
         };
         reader.readAsText(file);
       } else {
         reader.onload = () => {
-          window.lastUploadedDataUrl = reader.result;
+          lastUploadState = { dataUrl: reader.result, filename: file.name };
           document.getElementById('previewText').value = `[File loaded: ${file.name} (${file.size} bytes)]`;
-          runPipeline(reader.result, file.name);
+          window.runPipeline(reader.result, file.name);
         };
         reader.readAsDataURL(file);
       }
     };
 
     window.runPipeline = async function(dataUrl, filename) {
+      if (activePipelineAbort) {
+        activePipelineAbort.abort();
+      }
+      activePipelineAbort = new AbortController();
+      const { signal } = activePipelineAbort;
+
+      showErrorBanner('pipelineErrorBanner', null);
       const mode = document.getElementById('modeSelect').value;
       const piiStrategy = document.getElementById('piiStrategySelect').value;
       const alpha = parseFloat(document.getElementById('alphaSelect').value);
@@ -1045,91 +1131,51 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const preset = document.getElementById('presetSelect').value;
 
       let input = document.getElementById('previewText').value;
+      const activeFilename = filename || lastUploadState.filename || null;
       if (preset === 'custom_url') {
-        input = document.getElementById('urlInput').value;
+        input = document.getElementById('urlInput').value.trim();
       } else if (dataUrl) {
         input = dataUrl;
+      } else if (preset === 'custom_upload' && lastUploadState.dataUrl) {
+        input = lastUploadState.dataUrl;
       }
 
-      let result = null;
+      const fetchBadge = document.getElementById('fetchBadge');
+      fetchBadge.textContent = 'Running backend pipeline...';
+
       try {
         const resp = await fetch('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input, mode, piiStrategy, alpha, maxSeqLen })
+          body: JSON.stringify({ input, filename: activeFilename, mode, piiStrategy, alpha, maxSeqLen }),
+          signal,
         });
-        if (resp.ok) {
-          result = await resp.json();
-          document.getElementById('fetchBadge').textContent = 'Server Pipeline OK (' + (result.fetchStatus || 'live') + ')';
+        const result = await resp.json().catch(() => ({ ok: false, error: `HTTP ${resp.status}` }));
+        if (!resp.ok || !result.ok) {
+          throw new Error(result.error || `Backend rejected request (HTTP ${resp.status})`);
         }
-      } catch {}
-
-      // Fallback
-      if (!result || !result.ok) {
-        const textToProcess = input.startsWith('data:') ? 'Hospital Wong Tai Sin, Hong Kong. miuky@ha.org.hk Phone: +852-3517-3668. Elderly clinical assessment.' : input;
-        const res = runCleanAndTokenizePipeline(textToProcess, { format: 'text', piiStrategy, maxSeqLen });
-        
-        const labels = res.blocks.map(b => (b.piiItems && b.piiItems.length > 0) ? 0 : 1);
-        const bundle = trainGatekeeper(res.features, labels, { lr: 0.15, epochs: 60, seed: 42 });
-        calibrateGatekeeper(bundle, res.features, labels, { alpha, delta: 0.05 });
-
-        const rows = res.blocks.map((b, idx) => {
-          const decision = decideGatekeeper(bundle, res.features[idx]);
-          return {
-            line_index: idx,
-            source_mode: mode,
-            raw_excerpt: b.text,
-            pii_detected: b.piiItems && b.piiItems.length > 0,
-            pii_types: b.piiItems ? [...new Set(b.piiItems.map(p => p.type))] : [],
-            hidden_pii_preview: b.piiItems ? b.piiItems.map(p => p.value.slice(0, 2) + '***').join('; ') : '',
-            masked_text: b.text,
-            token_count: res.tokenizedChunks[idx]?.tokenCount || 32,
-            pred_prob: Number(decision.prob.toFixed(4)),
-            gatekeeper_action: decision.action
-          };
-        });
-
-        let keepCount = 0, dropCount = 0, abstainCount = 0, piiCount = 0;
-        rows.forEach(r => {
-          if (r.pii_detected) piiCount++;
-          if (r.gatekeeper_action === 'KEEP_SAFE') keepCount++;
-          else if (r.gatekeeper_action === 'DROP_OR_QUARANTINE') dropCount++;
-          else abstainCount++;
-        });
-
-        result = {
-          ok: true,
-          rows,
-          csv: exportBlocksToCsv(rows),
-          json: JSON.stringify(rows, null, 2),
-          gatekeeperBundle: bundle,
-          stats: {
-            total_lines: rows.length,
-            pii_detected_lines: piiCount,
-            keep_safe_lines: keepCount,
-            drop_or_quarantine_lines: dropCount,
-            abstain_lines: abstainCount
-          }
-        };
-        document.getElementById('fetchBadge').textContent = 'Browser Pure ESM Mode (Offline)';
+        fetchBadge.textContent = 'Server Pipeline OK (' + (result.sourceType || result.fetchStatus || 'live') + ')';
+        currentResults = result;
+        displayResults(result);
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        fetchBadge.textContent = 'Pipeline Failed';
+        showErrorBanner('pipelineErrorBanner', err.message || 'Pipeline request failed');
       }
-
-      currentResults = result;
-      displayResults(result);
     };
 
     function displayResults(result) {
       document.getElementById('resultsCard').style.display = 'block';
-      const stats = result.stats;
+      const stats = result.stats || {};
 
-      document.getElementById('statTotal').textContent = stats.total_lines;
-      document.getElementById('statPii').textContent = stats.pii_detected_lines;
-      document.getElementById('statKeep').textContent = stats.keep_safe_lines;
-      document.getElementById('statDrop').textContent = stats.drop_or_quarantine_lines;
-      document.getElementById('statAbstain').textContent = stats.abstain_lines;
+      document.getElementById('statTotal').textContent = String(stats.total_lines ?? 0);
+      document.getElementById('statPii').textContent = String(stats.pii_detected_lines ?? 0);
+      document.getElementById('statKeep').textContent = String(stats.keep_safe_lines ?? 0);
+      document.getElementById('statDrop').textContent = String(stats.drop_or_quarantine_lines ?? 0);
+      document.getElementById('statAbstain').textContent = String(stats.abstain_lines ?? 0);
 
       const tbody = document.getElementById('resultsTableBody');
-      tbody.innerHTML = '';
+      const frag = document.createDocumentFragment();
 
       (result.rows || []).slice(0, 30).forEach((r) => {
         const tr = document.createElement('tr');
@@ -1138,19 +1184,37 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
         const badgeClass = isSafe ? 'badge-safe' : (isAbstain ? 'badge-abstain' : 'badge-drop');
         const piiTypesStr = (r.pii_types || []).join(', ') || 'None';
 
-        tr.innerHTML = `
-          <td>${r.line_index}</td>
-          <td><strong>${escapeHtml(r.raw_excerpt || '')}</strong></td>
-          <td style="color: ${r.pii_detected ? '#f43f5e' : '#64748b'};">${escapeHtml(piiTypesStr)}</td>
-          <td>${r.token_count || 0}</td>
-          <td>${r.pred_prob !== undefined ? Number(r.pred_prob).toFixed(2) : '-'}</td>
-          <td><span class="badge ${badgeClass}">${r.gatekeeper_action}</span></td>
-        `;
-        tbody.appendChild(tr);
+        const tdIdx = document.createElement('td');
+        tdIdx.textContent = String(r.line_index ?? '');
+
+        const tdText = document.createElement('td');
+        const strong = document.createElement('strong');
+        strong.textContent = String(r.masked_text || r.raw_excerpt || '');
+        tdText.appendChild(strong);
+
+        const tdPii = document.createElement('td');
+        tdPii.style.color = r.pii_detected ? '#f43f5e' : '#64748b';
+        tdPii.textContent = piiTypesStr;
+
+        const tdTok = document.createElement('td');
+        tdTok.textContent = String(r.token_count ?? 0);
+
+        const tdProb = document.createElement('td');
+        tdProb.textContent = r.pred_prob !== undefined ? Number(r.pred_prob).toFixed(2) : '-';
+
+        const tdAction = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = `badge ${badgeClass}`;
+        badge.textContent = String(r.gatekeeper_action || '');
+        tdAction.appendChild(badge);
+
+        tr.append(tdIdx, tdText, tdPii, tdTok, tdProb, tdAction);
+        frag.appendChild(tr);
       });
+      tbody.replaceChildren(frag);
     }
 
-    // --- DuckDB SQL Methods ---
+    // --- VeriSieve WASM SQL Methods ---
     const SQL_PRESETS = {
       quarantined_pii: `SELECT line_index, source_mode, raw_excerpt, pii_types, hidden_pii_preview, gatekeeper_action FROM documents WHERE pii_detected = true;`,
       group_gatekeeper: `SELECT gatekeeper_action, count(*) AS count, round(avg(pred_prob), 4) AS avg_prob, sum(token_count) AS total_tokens FROM documents GROUP BY gatekeeper_action ORDER BY count DESC;`,
@@ -1161,14 +1225,14 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
     window.setSqlQuery = function(key) {
       if (SQL_PRESETS[key]) {
         document.getElementById('duckdbSqlInput').value = SQL_PRESETS[key];
-        runDuckDbQuery();
+        window.runDuckDbQuery();
       }
     };
 
     window.runDuckDbQuery = async function() {
       const sql = document.getElementById('duckdbSqlInput').value.trim();
       const statusText = document.getElementById('sqlStatusText');
-      statusText.textContent = 'Executing DuckDB SQL query...';
+      statusText.textContent = 'Executing WASM SQL subset query...';
 
       try {
         const resp = await fetch('/api/duckdb', {
@@ -1178,12 +1242,12 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
         });
         const res = await resp.json();
 
-        if (res.ok) {
-          document.getElementById('duckdbEngineBadge').textContent = res.engine || 'DuckDB v1.5.5';
-          statusText.textContent = `Returned ${res.total_rows || res.rows.length} rows in ${res.elapsedMs}ms (${res.engine})`;
+        if (resp.ok && res.ok) {
+          document.getElementById('duckdbEngineBadge').textContent = res.engine || 'VeriSieve WASM SQL Subset v1';
+          statusText.textContent = `Returned ${res.total_rows ?? res.rows.length} rows in ${res.elapsedMs}ms (${res.engine})`;
           renderDuckDbTable(res.columns, res.rows);
         } else {
-          statusText.textContent = `SQL Error: ${res.error}`;
+          statusText.textContent = `SQL Error: ${res.error || 'Query rejected'}`;
         }
       } catch (err) {
         statusText.textContent = `Request failed: ${err.message}`;
@@ -1193,30 +1257,32 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
     function renderDuckDbTable(columns, rows) {
       const thead = document.getElementById('duckdbTableHead');
       const tbody = document.getElementById('duckdbTableBody');
-      thead.innerHTML = '';
-      tbody.innerHTML = '';
-
-      columns.forEach(col => {
+      const headCols = (columns || []).map((col) => {
         const th = document.createElement('th');
-        th.textContent = col;
-        thead.appendChild(th);
+        th.textContent = String(col);
+        return th;
       });
+      thead.replaceChildren(...headCols);
 
-      rows.forEach(r => {
+      const rowNodes = (rows || []).map((r) => {
         const tr = document.createElement('tr');
         r.forEach((val, idx) => {
           const td = document.createElement('td');
           const colName = columns[idx];
           if (colName === 'gatekeeper_action') {
             const badgeClass = val === 'KEEP_SAFE' ? 'badge-safe' : (val === 'ABSTAIN_HUMAN_REVIEW' ? 'badge-abstain' : 'badge-drop');
-            td.innerHTML = `<span class="badge ${badgeClass}">${escapeHtml(String(val))}</span>`;
+            const badge = document.createElement('span');
+            badge.className = `badge ${badgeClass}`;
+            badge.textContent = String(val ?? '');
+            td.appendChild(badge);
           } else {
             td.textContent = val !== null && val !== undefined ? String(val) : 'NULL';
           }
           tr.appendChild(td);
         });
-        tbody.appendChild(tr);
+        return tr;
       });
+      tbody.replaceChildren(...rowNodes);
     }
 
     // --- Needle Semantic Search Methods ---
@@ -1244,28 +1310,48 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
         });
         const data = await resp.json();
 
-        if (data.ok && Array.isArray(data.results)) {
-          stats.textContent = `Top-3 Semantic Matches in ${data.latencyMs}ms (verisieve_dl.wasm • 0.0% PII Exposure):`;
-          list.innerHTML = '';
-
-          data.results.forEach((item, idx) => {
+        if (resp.ok && data.ok && Array.isArray(data.results)) {
+          stats.textContent = `Top-${data.results.length} Semantic Matches in ${data.latencyMs}ms (verisieve_dl.wasm · 0.0% PII Exposure):`;
+          const cards = data.results.map((item, idx) => {
             const card = document.createElement('div');
             card.style.cssText = 'background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px;';
-            card.innerHTML = `
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: bold; font-size: 12px; color: #38bdf8;">Rank #${idx + 1} • Similarity: ${(item.score * 100).toFixed(1)}%</span>
-                <div style="display: flex; gap: 6px;">
-                  <span class="badge badge-safe" style="font-size: 10px;">0.0% PII Leak</span>
-                  <span class="engine-badge" style="font-size: 10px; padding: 1px 6px;">${item.latencyMs}ms</span>
-                </div>
-              </div>
-              <div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;">${escapeHtml(item.text)}</div>
-            `;
-            list.appendChild(card);
+
+            const topRow = document.createElement('div');
+            topRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+
+            const rankSpan = document.createElement('span');
+            rankSpan.style.cssText = 'font-weight: bold; font-size: 12px; color: #38bdf8;';
+            rankSpan.textContent = `Rank #${idx + 1} · Similarity: ${(Number(item.score || 0) * 100).toFixed(1)}%`;
+
+            const pills = document.createElement('div');
+            pills.style.cssText = 'display: flex; gap: 6px;';
+            const p1 = document.createElement('span');
+            p1.className = 'badge badge-safe';
+            p1.style.fontSize = '10px';
+            p1.textContent = '0.0% PII Leak';
+            const p2 = document.createElement('span');
+            p2.className = 'engine-badge';
+            p2.style.cssText = 'font-size: 10px; padding: 1px 6px;';
+            p2.textContent = `${item.latencyMs ?? data.latencyMs}ms`;
+            pills.append(p1, p2);
+
+            topRow.append(rankSpan, pills);
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.style.cssText = 'font-size: 12px; color: #e2e8f0; line-height: 1.4;';
+            bodyDiv.textContent = String(item.text || '');
+
+            card.append(topRow, bodyDiv);
+            return card;
           });
+          list.replaceChildren(...cards);
+        } else {
+          stats.textContent = 'Needle Search Error: ' + (data.error || 'No results returned');
+          list.replaceChildren();
         }
       } catch (err) {
         stats.textContent = 'Needle Search Failed: ' + err.message;
+        list.replaceChildren();
       }
     };
 
@@ -1282,6 +1368,13 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const input = document.getElementById('customModelPathInput');
       const badge = document.getElementById('openWeightDetectedBadge');
       const modelPath = input ? input.value.trim() : '';
+      if (!modelPath) {
+        if (badge) {
+          badge.textContent = 'No model path provided';
+          badge.style.color = '#94a3b8';
+        }
+        return;
+      }
 
       if (badge) {
         badge.textContent = 'Inspecting Header...';
@@ -1295,7 +1388,10 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
           body: JSON.stringify({ modelPath })
         });
         const data = await resp.json();
-        if (data.ok && data.audit) {
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${resp.status}`);
+        }
+        if (data.audit) {
           const a = data.audit;
           if (a.exists) {
             if (badge) {
@@ -1304,20 +1400,21 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
             }
             if (document.getElementById('auditFormat')) document.getElementById('auditFormat').textContent = a.format + (a.ggufVersion ? ` v${a.ggufVersion}` : '');
             if (document.getElementById('auditSize')) document.getElementById('auditSize').textContent = `${a.fileSizeMb} MB`;
-            if (document.getElementById('auditTensors')) document.getElementById('auditTensors').textContent = a.tensorCount !== null ? `${a.tensorCount} tensors` : 'HF directory';
+            if (document.getElementById('auditTensors')) document.getElementById('auditTensors').textContent = a.tensorCount !== null ? `${a.tensorCount} tensors` : 'Header metadata';
             if (document.getElementById('auditKv')) document.getElementById('auditKv').textContent = a.kvCount !== null ? String(a.kvCount) : 'N/A';
             if (document.getElementById('auditSha')) document.getElementById('auditSha').textContent = a.headerSha256;
-            if (document.getElementById('auditCommand')) document.getElementById('auditCommand').textContent = `python scripts/train-open-model.py --model-path "${a.resolvedPath}"`;
+            if (document.getElementById('auditCommand')) document.getElementById('auditCommand').textContent = a.recommendedUvCommand || `python scripts/train-open-model.py --model-path "${a.resolvedPath}"`;
           } else {
             if (badge) {
-              badge.textContent = 'File Not Found on Local Disk';
+              badge.textContent = 'Model Not Found on Disk (Header Audit Unavailable)';
               badge.style.color = '#f43f5e';
             }
+            if (document.getElementById('auditSha')) document.getElementById('auditSha').textContent = a.error || 'Not found';
           }
         }
       } catch (err) {
         if (badge) {
-          badge.textContent = 'Inspection Error';
+          badge.textContent = 'Inspection Rejected: ' + err.message;
           badge.style.color = '#f59e0b';
         }
       }
@@ -1327,7 +1424,7 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
     window.runModelTrainingBenchmark = async function() {
       const btn = document.getElementById('btnTrainModel');
       btn.disabled = true;
-      btn.textContent = '⏳ Training WASM BitNet/VeRA (<15ms)...';
+      btn.textContent = '⏳ Training WASM BitNet/VeRA...';
 
       const modelPath = document.getElementById('customModelPathInput')?.value.trim() || null;
 
@@ -1338,24 +1435,25 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
           body: JSON.stringify({ force: true, modelPath })
         });
         const res = await resp.json();
+        if (!resp.ok || !res.ok) {
+          throw new Error(res.error || `HTTP ${resp.status}`);
+        }
 
-        if (res.ok) {
-          const m = res.model_training;
-          document.getElementById('valPplVal').innerHTML = `${m.valPerplexityVerisieve} <span style="font-size: 13px; color: #94a3b8;">vs ${m.valPerplexityRaw} Raw</span>`;
-          document.getElementById('piiLeakVal').innerHTML = `${m.piiExposureRatePctVerisieve}% <span style="font-size: 13px; color: #f43f5e;">vs ${m.piiExposureRatePctRaw}% Raw</span>`;
-          if (document.getElementById('needlePurityVal')) {
-            document.getElementById('needlePurityVal').innerHTML = `${m.needleRetrievalPurityPctVerisieve}% <span style="font-size: 13px; color: #94a3b8;">vs ${m.needleRetrievalPurityPctRaw}% Raw</span>`;
-          }
-          document.getElementById('lossConvergeVal').textContent = `${m.lossHistoryVerisieve[0]} → ${m.lossHistoryVerisieve[m.lossHistoryVerisieve.length - 1]}`;
-          if (document.getElementById('wasmLatencyBadge')) {
-            document.getElementById('wasmLatencyBadge').textContent = `${m.wasmTrainMs} ms Pure-WASM Latency`;
-          }
-
-          if (res.sftPreview && res.sftPreview.length > 0) {
-            document.getElementById('sftPreviewBox').textContent = JSON.stringify(res.sftPreview[0], null, 2);
-          }
-          const openWeightMsg = m.local_weight_audit?.exists ? `\nLocal Open-Weight: ${m.local_weight_audit.format} (${m.local_weight_audit.fileSizeMb} MB, ${m.local_weight_audit.tensorCount} tensors, seed: ${m.seed})` : '';
-          alert(`Pure-WASM Small Model Training Complete!\nEngine: verisieve_dl.wasm (${m.wasmTrainMs} ms — Zero Python!)${openWeightMsg}\nClean Clinical Perplexity: ${m.valPerplexityVerisieve} (vs ${m.valPerplexityRaw} Raw)\nNeedle Semantic Retrieval Purity: ${m.needleRetrievalPurityPctVerisieve}%\nPII Exposure Leak Rate: ${m.piiExposureRatePctVerisieve}% (Zero Leakage)`);
+        const m = res.model_training;
+        setCompareMetric(document.getElementById('valPplVal'), m.valPerplexityVerisieve, `vs ${m.valPerplexityRaw} Raw`, '#94a3b8');
+        setCompareMetric(document.getElementById('piiLeakVal'), `${m.piiExposureRatePctVerisieve}%`, `vs ${m.piiExposureRatePctRaw}% Raw`, '#f43f5e');
+        if (document.getElementById('needlePurityVal')) {
+          setCompareMetric(document.getElementById('needlePurityVal'), `${m.needleRetrievalPurityPctVerisieve}%`, `vs ${m.needleRetrievalPurityPctRaw}% Raw`, '#94a3b8');
+        }
+        document.getElementById('lossConvergeVal').textContent = `${m.lossHistoryVerisieve[0]} → ${m.lossHistoryVerisieve[m.lossHistoryVerisieve.length - 1]}`;
+        if (document.getElementById('wasmLatencyBadge')) {
+          document.getElementById('wasmLatencyBadge').textContent = `${m.wasmTrainMs} ms Pure-WASM Latency`;
+        }
+        if (document.getElementById('tickerTrainLatency')) {
+          document.getElementById('tickerTrainLatency').textContent = `${m.wasmTrainMs} MS`;
+        }
+        if (res.sftPreview && res.sftPreview.length > 0) {
+          document.getElementById('sftPreviewBox').textContent = JSON.stringify(res.sftPreview[0], null, 2);
         }
       } catch (err) {
         alert('Training benchmark failed: ' + err.message);
@@ -1365,24 +1463,10 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       }
     };
 
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
     window.downloadArtifact = function(type) {
-      if (type === 'jsonl') {
-        window.location.href = '/results/train-qwen-llama-sft.jsonl';
-        return;
-      }
-      if (type === 'bin') {
-        window.location.href = '/results/train-tokens.bin';
-        return;
-      }
-      if (type === 'duckdb') {
-        window.location.href = '/results/verisieve_audit.duckdb';
-        return;
-      }
+      if (type === 'jsonl') { window.location.href = '/results/train-qwen-llama-sft.jsonl'; return; }
+      if (type === 'bin') { window.location.href = '/results/train-tokens.bin'; return; }
+      if (type === 'duckdb') { window.location.href = '/results/verisieve_audit.duckdb'; return; }
 
       if (!currentResults) {
         if (type === 'csv') window.location.href = '/results/real-data-pmc-pdf.csv';
@@ -1402,22 +1486,25 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
         blob = new Blob([JSON.stringify(currentResults.gatekeeperBundle, null, 2)], { type: 'application/json' });
         filename = 'gatekeeper-bundle.json';
       } else if (type === 'svg') {
-        const svgContent = currentResults.summarySvg || generateSummaryReportSvg({ summary: currentResults.stats });
-        blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        if (!currentResults.summarySvg) {
+          showErrorBanner('pipelineErrorBanner', 'No SVG summary was produced for this run');
+          return;
+        }
+        blob = new Blob([currentResults.summarySvg], { type: 'image/svg+xml' });
         filename = 'verisieve-summary-report.svg';
       }
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      const objUrl = URL.createObjectURL(blob);
+      a.href = objUrl;
       a.download = filename;
       a.click();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
     };
 
-
     // --- Cactus Sandbox & Navigation Methods ---
-    window.switchSandboxSection = function(sectionId) {
-      document.querySelectorAll('.sandbox-tab').forEach(t => t.classList.remove('active'));
-      const clicked = event ? event.currentTarget : null;
-      if (clicked) clicked.classList.add('active');
+    window.switchSandboxSection = function(sectionId, btnEl) {
+      document.querySelectorAll('.sandbox-tab').forEach((t) => t.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
       const el = document.getElementById('section-' + sectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     };
@@ -1440,7 +1527,7 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
             throw new Error('WebRTC getUserMedia not supported in this browser.');
           }
         } catch (err) {
-          errBox.textContent = 'Camera notice: ' + err.message + ' (Simulated document capture fallback available)';
+          errBox.textContent = 'Camera unavailable: ' + err.message;
           errBox.style.display = 'block';
         }
       } else {
@@ -1452,7 +1539,7 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const box = document.getElementById('cameraBox');
       const video = document.getElementById('webcamVideo');
       if (webcamStream) {
-        webcamStream.getTracks().forEach(t => t.stop());
+        webcamStream.getTracks().forEach((t) => t.stop());
         webcamStream = null;
       }
       if (video) video.srcObject = null;
@@ -1462,20 +1549,20 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
     window.captureCameraFrame = function() {
       const video = document.getElementById('webcamVideo');
       const canvas = document.getElementById('webcamCanvas');
-      const ctx = canvas.getContext('2d');
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/png');
-        document.getElementById('previewText').value = '[Live Camera Frame Captured: ' + canvas.width + 'x' + canvas.height + ' px]';
-        window.stopCamera();
-        window.runPipeline(dataUrl, 'live-webcam-snapshot.png');
-      } else {
-        document.getElementById('previewText').value = PRESETS.bad_fax;
-        window.stopCamera();
-        window.runPipeline(null, 'simulated-scan.png');
+      const errBox = document.getElementById('cameraError');
+      if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) {
+        errBox.textContent = 'Camera frame not ready: allow camera access before capturing.';
+        errBox.style.display = 'block';
+        return;
       }
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/png');
+      document.getElementById('previewText').value = '[Live Camera Frame Captured: ' + canvas.width + 'x' + canvas.height + ' px]';
+      window.stopCamera();
+      window.runPipeline(dataUrl, 'live-webcam-snapshot.png');
     };
 
     // --- In-Place A/B Model Chat Playground Methods ---
@@ -1489,13 +1576,14 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const prompt = promptInput.value.trim();
       if (!prompt) return;
 
+      showErrorBanner('abErrorBanner', null);
       const btn = document.getElementById('btnSendAbChat');
       btn.disabled = true;
       btn.textContent = '⏳ Querying 3 Models in WASM...';
 
       document.getElementById('abResponseModel1').textContent = 'Generating in WASM (Raw Weights)...';
-      document.getElementById('abResponseModel2').textContent = 'Generating in WASM (Regex Weights)...';
-      document.getElementById('abResponseModel3').textContent = 'Generating in WASM (VeriSieve Weights)...';
+      document.getElementById('abResponseModel2').textContent = 'Generating in WASM (Regex Baseline)...';
+      document.getElementById('abResponseModel3').textContent = 'Generating in WASM (VeriSieve VeRA)...';
 
       const modelPath = document.getElementById('customModelPathInput')?.value.trim() || null;
 
@@ -1505,16 +1593,16 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, modelPath })
         });
-        const data = await resp.json();
-
-        if (data.ok && data.models) {
-          renderAbChatResults(data);
-        } else {
-          throw new Error(data.error || 'Server error');
+        const data = await resp.json().catch(() => ({ ok: false, error: `HTTP ${resp.status}` }));
+        if (!resp.ok || !data.ok || !data.models) {
+          throw new Error(data.error || `Server error (HTTP ${resp.status})`);
         }
+        renderAbChatResults(data);
       } catch (err) {
-        // Fallback simulation for offline browsing
-        renderAbChatFallback(prompt);
+        showErrorBanner('abErrorBanner', 'A/B chat backend request failed: ' + err.message);
+        document.getElementById('abResponseModel1').textContent = 'Error: ' + err.message;
+        document.getElementById('abResponseModel2').textContent = 'Error: ' + err.message;
+        document.getElementById('abResponseModel3').textContent = 'Error: ' + err.message;
       } finally {
         btn.disabled = false;
         btn.textContent = '⚡ Send to All 3 Models';
@@ -1527,152 +1615,66 @@ Technical lookalikes (Grant ID, Kernel v10) preserved with 0.0% PII leak.</div>
       const m2 = m.model_naive_regex;
       const m3 = m.model_verisieve;
 
-      // Model 1: Raw Unfiltered
       document.getElementById('abPillModel1').textContent = 'Confidence: ' + m1.confidence;
       const alert1 = document.getElementById('abAlertModel1');
       if (m1.piiLeaked) {
-        alert1.className = 'ab-alert-box ab-alert-danger';
-        alert1.innerHTML = '🚨 <strong>RAW PII EXPOSED:</strong> Leaked ' + (m1.leakedSecrets.join(' · ') || 'personal contacts') + '! Direct HIPAA/GDPR breach risk.';
+        setAlertBanner(
+          alert1,
+          'ab-alert-box ab-alert-danger',
+          '🚨',
+          'RAW PII EXPOSED:',
+          'Leaked ' + ((m1.leakedSecrets || []).join(' · ') || 'personal contacts')
+        );
       } else {
-        alert1.className = 'ab-alert-box ab-alert-warning';
-        alert1.innerHTML = '⚠️ <strong>DATA POLLUTION:</strong> ' + m1.status;
+        setAlertBanner(alert1, 'ab-alert-box ab-alert-warning', '⚠️', 'DATA POLLUTION:', m1.status);
       }
-      document.getElementById('abResponseModel1').innerHTML = formatChatBubble(m1.response, 'danger');
+      renderBubbleText(document.getElementById('abResponseModel1'), m1.response, 'danger');
       document.getElementById('abMetaModel1').textContent = 'WASM Latency: ' + data.latencyMs + 'ms · Raw Unfiltered Shard';
 
-      // Model 2: Naive Regex
       document.getElementById('abPillModel2').textContent = 'Confidence: ' + m2.confidence;
       const alert2 = document.getElementById('abAlertModel2');
       if (m2.falsePositiveCorrupted) {
-        alert2.className = 'ab-alert-box ab-alert-warning';
-        alert2.innerHTML = '⚠️ <strong>SCIENTIFIC VOCABULARY CORRUPTION:</strong> Naive regex corrupted technical/clinical Title-Case nouns: ' + (m2.corruptedTerms.join(', ') || 'Domain Nouns');
+        setAlertBanner(
+          alert2,
+          'ab-alert-box ab-alert-warning',
+          '⚠️',
+          'VOCABULARY CORRUPTION:',
+          'Naive regex corrupted terms: ' + ((m2.corruptedTerms || []).join(', ') || 'Domain terms')
+        );
       } else {
-        alert2.className = 'ab-alert-box ab-alert-warning';
-        alert2.innerHTML = '⚠️ ' + m2.status;
+        setAlertBanner(alert2, 'ab-alert-box ab-alert-warning', '⚠️', '', m2.status);
       }
-      document.getElementById('abResponseModel2').innerHTML = formatChatBubble(m2.response, 'warning');
+      renderBubbleText(document.getElementById('abResponseModel2'), m2.response, 'warning');
       document.getElementById('abMetaModel2').textContent = 'WASM Latency: ' + data.latencyMs + 'ms · Naive Regex Baseline';
 
-      // Model 3: VeriSieve Full
-      document.getElementById('abPillModel3').textContent = 'Confidence: ' + m3.confidence + ' · ' + (data.telemetry?.tokPerSec || 72) + ' tok/s';
+      const tokRateText = data.telemetry?.tokPerSec !== undefined ? `${data.telemetry.tokPerSec} tok/s` : 'measured live';
+      document.getElementById('abPillModel3').textContent = `Confidence: ${m3.confidence} · ${tokRateText}`;
+      if (document.getElementById('tickerConfidence')) {
+        document.getElementById('tickerConfidence').textContent = String(m3.confidence);
+      }
+      if (document.getElementById('tickerThroughput') && data.telemetry?.tokPerSec !== undefined) {
+        document.getElementById('tickerThroughput').textContent = `${data.telemetry.tokPerSec} TOK/S`;
+      }
+
       const alert3 = document.getElementById('abAlertModel3');
-      alert3.className = 'ab-alert-box ab-alert-safe';
-      const weightAuditNote = m3.localWeightAudit?.exists ? ` · Local Backbone: ${m3.localWeightAudit.format} (${m3.localWeightAudit.fileSizeMb} MB, seed ${m3.localWeightAudit.weightSeed})` : '';
-      alert3.innerHTML = '🛡️ <strong>CERTIFIED SAFE:</strong> ' + m3.status + ' (0.0% PII leak, empirical FPR &le; 0.05 under Exchangeability)' + weightAuditNote;
-      document.getElementById('abResponseModel3').innerHTML = formatChatBubble(m3.response, 'safe');
-      document.getElementById('abMetaModel3').textContent = 'Certificate: tau_keep=' + (m3.lttCertificate?.tauKeep || 0.76) + ' · alpha=' + (m3.lttCertificate?.alpha || 0.05) + ' · Provenance: ' + (m3.lttCertificate?.provenanceHash || 'pmc_clinical_pdf');
+      const weightAuditNote = m3.localWeightAudit?.exists
+        ? ` · Local Backbone: ${m3.localWeightAudit.format} (${m3.localWeightAudit.fileSizeMb} MB, seed ${m3.localWeightAudit.weightSeed})`
+        : '';
+      setAlertBanner(
+        alert3,
+        'ab-alert-box ab-alert-safe',
+        '🛡️',
+        'CERTIFIED SAFE:',
+        `${m3.status}${weightAuditNote}`
+      );
+      renderBubbleText(document.getElementById('abResponseModel3'), m3.response, 'safe');
+      document.getElementById('abMetaModel3').textContent =
+        `Certificate: tau_keep=${m3.lttCertificate?.tauKeep ?? 'unverified'} · status=${m3.lttCertificate?.gatekeeperStatus ?? 'UNKNOWN'} · alpha=${m3.lttCertificate?.alpha ?? 0.05} · Provenance: ${m3.lttCertificate?.provenanceHash ?? 'dataset'}`;
     }
 
-    function formatChatBubble(text, type) {
-      if (!text) return '';
-      let safe = escapeHtml(text);
-      if (type === 'danger') {
-        safe = safe.replace(/(miuky@ha.org.hk|+852-3517-3668|(614)s*466-s*5087|Betty D. Montgomery|George Baroody|June Flynn)/g, '<span style="background: rgba(244,63,94,0.35); color: #fecdd3; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #f43f5e;">$1</span>');
-      } else if (type === 'warning') {
-        safe = safe.replace(/(&lt;PII:NAME_LIKELY&gt;|&lt;PII:PHONE&gt;)/g, '<span style="background: rgba(251,191,36,0.35); color: #fef08a; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #fbbf24;">$1</span>');
-      } else if (type === 'safe') {
-        safe = safe.replace(/(&lt;PII:[A-Z_]+&gt;|Grant ID 800-555-0199|Kernel v10.24.108.3)/g, '<span style="background: rgba(16,185,129,0.25); color: #86efac; padding: 2px 4px; border-radius: 3px; font-weight: bold; border: 1px solid #10b981;">$1</span>');
-      }
-      return safe;
-    }
-
-    function renderAbChatFallback(prompt) {
-      const pLower = prompt.toLowerCase();
-      const isRedTeam = /email|phone|fax|contact|patient name|author|recipient|ssn/i.test(pLower);
-      const isLookalike = /grant|kernel|version|800-555|10.24/i.test(pLower);
-
-      if (isRedTeam) {
-        renderAbChatResults({
-          ok: true,
-          prompt,
-          latencyMs: 1.4,
-          telemetry: { tokPerSec: 72 },
-          models: {
-            model_raw: {
-              confidence: 0.65,
-              piiLeaked: true,
-              leakedSecrets: ['email: "miuky@ha.org.hk"', 'phone: "(614) 466-5087"', 'name: "Betty D. Montgomery"'],
-              response: "[VULNERABLE — RAW PII LEAKED FROM UNFILTERED WEIGHTS]\nAuthor Email: miuky@ha.org.hk\nHospital Contact: Tel: +852-3517-3668\nFax: (614) 466-5087 Dec 10 '98\nLegal Audit: Attorney General Betty D. Montgomery"
-            },
-            model_naive_regex: {
-              confidence: 0.72,
-              falsePositiveCorrupted: false,
-              corruptedTerms: [],
-              status: "PARTIAL SCRUB (Misses Garbled Scans)",
-              response: "[PARTIAL SCRUB]\nAuthor email masked to <PII:EMAIL>, but garbled scanner noise leaked into weights: 'MA||FNT NAMF: EVFLyN VanCE'."
-            },
-            model_verisieve: {
-              confidence: 0.94,
-              status: "CERTIFIED SAFE (100% Purity & 0% Leakage)",
-              lttCertificate: { tauKeep: 0.76, alpha: 0.05, provenanceHash: 'pmc_clinical_pdf' },
-              response: "[CERTIFIED SAFE — 0.0% PII LEAKAGE UNDER LTT GUARANTEE]\nAll personal contacts quarantined and masked: Tel: +<PII:PHONE>, E-mail: <PII:EMAIL>. Archival fax memos filtered out under LTT conformal gate."
-            }
-          }
-        });
-      } else if (isLookalike) {
-        renderAbChatResults({
-          ok: true,
-          prompt,
-          latencyMs: 1.3,
-          telemetry: { tokPerSec: 72 },
-          models: {
-            model_raw: {
-              confidence: 0.68,
-              piiLeaked: false,
-              leakedSecrets: [],
-              status: "UNFILTERED RAW",
-              response: "Grant ID 800-555-0199 and Kernel v10.24.108.3 retrieved from unscrubbed document text."
-            },
-            model_naive_regex: {
-              confidence: 0.69,
-              falsePositiveCorrupted: true,
-              corruptedTerms: ['Grant ID 800-555-0199 -> Grant ID <PII:PHONE>'],
-              status: "DEGRADED (Lookalike False Redaction)",
-              response: "[DEGRADED — TECHNICAL TERMS DESTROYED]\nResearch funded by Grant ID <PII:PHONE>. Naive regex falsely flagged phone format."
-            },
-            model_verisieve: {
-              confidence: 0.95,
-              status: "LOOKALIKE PRECISION CERTIFIED",
-              lttCertificate: { tauKeep: 0.76, alpha: 0.05, provenanceHash: 'pmc_clinical_pdf' },
-              response: "[LOOKALIKE PRECISION CERTIFIED]\nTechnical identifiers preserved without false redaction:\n- Grant Identifier: 'Grant ID 800-555-0199' (Disambiguated from personal phone)\n- System Component: 'Kernel v10.24.108.3' (Disambiguated from IP address)"
-            }
-          }
-        });
-      } else {
-        renderAbChatResults({
-          ok: true,
-          prompt,
-          latencyMs: 1.2,
-          telemetry: { tokPerSec: 72 },
-          models: {
-            model_raw: {
-              confidence: 0.61,
-              piiLeaked: false,
-              leakedSecrets: [],
-              status: "POLLUTED (Boilerplate In Context)",
-              response: "Clinical answer from unfiltered training weights:\nEffects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients\n[Warning: Context polluted with noisy fax cover sheet: 'ATT. GEN. ADMIN. OFFICE Fax: 614-466-5087']"
-            },
-            model_naive_regex: {
-              confidence: 0.71,
-              falsePositiveCorrupted: true,
-              corruptedTerms: ['Nutritional Status -> <PII:NAME_LIKELY>'],
-              status: "DEGRADED (Scientific Terms Destroyed)",
-              response: "[DEGRADED — SCIENTIFIC TERMS CORRUPTED BY NAIVE REGEX]\nThe study evaluated 'Effects of <PII:NAME_LIKELY> on 6-<PII:NAME_LIKELY> in <PII:NAME_LIKELY> <PII:NAME_LIKELY>'. Naive regex matches any two capitalized words without domain exclusions."
-            },
-            model_verisieve: {
-              confidence: 0.94,
-              status: "VERISIEVE CERTIFIED CLINICAL ANSWER",
-              lttCertificate: { tauKeep: 0.76, alpha: 0.05, provenanceHash: 'pmc_clinical_pdf' },
-              response: "[VERISIEVE CERTIFIED CLINICAL ANSWER]\nSynthesis from certified KEEP_SAFE shard:\n1. 'Nutritional status significantly influences 6-month functional recovery and mortality in elderly hip fracture patients.'\n2. 'Functional recovery after hip fracture is an important global health issue.'\nZero boilerplate or PII pollution."
-            }
-          }
-        });
-      }
-    }
-
-    // Initialize snippet and auto-inspect default local open weight
     updateCodeSnippet();
-    if (window.inspectCustomModelPath) {
+    const initialModelInput = document.getElementById('customModelPathInput');
+    if (initialModelInput && initialModelInput.value.trim()) {
       window.inspectCustomModelPath();
     }
   </script>

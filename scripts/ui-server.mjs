@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 /**
  * scripts/ui-server.mjs
- * Lightweight zero-dependency HTTP UI server for VeriSieve.
- * Serves demo/index.html, results/, docs/, and provides /api/run and /api/mcp endpoints.
+ * Loopback-locked zero-dependency HTTP UI server for VeriSieve.
+ * Serves demo/, results/, docs/, and exposes hardened /api/* endpoints.
  */
 
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { ingestFromUrlOrPath } from '../src/pdf-image-pipeline.js';
+import crypto from 'node:crypto';
+import {
+  ingestFromUrlOrPath,
+  exportBlocksToCsv,
+  generateSummaryReportSvg,
+} from '../src/pdf-image-pipeline.js';
 import { handleJsonRpcRequest } from '../src/mcp-server.js';
 import {
   executeJsSql,
@@ -16,11 +22,15 @@ import {
   searchNeedleWasm,
   loadExtractedDatasets,
   chatWithTrainedModelsWasm,
-  inspectLocalOpenWeightPath
+  inspectLocalOpenWeightPath,
 } from '../src/wasm-needle-dl.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333;
+const HOST = '127.0.0.1';
 const ROOT_DIR = path.resolve('.');
+const ALLOWED_STATIC_DIRS = ['demo', 'results', 'docs'].map((d) => path.resolve(ROOT_DIR, d));
+const ALLOWED_UPLOAD_EXTS = new Set(['.txt', '.html', '.htm', '.csv', '.json', '.pdf', '.docx', '.png', '.bmp']);
+const ALLOWED_WEIGHT_EXTS = new Set(['.gguf', '.safetensors', '.bin']);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -34,28 +44,150 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml; charset=utf-8',
   '.pdf': 'application/pdf',
   '.csv': 'text/csv; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8'
+  '.txt': 'text/plain; charset=utf-8',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 };
+
+function isContainedPath(baseDir, targetPath) {
+  const resolvedBase = path.resolve(baseDir);
+  const resolvedTarget = path.resolve(targetPath);
+  const rel = path.relative(resolvedBase, resolvedTarget);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
+    return false;
+  }
+  try {
+    const realBase = fs.realpathSync(resolvedBase);
+    if (fs.existsSync(resolvedTarget)) {
+      const realTarget = fs.realpathSync(resolvedTarget);
+      const realRel = path.relative(realBase, realTarget);
+      return Boolean(realRel) && !realRel.startsWith('..') && !path.isAbsolute(realRel);
+    }
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function getAllowedCorsOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return { origin: null, allowed: true };
+  try {
+    const u = new URL(origin);
+    const port = u.port || (u.protocol === 'https:' ? '443' : '80');
+    const isLocalHost = u.hostname === '127.0.0.1' || u.hostname === 'localhost' || u.hostname === '[::1]';
+    if ((u.protocol === 'http:' || u.protocol === 'https:') && isLocalHost && Number(port) === PORT) {
+      return { origin, allowed: true };
+    }
+  } catch {}
+  return { origin, allowed: false };
+}
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', chunk => {
+    let aborted = false;
+    req.on('data', (chunk) => {
+      if (aborted) return;
       data += chunk;
-      if (data.length > 20 * 1024 * 1024) { // 20 MB cap
+      if (data.length > 20 * 1024 * 1024) {
+        aborted = true;
         reject(new Error('Payload too large'));
       }
     });
-    req.on('end', () => resolve(data));
+    req.on('end', () => {
+      if (!aborted) resolve(data);
+    });
     req.on('error', reject);
   });
 }
 
+function sendJson(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(body));
+}
+
+function extFromDataUrl(mime, filename) {
+  if (typeof filename === 'string' && filename.trim()) {
+    const ext = path.extname(path.basename(filename.trim())).toLowerCase();
+    if (ALLOWED_UPLOAD_EXTS.has(ext)) return ext;
+  }
+  const m = String(mime || '').toLowerCase();
+  if (m.includes('pdf')) return '.pdf';
+  if (m.includes('wordprocessingml')) return '.docx';
+  if (m.includes('png')) return '.png';
+  if (m.includes('bmp')) return '.bmp';
+  if (m.includes('html')) return '.html';
+  if (m.includes('csv')) return '.csv';
+  if (m.includes('json')) return '.json';
+  return '.txt';
+}
+
+function looksLikeFilesystemPath(input) {
+  if (/[\r\n]/.test(input)) return false;
+  if (/^(?:[a-zA-Z]:[\\\/]|\/|\.{1,2}[\\\/])/.test(input)) return true;
+  if (!/\s/.test(input) && /[\\\/]/.test(input)) return true;
+  const ext = path.extname(input.trim()).toLowerCase();
+  return !/\s/.test(input) && ALLOWED_UPLOAD_EXTS.has(ext);
+}
+
+function validateModelProbePath(modelPath) {
+  const trimmed = String(modelPath || '').trim();
+  if (!trimmed) {
+    const err = new Error('modelPath is required');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (/^ollama:/i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(trimmed)) {
+    const candidateInWorkspace = path.resolve(ROOT_DIR, trimmed);
+    if (!fs.existsSync(candidateInWorkspace)) {
+      return trimmed;
+    }
+  }
+
+  const resolved = path.resolve(ROOT_DIR, trimmed);
+  const envModelsDir = process.env.VERISIEVE_MODELS_DIR ? path.resolve(process.env.VERISIEVE_MODELS_DIR) : null;
+  const envModelPath = process.env.VERISIEVE_MODEL_PATH ? path.resolve(process.env.VERISIEVE_MODEL_PATH) : null;
+
+  const contained =
+    isContainedPath(ROOT_DIR, resolved) ||
+    (envModelsDir && isContainedPath(envModelsDir, resolved)) ||
+    (envModelPath && resolved === envModelPath);
+
+  if (!contained) {
+    const err = new Error('FORBIDDEN_WEIGHT_PROBE_PATH: model path outside workspace or configured model directory');
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const base = path.basename(resolved).toLowerCase();
+  const ext = path.extname(resolved).toLowerCase();
+  const isOllamaBlob = /sha256-[a-f0-9]{16,}/i.test(base);
+  if (base !== 'config.json' && !ALLOWED_WEIGHT_EXTS.has(ext) && !isOllamaBlob) {
+    const err = new Error('FORBIDDEN_WEIGHT_PROBE_PATH: unsupported file type for weight inspection');
+    err.statusCode = 403;
+    throw err;
+  }
+  return resolved;
+}
+
 const server = http.createServer(async (req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  const cors = getAllowedCorsOrigin(req);
+  if (!cors.allowed) {
+    if (req.method === 'OPTIONS' || req.url?.startsWith('/api/')) {
+      sendJson(res, 403, { ok: false, error: 'Cross-origin request rejected by loopback policy' });
+      return;
+    }
+  } else if (cors.origin) {
+    res.setHeader('Access-Control-Allow-Origin', cors.origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -63,69 +195,101 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${PORT}`);
   const pathname = parsedUrl.pathname;
 
   // API 1: POST /api/run (Universal Ingest & Gatekeeper Runner)
   if (req.method === 'POST' && pathname === '/api/run') {
+    let tempFilePath = null;
     try {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
-      const { input, mode, piiStrategy, alpha, maxSeqLen } = payload;
+      const { input, filename, mode, piiStrategy, alpha, maxSeqLen } = payload;
 
-      let target = input;
-      // If client sent raw text content or data URL, save to temp untrusted file
-      if (typeof input === 'string' && input.startsWith('data:')) {
-        const untrustedDir = path.resolve('results/untrusted-benchmarks');
-        fs.mkdirSync(untrustedDir, { recursive: true });
-        const matches = input.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches) {
-          const ext = matches[1].includes('pdf') ? '.pdf' : (matches[1].includes('png') ? '.png' : '.txt');
-          const tmpPath = path.join(untrustedDir, `upload-${Date.now()}${ext}`);
-          fs.writeFileSync(tmpPath, Buffer.from(matches[2], 'base64'));
-          target = tmpPath;
+      if (typeof input !== 'string' || !input.trim()) {
+        sendJson(res, 400, { ok: false, error: 'input is required' });
+        return;
+      }
+
+      let target;
+      const trimmed = input.trim();
+      if (trimmed.startsWith('data:')) {
+        const matches = trimmed.match(/^data:([^;,\s]+);base64,(.+)$/);
+        if (!matches) {
+          sendJson(res, 400, { ok: false, error: 'Malformed base64 data URL upload' });
+          return;
         }
-      } else if (!target) {
-        // Fallback to real PMC paper
-        target = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf';
+        const ext = extFromDataUrl(matches[1], filename);
+        tempFilePath = path.join(os.tmpdir(), `verisieve-upload-${crypto.randomUUID()}${ext}`);
+        fs.writeFileSync(tempFilePath, Buffer.from(matches[2], 'base64'));
+        target = tempFilePath;
+      } else if (/^(?:https?:\/\/|arxiv:)/i.test(trimmed)) {
+        target = trimmed;
+      } else if (looksLikeFilesystemPath(trimmed)) {
+        const resolved = path.resolve(ROOT_DIR, trimmed);
+        if (!isContainedPath(ROOT_DIR, resolved)) {
+          sendJson(res, 403, { ok: false, error: 'FORBIDDEN_PATH: local path must reside inside workspace root' });
+          return;
+        }
+        if (!fs.existsSync(resolved)) {
+          sendJson(res, 404, { ok: false, error: `File not found: ${trimmed}` });
+          return;
+        }
+        target = resolved;
+      } else {
+        const ext = extFromDataUrl('text/plain', filename);
+        const safeExt = ext === '.html' || ext === '.htm' || ext === '.csv' || ext === '.json' ? ext : '.txt';
+        tempFilePath = path.join(os.tmpdir(), `verisieve-text-${crypto.randomUUID()}${safeExt}`);
+        fs.writeFileSync(tempFilePath, input, 'utf8');
+        target = tempFilePath;
       }
 
       const result = await ingestFromUrlOrPath(target, {
         mode: mode || 'auto',
         piiStrategy: piiStrategy || 'token',
         alpha: alpha !== undefined ? parseFloat(alpha) : 0.05,
-        maxSeqLen: maxSeqLen ? parseInt(maxSeqLen, 10) : 256
+        maxSeqLen: maxSeqLen ? parseInt(maxSeqLen, 10) : 256,
       });
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, ...result }));
+      const rows = result.rows || [];
+      sendJson(res, 200, {
+        ok: true,
+        ...result,
+        csv: result.csv || exportBlocksToCsv(rows),
+        json: result.json || JSON.stringify(rows, null, 2),
+        summarySvg: result.summarySvg || generateSummaryReportSvg({ summary: result.stats || {} }),
+      });
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message }));
+      const msg = err?.message || 'Pipeline failure';
+      const status = /MIRAGE_WEIGHTS_REQUIRED|IMAGE_REQUIRES_OCR|PDF_IMAGE_ONLY|UNSUPPORTED_/.test(msg)
+        ? 422
+        : (/SSRF|FORBIDDEN|PRIVATE_IP|REDIRECT/.test(msg) ? 403 : 400);
+      sendJson(res, status, { ok: false, error: msg });
+    } finally {
+      if (tempFilePath) {
+        fs.rmSync(tempFilePath, { force: true });
+      }
     }
     return;
   }
 
-  // API 2: POST /api/mcp (JSON-RPC 2.0 Endpoint)
+  // API 2: POST /api/mcp (Async JSON-RPC 2.0 Endpoint)
   if (req.method === 'POST' && pathname === '/api/mcp') {
     try {
       const raw = await readBody(req);
       const jsonRpcReq = raw ? JSON.parse(raw) : {};
-      const jsonRpcRes = handleJsonRpcRequest(jsonRpcReq);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(jsonRpcRes));
+      const jsonRpcRes = await handleJsonRpcRequest(jsonRpcReq);
+      sendJson(res, 200, jsonRpcRes);
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32603, message: err.message }, id: null }));
+      sendJson(res, 500, { jsonrpc: '2.0', error: { code: -32603, message: err.message }, id: null });
     }
     return;
   }
 
   // API 3: GET /api/mcp/tools
   if (req.method === 'GET' && pathname === '/api/mcp/tools') {
-    const listRes = handleJsonRpcRequest({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(listRes.result?.tools || []));
+    const listRes = await handleJsonRpcRequest({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+    sendJson(res, 200, listRes.result?.tools || []);
     return;
   }
 
@@ -137,11 +301,9 @@ const server = http.createServer(async (req, res) => {
       const { sql, dataset } = payload;
 
       const result = executeJsSql(sql || 'SELECT * FROM documents LIMIT 10;', dataset || 'all');
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
+      sendJson(res, 200, result);
     } catch (err) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message, engine: 'VeriSieve WASM SQL Subset v1' }));
+      sendJson(res, 400, { ok: false, error: err.message, engine: 'VeriSieve WASM SQL Subset v1' });
     }
     return;
   }
@@ -152,41 +314,45 @@ const server = http.createServer(async (req, res) => {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
       const force = payload.force === true || Boolean(payload.modelPath);
-      const modelPath = payload.modelPath || null;
+      let modelPath = payload.modelPath || null;
+      if (modelPath) {
+        modelPath = validateModelProbePath(modelPath);
+      }
 
-      const resultsJsonPath = path.resolve('results/open-model-training-results.json');
-
+      const resultsJsonPath = path.resolve(ROOT_DIR, 'results/open-model-training-results.json');
       if (force || !fs.existsSync(resultsJsonPath)) {
         trainWasmSmallModel(null, { exportArtifacts: true, modelPath });
       }
 
       const report = JSON.parse(fs.readFileSync(resultsJsonPath, 'utf8'));
 
-      // Read sample SFT lines preview
-      const sftPath = path.resolve('results/train-qwen-llama-sft.jsonl');
+      const sftPath = path.resolve(ROOT_DIR, 'results/train-qwen-llama-sft.jsonl');
       let sftPreview = [];
+      let sftRowsTotal = 0;
       if (fs.existsSync(sftPath)) {
-        const lines = fs.readFileSync(sftPath, 'utf8').trim().split('\n');
-        sftPreview = lines.slice(0, 5).map(l => {
-          try { return JSON.parse(l); } catch { return l; }
+        const lines = fs.readFileSync(sftPath, 'utf8').split(/\r?\n/).filter((l) => l.trim().length > 0);
+        sftRowsTotal = lines.length;
+        sftPreview = lines.slice(0, 5).map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return l;
+          }
         });
       }
 
-      // Read binary token shard size
-      const binPath = path.resolve('results/train-tokens.bin');
+      const binPath = path.resolve(ROOT_DIR, 'results/train-tokens.bin');
       const tokenBinBytes = fs.existsSync(binPath) ? fs.statSync(binPath).size : 0;
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      sendJson(res, 200, {
         ok: true,
         ...report,
         sftPreview,
         tokenBinBytes,
-        sftRowsTotal: sftPreview.length ? 42 : 0
-      }));
+        sftRowsTotal,
+      });
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message }));
+      sendJson(res, err.statusCode || 500, { ok: false, error: err.message });
     }
     return;
   }
@@ -201,55 +367,54 @@ const server = http.createServer(async (req, res) => {
         targetPath = payload.modelPath;
       }
       if (!targetPath) {
-        targetPath = 'D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff';
+        targetPath = process.env.VERISIEVE_MODEL_PATH || null;
       }
-
-      const audit = inspectLocalOpenWeightPath(targetPath);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      const validated = validateModelProbePath(targetPath);
+      const audit = inspectLocalOpenWeightPath(validated);
+      sendJson(res, 200, {
         ok: true,
-        defaultPath: 'D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff',
-        ollamaDetected: fs.existsSync('D:\\Ollama\\models\\blobs\\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff'),
-        audit
-      }));
+        audit,
+      });
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message }));
+      sendJson(res, err.statusCode || 400, { ok: false, error: err.message });
     }
     return;
   }
 
-  // API 6: POST /api/needle-search (Live WASM Needle Semantic Search <2ms)
+  // API 6: POST /api/needle-search (Live WASM Needle Semantic Search)
   if (req.method === 'POST' && pathname === '/api/needle-search') {
     try {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
-      const query = payload.query || 'hip fracture nutritional status elderly recovery';
-      const topK = payload.topK ? parseInt(payload.topK, 10) : 3;
+      const query = String(payload.query || '').trim();
+      if (!query) {
+        sendJson(res, 400, { ok: false, error: 'query is required' });
+        return;
+      }
+      const topK = payload.topK ? Math.max(1, Math.min(20, parseInt(payload.topK, 10))) : 3;
 
       const tables = loadExtractedDatasets();
-      const safeDocs = tables.verisieve_certified_tokens.map(r => ({
-        masked_text: r.masked_text || r.text || '',
-        source_mode: r.source_mode,
-        token_count: r.token_count,
-        pred_prob: r.pred_prob
+      const safeRows = tables.verisieve_certified_tokens || [];
+      const safeTexts = safeRows.map((r) => String(r.masked_text || r.text || ''));
+      const tSearch = performance.now();
+      const hits = safeTexts.length > 0 ? searchNeedleWasm(query, safeTexts, { topK }) : [];
+      const searchMs = Number((performance.now() - tSearch).toFixed(2));
+      const results = hits.map((h) => ({
+        ...h,
+        latencyMs: h.latencyMs ?? searchMs,
       }));
 
-      const results = searchNeedleWasm(query, safeDocs, { topK });
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      sendJson(res, 200, {
         ok: true,
         query,
         topK,
         results,
         piiExposureRatePct: 0.0,
         engine: 'verisieve_dl.wasm (embedNeedleWasm)',
-        latencyMs: results[0]?.latencyMs || 1.2
-      }));
+        latencyMs: searchMs,
+      });
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message }));
+      sendJson(res, 500, { ok: false, error: err.message });
     }
     return;
   }
@@ -260,29 +425,48 @@ const server = http.createServer(async (req, res) => {
       const raw = await readBody(req);
       const payload = raw ? JSON.parse(raw) : {};
       const { prompt, datasetRows, options = {}, modelPath } = payload;
-      if (!prompt) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: 'prompt is required' }));
+      if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+        sendJson(res, 400, { ok: false, error: 'prompt is required' });
         return;
       }
-      const chatOptions = { ...options, modelPath: modelPath || options.modelPath };
+      const chosenModel = modelPath || options.modelPath || null;
+      const validatedModel = chosenModel ? validateModelProbePath(chosenModel) : null;
+      const chatOptions = { ...options, modelPath: validatedModel };
       const chatResult = chatWithTrainedModelsWasm(prompt, datasetRows, chatOptions);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, ...chatResult }));
+      sendJson(res, 200, { ok: true, ...chatResult });
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message }));
+      sendJson(res, err.statusCode || 500, { ok: false, error: err.message });
     }
     return;
   }
 
+  // Static File Serving (strictly contained to demo/, results/, docs/ — explicit 404 on missing files)
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { 'Content-Type': 'text/plain' });
+    res.end('Method Not Allowed');
+    return;
+  }
 
-  // Static File Serving
-  let relativePath = pathname === '/' ? 'demo/index.html' : pathname.replace(/^\//, '');
-  let filePath = path.resolve(ROOT_DIR, relativePath);
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'text/plain' });
+    res.end('Bad Request');
+    return;
+  }
 
-  // Security check: stay within ROOT_DIR
-  if (!filePath.startsWith(ROOT_DIR)) {
+  const relativePath = decodedPath === '/' ? 'demo/index.html' : decodedPath.replace(/^\/+/, '');
+  const filePath = path.resolve(ROOT_DIR, relativePath);
+
+  if (!isContainedPath(ROOT_DIR, filePath)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+    return;
+  }
+
+  const inAllowedDir = ALLOWED_STATIC_DIRS.some((dir) => isContainedPath(dir, filePath));
+  if (!inAllowedDir) {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     res.end('Forbidden');
     return;
@@ -292,57 +476,30 @@ const server = http.createServer(async (req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     res.writeHead(200, { 'Content-Type': contentType });
-    fs.createReadStream(filePath).pipe(res);
-  } else {
-    // Try fallback to demo/index.html
-    const fallbackPath = path.resolve(ROOT_DIR, 'demo/index.html');
-    if (fs.existsSync(fallbackPath)) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      fs.createReadStream(fallbackPath).pipe(res);
+    if (req.method === 'HEAD') {
+      res.end();
     } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('File Not Found');
+      fs.createReadStream(filePath).pipe(res);
     }
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('File Not Found');
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`========================================================================`);
-  console.log(`  VERISIEVE — INTERACTIVE GATEKEEPER UI & MCP SERVER READY             `);
+  console.log(`  VERISIEVE — LOOPBACK UI & MCP SERVER READY (${HOST}:${PORT})         `);
   console.log(`========================================================================`);
-  console.log(`  Local UI URL:        http://localhost:${PORT}`);
-  console.log(`  Run Pipeline API:    POST http://localhost:${PORT}/api/run`);
-  console.log(`  DuckDB SQL API:      POST http://localhost:${PORT}/api/duckdb`);
-  console.log(`  Train Model API:     POST http://localhost:${PORT}/api/train-model`);
-  console.log(`  MCP Server API:      POST http://localhost:${PORT}/api/mcp`);
-  console.log(`  MCP Tools List:      GET  http://localhost:${PORT}/api/mcp/tools`);
+  console.log(`  Local UI URL:        http://${HOST}:${PORT}`);
+  console.log(`  Run Pipeline API:    POST http://${HOST}:${PORT}/api/run`);
+  console.log(`  WASM SQL API:        POST http://${HOST}:${PORT}/api/duckdb`);
+  console.log(`  Train Model API:     POST http://${HOST}:${PORT}/api/train-model`);
+  console.log(`  MCP Server API:      POST http://${HOST}:${PORT}/api/mcp`);
+  console.log(`  MCP Tools List:      GET  http://${HOST}:${PORT}/api/mcp/tools`);
   console.log(`------------------------------------------------------------------------`);
   console.log(`  Press Ctrl+C to stop the server.`);
   console.log(`========================================================================\n`);
 });
 
-function runJsSqlFallback(sql, dataset) {
-  const pmcPath = path.resolve('results/real-data-pmc-pdf.csv');
-  const funsdPath = path.resolve('results/real-data-funsd-noisy-ocr.csv');
-  let rowCount = 0;
-  [pmcPath, funsdPath].forEach((p) => {
-    if (fs.existsSync(p)) {
-      const lines = fs.readFileSync(p, 'utf8').trim().split('\n');
-      rowCount += Math.max(0, lines.length - 1);
-    }
-  });
-
-  return {
-    ok: true,
-    engine: 'DuckDB In-Memory Fallback',
-    columns: ['source_mode', 'gatekeeper_action', 'total_rows'],
-    rows: [
-      ['pmc_clinical_pdf', 'KEEP_SAFE', 17],
-      ['funsd_scanned_archival_ocr', 'KEEP_SAFE', 25]
-    ],
-    total_rows: rowCount || 67,
-    elapsedMs: 0.85
-  };
-}
-
-export { server, PORT };
+export { server, PORT, HOST };
