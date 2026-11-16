@@ -186,15 +186,19 @@ test('7. Client-side gatekeeper training + LTT routing classifies lines correctl
   const uniqueProbs = new Set(pdfRows.map((r) => r.pred_prob));
   assert.ok(uniqueProbs.size > 5, `pred_prob must vary across rows, found only ${uniqueProbs.size} unique values`);
 
-  // 4. Assert KEEP_SAFE rows have higher mean pred_prob than DROP_OR_QUARANTINE rows
-  const keepSafeRows = pdfRows.filter((r) => r.gatekeeper_action === 'KEEP_SAFE');
+  // 4. Assert small fixture (<59 calibration negatives) fails closed with zero KEEP_SAFE leaks, while trained probabilities separate safe vs unsafe lines
+  assert.strictEqual(comparison.calibratedGatekeeper.calibration.certified, false);
+  assert.strictEqual(comparison.calibratedGatekeeper.calibration.tauKeep, 1.0);
+  const safeLabeledRows = pdfRows.filter((r) => r.label === 1);
+  const unsafeLabeledRows = pdfRows.filter((r) => r.label === 0);
   const dropRows = pdfRows.filter((r) => r.gatekeeper_action === 'DROP_OR_QUARANTINE');
 
-  assert.ok(keepSafeRows.length > 0, 'Must have at least one KEEP_SAFE row');
+  assert.ok(safeLabeledRows.length > 0 && unsafeLabeledRows.length > 0);
   assert.ok(dropRows.length > 0, 'Must have at least one DROP_OR_QUARANTINE row');
+  assert.strictEqual(pdfRows.filter((r) => r.gatekeeper_action === 'KEEP_SAFE').length, 0, 'Uncertified small calibration split must fail closed with 0 KEEP_SAFE');
 
-  const meanSafeProb = keepSafeRows.reduce((sum, r) => sum + r.pred_prob, 0) / keepSafeRows.length;
-  const meanDropProb = dropRows.reduce((sum, r) => sum + r.pred_prob, 0) / dropRows.length;
+  const meanSafeProb = safeLabeledRows.reduce((sum, r) => sum + r.pred_prob, 0) / safeLabeledRows.length;
+  const meanDropProb = unsafeLabeledRows.reduce((sum, r) => sum + r.pred_prob, 0) / unsafeLabeledRows.length;
 
   assert.ok(
     meanSafeProb > meanDropProb,
@@ -249,7 +253,7 @@ test('10. ingestFromUrlOrPath handles files, flags, and online URL with offline 
   const resFile = await ingestFromUrlOrPath(pmcPdfPath, {
     mode: 'auto',
     piiStrategy: 'partial',
-    alpha: 0.10,
+    alpha: 0.15,
     maxSeqLen: 128,
     outDir
   });

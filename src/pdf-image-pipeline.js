@@ -420,9 +420,26 @@ export function runPdfVsImageComparison(options = {}) {
   );
   const trainingLabels = trainingBlocks.map((b) => b.label);
 
+  // Split disjointly into training vs calibration rows
+  const trainFeats = [];
+  const trainLabels = [];
+  const calFeats = [];
+  const calLabels = [];
+  for (let i = 0; i < trainingFeatures.length; i++) {
+    if (i % 2 === 0) {
+      trainFeats.push(trainingFeatures[i]);
+      trainLabels.push(trainingLabels[i]);
+    } else {
+      calFeats.push(trainingFeatures[i]);
+      calLabels.push(trainingLabels[i]);
+    }
+  }
+  const effectiveCalFeats = calFeats.length >= 2 ? calFeats : trainFeats;
+  const effectiveCalLabels = calLabels.length >= 2 ? calLabels : trainLabels;
+
   // Train and calibrate gatekeeper model
-  const gatekeeperModel = trainGatekeeper(trainingFeatures, trainingLabels, { lr: 0.15, epochs: 80, seed: 42 });
-  const calibratedGatekeeper = calibrateGatekeeper(gatekeeperModel, trainingFeatures, trainingLabels, { alpha: 0.05, delta: 0.05 });
+  const gatekeeperModel = trainGatekeeper(trainFeats, trainLabels, { lr: 0.15, epochs: 80, seed: 42 });
+  const calibratedGatekeeper = calibrateGatekeeper(gatekeeperModel, effectiveCalFeats, effectiveCalLabels, { alpha: 0.05, delta: 0.05 });
 
   // --- Tier 1: Born-Digital PDF (Path 1) ---
   const pdfExtracted = extractPdfTextLayer(pdfBuffer);

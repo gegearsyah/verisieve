@@ -18,6 +18,15 @@ import {
   runCleanAndTokenizePipeline
 } from '../src/clean-and-tokenize.js';
 
+function refUtf8Fnv1a(str) {
+  let hash = 0x811c9dc5;
+  for (const byte of Buffer.from(String(str), 'utf8')) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
 test('Born-digital text, HTML, and email ingestion', () => {
   // Plain text
   const textBlocks = ingestUnstructuredText('Hello World\nLine 2', { format: 'text' });
@@ -57,7 +66,7 @@ test('Rtio fnv1a and computeNodeHash determinism and key-order invariance', () =
 });
 
 test('100% removal of planted PII across all 8 categories in text and RGB image', () => {
-  const piiText = 'Contact alice@example.com, phone +61 412 345 678, ssn 123-45-6789, card 4111 2222 3333 4444, ip 192.168.1.1, dob 25/12/1990, name Patient Name: John Smith, address 123 Fake St Sydney.';
+  const piiText = 'Contact alice@example.com, phone +61 412 345 678, ssn 123-45-6789, card 4532-0151-1283-0366, ip 192.168.1.1, dob 25/12/1990, name Patient Name: John Smith, address 123 Fake St Sydney.';
   
   const blocks = [{
     id: 'b1',
@@ -144,4 +153,76 @@ test('End-to-end pipeline runCleanAndTokenizePipeline', () => {
   assert.ok(pipelineResult.features.length > 0);
   assert.ok(pipelineResult.auditEntries.length > 0);
   assert.ok(typeof pipelineResult.nodeHash === 'string');
+});
+
+test('T3: fnv1a UTF-8 C99 parity & byte-utf8-v1 exact round-trip tokenization', () => {
+  assert.strictEqual(fnv1a('café'), refUtf8Fnv1a('café'));
+  assert.strictEqual(fnv1a('naïve-🧬-日本語'), refUtf8Fnv1a('naïve-🧬-日本語'));
+
+  const tok = createTokenizer({ maxSeqLen: 128 });
+  assert.strictEqual(tok.name, 'byte-utf8-v1');
+  const sample = 'Patient\tcafé 🧬 <PII:EMAIL> & <PII:SSN>\nLine 2!';
+  const enc = tok.encode(sample, 128);
+  assert.strictEqual(tok.decode(enc.tokenIds), sample);
+});
+
+test('T3: structural feature slots [512..519] separate confidences, compute real ratios, and record unpadded tokenCount', () => {
+  const tok = createTokenizer({ maxSeqLen: 256 });
+  const plainText = 'hello';
+  const plainEnc = tok.encode(plainText, 256);
+  const plainFeat = extractFeatureRow({ id: 'p', text: plainText, fontStyle: 'sans_serif' }, plainEnc.tokenIds);
+
+  assert.strictEqual(plainFeat[513], Math.fround(1.0));
+  assert.strictEqual(plainFeat[514], Math.fround(1.0));
+  assert.strictEqual(plainFeat[515], 0);
+  assert.strictEqual(plainFeat[516], 0);
+  assert.ok(plainFeat[519] > 0 && plainFeat[519] < 0.06, `Expected unpadded token ratio < 0.06, got ${plainFeat[519]}`);
+
+  const mixedText = 'Check 123!! café';
+  const mixedEnc = tok.encode(mixedText, 256);
+  const mixedFeat = extractFeatureRow({
+    id: 'm',
+    text: mixedText,
+    wordConfidences: [0.25, 0.95],
+    piiItems: [{ type: 'email', value: 'a@b.co' }],
+  }, mixedEnc);
+
+  assert.strictEqual(mixedFeat[512], 1);
+  assert.strictEqual(mixedFeat[513], Math.fround(0.25));
+  assert.ok(Math.abs(mixedFeat[514] - 0.60) < 1e-5);
+  assert.ok(mixedFeat[515] > 0, 'Punctuation/structural variance must be non-zero without hardcoded constant');
+  assert.ok(mixedFeat[516] > 0, 'Non-ASCII ratio must be non-zero for café without hardcoded constant');
+});
+
+test('T3: PII scanner enforces Luhn+IIN card check, grant/kernel disambiguation, and opt-in domain configs', () => {
+  // Invalid Luhn 16-digit serials must NOT trigger credit_card
+  const nonCards = scanRecordsForPII('Serial 4111 2222 3333 4444 and Sample 9999 8888 7777 6666.');
+  assert.strictEqual(nonCards.some((x) => x.type === 'credit_card'), false);
+
+  // Valid Luhn Visa / MC / Amex must trigger credit_card
+  for (const card of ['4532-0151-1283-0366', '5425 2334 3010 9903', '378282246310005']) {
+    const hits = scanRecordsForPII(`Billing card ${card} verified.`);
+    assert.ok(hits.some((x) => x.type === 'credit_card'), `Valid Luhn card not detected: ${card}`);
+  }
+
+  // Technical lookalike disambiguators remain intact
+  const lookalikes = scanRecordsForPII('Grant ID 800-555-0199 running on Kernel v10.24.108.3.');
+  assert.strictEqual(lookalikes.length, 0);
+
+  // Hardcoded fixture literals are excluded by default, allowed via opt-in domainConfig
+  const defaultOnly = "Patient at Guy's Campus and King's College London; reviewed by Montgomery.";
+  const defaultHits = scanRecordsForPII(defaultOnly);
+  assert.strictEqual(defaultHits.length, 0);
+
+  const fixtureLine = "Review by Montgomery at Wong Tai Sin Hospital and Guy's Campus or King's College London.";
+  const domainHits = scanRecordsForPII(fixtureLine, {
+    domainConfig: {
+      additionalPatterns: {
+        name_likely: /\bMontgomery\b/g,
+        address_likely: /Wong Tai Sin Hospital|Guy's Campus|King's College London/gi
+      }
+    }
+  });
+  assert.ok(domainHits.some((x) => x.value === 'Montgomery'));
+  assert.ok(domainHits.some((x) => x.value === 'Wong Tai Sin Hospital'));
 });

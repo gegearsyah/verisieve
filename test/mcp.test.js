@@ -36,6 +36,7 @@ test('MCP Server tool call: ingest_and_tokenize', () => {
 
 test('MCP Server tool call: train_local_gatekeeper and gatekeeper_decide', () => {
   const fRow = Array.from(new Float32Array(520).fill(0.5));
+  const calRow = Array.from(new Float32Array(520).fill(-0.5));
   const trainReq = {
     jsonrpc: '2.0',
     method: 'tools/call',
@@ -44,8 +45,8 @@ test('MCP Server tool call: train_local_gatekeeper and gatekeeper_decide', () =>
       arguments: {
         featureRows: [fRow],
         labels: [1],
-        calibFeatureRows: [fRow],
-        calibLabels: [1]
+        calibFeatureRows: [calRow],
+        calibLabels: [0]
       }
     },
     id: 4

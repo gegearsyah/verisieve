@@ -324,11 +324,30 @@ export function handleJsonRpcRequest(request) {
           } else {
             throw new Error('train_multiaxis_gatekeeper requires samples[] or featureRows+labelsMap');
           }
-          let multiBundle = trainMultiAxisGatekeeper(fRows, labelsMap, args.options || {});
-          const cRows = Array.isArray(args.calibFeatureRows)
-            ? args.calibFeatureRows.map((r) => new Float32Array(r))
-            : fRows;
-          const cLabels = args.calibLabelsMap || labelsMap;
+          let trainFRows = fRows;
+          let trainLabelsMap = labelsMap;
+          let cRows;
+          let cLabels;
+          if (Array.isArray(args.calibFeatureRows) && args.calibLabelsMap) {
+            cRows = args.calibFeatureRows.map((r) => new Float32Array(r));
+            cLabels = args.calibLabelsMap;
+          } else if (fRows.length >= 2) {
+            trainFRows = [];
+            cRows = [];
+            trainLabelsMap = { safe: [], useful: [], topic: [] };
+            cLabels = { safe: [], useful: [], topic: [] };
+            for (let i = 0; i < fRows.length; i++) {
+              const targetX = i % 2 === 0 ? trainFRows : cRows;
+              const targetL = i % 2 === 0 ? trainLabelsMap : cLabels;
+              targetX.push(fRows[i]);
+              targetL.safe.push(labelsMap.safe[i]);
+              targetL.useful.push(labelsMap.useful[i]);
+              targetL.topic.push(labelsMap.topic[i]);
+            }
+          } else {
+            throw new Error('LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN: provide disjoint calibFeatureRows or >= 2 samples');
+          }
+          let multiBundle = trainMultiAxisGatekeeper(trainFRows, trainLabelsMap, args.options || {});
           multiBundle = calibrateMultiAxisGatekeeper(multiBundle, cRows, cLabels, args.options || {});
           lastMultiAxisBundle = multiBundle;
           result = { content: [{ type: 'text', text: JSON.stringify(multiBundle, null, 2) }] };

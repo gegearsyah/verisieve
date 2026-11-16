@@ -55,6 +55,23 @@ export function binomCdf(k, n, p) {
 // ---------------------------------------------------------------------------
 // 1. Client-Side Data-Quality & PII Routing Gatekeeper
 // ---------------------------------------------------------------------------
+function hashTrainingData(featureRows, labels) {
+  const payload = JSON.stringify({
+    featureRows: featureRows.map((r) => Array.from(r, (v) => Math.fround(v))),
+    labels: Array.from(labels)
+  });
+  return crypto.createHash('sha256').update(payload).digest('hex');
+}
+
+function hashModelWeights(weights, bias, seed) {
+  const payload = JSON.stringify({
+    weights: Array.from(weights, (v) => Math.fround(v)),
+    bias: Math.fround(bias),
+    seed
+  });
+  return crypto.createHash('sha256').update(payload).digest('hex');
+}
+
 export function trainGatekeeper(featureRows, labels, options = {}) {
   const nSamples = featureRows.length;
   if (nSamples === 0 || featureRows[0].length !== 520) {
@@ -63,7 +80,7 @@ export function trainGatekeeper(featureRows, labels, options = {}) {
 
   const dim = 520;
   let weights = new Float32Array(dim);
-  let bias = 0.0;
+  let bias = Math.fround(0.0);
   const lr = options.lr || 0.05;
   const epochs = options.epochs || 30;
   const l2Reg = options.l2 || 1e-3;
@@ -94,7 +111,7 @@ export function trainGatekeeper(featureRows, labels, options = {}) {
       const p = 1 / (1 + Math.exp(-z));
 
       const eps = 1e-15;
-      const loss = - (y * Math.log(p + eps) + (1 - y) * Math.log(1 - p + eps));
+      const loss = -(y * Math.log(p + eps) + (1 - y) * Math.log(1 - p + eps));
       totalLoss += loss;
 
       if ((p >= 0.5 ? 1 : 0) === y) correct++;
@@ -106,7 +123,7 @@ export function trainGatekeeper(featureRows, labels, options = {}) {
       }
     }
 
-    bias -= lr * (gradB / nSamples);
+    bias = Math.fround(bias - lr * (gradB / nSamples));
     for (let j = 0; j < dim; j++) {
       weights[j] -= lr * ((gradW[j] / nSamples) + l2Reg * weights[j]);
     }
@@ -115,11 +132,8 @@ export function trainGatekeeper(featureRows, labels, options = {}) {
   const trainLoss = totalLoss / nSamples;
   const trainAccuracy = correct / nSamples;
 
-  const dataPayload = JSON.stringify({ featureRows: featureRows.map(r => Array.from(r)), labels });
-  const dataSha256 = crypto.createHash('sha256').update(dataPayload).digest('hex');
-
-  const modelPayload = JSON.stringify({ weights: Array.from(weights), bias, seed });
-  const weightsSha256 = crypto.createHash('sha256').update(modelPayload).digest('hex');
+  const dataSha256 = hashTrainingData(featureRows, labels);
+  const weightsSha256 = hashModelWeights(weights, bias, seed);
 
   return {
     modelType: 'matilda-client-gatekeeper-v1',
@@ -139,7 +153,22 @@ export function trainGatekeeper(featureRows, labels, options = {}) {
 }
 
 export function verifyTrainingReceipt(bundle, featureRows, labels, options = {}) {
+  if (
+    !bundle ||
+    !Array.isArray(bundle.weights) ||
+    bundle.weights.length !== (bundle.dim || 520) ||
+    typeof bundle.bias !== 'number' ||
+    !bundle.receipt
+  ) {
+    return false;
+  }
+
   const seed = bundle.receipt.seed;
+  const liveWeightsSha256 = hashModelWeights(bundle.weights, bundle.bias, seed);
+  if (liveWeightsSha256 !== bundle.receipt.weightsSha256) {
+    return false;
+  }
+
   const replayed = trainGatekeeper(featureRows, labels, { ...options, seed });
   const dataMatch = replayed.receipt.dataSha256 === bundle.receipt.dataSha256;
   const weightsMatch = replayed.receipt.weightsSha256 === bundle.receipt.weightsSha256;
@@ -147,8 +176,19 @@ export function verifyTrainingReceipt(bundle, featureRows, labels, options = {})
 }
 
 export function calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, { alpha = 0.05, delta = 0.05, targetDropRecall = 0.90 } = {}) {
+  if (!Array.isArray(calibFeatureRows) || !Array.isArray(calibLabels) || calibFeatureRows.length !== calibLabels.length) {
+    throw new TypeError('calibrateGatekeeper requires matching calibFeatureRows and calibLabels arrays');
+  }
+
   const nCalib = calibFeatureRows.length;
-  const probs = calibFeatureRows.map(x => decideGatekeeper(bundle, x).prob);
+  if (nCalib > 0 && bundle.receipt?.dataSha256) {
+    const calibDataSha256 = hashTrainingData(calibFeatureRows, calibLabels);
+    if (calibDataSha256 === bundle.receipt.dataSha256) {
+      throw new Error('LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN: Calibration set must be disjoint from training set');
+    }
+  }
+
+  const probs = calibFeatureRows.map((x) => decideGatekeeper(bundle, x).prob);
 
   const negIndices = [];
   calibLabels.forEach((y, idx) => {
@@ -156,75 +196,102 @@ export function calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, { alp
   });
   const n0 = negIndices.length;
 
-  let tauKeep = null;
+  let tauKeep = 1.0;
   let empiricalFpr = 0.0;
+  let certified = false;
 
-  for (let t = 0.01; t <= 0.99; t += 0.01) {
-    let k = 0;
-    for (const idx of negIndices) {
-      if (probs[idx] >= t) k++;
-    }
-    const pValue = binomCdf(k, n0, alpha);
-    if (pValue <= delta) {
-      tauKeep = Number(t.toFixed(2));
-      empiricalFpr = n0 > 0 ? k / n0 : 0;
-      break;
-    }
-  }
-
-  // If finite calibration set n0 is insufficient to satisfy binomCdf <= delta,
-  // choose the minimum empirical risk threshold bounded by alpha (k / n0 <= alpha)
-  if (tauKeep === null) {
-    let bestT = 0.76;
-    let minK = n0;
-    for (let t = 0.99; t >= 0.50; t -= 0.01) {
+  if (n0 > 0) {
+    for (let step = 1; step <= 99; step++) {
+      const t = step / 100;
       let k = 0;
       for (const idx of negIndices) {
         if (probs[idx] >= t) k++;
       }
-      if (n0 > 0 && k / n0 <= alpha) {
-        bestT = Number(t.toFixed(2));
-        minK = k;
+      const pValue = binomCdf(k, n0, alpha);
+      if (pValue <= delta) {
+        tauKeep = Number(t.toFixed(2));
+        empiricalFpr = k / n0;
+        certified = true;
+        break;
       }
     }
-    tauKeep = bestT;
-    empiricalFpr = n0 > 0 ? minK / n0 : 0;
   }
 
-  let tauDrop = Math.max(0.05, Number((tauKeep - 0.25).toFixed(2)));
-  if (tauDrop >= tauKeep) tauDrop = Number((tauKeep - 0.05).toFixed(2));
+  // Fail closed when n0 === 0 or binomCdf <= delta is unattainable across t in [0.01..0.99]
+  if (!certified) {
+    tauKeep = 1.0;
+    let kAtOne = 0;
+    for (const idx of negIndices) {
+      if (probs[idx] >= 1.0) kAtOne++;
+    }
+    empiricalFpr = n0 > 0 ? kAtOne / n0 : 0.0;
+  }
+
+  // Resolve tauDrop monotonically in [0, maxDrop] from targetDropRecall over calibration negatives
+  const recTarget = Math.max(0, Math.min(1, Number(targetDropRecall ?? 0.90)));
+  let tauDrop = 0.0;
+  if (n0 > 0) {
+    const maxDrop = Math.max(0.0, Number((tauKeep - 0.01).toFixed(2)));
+    const maxStep = Math.round(maxDrop * 100);
+    tauDrop = maxDrop;
+    for (let step = 0; step <= maxStep; step++) {
+      const t = step / 100;
+      let caught = 0;
+      for (const idx of negIndices) {
+        if (probs[idx] <= t) caught++;
+      }
+      if (caught / n0 >= recTarget - 1e-12) {
+        tauDrop = Number(t.toFixed(2));
+        break;
+      }
+    }
+  }
+
+  const exchangeabilityNote =
+    n0 === 0
+      ? 'Uncertified fail-closed: 0 negative calibration rows (LTT FPR bound cannot be certified; tauKeep = 1.0).'
+      : certified
+        ? `Finite-sample LTT guarantee P(FPR <= ${alpha}) >= ${1 - delta} holds under exchangeability (n0=${n0}).`
+        : `Uncertified fail-closed: n0=${n0} negative calibration rows could not satisfy binomCdf <= ${delta} at alpha=${alpha} (tauKeep = 1.0).`;
 
   bundle.calibration = {
     alpha,
     delta,
+    targetDropRecall: recTarget,
     tauKeep,
     tauDrop,
     nCalib,
+    nNegatives: n0,
     empiricalFpr,
-    exchangeabilityNote: 'Finite-sample LTT guarantee P(FPR <= alpha) >= 1 - delta holds under exchangeability between calibration and deployment chunks.'
+    certified,
+    guaranteed: certified,
+    exchangeabilityNote
   };
 
   return bundle;
 }
 
 export function decideGatekeeper(bundle, featureRow) {
-  const dim = bundle.dim;
+  const dim = bundle.dim || 520;
   const weights = bundle.weights;
   const bias = bundle.bias;
 
-  let z = bias;
+  // Match C99 verisieve_predict_prob float32 step-by-step arithmetic
+  let z = Math.fround(bias);
   for (let j = 0; j < dim; j++) {
-    z += weights[j] * featureRow[j];
+    const prod = Math.fround(Math.fround(weights[j]) * Math.fround(featureRow[j] || 0));
+    z = Math.fround(z + prod);
   }
-  z = Math.max(-30, Math.min(30, z));
-  const prob = 1 / (1 + Math.exp(-z));
+  if (z > 30.0) z = 30.0;
+  if (z < -30.0) z = -30.0;
+  const prob = Math.fround(1.0 / Math.fround(1.0 + Math.fround(Math.exp(-z))));
 
   let action = 'ABSTAIN_HUMAN_REVIEW';
   let abstained = true;
 
   if (bundle.calibration) {
-    const { tauKeep, tauDrop } = bundle.calibration;
-    if (prob >= tauKeep) {
+    const { tauKeep, tauDrop, certified } = bundle.calibration;
+    if (certified !== false && prob >= tauKeep) {
       action = 'KEEP_SAFE';
       abstained = false;
     } else if (prob <= tauDrop) {
@@ -292,7 +359,10 @@ export function calibrateMultiAxisGatekeeper(multiBundle, calibFeatureRows, cali
   const calibratedModels = {};
   for (const axis of multiBundle.axes) {
     const bundle = multiBundle.models[axis];
-    const calibLabels = calibLabelsMap[axis];
+    const calibLabels = calibLabelsMap?.[axis];
+    if (!Array.isArray(calibLabels) || calibLabels.length !== calibFeatureRows.length) {
+      throw new TypeError(`Calibration labels for axis '${axis}' must match calibFeatureRows length`);
+    }
     calibratedModels[axis] = calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, options);
   }
   return {
@@ -303,30 +373,37 @@ export function calibrateMultiAxisGatekeeper(multiBundle, calibFeatureRows, cali
 
 export function decideMultiAxisGatekeeper(multiBundle, featureRow) {
   const decisions = {};
-  let allSafe = true;
-  let allUseful = true;
-  let allTopic = true;
-  let conjunctionAction = 'KEEP_SAFE';
-
   for (const axis of multiBundle.axes) {
-    const res = decideGatekeeper(multiBundle.models[axis], featureRow);
-    decisions[axis] = res;
-    if (res.action === 'DROP_OR_QUARANTINE') {
-      if (axis === 'safe') allSafe = false;
-      if (axis === 'useful') allUseful = false;
-      if (axis === 'topic') allTopic = false;
-    }
-    if (res.abstained) {
-      conjunctionAction = 'ABSTAIN_HUMAN_REVIEW';
-    }
+    decisions[axis] = decideGatekeeper(multiBundle.models[axis], featureRow);
   }
 
-  if (!allSafe || !allUseful || !allTopic) {
+  const allKeep =
+    decisions.safe?.action === 'KEEP_SAFE' &&
+    decisions.useful?.action === 'KEEP_SAFE' &&
+    decisions.topic?.action === 'KEEP_SAFE';
+  const anyDrop =
+    decisions.safe?.action === 'DROP_OR_QUARANTINE' ||
+    decisions.useful?.action === 'DROP_OR_QUARANTINE' ||
+    decisions.topic?.action === 'DROP_OR_QUARANTINE';
+  const anyAbstain =
+    Boolean(decisions.safe?.abstained || decisions.useful?.abstained || decisions.topic?.abstained);
+
+  let conjunctionAction = 'ABSTAIN_HUMAN_REVIEW';
+  if (anyDrop) {
     conjunctionAction = 'DROP_OR_QUARANTINE';
+  } else if (allKeep && !anyAbstain) {
+    conjunctionAction = 'KEEP_SAFE';
   }
+
+  const probSum = multiBundle.axes.reduce((s, ax) => s + (decisions[ax]?.prob || 0), 0);
+  const combinedProb = multiBundle.axes.length > 0 ? Math.round((probSum / multiBundle.axes.length) * 10000) / 10000 : 0;
 
   return {
     decisions,
+    axes: decisions,
+    allSafeAndUseful: allKeep,
+    prob: combinedProb,
+    action: conjunctionAction,
     conjunctionAction,
     abstained: conjunctionAction === 'ABSTAIN_HUMAN_REVIEW'
   };

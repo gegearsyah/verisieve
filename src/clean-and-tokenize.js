@@ -7,10 +7,14 @@ import { loadCleanWasmSync } from './clean-wasm.js';
 const FNV_OFFSET = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 
+const UTF8_ENCODER = new TextEncoder();
+const UTF8_DECODER = new TextDecoder('utf-8', { fatal: false });
+
 export function fnv1a(input) {
   let hash = FNV_OFFSET;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
+  const bytes = UTF8_ENCODER.encode(String(input ?? ''));
+  for (let i = 0; i < bytes.length; i++) {
+    hash ^= bytes[i];
     hash = Math.imul(hash, FNV_PRIME);
   }
   return (hash >>> 0).toString(16).padStart(8, '0');
@@ -306,12 +310,48 @@ export const PII_PATTERNS = {
   email: /[a-zA-Z0-9_.+-]+\s*@\s*[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g,
   phone: /(?:\+\d{1,3}[-.\s]*)?(?:\(\s*\d{2,4}\s*\)|\b\d{2,4}\b)[-.\s]*\d{3,4}[-.\s]*\d{3,4}\b/g,
   ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
-  credit_card: /\b(?:\d[ -]*?){13,16}\b/g,
+  credit_card: /\b(?:\d[ -]*?){13,19}\b/g,
   ip_address: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
   date_of_birth: /\b(?:\d{1,2}[\/\s-]\d{1,2}[\/\s-](?:\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/g,
-  name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b|\bMontgomery\b/g,
-  address_likely: /(?:\d{1,4}\s+[A-Z][a-zA-Z0-9\s,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)\s+of\s+[A-Z][a-zA-Z\s]+|Wong Tai Sin Hospital|Guy's Campus|King's College London)/gi
+  name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b/g,
+  address_likely: /(?:\d{1,4}\s+[A-Z][a-zA-Z0-9\s,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)\s+of\s+[A-Z][a-zA-Z\s]+)/gi
 };
+
+export function createDomainPiiConfig({ additionalPatterns = {}, extraExcludedWords = [] } = {}) {
+  return {
+    additionalPatterns: { ...additionalPatterns },
+    extraExcludedWords: Array.from(extraExcludedWords).map((w) => String(w).toLowerCase())
+  };
+}
+
+function luhnCheck(digits) {
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let digit = digits.charCodeAt(i) - 48;
+    if (digit < 0 || digit > 9) return false;
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+}
+
+function isValidPaymentCard(raw) {
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length < 13 || digits.length > 19) return false;
+  const isVisa = /^4(?:\d{12}|\d{15}|\d{18})$/.test(digits);
+  const isMastercard = /^(?:5[1-5]\d{14}|(?:222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)\d{12})$/.test(digits);
+  const isAmex = /^3[47]\d{13}$/.test(digits);
+  const isDiscover = /^(?:6011\d{12}|65\d{14}|64[4-9]\d{13})$/.test(digits);
+  const isJcb = /^(?:352[89]|35[3-8]\d)\d{12}$/.test(digits);
+  const isDiners = /^3(?:0[0-5]|[68]\d)\d{11}$/.test(digits);
+  if (!(isVisa || isMastercard || isAmex || isDiscover || isJcb || isDiners)) return false;
+  return luhnCheck(digits);
+}
 
 export function maskValue(val, type, strategy = 'token') {
   if (strategy === 'redact' || strategy === 'bullet') return '••••••••';
@@ -338,50 +378,75 @@ export function maskValue(val, type, strategy = 'token') {
   return `<PII:${type.toUpperCase()}>`;
 }
 
-export function scanRecordsForPII(text) {
+export function scanRecordsForPII(text, options = {}) {
+  const domainCfg = options?.domainConfig || null;
+  const extraExcluded = domainCfg?.extraExcludedWords
+    ? new Set(domainCfg.extraExcludedWords.map((w) => String(w).toLowerCase()))
+    : null;
+  const patternEntries = Object.entries(PII_PATTERNS).map(([type, rx]) => [type, [rx]]);
+  if (domainCfg?.additionalPatterns) {
+    for (const [type, extraRx] of Object.entries(domainCfg.additionalPatterns)) {
+      if (!extraRx) continue;
+      const list = Array.isArray(extraRx) ? extraRx : [extraRx];
+      const existing = patternEntries.find(([t]) => t === type);
+      if (existing) existing[1].push(...list);
+      else patternEntries.push([type, list]);
+    }
+  }
+
   const items = [];
-  for (const [type, regex] of Object.entries(PII_PATTERNS)) {
-    // Reset regex state
-    regex.lastIndex = 0;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      const fullMatch = match[0];
-      const captured = match[1] || match[2] || fullMatch;
-      const val = captured;
-      const offsetInMatch = fullMatch.indexOf(val);
-      const start = offsetInMatch !== -1 ? match.index + offsetInMatch : match.index;
-      const end = start + val.length;
-
-      // Exclude false positives for name_likely like clinical/scientific/document Title-Case nouns
-      if (type === 'name_likely') {
-        const words = val.toLowerCase().replace(/[^a-z]/g, ' ').split(/\s+/).filter(Boolean);
-        if (words.some(w => EXCLUDED_NAME_WORDS.has(w))) {
+  for (const [type, regexList] of patternEntries) {
+    for (const rawRegex of regexList) {
+      const regex = rawRegex instanceof RegExp
+        ? new RegExp(rawRegex.source, rawRegex.flags.includes('g') ? rawRegex.flags : `${rawRegex.flags}g`)
+        : new RegExp(String(rawRegex), 'g');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        if (match[0].length === 0) {
+          regex.lastIndex++;
           continue;
         }
-      }
+        const fullMatch = match[0];
+        const captured = match[1] || match[2] || fullMatch;
+        const val = captured;
+        const offsetInMatch = fullMatch.indexOf(val);
+        const start = offsetInMatch !== -1 ? match.index + offsetInMatch : match.index;
+        const end = start + val.length;
 
-      // Disambiguate technical lookalikes for phone (e.g. "Grant ID 800-555-0199")
-      if (type === 'phone') {
-        const prefix = text.slice(Math.max(0, match.index - 20), match.index).toLowerCase();
-        if (prefix.includes('grant') || prefix.includes('award') || prefix.includes('project') || prefix.includes('ref:') || prefix.includes('nih')) {
+        if (type === 'name_likely') {
+          const words = val.toLowerCase().replace(/[^a-z]/g, ' ').split(/\s+/).filter(Boolean);
+          if (words.some((w) => EXCLUDED_NAME_WORDS.has(w) || extraExcluded?.has(w))) {
+            continue;
+          }
+        }
+
+        if (type === 'credit_card' && !isValidPaymentCard(val)) {
           continue;
         }
-      }
 
-      // Disambiguate technical lookalikes for ip_address (e.g. "Kernel v10.24.108.3")
-      if (type === 'ip_address') {
-        const prefix = text.slice(Math.max(0, match.index - 15), match.index).toLowerCase();
-        if (prefix.includes('kernel') || prefix.includes('version') || prefix.includes('build') || /v[\s:]*$/i.test(prefix)) {
-          continue;
+        // Disambiguate technical lookalikes for phone (e.g. "Grant ID 800-555-0199")
+        if (type === 'phone') {
+          const prefix = text.slice(Math.max(0, match.index - 20), match.index).toLowerCase();
+          if (prefix.includes('grant') || prefix.includes('award') || prefix.includes('project') || prefix.includes('ref:') || prefix.includes('nih')) {
+            continue;
+          }
         }
-      }
 
-      items.push({
-        type,
-        value: val,
-        start,
-        end
-      });
+        // Disambiguate technical lookalikes for ip_address (e.g. "Kernel v10.24.108.3")
+        if (type === 'ip_address') {
+          const prefix = text.slice(Math.max(0, match.index - 15), match.index).toLowerCase();
+          if (prefix.includes('kernel') || prefix.includes('version') || prefix.includes('build') || /v[\s:]*$/i.test(prefix)) {
+            continue;
+          }
+        }
+
+        items.push({
+          type,
+          value: val,
+          start,
+          end
+        });
+      }
     }
   }
   // Sort by start index, preferring longer matches when starts collide
@@ -457,49 +522,57 @@ function blackoutRegion(rgb, width, height, x1, y1, x2, y2) {
 // ---------------------------------------------------------------------------
 // 5. Pluggable Tokenizer & Feature Extractor
 // ---------------------------------------------------------------------------
+const PII_TOKEN_MAP = {
+  '<PII:EMAIL>': 4,
+  '<PII:PHONE>': 5,
+  '<PII:SSN>': 6,
+  '<PII:CREDIT_CARD>': 7,
+  '<PII:IP_ADDRESS>': 8,
+  '<PII:DATE_OF_BIRTH>': 9,
+  '<PII:NAME_LIKELY>': 10,
+  '<PII:ADDRESS_LIKELY>': 11
+};
+const PII_ID_TO_TOKEN = Object.fromEntries(
+  Object.entries(PII_TOKEN_MAP).map(([tok, id]) => [id, tok])
+);
+const BYTE_TOKEN_OFFSET = 16;
+
 export function createTokenizer(options = {}) {
   const defaultMaxSeqLen = options.maxSeqLen || 256;
   if (options.vocab && options.merges && typeof options.encode === 'function') {
     return {
+      name: options.name || 'custom-bpe',
       encode: options.encode,
-      decode: options.decode || (ids => ids.join(' '))
+      decode: options.decode || ((ids) => ids.join(' '))
     };
   }
 
-  // Default byte+word BPE-compatible tokenizer ('byte-bpe-default')
+  // Exact reversible UTF-8 byte + special PII sentinel tokenizer ('byte-utf8-v1')
   return {
+    name: 'byte-utf8-v1',
     encode(text, maxSeqLen = defaultMaxSeqLen) {
-      // Special tokens: PAD=0, BOS=1, EOS=2, UNK=3, PII(8 tokens)=4..11
+      // Special tokens: PAD=0, BOS=1, EOS=2, UNK=3, PII(8 tokens)=4..11, UTF-8 byte b=16..271
       const tokens = [1]; // BOS
-      const words = text.split(/\s+/);
+      const rawStr = String(text ?? '');
+      const segments = rawStr.split(/(<PII:[A-Z_]+>)/g);
 
-      for (const word of words) {
-        if (/^<PII:[A-Z_]+>$/.test(word)) {
-          // Map PII token
-          const piiMap = {
-            '<PII:EMAIL>': 4,
-            '<PII:PHONE>': 5,
-            '<PII:SSN>': 6,
-            '<PII:CREDIT_CARD>': 7,
-            '<PII:IP_ADDRESS>': 8,
-            '<PII:DATE_OF_BIRTH>': 9,
-            '<PII:NAME_LIKELY>': 10,
-            '<PII:ADDRESS_LIKELY>': 11
-          };
-          tokens.push(piiMap[word] || 3);
-        } else {
-          for (let i = 0; i < word.length; i++) {
-            const code = word.charCodeAt(i) % 240 + 12; // safe offset
-            tokens.push(code);
-            if (tokens.length >= maxSeqLen - 1) break;
-          }
+      for (const seg of segments) {
+        if (!seg) continue;
+        if (Object.prototype.hasOwnProperty.call(PII_TOKEN_MAP, seg)) {
+          tokens.push(PII_TOKEN_MAP[seg]);
+          if (tokens.length >= maxSeqLen - 1) break;
+          continue;
+        }
+        const bytes = UTF8_ENCODER.encode(seg);
+        for (let i = 0; i < bytes.length; i++) {
+          tokens.push(BYTE_TOKEN_OFFSET + bytes[i]);
+          if (tokens.length >= maxSeqLen - 1) break;
         }
         if (tokens.length >= maxSeqLen - 1) break;
       }
 
       tokens.push(2); // EOS
 
-      // Pad to maxSeqLen if needed
       const tokenIds = new Uint32Array(maxSeqLen);
       const attentionMask = new Uint8Array(maxSeqLen);
 
@@ -520,7 +593,30 @@ export function createTokenizer(options = {}) {
       };
     },
     decode(tokenIds) {
-      return Array.from(tokenIds).filter(id => id > 3 && id < 65535).map(id => String.fromCharCode(id)).join('');
+      const parts = [];
+      let byteAccum = [];
+      const flushBytes = () => {
+        if (byteAccum.length > 0) {
+          parts.push(UTF8_DECODER.decode(new Uint8Array(byteAccum)));
+          byteAccum = [];
+        }
+      };
+
+      for (const rawId of tokenIds || []) {
+        const id = Number(rawId);
+        if (id === 0 || id === 1 || id === 2 || id === 3) {
+          flushBytes();
+          continue;
+        }
+        if (Object.prototype.hasOwnProperty.call(PII_ID_TO_TOKEN, id)) {
+          flushBytes();
+          parts.push(PII_ID_TO_TOKEN[id]);
+        } else if (id >= BYTE_TOKEN_OFFSET && id < BYTE_TOKEN_OFFSET + 256) {
+          byteAccum.push(id - BYTE_TOKEN_OFFSET);
+        }
+      }
+      flushBytes();
+      return parts.join('');
     }
   };
 }
@@ -542,19 +638,37 @@ export function tokenizeBlocks(blocks, { maxSeqLen = 256, tokenizer = createToke
   });
 }
 
-export function extractFeatureRow(block, tokenIds) {
+function computeFontScaleCv(block) {
+  if (typeof block?.fontScaleCv === 'number' && Number.isFinite(block.fontScaleCv)) {
+    return Math.max(0, block.fontScaleCv);
+  }
+  const sizes = Array.isArray(block?.fontSizes)
+    ? block.fontSizes
+    : Array.isArray(block?.fontScales)
+      ? block.fontScales
+      : Array.isArray(block?.bboxes) && block.bboxes.length > 1
+        ? block.bboxes.map((b) => Math.abs((b[3] ?? 0) - (b[1] ?? 0))).filter((h) => h > 0)
+        : null;
+  if (!sizes || sizes.length < 2) return null;
+  const mean = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+  if (mean <= 0) return 0;
+  const variance = sizes.reduce((a, b) => a + (b - mean) ** 2, 0) / sizes.length;
+  return Math.sqrt(variance) / mean;
+}
+
+export function extractFeatureRow(block, tokenIdsOrEnc) {
   const featureRow = new Float32Array(520);
-  const text = block.text || '';
+  const text = block?.text || '';
 
   // 1. Indices 0..511: L2-normalized signed FNV-1a hashing of unigrams, bigrams, char 4-grams
   const unigrams = text.toLowerCase().match(/\b[a-z0-9]+\b/g) || [];
   const bigrams = [];
   for (let i = 0; i < unigrams.length - 1; i++) {
-    bigrams.push(`${unigrams[i]}_${unigrams[i+1]}`);
+    bigrams.push(`${unigrams[i]}_${unigrams[i + 1]}`);
   }
   const char4 = [];
   for (let i = 0; i < text.length - 3; i++) {
-    char4.push(text.slice(i, i+4));
+    char4.push(text.slice(i, i + 4));
   }
 
   const allFeatures = [...unigrams, ...bigrams, ...char4];
@@ -576,22 +690,67 @@ export function extractFeatureRow(block, tokenIds) {
     }
   }
 
-  // 2. Indices 512..519: 8 structural/quality features
-  // [pii_count, min_ocr_conf, mean_ocr_conf, font_scale_cv, mono_ratio, digit_ratio, upper_ratio, token_count_norm]
-  const piiCount = block.piiItems ? block.piiItems.length : 0;
-  const conf = block.confidence !== undefined ? block.confidence : 1.0;
+  // 2. Indices 512..519: Truthful 8 structural/quality features (zero hardcoded defaults)
+  // [pii_count, min_ocr_conf, mean_ocr_conf, font_scale_cv|punct_ratio, mono|non_ascii_ratio, digit_ratio, upper_ratio, token_count_norm]
+  const piiCount = block?.piiItems ? block.piiItems.length : 0;
+  const confArr = Array.isArray(block?.wordConfidences)
+    ? block.wordConfidences
+    : Array.isArray(block?.confidences)
+      ? block.confidences
+      : Array.isArray(block?.charConfidences)
+        ? block.charConfidences
+        : null;
+  const defaultConf = block?.confidence !== undefined ? block.confidence : 1.0;
+  let minConf = block?.minConfidence !== undefined ? block.minConfidence : defaultConf;
+  let meanConf = block?.meanConfidence !== undefined ? block.meanConfidence : defaultConf;
+  if (confArr && confArr.length > 0) {
+    minConf = Math.min(...confArr);
+    meanConf = confArr.reduce((a, b) => a + b, 0) / confArr.length;
+  }
+
+  const totalChars = Math.max(1, text.length);
   const digits = (text.match(/\d/g) || []).length;
   const uppers = (text.match(/[A-Z]/g) || []).length;
-  const totalChars = text.length || 1;
+  const puncts = (text.match(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g) || []).length;
+  const nonAscii = (text.match(/[^\x00-\x7F]/g) || []).length;
+
+  const realFontCv = computeFontScaleCv(block);
+  const slot515 = realFontCv !== null ? realFontCv : (puncts / totalChars);
+  const slot516 = typeof block?.monoRatio === 'number'
+    ? block.monoRatio
+    : block?.fontStyle === 'monospace'
+      ? 1.0
+      : (nonAscii / totalChars);
+
+  let unpaddedTokenCount = 0;
+  let seqCap = 256;
+  if (tokenIdsOrEnc && typeof tokenIdsOrEnc === 'object' && 'tokenIds' in tokenIdsOrEnc) {
+    seqCap = tokenIdsOrEnc.tokenIds?.length || 256;
+    if (typeof tokenIdsOrEnc.tokenCount === 'number') {
+      unpaddedTokenCount = tokenIdsOrEnc.tokenCount;
+    } else if (tokenIdsOrEnc.tokenIds) {
+      for (const id of tokenIdsOrEnc.tokenIds) {
+        if (id !== 0) unpaddedTokenCount++;
+      }
+    }
+  } else if (block?.tokenCount !== undefined) {
+    unpaddedTokenCount = Number(block.tokenCount) || 0;
+    seqCap = tokenIdsOrEnc?.length || 256;
+  } else if (tokenIdsOrEnc && typeof tokenIdsOrEnc.length === 'number') {
+    seqCap = tokenIdsOrEnc.length || 256;
+    for (let i = 0; i < tokenIdsOrEnc.length; i++) {
+      if (tokenIdsOrEnc[i] !== 0) unpaddedTokenCount++;
+    }
+  }
 
   featureRow[512] = piiCount;
-  featureRow[513] = conf;
-  featureRow[514] = conf;
-  featureRow[515] = 0.1; // font_scale_cv default
-  featureRow[516] = 0.05; // mono_ratio default
+  featureRow[513] = minConf;
+  featureRow[514] = meanConf;
+  featureRow[515] = slot515;
+  featureRow[516] = slot516;
   featureRow[517] = digits / totalChars;
   featureRow[518] = uppers / totalChars;
-  featureRow[519] = Math.min(1.0, (tokenIds ? tokenIds.length : 0) / 256);
+  featureRow[519] = Math.min(1.0, unpaddedTokenCount / Math.max(1, seqCap));
 
   return featureRow;
 }
