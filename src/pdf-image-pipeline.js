@@ -9,7 +9,14 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { generateMultiFontDocument, encodePNG, applyScanDegradations, renderGlyphBitmap } from './multi-font-fixture.js';
-import { tileAndRead } from './ocr-engine.js';
+import {
+  tileAndRead,
+  decodeImageBuffer,
+  decodePdfImageXObject,
+  runTiledOcrAsync,
+  resolveCactusWeightsBytes,
+  DEFAULT_MIRAGE_WEIGHTS_PATH
+} from './ocr-engine.js';
 import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
 import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from './gatekeeper.js';
 import { extractPdfDetailed } from './pdf-parser.js';
@@ -1421,12 +1428,26 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       return diag.lines.join('\n');
     }
     if (diag.isLikelyScanned) {
-      if (typeof options.ocrProvider === 'function') {
-        const ocrOut = await options.ocrProvider(pdfBuf, { filename, sourceFormat: 'pdf', images: diag.images });
-        const ocrLines = Array.isArray(ocrOut) ? ocrOut : String(ocrOut || '').split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (ocrLines.length > 0) return ocrLines.join('\n');
+      const hasWeights = Boolean(resolveCactusWeightsBytes(options));
+      if (typeof options.ocrProvider === 'function' || hasWeights) {
+        const extractedLines = [];
+        for (const imgObj of diag.images) {
+          const decodedImg = decodePdfImageXObject(imgObj);
+          const ocrRes = await runTiledOcrAsync(decodedImg, {
+            ...options,
+            filename,
+            sourceFormat: 'pdf',
+          });
+          for (const line of ocrRes.lines || []) {
+            if (line?.text?.trim()) extractedLines.push(line.text.trim());
+          }
+        }
+        if (extractedLines.length > 0) return extractedLines.join('\n');
       }
-      throw new Error(`PDF_IMAGE_ONLY_REQUIRES_OCR: ${filename} contains ${diag.imageXObjectCount} image XObject(s) and zero born-digital text`);
+      throw new Error(
+        `PDF_IMAGE_ONLY_REQUIRES_OCR: ${filename} contains ${diag.imageXObjectCount} image XObject(s) and zero born-digital text; ` +
+        `supply local ${DEFAULT_MIRAGE_WEIGHTS_PATH} weights or ocrProvider (MIRAGE_WEIGHTS_REQUIRED)`
+      );
     }
     throw new Error(`PDF_EMPTY_TEXT_LAYER: ${filename} yielded zero extractable text lines`);
   };
@@ -1475,6 +1496,16 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       } else if (cType.includes('wordprocessingml') || url.toLowerCase().endsWith('.docx')) {
         sourceFormat = 'docx';
         rawContent = extractDocxText(buf, options).lines.join('\n');
+      } else if (cType.includes('image/png') || cType.includes('image/bmp') || url.toLowerCase().endsWith('.png') || url.toLowerCase().endsWith('.bmp')) {
+        sourceFormat = 'image';
+        const decodedImg = decodeImageBuffer(buf, localFilename);
+        if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
+          throw new Error(
+            `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
+          );
+        }
+        const ocrRes = await runTiledOcrAsync(decodedImg, { ...options, filename: localFilename, sourceFormat: 'image' });
+        rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
       } else if (cType.includes('html') || url.toLowerCase().endsWith('.html')) {
         sourceFormat = 'html';
         rawContent = buf.toString('utf8');
@@ -1549,11 +1580,18 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       } else if (ext === '.png' || ext === '.bmp') {
         sourceFormat = 'image';
         const b = fs.readFileSync(resolvedPath);
-        if (typeof options.ocrProvider === 'function') {
-          const ocrOut = await options.ocrProvider(b, { filename: localFilename, sourceFormat: 'image' });
-          rawContent = Array.isArray(ocrOut) ? ocrOut.join('\n') : String(ocrOut || '');
+        const decodedImg = decodeImageBuffer(b, ext);
+        if (typeof options.ocrProvider === 'function' || resolveCactusWeightsBytes(options)) {
+          const ocrRes = await runTiledOcrAsync(decodedImg, {
+            ...options,
+            filename: localFilename,
+            sourceFormat: 'image',
+          });
+          rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
         } else {
-          throw new Error(`IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an OCR provider`);
+          throw new Error(
+            `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
+          );
         }
       } else if (ext === '.html' || ext === '.htm') {
         sourceFormat = 'html';
@@ -1640,8 +1678,9 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       calLabels.push(labels[i]);
     }
   }
-  const effectiveCalFeatures = calFeatures.length >= 2 ? calFeatures : trainFeatures;
-  const effectiveCalLabels = calLabels.length >= 2 ? calLabels : trainLabels;
+  // Never fall back to in-sample training rows; sparse docs (<59 negatives) fail closed naturally.
+  const effectiveCalFeatures = calFeatures;
+  const effectiveCalLabels = calLabels;
   const nCalNeg = effectiveCalLabels.filter((l) => l === 0).length;
 
   const model = trainGatekeeper(trainFeatures, trainLabels, { lr: 0.15, epochs: 60, seed: 42 });

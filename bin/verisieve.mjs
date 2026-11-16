@@ -54,8 +54,12 @@ if (!command || command === 'selftest') {
 
 if (command === 'audit-wasm') {
   try {
-    const report = await auditCactusWasmArtifact();
+    const wasmTarget = flags.wasm || positional[1] || 'vendor/cactus/cactus.wasm';
+    const report = await auditCactusWasmArtifact(wasmTarget, { strict: true });
     console.log(JSON.stringify(report, null, 2));
+    if (!report.zeroEgressVerified) {
+      process.exit(1);
+    }
   } catch (err) {
     console.error('Error auditing WASM artifact:', err.message);
     process.exit(1);
