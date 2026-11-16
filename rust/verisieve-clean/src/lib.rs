@@ -18,6 +18,9 @@ static mut SPANS_BUF: [u32; MAX_SPANS * 3] = [0; MAX_SPANS * 3];
 static mut DEDUP_HASHES: [u64; MAX_DEDUP_SLOTS] = [0; MAX_DEDUP_SLOTS];
 static mut DEDUP_SIGS: [[u32; MINHASH_LANES]; MAX_DEDUP_SLOTS] = [[0; MINHASH_LANES]; MAX_DEDUP_SLOTS];
 static mut DEDUP_COUNT: usize = 0;
+static mut DEDUP_CURSOR: usize = 0;
+static mut DEDUP_OVERFLOWED: u32 = 0;
+static mut DEDUP_EVICTED: u32 = 0;
 static mut LAST_SIM_X1000: u32 = 0;
 static mut LAST_MATCH_IDX: i32 = -1;
 
@@ -33,6 +36,11 @@ static mut NORM_BUF: [u8; INPUT_CAP] = [0; INPUT_CAP];
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
+    #[cfg(target_arch = "wasm32")]
+    {
+        core::arch::wasm32::unreachable();
+    }
+    #[cfg(not(target_arch = "wasm32"))]
     loop {}
 }
 
@@ -87,9 +95,27 @@ pub extern "C" fn vs_clean_dedup_count() -> u32 {
 }
 
 #[no_mangle]
+pub extern "C" fn vs_clean_dedup_overflowed() -> u32 {
+    unsafe { DEDUP_OVERFLOWED }
+}
+
+#[no_mangle]
+pub extern "C" fn vs_clean_dedup_evicted() -> u32 {
+    unsafe { DEDUP_EVICTED }
+}
+
+#[no_mangle]
+pub extern "C" fn vs_clean_dedup_cap() -> u32 {
+    MAX_DEDUP_SLOTS as u32
+}
+
+#[no_mangle]
 pub extern "C" fn vs_clean_dedup_reset() {
     unsafe {
         DEDUP_COUNT = 0;
+        DEDUP_CURSOR = 0;
+        DEDUP_OVERFLOWED = 0;
+        DEDUP_EVICTED = 0;
         LAST_SIM_X1000 = 0;
         LAST_MATCH_IDX = -1;
     }
@@ -218,7 +244,7 @@ fn push_newline_if_needed(out: &mut [u8], w: &mut usize) {
     }
 }
 
-fn decode_entity(input: &[u8], start: usize) -> Option<(u8, usize)> {
+fn decode_entity(input: &[u8], start: usize) -> Option<([u8; 4], usize, usize)> {
     // input[start] == b'&'
     let max_scan = (start + 12).min(input.len());
     let mut semi = None;
@@ -233,53 +259,69 @@ fn decode_entity(input: &[u8], start: usize) -> Option<(u8, usize)> {
     }
     let end = semi?;
     let ent = &input[(start + 1)..end];
-    let decoded = if ent == b"amp" {
-        b'&'
+    let mut buf = [0u8; 4];
+    let byte_len = if ent == b"amp" {
+        buf[0] = b'&';
+        1
     } else if ent == b"lt" {
-        b'<'
+        buf[0] = b'<';
+        1
     } else if ent == b"gt" {
-        b'>'
+        buf[0] = b'>';
+        1
     } else if ent == b"quot" {
-        b'"'
+        buf[0] = b'"';
+        1
     } else if ent == b"apos" || ent == b"#39" {
-        b'\''
+        buf[0] = b'\'';
+        1
     } else if ent == b"nbsp" || ent == b"#160" {
-        b' '
+        buf[0] = b' ';
+        1
     } else if ent == b"mdash" || ent == b"ndash" {
-        b'-'
-    } else if ent.starts_with(b"#x") || ent.starts_with(b"#X") {
-        let mut val: u32 = 0;
-        for &c in &ent[2..] {
-            let d = match c {
-                b'0'..=b'9' => (c - b'0') as u32,
-                b'a'..=b'f' => (c - b'a' + 10) as u32,
-                b'A'..=b'F' => (c - b'A' + 10) as u32,
-                _ => return None,
-            };
-            val = val.saturating_mul(16).saturating_add(d);
-        }
-        if (0x20..=0x7e).contains(&val) {
-            val as u8
-        } else {
-            b' '
-        }
-    } else if ent.starts_with(b"#") && ent.len() > 1 {
-        let mut val: u32 = 0;
-        for &c in &ent[1..] {
-            if !c.is_ascii_digit() {
-                return None;
-            }
-            val = val.saturating_mul(10).saturating_add((c - b'0') as u32);
-        }
-        if (0x20..=0x7e).contains(&val) {
-            val as u8
-        } else {
-            b' '
-        }
+        buf[0] = b'-';
+        1
     } else {
-        return None;
+        let val: u32 = if (ent.starts_with(b"#x") || ent.starts_with(b"#X")) && ent.len() > 2 {
+            let mut acc: u32 = 0;
+            for &c in &ent[2..] {
+                let d = match c {
+                    b'0'..=b'9' => (c - b'0') as u32,
+                    b'a'..=b'f' => (c - b'a' + 10) as u32,
+                    b'A'..=b'F' => (c - b'A' + 10) as u32,
+                    _ => return None,
+                };
+                acc = acc.checked_mul(16)?.checked_add(d)?;
+            }
+            acc
+        } else if ent.starts_with(b"#") && ent.len() > 1 {
+            let mut acc: u32 = 0;
+            for &c in &ent[1..] {
+                if !c.is_ascii_digit() {
+                    return None;
+                }
+                acc = acc.checked_mul(10)?.checked_add((c - b'0') as u32)?;
+            }
+            acc
+        } else {
+            return None;
+        };
+
+        if val == 0xa0 {
+            buf[0] = b' ';
+            1
+        } else if (0x20..=0x7e).contains(&val) {
+            buf[0] = val as u8;
+            1
+        } else if val < 0x20 || (0x7f..=0x9f).contains(&val) {
+            buf[0] = b' ';
+            1
+        } else {
+            let ch = core::char::from_u32(val)?;
+            ch.encode_utf8(&mut buf).len()
+        }
     };
-    Some((decoded, end + 1))
+    Some((buf, byte_len, end + 1))
 }
 
 fn find_tag_end(input: &[u8], start: usize) -> usize {
@@ -326,20 +368,106 @@ fn parse_tag_name(input: &[u8], lt_idx: usize) -> (bool, &[u8], bool) {
 
 fn skip_container_block(input: &[u8], open_lt: usize, target_tag: &[u8]) -> usize {
     let mut i = find_tag_end(input, open_lt + 1);
+    let script_mode = eq_ascii_ci(target_tag, b"script");
+    let style_mode = eq_ascii_ci(target_tag, b"style");
+    let noscript_mode = eq_ascii_ci(target_tag, b"noscript");
+    let raw_text_mode = script_mode || style_mode || noscript_mode;
     let mut depth: usize = 1;
+    let mut quote: u8 = 0;
+    let mut in_line_comment = false;
+    let mut in_block_comment = false;
+    let mut tmpl_brace_stack = [0u16; 8];
+    let mut tmpl_depth = 0usize;
+
     while i < input.len() {
-        if input[i] == b'<' {
+        let b = input[i];
+        if script_mode || style_mode {
+            if in_line_comment {
+                if b == b'\n' || b == b'\r' {
+                    in_line_comment = false;
+                }
+                i += 1;
+                continue;
+            }
+            if in_block_comment {
+                if b == b'*' && i + 1 < input.len() && input[i + 1] == b'/' {
+                    in_block_comment = false;
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                continue;
+            }
+            if quote != 0 {
+                if b == b'\\' && i + 1 < input.len() {
+                    i += 2;
+                    continue;
+                }
+                if script_mode && quote == b'`' && b == b'$' && i + 1 < input.len() && input[i + 1] == b'{' && tmpl_depth < 8 {
+                    tmpl_brace_stack[tmpl_depth] = 0;
+                    tmpl_depth += 1;
+                    quote = 0;
+                    i += 2;
+                    continue;
+                }
+                if b == quote {
+                    quote = 0;
+                }
+                i += 1;
+                continue;
+            }
+            if b == b'/' && i + 1 < input.len() {
+                if input[i + 1] == b'*' {
+                    in_block_comment = true;
+                    i += 2;
+                    continue;
+                }
+                if script_mode && input[i + 1] == b'/' {
+                    in_line_comment = true;
+                    i += 2;
+                    continue;
+                }
+            }
+            if b == b'\'' || b == b'"' || (script_mode && b == b'`') {
+                quote = b;
+                i += 1;
+                continue;
+            }
+            if script_mode && tmpl_depth > 0 {
+                if b == b'{' {
+                    tmpl_brace_stack[tmpl_depth - 1] = tmpl_brace_stack[tmpl_depth - 1].saturating_add(1);
+                    i += 1;
+                    continue;
+                }
+                if b == b'}' {
+                    if tmpl_brace_stack[tmpl_depth - 1] > 0 {
+                        tmpl_brace_stack[tmpl_depth - 1] -= 1;
+                    } else {
+                        tmpl_depth -= 1;
+                        quote = b'`';
+                    }
+                    i += 1;
+                    continue;
+                }
+            }
+        }
+
+        if b == b'<' {
             let (is_close, tag, self_closing) = parse_tag_name(input, i);
             let next_i = find_tag_end(input, i + 1);
             if eq_ascii_ci(tag, target_tag) {
                 if is_close {
                     depth = depth.saturating_sub(1);
-                    if depth == 0 {
+                    if raw_text_mode || depth == 0 {
                         return next_i;
                     }
-                } else if !self_closing {
+                } else if !raw_text_mode && !self_closing {
                     depth += 1;
                 }
+            }
+            if raw_text_mode {
+                i += 1;
+                continue;
             }
             i = next_i;
         } else {
@@ -389,8 +517,14 @@ fn strip_html_to_buf(input: &[u8], out: &mut [u8]) -> usize {
         }
 
         if input[i] == b'&' {
-            if let Some((decoded, next_i)) = decode_entity(input, i) {
-                push_byte(out, &mut w, decoded);
+            if let Some((utf8_bytes, byte_len, next_i)) = decode_entity(input, i) {
+                if w + byte_len <= out.len() {
+                    for k in 0..byte_len {
+                        push_byte(out, &mut w, utf8_bytes[k]);
+                    }
+                } else {
+                    break;
+                }
                 i = next_i;
                 continue;
             }
@@ -437,17 +571,26 @@ fn is_chrome_line(trimmed: &[u8]) -> bool {
         let mut lower = [0u8; 200];
         let n = trimmed.len();
         let mut alpha_count = 0usize;
-        let mut pipe_count = 0usize;
+        let mut digit_count = 0usize;
+        let mut isolated_pipe_count = 0usize;
         for idx in 0..n {
             let b = to_lower_ascii(trimmed[idx]);
             lower[idx] = b;
             if b.is_ascii_alphabetic() {
                 alpha_count += 1;
-            } else if b == b'|' {
-                pipe_count += 1;
+            } else if b.is_ascii_digit() {
+                digit_count += 1;
+            } else if b == b'|'
+                && idx > 0
+                && idx + 1 < n
+                && trimmed[idx - 1] == b' '
+                && trimmed[idx + 1] == b' '
+            {
+                isolated_pipe_count += 1;
             }
         }
         let l = &lower[..n];
+        let has_email_or_pii = contains_ascii_ci(l, b"<pii:") || l.contains(&b'@');
 
         if alpha_count == 0 && n <= 48 {
             return true;
@@ -477,7 +620,8 @@ fn is_chrome_line(trimmed: &[u8]) -> bool {
                     || l.starts_with(b"powered by ")
                     || l.starts_with(b"\xc2\xa9")
                     || contains_ascii_ci(l, b"\xc2\xa9 20")))
-            || (n <= 80 && pipe_count >= 2)
+            || (n <= 80 && digit_count == 0 && !has_email_or_pii && isolated_pipe_count >= 2)
+            || (n <= 80 && isolated_pipe_count >= 4)
         {
             return true;
         }
@@ -714,6 +858,13 @@ pub extern "C" fn vs_clean_dedup_check(in_len: u32, threshold_x1000: u32) -> u32
             DEDUP_HASHES[slot] = exact_hash;
             DEDUP_SIGS[slot] = sig;
             DEDUP_COUNT += 1;
+        } else {
+            DEDUP_OVERFLOWED = 1;
+            DEDUP_EVICTED = DEDUP_EVICTED.wrapping_add(1);
+            let slot = DEDUP_CURSOR % MAX_DEDUP_SLOTS;
+            DEDUP_HASHES[slot] = exact_hash;
+            DEDUP_SIGS[slot] = sig;
+            DEDUP_CURSOR = (DEDUP_CURSOR + 1) % MAX_DEDUP_SLOTS;
         }
         LAST_SIM_X1000 = best_sim;
         LAST_MATCH_IDX = best_idx;
@@ -785,14 +936,16 @@ pub extern "C" fn vs_clean_chunk_windows(in_len: u32, max_tokens: u32, overlap_t
                     let mut sub_chars = 0u32;
                     while cur < w_end {
                         let next_byte = input[cur];
-                        let char_width = if (next_byte & 0x80) == 0 {
+                        let char_width = if (next_byte & 0x80) == 0 || (next_byte & 0xc0) == 0x80 {
                             1
                         } else if (next_byte & 0xe0) == 0xc0 {
                             2
                         } else if (next_byte & 0xf0) == 0xe0 {
                             3
-                        } else {
+                        } else if (next_byte & 0xf8) == 0xf0 {
                             4
+                        } else {
+                            1
                         };
                         if sub_chars > 0 && sub_chars + 1 > content_budget {
                             break;
@@ -918,6 +1071,91 @@ mod tests {
                 let chunk = core::str::from_utf8(&IN_BUF[s..e]).unwrap();
                 assert!(!chunk.ends_with("<PII:"));
             }
+        }
+    }
+
+    #[test]
+    fn html_numeric_entities_decode_to_utf8_and_preserve_nbsp() {
+        let html = b"<p>It&#x2019;s &#8364;50&nbsp;&amp;&nbsp;&#x1F600; &#xD800; ok</p>";
+        let mut out = [0u8; 4096];
+        let n = strip_boilerplate_internal(html, &mut out, FLAG_HTML);
+        let text = core::str::from_utf8(&out[..n]).unwrap();
+        assert!(text.contains("It\u{2019}s \u{20ac}50 & \u{1f600}"), "got: {text}");
+        assert!(text.contains("ok"), "got: {text}");
+    }
+
+    #[test]
+    fn skip_script_and_style_respects_strings_and_comments() {
+        let html = b"<div>before</div><script>const a = \"</script>\"; const b = '</script>'; const c = `</script>`; // </script>\n/* </script> */ secret();</script><style>/* </style> */ .x::after { content: \"</style>\"; }</style><p>after</p>";
+        let mut out = [0u8; 4096];
+        let n = strip_boilerplate_internal(html, &mut out, FLAG_HTML);
+        let text = core::str::from_utf8(&out[..n]).unwrap();
+        assert!(text.contains("before"), "got: {text}");
+        assert!(text.contains("after"), "got: {text}");
+        assert!(!text.contains("secret()"), "leaked script body: {text}");
+        assert!(!text.contains(".x::after"), "leaked style body: {text}");
+        assert!(!text.contains("const a"), "leaked js: {text}");
+    }
+
+    #[test]
+    fn pipe_delimited_pii_preserved() {
+        let html = b"<p>SSN 123-45-6789 | CC 4111-2222-3333-4444 | Alice</p><p>Alice | alice@corp.com | Note</p><p>Home | Docs | Pricing</p>";
+        let mut out = [0u8; 4096];
+        let n = strip_boilerplate_internal(html, &mut out, FLAG_HTML | FLAG_CHROME);
+        let text = core::str::from_utf8(&out[..n]).unwrap();
+        assert!(text.contains("SSN 123-45-6789 | CC 4111-2222-3333-4444 | Alice"), "got: {text}");
+        assert!(text.contains("Alice | alice@corp.com | Note"), "got: {text}");
+        assert!(!text.contains("Home | Docs | Pricing"), "chrome kept: {text}");
+    }
+
+    fn unique_packet(idx: usize) -> String {
+        let mut s = format!("id{:x} ", idx);
+        let mut x = (idx as u64).wrapping_add(1).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        for _ in 0..8 {
+            x ^= x >> 30;
+            x = x.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+            x ^= x >> 27;
+            x = x.wrapping_mul(0x94D0_49BB_1331_11EB);
+            x ^= x >> 31;
+            let mut w = [0u8; 6];
+            for ch in &mut w {
+                *ch = b'a' + ((x % 26) as u8);
+                x /= 26;
+            }
+            s.push_str(core::str::from_utf8(&w).unwrap());
+            s.push(' ');
+        }
+        s
+    }
+
+    #[test]
+    fn dedup_ring_wraps_and_tracks_evictions() {
+        let _lock = TEST_GUARD.lock().unwrap();
+        vs_clean_dedup_reset();
+        assert_eq!(vs_clean_dedup_cap(), MAX_DEDUP_SLOTS as u32);
+        assert_eq!(vs_clean_dedup_overflowed(), 0);
+        assert_eq!(vs_clean_dedup_evicted(), 0);
+
+        unsafe {
+            for idx in 0..(MAX_DEDUP_SLOTS + 3) {
+                let doc = unique_packet(idx);
+                let bytes = doc.as_bytes();
+                IN_BUF[..bytes.len()].copy_from_slice(bytes);
+                assert_eq!(vs_clean_dedup_check(bytes.len() as u32, 950), 0, "idx={idx}");
+            }
+
+            assert_eq!(vs_clean_dedup_count(), MAX_DEDUP_SLOTS as u32);
+            assert_eq!(vs_clean_dedup_overflowed(), 1);
+            assert_eq!(vs_clean_dedup_evicted(), 3);
+
+            let doc0 = unique_packet(0);
+            IN_BUF[..doc0.len()].copy_from_slice(doc0.as_bytes());
+            assert_eq!(vs_clean_dedup_check(doc0.len() as u32, 950), 0);
+            assert_eq!(vs_clean_dedup_evicted(), 4);
+
+            let doc4 = unique_packet(4);
+            IN_BUF[..doc4.len()].copy_from_slice(doc4.as_bytes());
+            assert_eq!(vs_clean_dedup_check(doc4.len() as u32, 950), 1);
         }
     }
 }
