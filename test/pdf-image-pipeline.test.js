@@ -349,7 +349,7 @@ test('12. UI server endpoints /api/duckdb and /api/train-model process SQL and t
     assert.ok(duckData.columns.includes('source_mode'));
     assert.ok(duckData.columns.includes('count'));
     assert.ok(duckData.rows.length >= 2);
-    assert.ok(duckData.engine.includes('DuckDB'));
+    assert.match(duckData.engine, /WASM SQL Subset/i);
 
     // 2. Test /api/train-model
     const trainResp = await fetch(`http://localhost:${testPort}/api/train-model`, {

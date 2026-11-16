@@ -20,28 +20,36 @@ def main():
         dataset = payload.get('dataset', 'all')
 
         results_dir = os.path.abspath('results')
-        pmc_csv = os.path.join(results_dir, 'real-data-pmc-pdf.csv').replace('\\', '/')
-        funsd_csv = os.path.join(results_dir, 'real-data-funsd-noisy-ocr.csv').replace('\\', '/')
+        pmc_csv = os.path.abspath(payload.get('pmcCsvPath') or os.path.join(results_dir, 'real-data-pmc-pdf.csv'))
+        funsd_csv = os.path.abspath(payload.get('funsdCsvPath') or os.path.join(results_dir, 'real-data-funsd-noisy-ocr.csv'))
 
         con = duckdb.connect(':memory:')
 
-        # Set up default tables/views
-        if os.path.exists(pmc_csv):
-            con.execute(f"CREATE TABLE pmc_pdf_data AS SELECT * FROM read_csv_auto('{pmc_csv}');")
-        if os.path.exists(funsd_csv):
-            con.execute(f"CREATE TABLE funsd_ocr_data AS SELECT * FROM read_csv_auto('{funsd_csv}');")
+        # Set up default tables/views via parameterized read_csv_auto(?)
+        has_pmc = os.path.isfile(pmc_csv)
+        has_funsd = os.path.isfile(funsd_csv)
+        if has_pmc:
+            con.execute("CREATE TABLE pmc_pdf_data AS SELECT * FROM read_csv_auto(?);", [pmc_csv])
+        if has_funsd:
+            con.execute("CREATE TABLE funsd_ocr_data AS SELECT * FROM read_csv_auto(?);", [funsd_csv])
 
-        if os.path.exists(pmc_csv) and os.path.exists(funsd_csv):
-            con.execute(f"""
+        if has_pmc and has_funsd:
+            con.execute("""
                 CREATE TABLE raw_extracted_documents AS
                 SELECT * FROM pmc_pdf_data
                 UNION ALL BY NAME
                 SELECT * FROM funsd_ocr_data;
             """)
             con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
-        elif os.path.exists(pmc_csv):
+            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
+        elif has_pmc:
             con.execute("CREATE TABLE raw_extracted_documents AS SELECT * FROM pmc_pdf_data;")
             con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
+            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
+        elif has_funsd:
+            con.execute("CREATE TABLE raw_extracted_documents AS SELECT * FROM funsd_ocr_data;")
+            con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
+            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
 
         t0 = time.perf_counter()
         rel = con.execute(sql)

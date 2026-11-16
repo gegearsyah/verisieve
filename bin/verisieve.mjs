@@ -23,6 +23,7 @@ import {
   DEFAULT_MIRAGE_WEIGHTS_PATH,
 } from '../src/ocr-engine.js';
 import { auditVerisieveDlWasm } from '../src/wasm-needle-dl.js';
+import { auditVerisieveSqlWasm } from '../src/sql-wasm.js';
 import { loadCleanWasm } from '../src/clean-wasm.js';
 import { extractPdfDetailed } from '../src/pdf-parser.js';
 import { extractDocxText, stripHtmlBoilerplate, ingestUrl } from '../src/ingestor.js';
@@ -310,6 +311,8 @@ if (command === 'audit-wasm') {
         report = await auditCleanWasmArtifact(singleTarget);
       } else if (base.includes('verisieve_dl')) {
         report = await auditDlWasmArtifact(singleTarget);
+      } else if (base.includes('verisieve_sql')) {
+        report = await auditVerisieveSqlWasm(singleTarget);
       } else {
         report = await auditCactusWasmArtifact(singleTarget, { strict: true });
       }
@@ -321,10 +324,12 @@ if (command === 'audit-wasm') {
       const cactus = await auditCactusWasmArtifact(path.join(PKG_ROOT, 'vendor/cactus/cactus.wasm'), { strict: true });
       const verisieveClean = await auditCleanWasmArtifact(path.join(PKG_ROOT, 'vendor/wasm/verisieve_clean.wasm'));
       const verisieveDl = await auditDlWasmArtifact(path.join(PKG_ROOT, 'vendor/wasm/verisieve_dl.wasm'));
+      const verisieveSql = await auditVerisieveSqlWasm(path.join(PKG_ROOT, 'vendor/wasm/verisieve_sql.wasm'));
       const allVerified = Boolean(
         cactus.zeroEgressVerified &&
         verisieveClean.zeroEgressVerified &&
-        verisieveDl.zeroEgressVerified
+        verisieveDl.zeroEgressVerified &&
+        verisieveSql.zeroEgressVerified
       );
       const summary = {
         allVerified,
@@ -332,6 +337,7 @@ if (command === 'audit-wasm') {
           cactus,
           verisieve_clean: verisieveClean,
           verisieve_dl: verisieveDl,
+          verisieve_sql: verisieveSql,
         },
       };
       console.log(JSON.stringify(summary, null, 2));

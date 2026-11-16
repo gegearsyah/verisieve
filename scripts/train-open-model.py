@@ -237,12 +237,12 @@ def run_training_experiment(export_artifacts=True, model_path=None):
     pmc_csv_sql = pmc_csv.replace('\\', '/')
     funsd_csv_sql = funsd_csv.replace('\\', '/')
 
-    con.execute(f"""
+    con.execute("""
         CREATE OR REPLACE TABLE raw_extracted_documents AS
-        SELECT * FROM read_csv_auto('{pmc_csv_sql}')
+        SELECT * FROM read_csv_auto(?)
         UNION ALL BY NAME
-        SELECT * FROM read_csv_auto('{funsd_csv_sql}');
-    """)
+        SELECT * FROM read_csv_auto(?);
+    """, [pmc_csv_sql, funsd_csv_sql])
 
     # Query 1: Breakdown by source_mode and gatekeeper_action
     breakdown_rows = con.execute("""

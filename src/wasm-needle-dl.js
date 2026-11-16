@@ -17,6 +17,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { scanRecordsForPII } from './clean-and-tokenize.js';
 import { binomCdf } from './gatekeeper.js';
+import { executeSqlWasm, executeSqlSubsetFallback } from './sql-wasm.js';
 
 export const VERISIEVE_DL_WASM_PATH = 'vendor/wasm/verisieve_dl.wasm';
 export const VERISIEVE_DL_PROVENANCE_PATH = 'vendor/wasm/verisieve_dl.provenance.json';
@@ -567,135 +568,16 @@ export function loadExtractedDatasets() {
 }
 
 /**
- * 4. executeJsSql(sql, options)
- * Pure-JS/WASM in-memory SQL execution engine (<1 ms).
- * Supports: SELECT ... FROM ... WHERE ... GROUP BY ... ORDER BY ... LIMIT ...
+ * 4. executeJsSql(sql, dataset, options)
+ * Runs strict SQL subset over tabular document rows using zero-import verisieve_sql.wasm
+ * (or strict AST JS subset fallback when options.forceJsFallback is true).
  */
 export function executeJsSql(sql, dataset = 'all', options = {}) {
-  const t0 = performance.now();
   const tables = options.tables || loadExtractedDatasets();
-
-  const cleanedSql = sql.trim().replace(/;$/, '');
-
-  // Default table resolution
-  let sourceTable = tables.documents || tables.raw_extracted_documents || [];
-  if (/FROM\s+verisieve_certified_tokens/i.test(cleanedSql)) {
-    sourceTable = tables.verisieve_certified_tokens || [];
-  } else if (/FROM\s+pmc_pdf_data/i.test(cleanedSql)) {
-    sourceTable = tables.pmc_pdf_data || [];
-  } else if (/FROM\s+funsd_ocr_data/i.test(cleanedSql)) {
-    sourceTable = tables.funsd_ocr_data || [];
+  if (options.forceJsFallback) {
+    return executeSqlSubsetFallback(sql, { ...options, tables });
   }
-
-  // WHERE filter
-  let filtered = [...sourceTable];
-  const whereMatch = cleanedSql.match(/WHERE\s+([^ORDER|GROUP|LIMIT]+)/i);
-  if (whereMatch) {
-    const clause = whereMatch[1].trim();
-    if (/gatekeeper_action\s*=\s*'KEEP_SAFE'/i.test(clause)) {
-      filtered = filtered.filter(r => r.gatekeeper_action === 'KEEP_SAFE');
-    } else if (/gatekeeper_action\s*=\s*'DROP_OR_QUARANTINE'/i.test(clause)) {
-      filtered = filtered.filter(r => r.gatekeeper_action === 'DROP_OR_QUARANTINE');
-    } else if (/gatekeeper_action\s*=\s*'ABSTAIN_HUMAN_REVIEW'/i.test(clause)) {
-      filtered = filtered.filter(r => r.gatekeeper_action === 'ABSTAIN_HUMAN_REVIEW');
-    } else if (/pii_detected\s*=\s*true/i.test(clause)) {
-      filtered = filtered.filter(r => r.pii_detected === true);
-    }
-  }
-
-  // GROUP BY detection
-  const groupMatch = cleanedSql.match(/GROUP\s+BY\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
-  let resultColumns = [];
-  let resultRows = [];
-
-  if (groupMatch) {
-    const groupCols = groupMatch[1].split(',').map(s => s.trim());
-    const groups = new Map();
-
-    for (const row of filtered) {
-      const key = groupCols.map(c => String(row[c])).join('|||');
-      if (!groups.has(key)) {
-        groups.set(key, { keyValues: groupCols.map(c => row[c]), rows: [] });
-      }
-      groups.get(key).rows.push(row);
-    }
-
-    // Determine projected columns from SELECT clause if explicit
-    const selectMatch = cleanedSql.match(/SELECT\s+(.*?)\s+FROM/i);
-    let selectCols = [];
-    if (selectMatch) {
-      selectCols = selectMatch[1].split(',').map(s => {
-        const parts = s.trim().split(/\s+as\s+/i);
-        return { expr: parts[0].trim(), alias: (parts[1] || parts[0]).trim() };
-      });
-    }
-
-    resultColumns = selectCols.length > 0 ? selectCols.map(sc => sc.alias) : [...groupCols, 'count'];
-    resultRows = [];
-
-    for (const [, grp] of groups.entries()) {
-      const gRows = grp.rows;
-      const count = gRows.length;
-      let totalTokens = 0;
-      let probSum = 0;
-
-      for (const r of gRows) {
-        totalTokens += Number(r.token_count) || 0;
-        probSum += Number(r.pred_prob) || 0;
-      }
-
-      const avgProb = count > 0 ? Math.round((probSum / count) * 10000) / 10000 : 0;
-      const firstRow = gRows[0];
-
-      if (selectCols.length > 0) {
-        const rowVals = selectCols.map(sc => {
-          if (/count\(\*\)/i.test(sc.expr)) return count;
-          if (/avg\(/i.test(sc.expr)) return avgProb;
-          if (/sum\(/i.test(sc.expr)) return totalTokens;
-          return firstRow[sc.expr] !== undefined ? firstRow[sc.expr] : grp.keyValues[0];
-        });
-        resultRows.push(rowVals);
-      } else {
-        resultRows.push([
-          ...grp.keyValues,
-          count
-        ]);
-      }
-    }
-
-    // ORDER BY
-    resultRows.sort((a, b) => {
-      const m0 = String(a[0]).localeCompare(String(b[0]));
-      return m0 !== 0 ? m0 : String(a[1]).localeCompare(String(b[1]));
-    });
-
-  } else if (/SELECT\s+count\(\*\)/i.test(cleanedSql)) {
-    resultColumns = ['count'];
-    resultRows = [[filtered.length]];
-  } else {
-    // SELECT * or projection
-    const limitMatch = cleanedSql.match(/LIMIT\s+(\d+)/i);
-    const limit = limitMatch ? parseInt(limitMatch[1], 10) : 50;
-
-    if (filtered.length > 0) {
-      resultColumns = Object.keys(filtered[0]);
-      resultRows = filtered.slice(0, limit).map(r => Object.values(r));
-    } else {
-      resultColumns = ['status'];
-      resultRows = [['empty']];
-    }
-  }
-
-  const elapsedMs = Math.round((performance.now() - t0) * 100) / 100;
-
-  return {
-    ok: true,
-    engine: 'DuckDB v1.5.5 (Pure-JS/WASM In-Process)',
-    columns: resultColumns,
-    rows: resultRows,
-    total_rows: resultRows.length,
-    elapsedMs
-  };
+  return executeSqlWasm(sql, { ...options, tables });
 }
 
 /**
@@ -1176,7 +1058,9 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     pipeline: 'VeriSieve Pure-WASM Small Model & Needle Semantic Engine (verisieve_dl.wasm + cactus.wasm)',
     timestamp: new Date().toISOString(),
     duckdb_audit: {
-      version: '1.5.5',
+      engine: 'VeriSieve WASM SQL Subset v1',
+      version: 'verisieve-sql-wasm-v1',
+      sql_subset: true,
       total_rows_ingested: totalRows,
       pii_detected_rows: piiCount,
       keep_safe_rows: keepSafeCount,

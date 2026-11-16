@@ -91,7 +91,7 @@ safeHits.forEach((hit, idx) => {
 console.log('\n========================================================================');
 console.log('               PURE-WASM SMALL MODEL & NEEDLE AUDIT REPORT               ');
 console.log('========================================================================');
-console.log(` In-Process SQL Engine:        DuckDB v${duck.version} (Pure JS/WASM)`);
+console.log(` In-Process SQL Engine:        ${duck.engine || duck.version || 'VeriSieve WASM SQL Subset v1'}`);
 console.log(` Total Unstructured Rows:      ${duck.total_rows_ingested.toString().padEnd(6)} (PMC PDFs + FUNSD Scanned Forms)`);
 console.log(` Dual PII Quarantined:         ${duck.pii_detected_rows.toString().padEnd(6)} (Author Emails, Faxes, Names)`);
 console.log(` KEEP_SAFE Training Shard:     ${duck.keep_safe_rows.toString().padEnd(6)} (Filtered via Conformal LTT)`);

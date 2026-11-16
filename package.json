@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "node bin/verisieve.mjs run",
-    "test": "node --test test/clean-wasm.test.js test/multi-font-fixture.test.js test/ocr-engine.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-docx-ingest.test.js test/cli-ssrf.test.js test/wasm-needle-dl.test.js test/pdf-image-pipeline.test.js test/head-to-head-comparison.test.js && node --test test/mcp.test.js",
+    "test": "node --test test/clean-wasm.test.js test/multi-font-fixture.test.js test/ocr-engine.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-docx-ingest.test.js test/cli-ssrf.test.js test/wasm-needle-dl.test.js test/sql-wasm.test.js test/pdf-image-pipeline.test.js test/head-to-head-comparison.test.js && node --test test/mcp.test.js",
     "demo:real": "node scripts/run-real-data-benchmark.mjs",
     "demo:pdf-vs-image": "node scripts/run-pdf-vs-image-demo.mjs",
     "bench": "node scripts/run-benchmarks.mjs && node scripts/generate-figures.mjs",

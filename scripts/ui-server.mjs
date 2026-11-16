@@ -129,7 +129,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API 4: POST /api/duckdb (DuckDB SQL Query Endpoint — Pure JS/WASM <1ms)
+  // API 4: POST /api/duckdb (VeriSieve WASM SQL Subset Endpoint — Zero-Import verisieve_sql.wasm)
   if (req.method === 'POST' && pathname === '/api/duckdb') {
     try {
       const raw = await readBody(req);
@@ -140,8 +140,8 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: err.message, engine: 'DuckDB v1.5.5' }));
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: err.message, engine: 'VeriSieve WASM SQL Subset v1' }));
     }
     return;
   }
