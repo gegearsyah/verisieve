@@ -1,0 +1,148 @@
+{
+  "wasmSha256": "2ff6e7756acafb31a97ac365d7bfeb9911654d751126c603a9cdeda8f2e314d2",
+  "checkpointLoaded": false,
+  "downloadedWeights": false,
+  "dim": 64,
+  "dModel": 16,
+  "nLayers": 2,
+  "rank": 4,
+  "epochs": 25,
+  "lr": 0.015,
+  "backboneSeed": 101,
+  "pairVector": "elementwise_product_of_unit_needle_embeddings",
+  "rerank": {
+    "trainSeed": 42,
+    "trainQuestions": 375,
+    "evalQuestions": 125,
+    "evalSlice": [
+      375,
+      500
+    ],
+    "negativesPerQuestionCap": 8,
+    "polarity": "lower_is_positive",
+    "lastEpochLoss": 0.3507,
+    "valLoss": 0.3488,
+    "blendGoldInTop6": {
+      "hits": 121,
+      "pct": 96.8
+    },
+    "shortlist6": {
+      "headGoldInTop6": {
+        "hits": 121,
+        "pct": 96.8
+      },
+      "blendGoldAt1": {
+        "hits": 117,
+        "pct": 93.6
+      },
+      "headGoldAt1": {
+        "hits": 27,
+        "pct": 21.6
+      }
+    },
+    "shortlist30": {
+      "goldInsideBlendTop30": {
+        "hits": 124,
+        "pct": 99.2
+      },
+      "headGoldInTop6": {
+        "hits": 39,
+        "pct": 31.2
+      }
+    }
+  },
+  "redaction": {
+    "trainSeed": 43,
+    "trainDocs": 250,
+    "testDocs": 250,
+    "threshold": 0.5,
+    "polarity": "higher_is_positive",
+    "lastEpochLoss": 0.3168,
+    "valLoss": 0.351,
+    "regexAll500": {
+      "contact": {
+        "hits": 110,
+        "total": 140,
+        "pct": 78.6
+      },
+      "bareNames": {
+        "hits": 118,
+        "total": 238,
+        "pct": 49.6
+      },
+      "structured26": {
+        "hits": 180,
+        "total": 580,
+        "pct": 31
+      }
+    },
+    "test250": {
+      "contact": {
+        "regexRecall": {
+          "hits": 51,
+          "total": 61,
+          "pct": 83.6
+        },
+        "headRecall": {
+          "hits": 51,
+          "total": 61,
+          "pct": 83.6
+        },
+        "regexPrecisionProxy": {
+          "hits": 51,
+          "total": 255,
+          "pct": 20
+        },
+        "headPrecisionProxy": {
+          "hits": 51,
+          "total": 228,
+          "pct": 22.4
+        }
+      },
+      "bareNames": {
+        "regexRecall": {
+          "hits": 56,
+          "total": 119,
+          "pct": 47.1
+        },
+        "headRecall": {
+          "hits": 42,
+          "total": 119,
+          "pct": 35.3
+        },
+        "regexPrecisionProxy": {
+          "hits": 43,
+          "total": 255,
+          "pct": 16.9
+        },
+        "headPrecisionProxy": {
+          "hits": 32,
+          "total": 228,
+          "pct": 14
+        }
+      },
+      "structured26": {
+        "regexRecall": {
+          "hits": 85,
+          "total": 277,
+          "pct": 30.7
+        },
+        "headRecall": {
+          "hits": 85,
+          "total": 277,
+          "pct": 30.7
+        },
+        "regexPrecisionProxy": {
+          "hits": 85,
+          "total": 255,
+          "pct": 33.3
+        },
+        "headPrecisionProxy": {
+          "hits": 85,
+          "total": 228,
+          "pct": 37.3
+        }
+      }
+    }
+  }
+}
