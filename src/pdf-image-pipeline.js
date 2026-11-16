@@ -20,7 +20,7 @@ import {
 import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
 import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from './gatekeeper.js';
 import { extractPdfDetailed } from './pdf-parser.js';
-import { extractDocxText } from './ingestor.js';
+import { extractDocxText, fetchSafeUrlResponse } from './ingestor.js';
 
 export { extractPdfDetailed } from './pdf-parser.js';
 
@@ -1452,10 +1452,9 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     throw new Error(`PDF_EMPTY_TEXT_LAYER: ${filename} yielded zero extractable text lines`);
   };
 
-  // 1. Check if input is an online URL or arxiv id
+  // 1. Check if input is a URL scheme (excluding single-letter Windows drive paths like C:\...) or arxiv id
   const isOnlineUrl = typeof inputUrlOrPath === 'string' && (
-    inputUrlOrPath.startsWith('http://') ||
-    inputUrlOrPath.startsWith('https://') ||
+    /^[a-zA-Z][a-zA-Z0-9+.-]+:/.test(inputUrlOrPath) ||
     inputUrlOrPath.startsWith('arxiv:')
   );
 
@@ -1466,79 +1465,48 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       url = `https://arxiv.org/pdf/${arxivId}.pdf`;
     }
 
-    let fetched = false;
-    try {
-      const controller = new AbortController();
-      const timeoutMs = options.timeoutMs || 8000;
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const fetchedRes = await fetchSafeUrlResponse(url, {
+      ...options,
+      headers: {
+        'User-Agent': 'Matilda-Portable/1.0.0 (Research Audit Pipeline)',
+        ...(options.headers || {}),
+      },
+    });
 
-      const resp = await fetch(url, {
-        headers: {
-          'User-Agent': 'Matilda-Portable/1.0.0 (Research Audit Pipeline)'
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+    const cType = fetchedRes.contentType || '';
+    const buf = fetchedRes.bodyBuffer;
+    const finalPathname = new URL(fetchedRes.finalUrl).pathname;
+    localFilename = path.basename(finalPathname) || 'downloaded-paper';
 
-      if (!resp.ok) {
-        throw new Error(`HTTP status ${resp.status}`);
+    if (cType.includes('pdf') || fetchedRes.finalUrl.toLowerCase().endsWith('.pdf')) {
+      sourceFormat = 'pdf';
+      const cachedPdf = path.join(untrustedDir, 'downloaded-online.pdf');
+      fs.writeFileSync(cachedPdf, buf);
+      rawContent = await extractPdfOrFail(buf, localFilename);
+    } else if (cType.includes('wordprocessingml') || fetchedRes.finalUrl.toLowerCase().endsWith('.docx')) {
+      sourceFormat = 'docx';
+      rawContent = extractDocxText(buf, options).lines.join('\n');
+    } else if (cType.includes('image/png') || cType.includes('image/bmp') || fetchedRes.finalUrl.toLowerCase().endsWith('.png') || fetchedRes.finalUrl.toLowerCase().endsWith('.bmp')) {
+      sourceFormat = 'image';
+      const decodedImg = decodeImageBuffer(buf, localFilename);
+      if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
+        throw new Error(
+          `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
+        );
       }
-
-      const cType = resp.headers.get('content-type') || '';
-      const buf = Buffer.from(await resp.arrayBuffer());
-      localFilename = path.basename(new URL(url).pathname) || 'downloaded-paper';
-
-      if (cType.includes('pdf') || url.toLowerCase().endsWith('.pdf')) {
-        sourceFormat = 'pdf';
-        const cachedPdf = path.join(untrustedDir, 'downloaded-online.pdf');
-        fs.writeFileSync(cachedPdf, buf);
-        rawContent = await extractPdfOrFail(buf, localFilename);
-      } else if (cType.includes('wordprocessingml') || url.toLowerCase().endsWith('.docx')) {
-        sourceFormat = 'docx';
-        rawContent = extractDocxText(buf, options).lines.join('\n');
-      } else if (cType.includes('image/png') || cType.includes('image/bmp') || url.toLowerCase().endsWith('.png') || url.toLowerCase().endsWith('.bmp')) {
-        sourceFormat = 'image';
-        const decodedImg = decodeImageBuffer(buf, localFilename);
-        if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
-          throw new Error(
-            `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
-          );
-        }
-        const ocrRes = await runTiledOcrAsync(decodedImg, { ...options, filename: localFilename, sourceFormat: 'image' });
-        rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
-      } else if (cType.includes('html') || url.toLowerCase().endsWith('.html')) {
-        sourceFormat = 'html';
-        rawContent = buf.toString('utf8');
-      } else if (cType.includes('json') || url.toLowerCase().endsWith('.json')) {
-        sourceFormat = 'json';
-        rawContent = buf.toString('utf8');
-      } else {
-        sourceFormat = 'text';
-        rawContent = buf.toString('utf8');
-      }
-      fetchStatus = 'online_live';
-      fetched = true;
-    } catch (err) {
-      if (!fetched && options.allowOfflineFallback === true && options.offlineFallbackPath && fs.existsSync(options.offlineFallbackPath)) {
-        const fbPath = path.resolve(options.offlineFallbackPath);
-        const fbBuf = fs.readFileSync(fbPath);
-        const fbExt = path.extname(fbPath).toLowerCase();
-        localFilename = path.basename(fbPath);
-        fetchStatus = 'offline_fallback';
-        if (fbExt === '.pdf') {
-          sourceFormat = 'pdf';
-          rawContent = await extractPdfOrFail(fbBuf, localFilename);
-        } else if (fbExt === '.docx') {
-          sourceFormat = 'docx';
-          rawContent = extractDocxText(fbBuf, options).lines.join('\n');
-        } else {
-          sourceFormat = 'text';
-          rawContent = fbBuf.toString('utf8');
-        }
-      } else {
-        throw new Error(`URL_FETCH_FAILED: ${err.message}`);
-      }
+      const ocrRes = await runTiledOcrAsync(decodedImg, { ...options, filename: localFilename, sourceFormat: 'image' });
+      rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
+    } else if (cType.includes('html') || fetchedRes.finalUrl.toLowerCase().endsWith('.html')) {
+      sourceFormat = 'html';
+      rawContent = buf.toString('utf8');
+    } else if (cType.includes('json') || fetchedRes.finalUrl.toLowerCase().endsWith('.json')) {
+      sourceFormat = 'json';
+      rawContent = buf.toString('utf8');
+    } else {
+      sourceFormat = 'text';
+      rawContent = buf.toString('utf8');
     }
+    fetchStatus = 'online_live';
   } else {
     // 2. Local File or Directory
     const resolvedPath = path.resolve(inputUrlOrPath);

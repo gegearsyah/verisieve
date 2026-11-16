@@ -10,7 +10,50 @@ import {
 } from './gatekeeper.js';
 import { AuditChain } from './clean-and-tokenize.js';
 import { inspectLocalOpenWeightPath } from './wasm-needle-dl.js';
-import { ingestUrl, ingestLinkList, buildCorpusManifest } from './ingestor.js';
+import { ingestUrl, ingestLinkList, stripHtmlBoilerplate, buildCorpusManifest } from './ingestor.js';
+
+function sanitizePiiItems(piiItems = [], includeRawPii = false) {
+  if (includeRawPii) return piiItems;
+  return piiItems.map((item) => ({
+    category: item.category || item.type || 'pii',
+    start: item.start,
+    end: item.end,
+    redacted: true,
+  }));
+}
+
+function splitMultiAxisHoldout(fRows, labelsMap, calRatio = 0.5) {
+  const posIdx = [];
+  const negIdx = [];
+  for (let i = 0; i < fRows.length; i++) {
+    if (Number(labelsMap.safe?.[i]) === 1) posIdx.push(i);
+    else negIdx.push(i);
+  }
+  const partition = (indices) => {
+    if (indices.length < 2) return { train: indices, cal: [] };
+    let nCal = Math.round(indices.length * calRatio);
+    nCal = Math.max(1, Math.min(indices.length - 1, nCal));
+    return { train: indices.slice(0, indices.length - nCal), cal: indices.slice(indices.length - nCal) };
+  };
+  let pos = partition(posIdx);
+  let neg = partition(negIdx);
+  let trainIdx = [...pos.train, ...neg.train];
+  let calIdx = [...pos.cal, ...neg.cal];
+  if (calIdx.length === 0 && fRows.length >= 2) {
+    const half = Math.max(1, Math.floor(fRows.length / 2));
+    trainIdx = Array.from({ length: half }, (_, i) => i);
+    calIdx = Array.from({ length: fRows.length - half }, (_, i) => i + half);
+  }
+  const pick = (indices) => ({
+    rows: indices.map((i) => fRows[i]),
+    labels: {
+      safe: indices.map((i) => labelsMap.safe[i]),
+      useful: indices.map((i) => labelsMap.useful[i]),
+      topic: indices.map((i) => labelsMap.topic[i]),
+    },
+  });
+  return { train: pick(trainIdx), cal: pick(calIdx) };
+}
 
 // Module-level cached gatekeeper bundles for stateful CLI / agent sessions
 let lastTrainedBundle = null;
@@ -272,15 +315,23 @@ export function handleJsonRpcRequest(request) {
             bundle.localWeightAudit = inspectLocalOpenWeightPath(args.modelPath);
           }
 
+          bundle.certified = Boolean(bundle.calibration?.certified);
+          bundle.gatekeeperStatus = bundle.certified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED';
           lastTrainedBundle = bundle;
           result = { content: [{ type: 'text', text: JSON.stringify(bundle, null, 2) }] };
         } else if (toolName === 'gatekeeper_decide') {
           const bundle = getOrAutoTrainBundle(args.bundle, args.alpha || 0.05);
+          const includeRawExcerpt = args.includeRawExcerpt === true || args.options?.includeRawExcerpt === true;
+          const includeRawPii = args.includeRawPii === true || args.options?.includeRawPii === true;
+          const certified = Boolean(bundle.calibration?.certified);
+          const gatekeeperStatus = certified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED';
 
           if (args.featureRow) {
             // Backward-compatible featureRow mode
             const fRow = new Float32Array(args.featureRow);
             const decision = decideGatekeeper(bundle, fRow);
+            decision.certified = certified;
+            decision.gatekeeperStatus = gatekeeperStatus;
             result = { content: [{ type: 'text', text: JSON.stringify(decision, null, 2) }] };
           } else if (typeof args.text === 'string') {
             // Direct text decision mode
@@ -288,7 +339,13 @@ export function handleJsonRpcRequest(request) {
             const fRow = extractFeatureRow({ text: args.text, piiItems: pii });
             const decision = decideGatekeeper(bundle, fRow);
             decision.piiDetected = pii.length > 0;
-            decision.piiItems = pii;
+            decision.piiCount = pii.length;
+            decision.piiItems = sanitizePiiItems(pii, includeRawPii);
+            decision.certified = certified;
+            decision.gatekeeperStatus = gatekeeperStatus;
+            if (includeRawExcerpt) {
+              decision.textExcerpt = args.text.slice(0, 80);
+            }
             result = { content: [{ type: 'text', text: JSON.stringify(decision, null, 2) }] };
           } else if (Array.isArray(args.texts)) {
             // Batch texts decision mode
@@ -297,8 +354,13 @@ export function handleJsonRpcRequest(request) {
               const fRow = extractFeatureRow({ text: t, piiItems: pii });
               const d = decideGatekeeper(bundle, fRow);
               d.piiDetected = pii.length > 0;
-              d.piiItems = pii;
-              d.textExcerpt = t.slice(0, 80);
+              d.piiCount = pii.length;
+              d.piiItems = sanitizePiiItems(pii, includeRawPii);
+              d.certified = certified;
+              d.gatekeeperStatus = gatekeeperStatus;
+              if (includeRawExcerpt) {
+                d.textExcerpt = t.slice(0, 80);
+              }
               return d;
             });
             result = { content: [{ type: 'text', text: JSON.stringify({ decisions }, null, 2) }] };
@@ -312,7 +374,11 @@ export function handleJsonRpcRequest(request) {
           let fRows;
           let labelsMap;
           if (Array.isArray(args.samples) && args.samples.length > 0) {
-            fRows = args.samples.map((s) => extractFeatureRow({ text: s.text || '' }));
+            fRows = args.samples.map((s) => {
+              const txt = String(s.text || '');
+              const pii = scanRecordsForPII(txt);
+              return extractFeatureRow({ text: txt, piiItems: pii });
+            });
             labelsMap = {
               safe: args.samples.map((s) => (s.safe ? 1 : 0)),
               useful: args.samples.map((s) => (s.useful ? 1 : 0)),
@@ -328,27 +394,38 @@ export function handleJsonRpcRequest(request) {
           let trainLabelsMap = labelsMap;
           let cRows;
           let cLabels;
-          if (Array.isArray(args.calibFeatureRows) && args.calibLabelsMap) {
+          if (Array.isArray(args.calibSamples) && args.calibSamples.length > 0) {
+            cRows = args.calibSamples.map((s) => {
+              const txt = String(s.text || '');
+              const pii = scanRecordsForPII(txt);
+              return extractFeatureRow({ text: txt, piiItems: pii });
+            });
+            cLabels = {
+              safe: args.calibSamples.map((s) => (s.safe ? 1 : 0)),
+              useful: args.calibSamples.map((s) => (s.useful ? 1 : 0)),
+              topic: args.calibSamples.map((s) => (s.topic ? 1 : 0)),
+            };
+          } else if (Array.isArray(args.calibFeatureRows) && args.calibLabelsMap) {
             cRows = args.calibFeatureRows.map((r) => new Float32Array(r));
             cLabels = args.calibLabelsMap;
           } else if (fRows.length >= 2) {
-            trainFRows = [];
-            cRows = [];
-            trainLabelsMap = { safe: [], useful: [], topic: [] };
-            cLabels = { safe: [], useful: [], topic: [] };
-            for (let i = 0; i < fRows.length; i++) {
-              const targetX = i % 2 === 0 ? trainFRows : cRows;
-              const targetL = i % 2 === 0 ? trainLabelsMap : cLabels;
-              targetX.push(fRows[i]);
-              targetL.safe.push(labelsMap.safe[i]);
-              targetL.useful.push(labelsMap.useful[i]);
-              targetL.topic.push(labelsMap.topic[i]);
-            }
+            const split = splitMultiAxisHoldout(fRows, labelsMap, args.options?.calRatio ?? 0.5);
+            trainFRows = split.train.rows;
+            trainLabelsMap = split.train.labels;
+            cRows = split.cal.rows;
+            cLabels = split.cal.labels;
           } else {
             throw new Error('LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN: provide disjoint calibFeatureRows or >= 2 samples');
           }
           let multiBundle = trainMultiAxisGatekeeper(trainFRows, trainLabelsMap, args.options || {});
           multiBundle = calibrateMultiAxisGatekeeper(multiBundle, cRows, cLabels, args.options || {});
+          const multiCertified = Boolean(
+            multiBundle.models?.safe?.calibration?.certified &&
+            multiBundle.models?.useful?.calibration?.certified &&
+            multiBundle.models?.topic?.calibration?.certified
+          );
+          multiBundle.certified = multiCertified;
+          multiBundle.gatekeeperStatus = multiCertified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED';
           lastMultiAxisBundle = multiBundle;
           result = { content: [{ type: 'text', text: JSON.stringify(multiBundle, null, 2) }] };
         } else if (toolName === 'gatekeeper_decide_multiaxis') {
@@ -356,10 +433,17 @@ export function handleJsonRpcRequest(request) {
           if (!multiBundle) {
             throw new Error('No trained multi-axis bundle available; call train_multiaxis_gatekeeper first or pass bundle');
           }
+          const rawText = typeof args.text === 'string' ? args.text : '';
+          const pii = rawText ? scanRecordsForPII(rawText) : [];
           const fRow = args.featureRow
             ? new Float32Array(args.featureRow)
-            : extractFeatureRow({ text: String(args.text || '') });
+            : extractFeatureRow({ text: rawText, piiItems: pii });
           const decision = decideMultiAxisGatekeeper(multiBundle, fRow);
+          const multiCertified = Boolean(
+            multiBundle.models?.safe?.calibration?.certified &&
+            multiBundle.models?.useful?.calibration?.certified &&
+            multiBundle.models?.topic?.calibration?.certified
+          );
           result = {
             content: [
               {
@@ -369,6 +453,11 @@ export function handleJsonRpcRequest(request) {
                     axes: decision.decisions,
                     conjunctionAction: decision.conjunctionAction,
                     abstained: decision.abstained,
+                    certified: multiCertified,
+                    gatekeeperStatus: multiCertified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED',
+                    piiDetected: pii.length > 0,
+                    piiCount: pii.length,
+                    piiItems: sanitizePiiItems(pii, args.includeRawPii === true),
                   },
                   null,
                   2
@@ -382,11 +471,28 @@ export function handleJsonRpcRequest(request) {
         } else if (toolName === 'ingest_url_or_links') {
           if (typeof args.htmlOrLinks === 'string') {
             const hasHtml = /<[a-z][\s\S]*>/i.test(args.htmlOrLinks);
-            const pipelineRes = runCleanAndTokenizePipeline(args.htmlOrLinks, {
-              format: hasHtml ? 'html' : 'text',
+            const stripped = hasHtml ? stripHtmlBoilerplate(args.htmlOrLinks) : null;
+            const cleanInput = stripped ? stripped.cleanText : args.htmlOrLinks;
+            const pipelineRes = runCleanAndTokenizePipeline(cleanInput, {
+              format: 'text',
               ...(args.options || {}),
             });
-            result = { content: [{ type: 'text', text: JSON.stringify(pipelineRes, null, 2) }] };
+            result = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      cleanText: cleanInput,
+                      ...(stripped ? { title: stripped.title, links: stripped.links } : {}),
+                      ...pipelineRes,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
           } else {
             throw new Error('URL network fetching requires handleJsonRpcRequestAsync');
           }
@@ -413,7 +519,7 @@ export async function handleJsonRpcRequestAsync(request) {
   ) {
     try {
       const args = request.params?.arguments || {};
-      const opts = args.options || {};
+      const { allowPrivateNetworkForTest: _stripPrivate, ...safeOpts } = args.options || {};
       const explicitUrls = Array.isArray(args.urls)
         ? args.urls
         : typeof args.url === 'string'
@@ -425,23 +531,25 @@ export async function handleJsonRpcRequestAsync(request) {
       if (explicitUrls.length > 0) {
         const fetched =
           explicitUrls.length === 1
-            ? [Object.assign({ url: explicitUrls[0], success: true }, await ingestUrl(explicitUrls[0], opts))]
-            : await ingestLinkList(explicitUrls, opts);
+            ? [Object.assign({ url: explicitUrls[0], success: true }, await ingestUrl(explicitUrls[0], safeOpts))]
+            : await ingestLinkList(explicitUrls, safeOpts);
         const combinedText = fetched
           .filter((item) => item.success && item.cleanText)
           .map((item) => item.cleanText)
           .join('\n\n');
         const pipelineRes = runCleanAndTokenizePipeline(combinedText, {
           format: 'text',
-          ...opts,
+          ...safeOpts,
         });
         const manifest = buildCorpusManifest(
           fetched.map((f) => ({
-            url: f.url,
+            sourceId: f.url,
+            sourceType: f.sourceType || 'url',
             rawBytes: f.rawBytes || 0,
-            cleanText: f.cleanText || '',
-          })),
-          pipelineRes.tokenizedChunks || []
+            boilerplateStrippedBytes: f.boilerplateStrippedBytes || 0,
+            lines: f.lines || [],
+            sha256: f.sha256 || '',
+          }))
         );
         return {
           jsonrpc: '2.0',
@@ -449,7 +557,7 @@ export async function handleJsonRpcRequestAsync(request) {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({ ...pipelineRes, fetched, manifest }, null, 2),
+                text: JSON.stringify({ cleanText: combinedText, ...pipelineRes, fetched, manifest }, null, 2),
               },
             ],
           },

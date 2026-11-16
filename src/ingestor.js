@@ -1,21 +1,282 @@
 import crypto from 'node:crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import zlib from 'node:zlib';
 
 // ---------------------------------------------------------------------------
-// 1. Real URL & Link-List Capture (NO Silent Fallback)
+// 1. SSRF-Hardened URL & Link-List Capture (Zero Local Fallback)
 // ---------------------------------------------------------------------------
-export async function ingestUrl(url, options = {}) {
-  let res;
+const DISALLOWED_HOSTNAMES = new Set([
+  'localhost',
+  'localhost.localdomain',
+  'ip6-localhost',
+  'ip6-loopback',
+  'metadata.google.internal',
+  'metadata',
+]);
+
+function ipv4ToInt(ip) {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const part of parts) {
+    if (!/^\d{1,3}$/.test(part)) return null;
+    const oct = Number(part);
+    if (oct < 0 || oct > 255) return null;
+    n = (n << 8) | oct;
+  }
+  return n >>> 0;
+}
+
+function inCidr4(ipInt, base, maskBits) {
+  const baseInt = ipv4ToInt(base);
+  if (baseInt === null) return false;
+  const mask = maskBits === 0 ? 0 : (0xffffffff << (32 - maskBits)) >>> 0;
+  return (ipInt & mask) === (baseInt & mask);
+}
+
+export function isDisallowedIpAddress(rawIp) {
+  if (typeof rawIp !== 'string') return true;
+  const ip = rawIp.trim().replace(/^\[|\]$/g, '').split('%')[0].toLowerCase();
+  const ver = net.isIP(ip);
+  if (ver === 4) {
+    const n = ipv4ToInt(ip);
+    if (n === null) return true;
+    return (
+      inCidr4(n, '0.0.0.0', 8) ||
+      inCidr4(n, '10.0.0.0', 8) ||
+      inCidr4(n, '100.64.0.0', 10) ||
+      inCidr4(n, '127.0.0.0', 8) ||
+      inCidr4(n, '169.254.0.0', 16) ||
+      inCidr4(n, '172.16.0.0', 12) ||
+      inCidr4(n, '192.0.0.0', 24) ||
+      inCidr4(n, '192.168.0.0', 16) ||
+      inCidr4(n, '198.18.0.0', 15) ||
+      inCidr4(n, '224.0.0.0', 4) ||
+      inCidr4(n, '240.0.0.0', 4)
+    );
+  }
+
+  if (ver === 6) {
+    if (ip === '::' || ip === '::1') return true;
+    if (ip.startsWith('::ffff:')) {
+      const suffix = ip.slice('::ffff:'.length);
+      if (net.isIP(suffix) === 4) return isDisallowedIpAddress(suffix);
+      const hexParts = suffix.split(':');
+      if (hexParts.length === 2) {
+        const hi = parseInt(hexParts[0], 16);
+        const lo = parseInt(hexParts[1], 16);
+        if (Number.isFinite(hi) && Number.isFinite(lo)) {
+          const v4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+          return isDisallowedIpAddress(v4);
+        }
+      }
+    }
+    const firstHextet = parseInt(ip.split(':')[0] || '0', 16);
+    if (!Number.isFinite(firstHextet)) return true;
+    if ((firstHextet & 0xfe00) === 0xfc00) return true;
+    if ((firstHextet & 0xffc0) === 0xfe80) return true;
+    if ((firstHextet & 0xff00) === 0xff00) return true;
+    return false;
+  }
+
+  return true;
+}
+
+function isLoopbackHostOrIp(host) {
+  const clean = String(host || '').trim().toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  if (clean === 'localhost' || clean === 'localhost.localdomain' || clean === '::1') return true;
+  if (net.isIP(clean) === 4) {
+    const n = ipv4ToInt(clean);
+    return n !== null && inCidr4(n, '127.0.0.0', 8);
+  }
+  return false;
+}
+
+export function validatePublicUrlTarget(rawUrl, options = {}) {
+  let parsed;
   try {
-    res = await fetch(url, { headers: options.headers || {} });
+    parsed = new URL(rawUrl);
   } catch (err) {
-    throw new Error(`URL_FETCH_FAILED: Failed to fetch ${url} - ${err.message}`);
+    throw new Error(`URL_SSRF_BLOCKED: Invalid URL (${err.message})`);
   }
-  if (!res.ok) {
-    throw new Error(`URL_FETCH_FAILED: ${url} returned non-2xx status ${res.status} ${res.statusText}`);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`URL_SSRF_BLOCKED: Invalid protocol ${parsed.protocol} (only http/https supported)`);
   }
-  const html = await res.text();
-  return stripHtmlBoilerplate(html, { url });
+  if (parsed.username || parsed.password) {
+    throw new Error('URL_SSRF_BLOCKED: Embedded credentials in URL are not allowed');
+  }
+
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  if (options.allowPrivateNetworkForTest === true && isLoopbackHostOrIp(host)) {
+    return parsed;
+  }
+
+  if (
+    !host ||
+    DISALLOWED_HOSTNAMES.has(host) ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host.endsWith('.localhost')
+  ) {
+    throw new Error(`URL_SSRF_BLOCKED: Blocked internal hostname: ${host || '(empty)'}`);
+  }
+
+  if (net.isIP(host)) {
+    if (isDisallowedIpAddress(host)) {
+      throw new Error(`URL_SSRF_BLOCKED: Blocked private or loopback IP address: ${host}`);
+    }
+  } else if (!host.includes('.')) {
+    throw new Error(`URL_SSRF_BLOCKED: Blocked single-label internal hostname: ${host}`);
+  }
+
+  return parsed;
+}
+
+const defaultDnsLookup = (hostname) => dns.lookup(hostname, { all: true, verbatim: true });
+
+export async function assertSafePublicUrl(rawUrl, options = {}) {
+  const parsed = validatePublicUrlTarget(rawUrl, options);
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  if (options.allowPrivateNetworkForTest === true && isLoopbackHostOrIp(host)) {
+    return parsed;
+  }
+  if (net.isIP(host)) {
+    return parsed;
+  }
+
+  const lookupFn = typeof options.lookupFn === 'function' ? options.lookupFn : defaultDnsLookup;
+  let records;
+  try {
+    records = await lookupFn(host);
+  } catch (err) {
+    throw new Error(`URL_FETCH_FAILED: DNS lookup failed for ${host} - ${err.message}`);
+  }
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new Error(`URL_FETCH_FAILED: DNS resolution returned no addresses for ${host}`);
+  }
+  for (const rec of records) {
+    if (isDisallowedIpAddress(rec.address)) {
+      throw new Error(`URL_SSRF_BLOCKED: Target ${host} resolved to disallowed IP ${rec.address}`);
+    }
+  }
+  return parsed;
+}
+
+async function readResponseWithLimit(res, maxBytes) {
+  const clHeader = res.headers?.get?.('content-length');
+  if (clHeader !== null && clHeader !== undefined && clHeader !== '') {
+    const declared = Number(clHeader);
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      await res.body?.cancel?.();
+      throw new Error(`URL_RESPONSE_TOO_LARGE: Content-Length (${declared}) exceeds limit (${maxBytes})`);
+    }
+  }
+
+  if (res.body && typeof res.body.getReader === 'function') {
+    const reader = res.body.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const bufChunk = Buffer.from(value);
+        total += bufChunk.length;
+        if (total > maxBytes) {
+          await reader.cancel();
+          throw new Error(`URL_RESPONSE_TOO_LARGE: Response body exceeds limit (${maxBytes})`);
+        }
+        chunks.push(bufChunk);
+      }
+      return Buffer.concat(chunks, total);
+    } catch (err) {
+      try {
+        await reader.cancel();
+      } catch {
+        // Ignore cleanup errors
+      }
+      throw err;
+    }
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > maxBytes) {
+    throw new Error(`URL_RESPONSE_TOO_LARGE: Response body (${buf.length}) exceeds limit (${maxBytes})`);
+  }
+  return buf;
+}
+
+const TYPED_URL_ERROR_RE = /^(URL_SSRF_BLOCKED|URL_REDIRECT_LIMIT|URL_RESPONSE_TOO_LARGE|URL_FETCH_FAILED):/;
+
+export async function fetchSafeUrlResponse(rawUrl, options = {}) {
+  const maxRedirects = Number.isInteger(options.maxRedirects) && options.maxRedirects >= 0 ? options.maxRedirects : 5;
+  const maxBytes = Number.isFinite(options.maxBytes) && options.maxBytes > 0 ? options.maxBytes : 10 * 1024 * 1024;
+  const timeoutMs = Number.isFinite(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 8000;
+  const fetchFn = typeof options.fetchFn === 'function' ? options.fetchFn : globalThis.fetch;
+
+  let currentUrl = String(rawUrl || '');
+  for (let hop = 0; ; hop++) {
+    await assertSafePublicUrl(currentUrl, options);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res;
+    try {
+      res = await fetchFn(currentUrl, {
+        headers: options.headers || {},
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      if (TYPED_URL_ERROR_RE.test(err.message || '')) {
+        throw err;
+      }
+      const reason = err?.name === 'AbortError' ? `Timed out after ${timeoutMs}ms` : err.message;
+      throw new Error(`URL_FETCH_FAILED: Failed to fetch ${currentUrl} - ${reason}`);
+    }
+    clearTimeout(timer);
+
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers?.get?.('location');
+      await res.body?.cancel?.();
+      if (!location) {
+        throw new Error(`URL_FETCH_FAILED: Redirect ${res.status} missing Location header at ${currentUrl}`);
+      }
+      if (hop >= maxRedirects) {
+        throw new Error(`URL_REDIRECT_LIMIT: Exceeded maxRedirects (${maxRedirects}) starting at ${rawUrl}`);
+      }
+      currentUrl = new URL(location, currentUrl).toString();
+      continue;
+    }
+
+    if (!res.ok) {
+      await res.body?.cancel?.();
+      throw new Error(`URL_FETCH_FAILED: ${currentUrl} returned non-2xx status ${res.status} ${res.statusText || ''}`);
+    }
+
+    const bodyBuffer = await readResponseWithLimit(res, maxBytes);
+    return {
+      url: rawUrl,
+      finalUrl: currentUrl,
+      status: res.status,
+      contentType: res.headers?.get?.('content-type') || '',
+      bodyBuffer,
+    };
+  }
+}
+
+export async function ingestUrl(url, options = {}) {
+  const fetched = await fetchSafeUrlResponse(url, options);
+  const html = fetched.bodyBuffer.toString('utf8');
+  const stripped = stripHtmlBoilerplate(html, { url: fetched.finalUrl });
+  return {
+    ...stripped,
+    url,
+    finalUrl: fetched.finalUrl,
+    status: fetched.status,
+    contentType: fetched.contentType,
+  };
 }
 
 export async function ingestLinkList(urls, options = {}) {
@@ -28,7 +289,8 @@ export async function ingestLinkList(urls, options = {}) {
       if (options.throwOnError) {
         throw err;
       }
-      results.push({ url, success: false, error: err.message });
+      const code = (err.message.match(/^([A-Z0-9_]+):/) || [])[1] || 'URL_FETCH_FAILED';
+      results.push({ url, success: false, code, error: err.message });
     }
   }
   return results;
@@ -77,7 +339,8 @@ export function stripHtmlBoilerplate(html, options = {}) {
     .replace(/&nbsp;/g, ' ');
 
   const lines = decoded.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const boilerplateStrippedBytes = Buffer.byteLength(lines.join('\n'), 'utf8');
+  const cleanText = lines.join('\n');
+  const boilerplateStrippedBytes = Buffer.byteLength(cleanText, 'utf8');
 
   return {
     sourceType: 'url',
@@ -85,8 +348,9 @@ export function stripHtmlBoilerplate(html, options = {}) {
     rawBytes,
     boilerplateStrippedBytes,
     lines,
+    cleanText,
     links,
-    sha256: crypto.createHash('sha256').update(lines.join('\n')).digest('hex')
+    sha256: crypto.createHash('sha256').update(cleanText).digest('hex')
   };
 }
 

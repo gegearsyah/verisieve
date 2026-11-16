@@ -287,20 +287,21 @@ test('10. ingestFromUrlOrPath handles files, flags, and online URL with offline 
   assert.ok(Array.isArray(firstSample.messages), 'Must contain messages');
   assert.ok(typeof firstSample.provenance_node_hash === 'string', 'Must contain provenance_node_hash');
 
-  // Test 2: Unreachable online URL fails closed by default; explicit opt-in fallback works when configured
+  // Test 2: Unreachable online URL always fails with typed URL_FETCH_FAILED (never substitutes local files)
   const unreachableUrl = 'https://offline-fallback-test.invalid/paper.pdf';
   await assert.rejects(
     () => ingestFromUrlOrPath(unreachableUrl, { timeoutMs: 2000 }),
     /URL_FETCH_FAILED/
   );
-  const resFallback = await ingestFromUrlOrPath(unreachableUrl, {
-    timeoutMs: 2000,
-    allowOfflineFallback: true,
-    offlineFallbackPath: pmcPdfPath
-  });
-  assert.strictEqual(resFallback.fetchStatus, 'offline_fallback');
-  assert.ok(resFallback.rows.length > 0, 'Explicit offline fallback must produce rows');
-  assert.ok(resFallback.gatekeeperBundle, 'Must produce gatekeeper bundle');
+  await assert.rejects(
+    () =>
+      ingestFromUrlOrPath(unreachableUrl, {
+        timeoutMs: 2000,
+        allowOfflineFallback: true,
+        offlineFallbackPath: pmcPdfPath
+      }),
+    /URL_FETCH_FAILED/
+  );
 });
 
 test('11. UI server endpoints /api/run and /api/mcp forward requests cleanly', async () => {
