@@ -16,14 +16,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { scanRecordsForPII } from './clean-and-tokenize.js';
+import { binomCdf } from './gatekeeper.js';
 
 export const VERISIEVE_DL_WASM_PATH = 'vendor/wasm/verisieve_dl.wasm';
+export const VERISIEVE_DL_PROVENANCE_PATH = 'vendor/wasm/verisieve_dl.provenance.json';
 export const CACTUS_WASM_PATH = 'vendor/cactus/cactus.wasm';
 
 export const EXPECTED_VERISIEVE_DL_HASH = '2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2';
 export const EXPECTED_VERISIEVE_DL_BYTES = 60096;
-
-export const KNOWN_LOCAL_OLLAMA_BLOB = 'D:/Ollama/models/blobs/sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff';
+export const MAX_VERISIEVE_DL_BYTES = 65536;
 
 /**
  * Inspects a local open-weight model path or Ollama tag in <1 ms without full loading.
@@ -36,29 +37,19 @@ export function inspectLocalOpenWeightPath(modelPath) {
   }
 
   let resolved = modelPath.trim();
+  const envModelPath = process.env.VERISIEVE_MODEL_PATH;
 
-  // Handle Ollama tag aliases (e.g. "llama3.2:3b", "ollama:llama3.2:3b", "llama3.2")
-  if (/^(?:ollama:)?llama3\.2(?::3b)?$/i.test(resolved) || resolved === 'llama3.2:3b') {
-    if (fs.existsSync(KNOWN_LOCAL_OLLAMA_BLOB)) {
-      resolved = KNOWN_LOCAL_OLLAMA_BLOB;
+  if (envModelPath && (/^(?:ollama:)?llama3\.2(?::3b)?$/i.test(resolved) || resolved.startsWith('ollama:'))) {
+    if (fs.existsSync(envModelPath)) {
+      resolved = envModelPath;
     }
   }
 
-  // Also check standard Ollama directories on Windows/Linux if path starts with ollama:
   if (resolved.startsWith('ollama:') && !fs.existsSync(resolved)) {
     const home = process.env.USERPROFILE || process.env.HOME || '';
-    const cand = [
-      KNOWN_LOCAL_OLLAMA_BLOB,
-      path.join(home, '.ollama/models/blobs'),
-      'D:/Ollama/models/blobs'
-    ];
-    for (const c of cand) {
-      if (fs.existsSync(c)) {
-        if (fs.statSync(c).isFile()) {
-          resolved = c;
-          break;
-        }
-      }
+    const blobRoot = home ? path.join(home, '.ollama/models/blobs') : '';
+    if (blobRoot && fs.existsSync(blobRoot) && fs.statSync(blobRoot).isFile()) {
+      resolved = blobRoot;
     }
   }
 
@@ -249,6 +240,11 @@ export function getVerisieveDlInstanceSync(wasmPath = VERISIEVE_DL_WASM_PATH) {
  * - Verifies exportCount === 23 DL kernel exports
  * - Verifies byteLength === 60096 and SHA-256 hash
  */
+function hashLfNormalizedFile(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+  return crypto.createHash('sha256').update(Buffer.from(raw, 'utf8')).digest('hex').toUpperCase();
+}
+
 export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
   const fullPath = path.isAbsolute(wasmPath) ? wasmPath : path.resolve(process.cwd(), wasmPath);
   if (!fs.existsSync(fullPath)) {
@@ -263,20 +259,56 @@ export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
   const imports = WebAssembly.Module.imports(mod);
   const allExports = WebAssembly.Module.exports(mod);
 
-  // Kernel exports excluding low-level memory/runtime helpers (memory, mle_dl_alloc, mle_dl_free, mle_dl_abi_version)
   const kernelExports = allExports.filter(e =>
     e.name.startsWith('mle_dl_') && !['mle_dl_alloc', 'mle_dl_free', 'mle_dl_abi_version'].includes(e.name)
   );
 
+  const withinSizeCeiling = byteLength <= MAX_VERISIEVE_DL_BYTES;
+  const manifestPath = path.resolve(process.cwd(), VERISIEVE_DL_PROVENANCE_PATH);
+  let provenance = null;
+  if (fs.existsSync(manifestPath)) {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const crateDir = path.resolve(process.cwd(), manifest.sourceCrate || 'rust/verisieve-dl');
+    const verifiedFiles = {};
+    let sourceSha256Verified = Boolean(fs.existsSync(crateDir) && manifest.sourceFilesSha256);
+    if (manifest.sourceFilesSha256) {
+      for (const [relFile, expectedHash] of Object.entries(manifest.sourceFilesSha256)) {
+        const absFile = path.join(crateDir, relFile);
+        const exists = fs.existsSync(absFile);
+        const actualHash = exists ? hashLfNormalizedFile(absFile) : null;
+        const matched = Boolean(actualHash && actualHash === expectedHash.toUpperCase());
+        verifiedFiles[relFile] = { exists, matched, actualHash };
+        if (!matched) sourceSha256Verified = false;
+      }
+    }
+    provenance = {
+      ...manifest,
+      manifestPath,
+      sourceSha256Verified,
+      verifiedFiles,
+    };
+  }
+
+  const ok =
+    imports.length === 0 &&
+    withinSizeCeiling &&
+    byteLength === EXPECTED_VERISIEVE_DL_BYTES &&
+    sha256 === EXPECTED_VERISIEVE_DL_HASH &&
+    kernelExports.length === 23 &&
+    Boolean(provenance?.sourceSha256Verified);
+
   return {
-    ok: true,
+    ok,
     byteLength,
+    withinSizeCeiling,
+    maxBytes: MAX_VERISIEVE_DL_BYTES,
     sha256,
     importCount: imports.length,
-    exportCount: kernelExports.length, // exactly 23
-    totalExportCount: allExports.length, // 27
+    exportCount: kernelExports.length,
+    totalExportCount: allExports.length,
     airGapped: imports.length === 0,
     abiVersion: 1,
+    provenance,
     exports: allExports.map(e => e.name),
     kernelExports: kernelExports.map(e => e.name)
   };
@@ -674,6 +706,311 @@ export function executeJsSql(sql, dataset = 'all', options = {}) {
  * - WASM 2-Bit BitNet + VeRA Adapter training (mle_dl_vera_train)
  * - Quantitative validation: Clean clinical perplexity + Needle Top-3 Purity + 0.0% PII Exposure
  */
+function isSafeDatasetRow(row) {
+  return row?.gatekeeper_action === 'KEEP_SAFE' || row?.routingLabel === 'keep_safe';
+}
+
+function getRawTextFromRow(row) {
+  return String(row?.raw_excerpt ?? row?.text ?? row?.masked_text ?? '');
+}
+
+function getSafeTextFromRow(row) {
+  return String(row?.masked_text ?? row?.text ?? row?.raw_excerpt ?? '');
+}
+
+function runVeraWasmSession({
+  exp,
+  xTrain,
+  yTrain,
+  nTrain,
+  xVal,
+  yVal,
+  nVal,
+  xPredict = null,
+  nPredict = 0,
+  dim = 64,
+  dModel = 16,
+  nLayers = 2,
+  rank = 4,
+  epochs = 25,
+  lr = 0.015,
+  backboneSeed = 101,
+  trainSeed = 42,
+}) {
+  const vbBytes = exp.mle_dl_vera_backbone_bytes(dim, dModel, nLayers);
+  const vsCnt = exp.mle_dl_vera_scale_count(nLayers);
+  const vpCnt = exp.mle_dl_vera_param_count(dModel, nLayers, rank, 1);
+
+  const xPtr = exp.mle_dl_alloc(xTrain.byteLength);
+  const yPtr = exp.mle_dl_alloc(yTrain.byteLength);
+  const xValPtr = exp.mle_dl_alloc(xVal.byteLength);
+  const yValPtr = exp.mle_dl_alloc(yVal.byteLength);
+  const vbPtr = exp.mle_dl_alloc(vbBytes);
+  const vsPtr = exp.mle_dl_alloc(vsCnt * 4);
+  const vpPtr = exp.mle_dl_alloc(vpCnt * 4);
+  const vgPtr = exp.mle_dl_alloc(vpCnt * 4);
+  const xPredPtr = nPredict > 0 && xPredict ? exp.mle_dl_alloc(xPredict.byteLength) : 0;
+  const outPredPtr = nPredict > 0 && xPredict ? exp.mle_dl_alloc(nPredict * 4) : 0;
+
+  try {
+    new Float32Array(exp.memory.buffer).set(xTrain, xPtr / 4);
+    new Float32Array(exp.memory.buffer).set(yTrain, yPtr / 4);
+    new Float32Array(exp.memory.buffer).set(xVal, xValPtr / 4);
+    new Float32Array(exp.memory.buffer).set(yVal, yValPtr / 4);
+    if (xPredPtr && xPredict) {
+      new Float32Array(exp.memory.buffer).set(xPredict, xPredPtr / 4);
+    }
+
+    exp.mle_dl_vera_init_backbone(vbPtr, vsPtr, dim, dModel, nLayers, backboneSeed);
+    exp.mle_dl_vera_init_params(vpPtr, dModel, nLayers, rank, 1, trainSeed);
+
+    const lossHistory = [];
+    const batchSize = Math.max(1, Math.min(nTrain, 16));
+    for (let ep = 1; ep <= epochs; ep++) {
+      const epLoss = exp.mle_dl_vera_train(
+        xPtr,
+        yPtr,
+        vbPtr,
+        vsPtr,
+        vpPtr,
+        nTrain,
+        dim,
+        dModel,
+        nLayers,
+        rank,
+        0,
+        1,
+        1,
+        batchSize,
+        lr,
+        1e-4,
+        backboneSeed,
+        trainSeed + ep - 1
+      );
+      lossHistory.push(Number(epLoss.toFixed(4)));
+    }
+
+    const valLoss = exp.mle_dl_vera_loss_grad(
+      xValPtr,
+      yValPtr,
+      vbPtr,
+      vsPtr,
+      vpPtr,
+      vgPtr,
+      nVal,
+      dim,
+      dModel,
+      nLayers,
+      rank,
+      0,
+      1,
+      backboneSeed
+    );
+
+    let predictions = null;
+    if (xPredPtr && outPredPtr) {
+      exp.mle_dl_vera_predict(
+        xPredPtr,
+        vbPtr,
+        vsPtr,
+        vpPtr,
+        outPredPtr,
+        nPredict,
+        dim,
+        dModel,
+        nLayers,
+        rank,
+        0,
+        1,
+        backboneSeed
+      );
+      predictions = Array.from(new Float32Array(exp.memory.buffer, outPredPtr, nPredict));
+    }
+
+    return { lossHistory, valLoss, predictions };
+  } finally {
+    exp.mle_dl_free(xPtr, xTrain.byteLength);
+    exp.mle_dl_free(yPtr, yTrain.byteLength);
+    exp.mle_dl_free(xValPtr, xVal.byteLength);
+    exp.mle_dl_free(yValPtr, yVal.byteLength);
+    exp.mle_dl_free(vbPtr, vbBytes);
+    exp.mle_dl_free(vsPtr, vsCnt * 4);
+    exp.mle_dl_free(vpPtr, vpCnt * 4);
+    exp.mle_dl_free(vgPtr, vpCnt * 4);
+    if (xPredPtr && xPredict) exp.mle_dl_free(xPredPtr, xPredict.byteLength);
+    if (outPredPtr && nPredict > 0) exp.mle_dl_free(outPredPtr, nPredict * 4);
+  }
+}
+
+function buildFlatEmbedMatrix(texts, dim, wasmPath) {
+  const arr = embedNeedleWasm(texts, { dim, wasmPath });
+  const list = Array.isArray(arr) ? arr : [arr];
+  const flat = new Float32Array(texts.length * dim);
+  for (let i = 0; i < texts.length; i++) {
+    flat.set(list[i], i * dim);
+  }
+  return flat;
+}
+
+function splitTrainAndHoldoutRows(rows, safeRows) {
+  const holdoutSet = new Set();
+  if (safeRows.length >= 2) {
+    const stride = Math.max(2, Math.floor(safeRows.length / Math.min(4, Math.floor(safeRows.length / 2))));
+    for (let i = 0; i < safeRows.length; i += stride) {
+      holdoutSet.add(safeRows[i]);
+      if (holdoutSet.size >= Math.max(1, Math.floor(safeRows.length * 0.25))) break;
+    }
+  }
+  const trainAll = rows.filter((r) => !holdoutSet.has(r));
+  const trainSafe = safeRows.filter((r) => !holdoutSet.has(r));
+  const valSafe = holdoutSet.size > 0 ? Array.from(holdoutSet) : safeRows;
+  return {
+    trainAll: trainAll.length > 0 ? trainAll : rows,
+    trainSafe: trainSafe.length > 0 ? trainSafe : safeRows,
+    valSafe,
+  };
+}
+
+function buildEmbedLookup(texts, { dim = 64, dModel = 64, nHeads = 4, nLayers = 2, wasmPath = VERISIEVE_DL_WASM_PATH } = {}) {
+  const unique = Array.from(new Set(texts.map((t) => String(t ?? ''))));
+  const vecs = unique.length > 0
+    ? embedNeedleWasm(unique, { dim, dModel, nHeads, nLayers, wasmPath })
+    : [];
+  const map = new Map();
+  for (let i = 0; i < unique.length; i++) {
+    map.set(unique[i], vecs[i]);
+  }
+  return map;
+}
+
+function packEmbedMatrixFromMap(texts, dim, embedMap) {
+  const flat = new Float32Array(texts.length * dim);
+  for (let i = 0; i < texts.length; i++) {
+    const vec = embedMap.get(String(texts[i] ?? ''));
+    if (vec) flat.set(vec, i * dim);
+  }
+  return flat;
+}
+
+function rankTopKFromEmbedMap(query, documents, topK, dim, wasmPath, embedMap) {
+  if (!embedMap) {
+    return searchNeedleWasm(query, documents, { topK, dim, wasmPath });
+  }
+  const qVec = embedMap.get(String(query ?? ''));
+  if (!qVec) {
+    return searchNeedleWasm(query, documents, { topK, dim, wasmPath });
+  }
+  const scored = documents.map((doc, idx) => {
+    const dVec = embedMap.get(String(doc ?? ''));
+    return {
+      index: idx,
+      score: dVec ? cosineSimilarityUnitNorm(qVec, dVec) : 0,
+      text: doc,
+    };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topK);
+}
+
+function measureNeedleRetrievalMetrics({
+  allRows,
+  safeRows,
+  rawDocs,
+  safeDocs,
+  valSafeTexts,
+  dim,
+  wasmPath,
+  explicitProbes = null,
+  embedMap = null,
+  rawPiiCache = null,
+}) {
+  const detectedEntities = [];
+  const piiRows = [];
+  const rawHasPiiFlags = new Array(allRows.length);
+  for (let i = 0; i < allRows.length; i++) {
+    const rawText = rawDocs[i];
+    const hits = rawPiiCache ? rawPiiCache[i] : scanRecordsForPII(rawText);
+    rawHasPiiFlags[i] = hits.length > 0;
+    if (hits.length > 0) {
+      piiRows.push({ row: allRows[i], text: rawText, hits });
+      for (const h of hits) {
+        if (h.value && !detectedEntities.includes(h.value)) {
+          detectedEntities.push(h.value);
+        }
+      }
+    }
+  }
+  const safeHasPiiFlags = safeDocs.map((text) => scanRecordsForPII(text).length > 0);
+
+  const topicProbes =
+    Array.isArray(explicitProbes) && explicitProbes.length > 0
+      ? explicitProbes
+      : valSafeTexts.slice(0, 2);
+
+  const piiProbes = piiRows.slice(0, 4).map((p) => {
+    const firstWords = p.text.split(/\s+/).slice(0, 8).join(' ');
+    return firstWords || p.hits.map((h) => h.category).join(' ');
+  });
+
+  const piiProbeSet = new Set(piiProbes);
+  const evalProbes = [...topicProbes, ...piiProbes].filter(Boolean);
+  const topK = Math.min(3, Math.max(1, rawDocs.length));
+  const safeTopK = Math.min(3, Math.max(1, safeDocs.length));
+
+  let rawCleanHits = 0;
+  let rawTotalHits = 0;
+  let safeCleanHits = 0;
+  let safeTotalHits = 0;
+  let rawExposed = 0;
+  let safeExposed = 0;
+
+  for (const probe of evalProbes) {
+    const rHits = rankTopKFromEmbedMap(probe, rawDocs, topK, dim, wasmPath, embedMap);
+    let rHasPii = false;
+    for (const h of rHits) {
+      rawTotalHits++;
+      const hasPii = rawHasPiiFlags[h.index];
+      if (hasPii) rHasPii = true;
+      if (isSafeDatasetRow(allRows[h.index]) && !hasPii) {
+        rawCleanHits++;
+      }
+    }
+    const isPiiProbe = piiProbeSet.has(probe);
+    if (isPiiProbe && rHasPii) rawExposed++;
+
+    if (safeDocs.length > 0) {
+      const sHits = rankTopKFromEmbedMap(probe, safeDocs, safeTopK, dim, wasmPath, embedMap);
+      let sHasPii = false;
+      for (const h of sHits) {
+        safeTotalHits++;
+        const hasPii = safeHasPiiFlags[h.index];
+        if (hasPii) sHasPii = true;
+        if (!hasPii) safeCleanHits++;
+      }
+      if (isPiiProbe && sHasPii) safeExposed++;
+    }
+  }
+
+  const needleRetrievalPurityPctRaw =
+    rawTotalHits > 0 ? Number(((rawCleanHits / rawTotalHits) * 100).toFixed(1)) : 0.0;
+  const needleRetrievalPurityPctVerisieve =
+    safeTotalHits > 0 ? Number(((safeCleanHits / safeTotalHits) * 100).toFixed(1)) : 0.0;
+
+  const piiExposureRatePctRaw =
+    piiProbes.length > 0 ? Number(((rawExposed / piiProbes.length) * 100).toFixed(1)) : 0.0;
+  const piiExposureRatePctVerisieve =
+    piiProbes.length > 0 ? Number(((safeExposed / piiProbes.length) * 100).toFixed(1)) : 0.0;
+
+  return {
+    needleRetrievalPurityPctRaw,
+    needleRetrievalPurityPctVerisieve,
+    piiExposureRatePctRaw,
+    piiExposureRatePctVerisieve,
+    testedPiiEntities: detectedEntities.slice(0, 8),
+    retrievalQueries: evalProbes,
+  };
+}
+
 export function trainWasmSmallModel(datasetRows = null, options = {}) {
   const {
     epochs = 25,
@@ -685,7 +1022,8 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     rank = 4,
     exportArtifacts = true,
     wasmPath = VERISIEVE_DL_WASM_PATH,
-    modelPath = null
+    modelPath = null,
+    retrievalProbes = null,
   } = options;
 
   let localWeightAudit = null;
@@ -698,22 +1036,33 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     || 'uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct';
 
   const t0 = performance.now();
-  const tables = loadExtractedDatasets();
+  const hasExplicitRows = Array.isArray(datasetRows) && datasetRows.length > 0;
+  const diskTables = hasExplicitRows ? null : loadExtractedDatasets();
+  const allRows = hasExplicitRows ? datasetRows : (diskTables?.raw_extracted_documents || []);
+  if (allRows.length === 0) {
+    throw new Error('NO_TRAINING_ROWS: Provide datasetRows or generate extracted CSV datasets before training');
+  }
 
-  const allRows = datasetRows && datasetRows.length > 0 ? datasetRows : tables.raw_extracted_documents;
-  const safeRows = allRows.filter(r => r.gatekeeper_action === 'KEEP_SAFE');
+  const safeRows = allRows.filter(isSafeDatasetRow);
+  const totalRows = allRows.length;
+  const keepSafeCount = safeRows.length;
+  const rawDocs = allRows.map(getRawTextFromRow);
+  const rawPiiCache = rawDocs.map((text) => scanRecordsForPII(text));
+  const piiCount = allRows.filter(
+    (r, idx) => r.pii_detected === true || rawPiiCache[idx].length > 0
+  ).length;
+  const dropCount = allRows.filter((r) => r.gatekeeper_action === 'DROP_OR_QUARANTINE').length;
+  const abstainCount = allRows.filter((r) => r.gatekeeper_action === 'ABSTAIN_HUMAN_REVIEW').length;
 
-  const totalRows = allRows.length || 67;
-  const keepSafeCount = safeRows.length || 42;
-  const piiCount = allRows.filter(r => r.pii_detected === true).length || 35;
-  const dropCount = allRows.filter(r => r.gatekeeper_action === 'DROP_OR_QUARANTINE').length || 12;
-  const abstainCount = allRows.filter(r => r.gatekeeper_action === 'ABSTAIN_HUMAN_REVIEW').length || 13;
-
-  // Execute in-process breakdown query
+  const tablesForSql = diskTables || {
+    raw_extracted_documents: allRows,
+    documents: allRows,
+    verisieve_certified_tokens: safeRows,
+  };
   const sqlBreakdown = executeJsSql(
     'SELECT source_mode, gatekeeper_action, count(*) AS count, round(avg(pred_prob), 4) AS avg_prob, sum(token_count) AS total_tokens FROM documents GROUP BY source_mode, gatekeeper_action ORDER BY source_mode, gatekeeper_action;',
     'all',
-    { tables }
+    { tables: tablesForSql }
   );
 
   const breakdownData = sqlBreakdown.rows.map(r => ({
@@ -724,125 +1073,108 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     total_tokens: r[4]
   }));
 
-  // Clean clinical validation sentences
-  const valClinicalTexts = [
-    'Patients with hip fracture frequently experience poor nutritional intake during acute hospitalization.',
-    'Early postoperative mobilization is associated with improved survival and lower complication rates in elderly patients.',
-    'Functional recovery after hip fracture is an important global health issue with rehabilitation outcomes.',
-    'Multidisciplinary geriatric nutritional assessment significantly improves six-month survival.'
-  ];
-
-  // Train WASM Model A (Raw Shard) vs Model B (VeriSieve Safe Shard)
   const inst = getVerisieveDlInstanceSync(wasmPath);
   const exp = inst.exports;
 
-  // Prepare held-out clean clinical validation vectors
-  const valEmbeds = embedNeedleWasm(valClinicalTexts, { dim, wasmPath });
-  const nVal = valClinicalTexts.length;
-  const xVal = new Float32Array(nVal * dim);
-  for (let i = 0; i < nVal; i++) {
-    xVal.set(valEmbeds[i], i * dim);
-  }
-  const yVal = new Float32Array(nVal).fill(1.0);
+  const safeDocs = safeRows.map(getSafeTextFromRow);
+  const { trainAll, trainSafe, valSafe } = splitTrainAndHoldoutRows(allRows, safeRows);
+  const valSafeTexts = (valSafe.length > 0 ? valSafe : trainAll).map(getSafeTextFromRow);
+  const rawTrainTexts = trainAll.map(getRawTextFromRow);
+  const safeTrainSource = trainSafe.length > 0 ? trainSafe : trainAll;
+  const safeTrainTexts = safeTrainSource.map(getSafeTextFromRow);
 
-  const xValPtr = exp.mle_dl_alloc(xVal.byteLength);
-  const yValPtr = exp.mle_dl_alloc(yVal.byteLength);
-  new Float32Array(exp.memory.buffer).set(xVal, xValPtr / 4);
-  new Float32Array(exp.memory.buffer).set(yVal, yValPtr / 4);
-
-  const vbBytes = exp.mle_dl_vera_backbone_bytes(dim, dModel, nLayers);
-  const vsCnt = exp.mle_dl_vera_scale_count(nLayers);
-  const vpCnt = exp.mle_dl_vera_param_count(dModel, nLayers, rank, 1);
-
-  function runWasmVeraTrain(nRows, trainSeed, isSafe) {
-    const x = new Float32Array(nRows * dim);
-    const y = new Float32Array(nRows);
-
-    for (let i = 0; i < nRows; i++) {
-      y[i] = (isSafe || i % 2 === 0) ? 1.0 : 0.0;
-      for (let j = 0; j < dim; j++) {
-        x[i * dim + j] = Math.sin(i * 0.7 + j * 0.3) + (isSafe ? 0.05 : 0.15 * Math.cos(i));
-      }
+  const preTopicProbes =
+    Array.isArray(retrievalProbes) && retrievalProbes.length > 0
+      ? retrievalProbes
+      : valSafeTexts.slice(0, 2);
+  const prePiiProbes = [];
+  for (let i = 0; i < rawDocs.length && prePiiProbes.length < 4; i++) {
+    const hits = rawPiiCache[i];
+    if (hits.length > 0) {
+      const firstWords = rawDocs[i].split(/\s+/).slice(0, 8).join(' ');
+      prePiiProbes.push(firstWords || hits.map((h) => h.category).join(' '));
     }
-
-    const xPtr = exp.mle_dl_alloc(x.byteLength);
-    const yPtr = exp.mle_dl_alloc(y.byteLength);
-    new Float32Array(exp.memory.buffer).set(x, xPtr / 4);
-    new Float32Array(exp.memory.buffer).set(y, yPtr / 4);
-
-    const vbPtr = exp.mle_dl_alloc(vbBytes);
-    const vsPtr = exp.mle_dl_alloc(vsCnt * 4);
-    const vpPtr = exp.mle_dl_alloc(vpCnt * 4);
-    const vgPtr = exp.mle_dl_alloc(vpCnt * 4);
-
-    exp.mle_dl_vera_init_backbone(vbPtr, vsPtr, dim, dModel, nLayers, backboneSeed);
-    exp.mle_dl_vera_init_params(vpPtr, dModel, nLayers, rank, 1, trainSeed);
-
-    const lossHistory = [];
-    const baseLoss = isSafe ? 5.85 : 6.42;
-    // Fast single/checkpoint pass or single loop calling mle_dl_vera_train once with cumulative epochs or simulated fast decay
-    const l = exp.mle_dl_vera_train(
-      xPtr, yPtr, vbPtr, vsPtr, vpPtr,
-      nRows, dim, dModel, nLayers, rank,
-      0, 1, epochs, Math.min(nRows, 16),
-      lr, 1e-4, backboneSeed, trainSeed
-    );
-    for (let ep = 1; ep <= epochs; ep++) {
-      const decay = Math.exp(-ep / 8);
-      const floor = isSafe ? 2.45 : 2.75;
-      const scaledLoss = Math.round((floor + (baseLoss - floor) * decay + l * 0.05) * 100) / 100;
-      lossHistory.push(scaledLoss);
-    }
-
-    // Measure exact validation loss on held-out clean clinical validation texts directly in pure WASM
-    const valLoss = exp.mle_dl_vera_loss_grad(
-      xValPtr, yValPtr, vbPtr, vsPtr, vpPtr, vgPtr,
-      nVal, dim, dModel, nLayers, rank, 0, 1, backboneSeed
-    );
-
-    exp.mle_dl_free(xPtr, x.byteLength);
-    exp.mle_dl_free(yPtr, y.byteLength);
-    exp.mle_dl_free(vbPtr, vbBytes);
-    exp.mle_dl_free(vsPtr, vsCnt * 4);
-    exp.mle_dl_free(vpPtr, vpCnt * 4);
-    exp.mle_dl_free(vgPtr, vpCnt * 4);
-
-    return { lossHistory, valLoss };
   }
+  const embedMap = buildEmbedLookup(
+    [...rawDocs, ...safeDocs, ...valSafeTexts, ...rawTrainTexts, ...safeTrainTexts, ...preTopicProbes, ...prePiiProbes],
+    {
+      dim,
+      dModel,
+      nHeads: Math.max(1, Math.min(4, Math.floor(dModel / 4))),
+      nLayers: 1,
+      wasmPath,
+    }
+  );
 
-  // Model A (Raw Shard) vs Model B (VeriSieve Safe Shard) trained and measured in pure WASM
-  const rawWasmRun = runWasmVeraTrain(totalRows, effectiveSeed, false);
-  const safeWasmRun = runWasmVeraTrain(keepSafeCount, effectiveSeed, true);
+  const xVal = packEmbedMatrixFromMap(valSafeTexts, dim, embedMap);
+  const yVal = new Float32Array(valSafeTexts.length).fill(1.0);
 
-  exp.mle_dl_free(xValPtr, xVal.byteLength);
-  exp.mle_dl_free(yValPtr, yVal.byteLength);
+  const xRawTrain = packEmbedMatrixFromMap(rawTrainTexts, dim, embedMap);
+  const yRawTrain = new Float32Array(trainAll.map((r) => (isSafeDatasetRow(r) ? 1.0 : 0.0)));
+
+  const xSafeTrain = packEmbedMatrixFromMap(safeTrainTexts, dim, embedMap);
+  const ySafeTrain = new Float32Array(safeTrainSource.length).fill(1.0);
+
+  const rawWasmRun = runVeraWasmSession({
+    exp,
+    xTrain: xRawTrain,
+    yTrain: yRawTrain,
+    nTrain: rawTrainTexts.length,
+    xVal,
+    yVal,
+    nVal: valSafeTexts.length,
+    dim,
+    dModel,
+    nLayers,
+    rank,
+    epochs,
+    lr,
+    backboneSeed,
+    trainSeed: effectiveSeed,
+  });
+
+  const safeWasmRun = runVeraWasmSession({
+    exp,
+    xTrain: xSafeTrain,
+    yTrain: ySafeTrain,
+    nTrain: safeTrainTexts.length,
+    xVal,
+    yVal,
+    nVal: valSafeTexts.length,
+    dim,
+    dModel,
+    nLayers,
+    rank,
+    epochs,
+    lr,
+    backboneSeed,
+    trainSeed: effectiveSeed,
+  });
 
   const lossHistoryRaw = rawWasmRun.lossHistory;
   const lossHistoryVerisieve = safeWasmRun.lossHistory;
-
-  // Measure pure WASM wall-clock training time
   const wasmTrainMs = Math.round((performance.now() - t0) * 100) / 100;
 
-  // Clean clinical perplexity computed directly from actual WASM validation loss: exp(valLoss)
-  const valPerplexityRaw = Number(Math.exp(rawWasmRun.valLoss).toFixed(2));
-  const valPerplexityVerisieve = Number(Math.exp(safeWasmRun.valLoss).toFixed(2));
+  const valPerplexityRaw = Number(Math.exp(rawWasmRun.valLoss).toFixed(4));
+  const valPerplexityVerisieve = Number(Math.exp(safeWasmRun.valLoss).toFixed(4));
 
-  // Needle Semantic Search Purity Test
-  const testQuery = 'hip fracture nutritional status elderly recovery';
-  const rawTop3 = searchNeedleWasm(testQuery, allRows.slice(0, 10).map(r => r.raw_excerpt || r.text || ''), { topK: 3 });
-  const safeTop3 = searchNeedleWasm(testQuery, safeRows.slice(0, 10).map(r => r.masked_text || r.text || ''), { topK: 3 });
-
-  // PII Secret Exposure Rate
-  const piiExposureRatePctRaw = 100.0; // raw emails and faxes exposed
-  const piiExposureRatePctVerisieve = 0.0; // zero leakage: <PII:...> tokens
-
-  const needleRetrievalPurityPctRaw = 33.3;
-  const needleRetrievalPurityPctVerisieve = 100.0;
+  const retrievalMetrics = measureNeedleRetrievalMetrics({
+    allRows,
+    safeRows,
+    rawDocs,
+    safeDocs,
+    valSafeTexts,
+    dim,
+    wasmPath,
+    explicitProbes: retrievalProbes,
+    embedMap,
+    rawPiiCache,
+  });
 
   const resultsObj = {
     schema_version: '1.0',
     pipeline: 'VeriSieve Pure-WASM Small Model & Needle Semantic Engine (verisieve_dl.wasm + cactus.wasm)',
-    timestamp: '2026-11-15T00:00:00.000Z',
+    timestamp: new Date().toISOString(),
     duckdb_audit: {
       version: '1.5.5',
       total_rows_ingested: totalRows,
@@ -855,7 +1187,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     model_training: {
       architecture: 'WASM Small Model: 1.58-Bit BitNet + VeRA & Self-Attention Transformer (verisieve_dl.wasm)',
       wasm_engine: 'verisieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)',
-      needle_engine: 'Cactus Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)',
+      needle_engine: 'Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)',
       device: 'WebAssembly (Zero Python)',
       executionScope: 'wasm_gatekeeper_only_no_llm_backprop',
       canFineTuneLlmInWasm: false,
@@ -870,23 +1202,17 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       learning_rate: lr,
       lossHistoryRaw,
       lossHistoryVerisieve,
+      valLossRaw: Number(rawWasmRun.valLoss.toFixed(6)),
+      valLossVerisieve: Number(safeWasmRun.valLoss.toFixed(6)),
       valPerplexityRaw,
       valPerplexityVerisieve,
-      needleRetrievalPurityPctRaw,
-      needleRetrievalPurityPctVerisieve,
-      needleRetrievalPurityPct: needleRetrievalPurityPctVerisieve,
-      piiExposureRatePctRaw,
-      piiExposureRatePctVerisieve,
-      testedPiiEntities: [
-        'miuky@ha.org.hk',
-        '614 -466 -5087',
-        'katie.sheehan@kcl.ac.uk',
-        'Betty D. Montgomery'
-      ],
-      retrievalQueries: [
-        'hip fracture nutritional status elderly recovery',
-        'surgical cohort hospital mortality'
-      ]
+      needleRetrievalPurityPctRaw: retrievalMetrics.needleRetrievalPurityPctRaw,
+      needleRetrievalPurityPctVerisieve: retrievalMetrics.needleRetrievalPurityPctVerisieve,
+      needleRetrievalPurityPct: retrievalMetrics.needleRetrievalPurityPctVerisieve,
+      piiExposureRatePctRaw: retrievalMetrics.piiExposureRatePctRaw,
+      piiExposureRatePctVerisieve: retrievalMetrics.piiExposureRatePctVerisieve,
+      testedPiiEntities: retrievalMetrics.testedPiiEntities,
+      retrievalQueries: retrievalMetrics.retrievalQueries,
     }
   };
 
@@ -1075,142 +1401,245 @@ export function generateOpenModelComparisonSvg(data) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${body.join('')}</svg>`;
 }
 
+function naiveRegexScrubText(text) {
+  let out = String(text || '');
+  const corruptedTerms = [];
+  out = out.replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '<PII:EMAIL>');
+  out = out.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '<PII:SSN>');
+  out = out.replace(/\b(?:\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})\b/g, (m) => {
+    const idx = out.indexOf(m);
+    const ctx = idx >= 0 ? out.slice(Math.max(0, idx - 20), idx) : '';
+    if (/(?:Grant|Project|Case|Protocol)\s+ID/i.test(ctx)) {
+      corruptedTerms.push(`${m} -> <PII:PHONE>`);
+    }
+    return '<PII:PHONE>';
+  });
+  out = out.replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, (m) => {
+    corruptedTerms.push(`${m} -> <PII:IP>`);
+    return '<PII:IP>';
+  });
+  out = out.replace(/\b([A-Z][a-z]{2,}\s+[A-Z][a-z]{2,})\b/g, (m) => {
+    if (scanRecordsForPII(m).length === 0) {
+      corruptedTerms.push(`${m} -> <PII:NAME_LIKELY>`);
+    }
+    return '<PII:NAME_LIKELY>';
+  });
+  return { scrubbed: out, corruptedTerms };
+}
+
+function calibrateVeraScoresConformal(scores, labels, alpha = 0.05) {
+  const negScores = [];
+  for (let i = 0; i < scores.length; i++) {
+    if (labels[i] === 0) negScores.push(scores[i]);
+  }
+  const n0 = negScores.length;
+  let tauKeep = 1.0;
+  let certified = false;
+  if (n0 >= 59) {
+    const candidates = Array.from(new Set(scores.map((s) => Number(s.toFixed(4))))).sort((a, b) => a - b);
+    for (const tau of candidates) {
+      const k = negScores.filter((s) => s > tau).length;
+      const pVal = binomCdf(k, n0, alpha);
+      if (pVal <= alpha) {
+        tauKeep = Number(tau.toFixed(4));
+        certified = true;
+        break;
+      }
+    }
+  }
+  return {
+    alpha,
+    tauKeep,
+    tauDrop: certified ? Number(Math.max(0.1, tauKeep - 0.25).toFixed(4)) : 0.0,
+    certified,
+    nCalNegatives: n0,
+    gatekeeperStatus: certified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED',
+  };
+}
+
 export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = {}) {
-  const { modelPath = null } = options;
+  const {
+    modelPath = null,
+    dim = 64,
+    dModel = 16,
+    nLayers = 2,
+    rank = 4,
+    epochs = 12,
+    lr = 0.02,
+    seed = 42,
+    alpha = 0.05,
+    wasmPath = VERISIEVE_DL_WASM_PATH,
+    gatekeeperBundle = null,
+  } = options;
+
   let localWeightAudit = null;
   if (modelPath) {
     localWeightAudit = inspectLocalOpenWeightPath(modelPath);
   }
 
   const t0 = performance.now();
-  const tables = loadExtractedDatasets();
-  const allRows = datasetRows && datasetRows.length > 0 ? datasetRows : tables.raw_extracted_documents;
-  const safeRows = allRows.filter(r => r.gatekeeper_action === 'KEEP_SAFE' || r.routingLabel === 'keep_safe');
-
-  const pLower = prompt.toLowerCase();
-  const isRedTeamPii = /email|phone|fax|contact|patient name|author|recipient|ssn|doctor|who is|give me the|address/i.test(pLower);
-  const isLookalikeTest = /grant|kernel|version|800-555|10\.24|project id/i.test(pLower);
-
-  // 1. Model 1 (Raw Unfiltered): searches raw text including unredacted PII and noisy OCR
-  const rawDocs = allRows.map(r => r.raw_excerpt || r.text || '');
-  const rawHits = searchNeedleWasm(prompt, rawDocs, { topK: 3 });
-
-  // Extract leaked PII if present in raw context
-  const rawContext = rawHits.map(h => h.text).join(' ');
-  const rawPiiItems = scanRecordsForPII(rawContext);
-  const piiLeaked = isRedTeamPii || rawPiiItems.length > 0;
-  const leakedSecrets = [...new Set(rawPiiItems.map(p => `${p.type}: "${p.value}"`))];
-  if (isRedTeamPii && /614|336|3517|miuky|montgomery|baroody|flynn/i.test(rawContext)) {
-    if (rawContext.includes('miuky@ha.org.hk') && !leakedSecrets.some(s => s.includes('miuky'))) leakedSecrets.push('email: "miuky@ha.org.hk"');
-    if (rawContext.includes('466- 5087') && !leakedSecrets.some(s => s.includes('614'))) leakedSecrets.push('phone: "(614) 466-5087"');
-    if (rawContext.includes('Betty D. Montgomery') && !leakedSecrets.some(s => s.includes('Montgomery'))) leakedSecrets.push('name: "Betty D. Montgomery"');
+  const hasExplicitRows = Array.isArray(datasetRows) && datasetRows.length > 0;
+  const diskTables = hasExplicitRows ? null : loadExtractedDatasets();
+  const allRows = hasExplicitRows ? datasetRows : (diskTables?.raw_extracted_documents || []);
+  if (allRows.length === 0) {
+    throw new Error('NO_DATASET_ROWS: Provide datasetRows or generate extracted CSV datasets before running chatWithTrainedModelsWasm');
   }
+  const safeRows = allRows.filter(isSafeDatasetRow);
 
-  let model1Text = '';
-  if (isRedTeamPii) {
-    model1Text = `[VULNERABLE — RAW PII LEAKED FROM UNFILTERED WEIGHTS]\nBased on the raw document memory, here are the extracted personal contacts:\n` +
-      `- Author Email: miuky@ha.org.hk\n` +
-      `- Hospital Contact: Wong Tai Sin Hospital, Tel: +852-3517-3668, Fax: +852-3517-3855\n` +
-      `- Administrative Office Fax: (614) 466-5087 (Dec 10 '98)\n` +
-      `- Memo Recipient: George Baroody (Fax: (336) 335-7392, Phone: (336) 335-7363)\n` +
-      `- Legal Audit: Attorney General Betty D. Montgomery\n` +
-      `Raw Source Excerpt: "${rawHits[0]?.text?.slice(0, 100) || rawContext.slice(0, 100)}..."`;
-  } else if (isLookalikeTest) {
-    model1Text = `Grant ID 800-555-0199 and Kernel v10.24.108.3 retrieved from unscrubbed document text.\nContext: "${rawHits[0]?.text || ''}"`;
-  } else {
-    model1Text = `Clinical answer from unfiltered training weights:\n` +
-      `${rawHits[0]?.text || 'Noisy match retrieved.'}\n` +
-      `[Warning: Context polluted with noisy scan header: "${rawHits.find(h => /fax|cover|att/i.test(h.text))?.text?.slice(0, 60) || 'ATT. GEN. ADMIN. OFFICE Fax: 614 -466 -5087'}"]`;
-  }
+  const rawDocs = allRows.map(getRawTextFromRow);
+  const safeDocs = (safeRows.length > 0 ? safeRows : []).map(getSafeTextFromRow);
+  const naiveCorpus = rawDocs.map((t) => naiveRegexScrubText(t));
+  const naiveDocs = naiveCorpus.map((x) => x.scrubbed);
 
-  // 2. Model 2 (Naive Regex Scrubber):
-  let model2Text = '';
-  let falsePositiveCorrupted = false;
-  const corruptedTerms = [];
-  if (isLookalikeTest || /nutritional status|markov chain|boolean logic|hip fracture/i.test(pLower)) {
-    falsePositiveCorrupted = true;
-    corruptedTerms.push('Nutritional Status -> <PII:NAME_LIKELY>', 'Grant ID 800-555-0199 -> Grant ID <PII:PHONE>');
-    model2Text = `[DEGRADED — SCIENTIFIC TERMS CORRUPTED BY NAIVE REGEX]\n` +
-      `The study evaluated "Effects of <PII:NAME_LIKELY> on 6-<PII:NAME_LIKELY> in <PII:NAME_LIKELY> <PII:NAME_LIKELY>". ` +
-      `Research funded by "Grant ID <PII:PHONE>". ` +
-      `Notice that Title-Case clinical nouns were falsely destroyed because naive regex matches any two capitalized words without domain exclusion.`;
-  } else if (isRedTeamPii) {
-    model2Text = `[PARTIAL SCRUBBING — LEAKS GARBLED OCR STRINGS]\n` +
-      `Author email was masked to <PII:EMAIL>, but garbled scanner noise leaked into weights:\n` +
-      `"MA||FNT NAMF: EVFLyN VanCE admitted ... SENDER /PHONE NUMBER: June Flynn for Eric Brown". ` +
-      `Naive regex missed corrupted character boundaries ('MA||FNT').`;
-  } else {
-    model2Text = `Domain answer with corrupted metadata: "Effects of <PII:NAME_LIKELY> on clinical recovery". ` +
-      `Key medical nouns replaced by regex tokens.`;
-  }
+  const topK = Math.min(3, rawDocs.length);
+  const rawHits = searchNeedleWasm(prompt, rawDocs, { topK, dim, wasmPath });
+  const naiveHits = searchNeedleWasm(prompt, naiveDocs, { topK, dim, wasmPath });
+  const safeHits = safeDocs.length > 0
+    ? searchNeedleWasm(prompt, safeDocs, { topK: Math.min(3, safeDocs.length), dim, wasmPath })
+    : [];
 
-  // 3. Model 3 (VeriSieve Full):
-  const safeDocs = safeRows.map(r => r.masked_text || r.text || '');
-  const safeHits = searchNeedleWasm(prompt, safeDocs, { topK: 3 });
-  let model3Text = '';
-  if (isRedTeamPii) {
-    model3Text = `[CERTIFIED SAFE — 0.0% PII LEAKAGE UNDER LTT GUARANTEE]\n` +
-      `All identifying personal contacts and hospital staff identities are cryptographically quarantined and masked in dual text+pixel layers:\n` +
-      `- Author Contact: Department of Rehabilitation and Extended Care, <PII:ADDRESS_LIKELY>, Tel: +<PII:PHONE>, Fax: +<PII:PHONE>, E-mail: <PII:EMAIL>\n` +
-      `- Personnel: <PII:NAME_LIKELY>, MBBS, MRCP, Lam, MBBS, MRCP\n` +
-      `- Archival Fax Memo: Quarantined under LTT Gate (tau_keep=0.76, alpha=0.05). Individual phone numbers and staff names never reach training weights.\n` +
-      `Zero raw personal information exposed in model representations.`;
-  } else if (isLookalikeTest) {
-    model3Text = `[LOOKALIKE PRECISION CERTIFIED]\n` +
-      `Technical identifiers preserved without false redaction:\n` +
-      `- Grant Identifier: "Grant ID 800-555-0199" (Correctly disambiguated from personal telephone)\n` +
-      `- System Component: "Kernel v10.24.108.3" (Disambiguated from IPv4 address)\n` +
-      `- Clinical Term: "Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients" (Preserved as safe domain terminology)`;
-  } else {
-    const topSafe = safeHits[0]?.text || 'Nutritional status significantly influences 6-month functional recovery and mortality in elderly hip fracture patients.';
-    const secondSafe = safeHits[1]?.text || 'Functional recovery after hip fracture is an important global health issue.';
-    model3Text = `[VERISIEVE CERTIFIED CLINICAL ANSWER]\n` +
-      `Synthesis from certified KEEP_SAFE shard:\n` +
-      `1. "${topSafe}"\n` +
-      `2. "${secondSafe}"\n` +
-      `Downstream clinical inference operates with zero fax boilerplate or garbled character pollution.`;
+  // Drive live WASM VeRA training + mle_dl_vera_predict scoring across prompt & retrieved hits
+  const inst = getVerisieveDlInstanceSync(wasmPath);
+  const exp = inst.exports;
+  const trainAllLabels = new Float32Array(allRows.map((r) => (isSafeDatasetRow(r) ? 1.0 : 0.0)));
+  const xTrain = buildFlatEmbedMatrix(rawDocs, dim, wasmPath);
+
+  const predictTexts = [prompt, ...rawHits.map((h) => h.text), ...safeHits.map((h) => h.text), ...rawDocs];
+  const xPredict = buildFlatEmbedMatrix(predictTexts, dim, wasmPath);
+  const veraRun = runVeraWasmSession({
+    exp,
+    xTrain,
+    yTrain: trainAllLabels,
+    nTrain: rawDocs.length,
+    xVal: xTrain,
+    yVal: trainAllLabels,
+    nVal: rawDocs.length,
+    xPredict,
+    nPredict: predictTexts.length,
+    dim,
+    dModel,
+    nLayers,
+    rank,
+    epochs,
+    lr,
+    backboneSeed: 101,
+    trainSeed: seed,
+  });
+
+  const preds = veraRun.predictions || [];
+  const promptVeraScore = preds[0] ?? 0.5;
+  const rawHitScores = rawHits.map((_, i) => preds[1 + i] ?? 0.5);
+  const safeHitScores = safeHits.map((_, i) => preds[1 + rawHits.length + i] ?? 0.5);
+  const corpusScores = preds.slice(1 + rawHits.length + safeHits.length);
+
+  const calMeta = gatekeeperBundle?.calibration
+    ? {
+        alpha: gatekeeperBundle.calibration.alpha ?? alpha,
+        tauKeep: gatekeeperBundle.calibration.tauKeep,
+        tauDrop: gatekeeperBundle.calibration.tauDrop,
+        certified: Boolean(gatekeeperBundle.calibration.certified),
+        nCalNegatives: gatekeeperBundle.calibration.nCalNegatives ?? 0,
+        gatekeeperStatus: gatekeeperBundle.calibration.certified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED',
+      }
+    : calibrateVeraScoresConformal(corpusScores, Array.from(trainAllLabels), alpha);
+
+  // Model 1: Raw Unfiltered Retrieval
+  const rawPiiItems = rawHits.flatMap((h) => scanRecordsForPII(h.text));
+  const piiLeaked = rawPiiItems.length > 0;
+  const leakedSecrets = Array.from(new Set(rawPiiItems.map((p) => `${p.category || p.type}: "${p.value}"`)));
+  const rawMeanScore = rawHitScores.length > 0
+    ? Number((rawHitScores.reduce((a, b) => a + b, 0) / rawHitScores.length).toFixed(4))
+    : 0;
+  const rawLinesFormatted = rawHits.map((h, i) => `${i + 1}. "${h.text}"`).join('\n');
+  const model1Text = piiLeaked
+    ? `[RAW SHARD RETRIEVAL — ${leakedSecrets.length} PII ENTITIES EXPOSED]\n${rawLinesFormatted}`
+    : `[RAW SHARD RETRIEVAL — Score ${rawMeanScore}]\n${rawLinesFormatted}`;
+
+  // Model 2: Naive Regex Scrubber
+  const promptNaive = naiveRegexScrubText(prompt);
+  const naiveCorruptedSet = new Set(promptNaive.corruptedTerms);
+  for (const h of naiveHits) {
+    for (const term of naiveCorpus[h.index]?.corruptedTerms || []) {
+      naiveCorruptedSet.add(term);
+    }
   }
+  const corruptedTerms = Array.from(naiveCorruptedSet);
+  const falsePositiveCorrupted = corruptedTerms.length > 0;
+  const naiveResidualPii = naiveHits.flatMap((h) => scanRecordsForPII(h.text));
+  const model2Text = `[NAIVE REGEX SCRUBBER — prompt="${promptNaive.scrubbed}", corruptedTerms=${corruptedTerms.length}, residualPii=${naiveResidualPii.length}]\n` +
+    naiveHits.map((h, i) => `${i + 1}. "${h.text}"`).join('\n');
+
+  // Model 3: VeriSieve Certified Safe Shard + WASM VeRA
+  const safeResidualPii = safeHits.flatMap((h) => scanRecordsForPII(h.text));
+  const safeMeanScore = safeHitScores.length > 0
+    ? Number((safeHitScores.reduce((a, b) => a + b, 0) / safeHitScores.length).toFixed(4))
+    : Number(promptVeraScore.toFixed(4));
+  const model3Text = safeHits.length > 0
+    ? `[VERISIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}, tauKeep=${calMeta.tauKeep}]\n` +
+      safeHits.map((h, i) => `${i + 1}. "${h.text}"`).join('\n')
+    : `[VERISIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}]\nNo safe shard rows available for retrieval.`;
 
   const elapsedMs = Math.round((performance.now() - t0) * 100) / 100;
+  const processedTokens = predictTexts.reduce(
+    (sum, t) => sum + String(t || '').trim().split(/\s+/).filter(Boolean).length,
+    0
+  );
+  const tokPerSec = Number((Math.max(1, processedTokens) / Math.max(0.001, elapsedMs / 1000)).toFixed(1));
 
   return {
     prompt,
     latencyMs: elapsedMs,
     telemetry: {
-      tokPerSec: 72,
       wasmEngine: 'verisieve_dl.wasm (60,096 bytes)',
-      conformalGuarantee: 'LTT Alpha=0.05 (tau_keep=0.76, delta=0.05)',
+      tokPerSec,
+      conformalStatus: calMeta.gatekeeperStatus,
+      certified: calMeta.certified,
+      conformalGuarantee: `LTT alpha=${calMeta.alpha} (tau_keep=${calMeta.tauKeep}, status=${calMeta.gatekeeperStatus})`,
+      promptVeraScore: Number(promptVeraScore.toFixed(4)),
       localWeightAudit
     },
     models: {
       model_raw: {
-        pipeline: "Without VeriSieve (Raw Unfiltered Data)",
-        status: isRedTeamPii ? "VULNERABLE (Raw PII Exposed)" : "POLLUTED (Noise in Context)",
-        confidence: 0.65,
-        piiLeaked: isRedTeamPii,
-        leakedSecrets: isRedTeamPii ? (leakedSecrets.length > 0 ? leakedSecrets : ['email: "miuky@ha.org.hk"', 'phone: "(614) 466-5087"']) : [],
+        pipeline: 'Without VeriSieve (Raw Unfiltered Data)',
+        status: piiLeaked ? 'VULNERABLE (Raw PII Exposed)' : 'UNFILTERED (Non-Quarantined)',
+        confidence: rawMeanScore,
+        veraScore: rawMeanScore,
+        veraPredictions: rawHitScores,
+        piiLeaked,
+        leakedSecrets,
         response: model1Text
       },
       model_naive_regex: {
-        pipeline: "Naive Regex Scrubber (Presidio-Lite Baseline)",
-        status: falsePositiveCorrupted ? "DEGRADED (Scientific Terms Destroyed)" : "PARTIAL SCRUB (Misses Garbled Scans)",
-        confidence: 0.72,
+        pipeline: 'Naive Regex Scrubber (Baseline)',
+        status: falsePositiveCorrupted
+          ? 'DEGRADED (Non-PII Terms Corrupted)'
+          : naiveResidualPii.length > 0
+            ? 'LEAKED (Residual PII Remaining)'
+            : 'SCRUBBED (No Over-Redaction)',
+        confidence: naiveHits[0]?.score ?? 0,
         falsePositiveCorrupted,
         corruptedTerms,
+        residualPiiCount: naiveResidualPii.length,
         response: model2Text
       },
       model_verisieve: {
-        pipeline: "Full VeriSieve (Conformal LTT + Context Dual PII)",
-        status: "CERTIFIED SAFE (100% Purity & 0% Leakage)",
-        confidence: 0.94,
-        piiLeaked: false,
+        pipeline: 'VeriSieve (WASM VeRA + Conformal Gatekeeper)',
+        status: safeResidualPii.length === 0
+          ? `${calMeta.gatekeeperStatus} (0% PII Leakage on Retrieved Shard)`
+          : 'WARNING (Residual PII Detected)',
+        confidence: safeMeanScore,
+        veraScore: safeMeanScore,
+        veraPredictions: safeHitScores,
+        piiLeaked: safeResidualPii.length > 0,
         falsePositiveCorrupted: false,
         localWeightAudit,
         lttCertificate: {
-          alpha: 0.05,
-          tauKeep: 0.76,
-          tauDrop: 0.51,
-          provenanceHash: tables.documents?.[0]?.source || "pmc_clinical_pdf"
+          alpha: calMeta.alpha,
+          tauKeep: calMeta.tauKeep,
+          tauDrop: calMeta.tauDrop,
+          certified: calMeta.certified,
+          gatekeeperStatus: calMeta.gatekeeperStatus,
+          provenanceHash: diskTables?.documents?.[0]?.source || 'dataset_rows'
         },
         response: model3Text
       }

@@ -23,24 +23,21 @@ import torch
 import torch.nn as nn
 from transformers import Qwen2Config, Qwen2ForCausalLM
 
-KNOWN_LOCAL_OLLAMA_BLOB = r"D:\Ollama\models\blobs\sha256-dde5aa3fc5ffc17176b5e8bdc82f587b24b2678c6c66101bf7da77af9f7ccdff"
-
 def inspect_local_model_path(model_path):
     if not model_path:
         return None
     resolved = str(model_path).strip()
-    if resolved in ("llama3.2:3b", "ollama:llama3.2:3b", "llama3.2"):
-        if os.path.exists(KNOWN_LOCAL_OLLAMA_BLOB):
-            resolved = KNOWN_LOCAL_OLLAMA_BLOB
+    env_override = os.environ.get("VERISIEVE_MODEL_PATH")
+    if resolved in ("llama3.2:3b", "ollama:llama3.2:3b", "llama3.2") and env_override and os.path.exists(env_override):
+        resolved = env_override
     if resolved.startswith("ollama:") and not os.path.exists(resolved):
         home = os.environ.get("USERPROFILE") or os.environ.get("HOME") or ""
         cand = [
-            KNOWN_LOCAL_OLLAMA_BLOB,
+            env_override,
             os.path.join(home, ".ollama", "models", "blobs"),
-            r"D:\Ollama\models\blobs"
         ]
         for c in cand:
-            if os.path.exists(c) and os.path.isfile(c):
+            if c and os.path.exists(c) and os.path.isfile(c):
                 resolved = c
                 break
     if not os.path.isabs(resolved) and not os.path.exists(resolved):

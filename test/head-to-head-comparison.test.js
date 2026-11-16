@@ -95,7 +95,7 @@ test('6. In-Place A/B Model Chat Engine (Cactus Compute Sandbox parity)', () => 
   assert.strictEqual(lookalike.models.model_verisieve.falsePositiveCorrupted, false, 'VeriSieve must preserve lookalikes');
 
   // Telemetry check
-  assert.strictEqual(lookalike.telemetry.tokPerSec, 72);
+  assert.ok(typeof lookalike.telemetry.tokPerSec === 'number' && Number.isFinite(lookalike.telemetry.tokPerSec) && lookalike.telemetry.tokPerSec > 0);
   assert.ok(lookalike.telemetry.wasmEngine.includes('60,096'));
 });
 
