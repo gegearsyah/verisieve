@@ -6,7 +6,7 @@ VeriSieve is engineered specifically for privacy-critical and sovereign AI envir
 
 1. **Zero External Runtime Dependencies**:
    - The entire VeriSieve core library, CLI, MCP server, and local UI server are written using standard Node.js runtime primitives with **0 npm dependencies**.
-   - Browser integration in RTIO converges onto the same Option B pure-memory WASM runtimes without third-party `tesseract.js` or `pdfjs-dist` bundles.
+   - The separate RTIO app still depends on `tesseract.js` `^7.0.0` and `@tesseract.js-data/eng`. This repository does not contain that app, and its CI does not inspect it.
 
 2. **WebAssembly Zero-Network-Import Static Census**:
    - All four shipped WebAssembly binaries (`vendor/wasm/verisieve_clean.wasm`, `vendor/wasm/verisieve_dl.wasm`, `vendor/wasm/verisieve_sql.wasm`, and `vendor/cactus/cactus.wasm`) are audited via `npm run audit-wasm`.

@@ -787,7 +787,10 @@ export function extractRealFunsdLines(funsdPath = 'results/untrusted-benchmarks/
   }
 
   if (!funsdData || !funsdData.rows || funsdData.rows.length === 0) {
-    throw new Error(`FUNSD sample data not found at ${targetPath}.`);
+    throw new Error(
+      `FUNSD sample data not found at ${targetPath}. ` +
+      'That file is not in the git clone. Run: node scripts/fetch-public-benchmarks.mjs'
+    );
   }
 
   const r0 = funsdData.rows[0].row || funsdData.rows[0];

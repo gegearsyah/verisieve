@@ -427,6 +427,19 @@ export function buildPublicBenchmarkCorpus(options = {}) {
     return cachedPublicCorpus;
   }
 
+  const requiredInputs = [
+    'results/untrusted-benchmarks/funsd-full.json',
+    'results/untrusted-benchmarks/ai4privacy-500.json',
+    'results/untrusted-benchmarks/pubmedqa-500.json',
+  ];
+  const missingInputs = requiredInputs.filter((rel) => !fs.existsSync(path.resolve(rel)));
+  if (missingInputs.length > 0) {
+    throw new Error(
+      `Benchmark inputs are not in this git clone (${missingInputs.join(', ')}). ` +
+      'Download them with: node scripts/fetch-public-benchmarks.mjs'
+    );
+  }
+
   const docs = [];
   const tokenizer = createTokenizer('bert');
 
@@ -585,9 +598,11 @@ export function buildPublicBenchmarkCorpus(options = {}) {
     }
   }
 
-  // If untrusted-benchmarks haven't been fetched yet, provide deterministic synthetic fallback
-  if (docs.length < 500) {
-    console.warn(`Local benchmark files incomplete (${docs.length} docs loaded). Run node scripts/fetch-public-benchmarks.mjs`);
+  if (docs.length < 1207) {
+    throw new Error(
+      `Benchmark corpus has ${docs.length} documents, not 1,207. ` +
+      'Download the upstream rows with: node scripts/fetch-public-benchmarks.mjs'
+    );
   }
 
   if (!options.limit) {

@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { extractPdfDetailed, ingestFromUrlOrPath } from '../src/pdf-image-pipeline.js';
 import { extractDocxText } from '../src/ingestor.js';
@@ -105,34 +104,6 @@ test('T9: benchmark modules eliminate synthetic formulas, PRNG fake calibration,
   const parsedCold = JSON.parse(coldOut.trim());
   assert.equal(parsedCold.n, 20);
   assert.ok(parsedCold.hotLoopMs >= 0 && parsedCold.wasmKernelExecuted === true);
-});
-
-test('T9: sibling Rtio converges onto Option B pure WASM without tesseract.js or pdfjs-dist bloat', () => {
-  const rtioFrontend = path.resolve('..', 'Rtio', 'frontend');
-  if (!fs.existsSync(rtioFrontend)) return;
-
-  const pkg = JSON.parse(fs.readFileSync(path.join(rtioFrontend, 'package.json'), 'utf8'));
-  const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
-  assert.equal('tesseract.js' in deps, false, 'Rtio must remove tesseract.js');
-  assert.equal('@tesseract.js-data/eng' in deps, false, 'Rtio must remove @tesseract.js-data/eng');
-  assert.equal('pdfjs-dist' in deps, false, 'Rtio must remove pdfjs-dist');
-
-  assert.equal(fs.existsSync(path.join(rtioFrontend, 'public', 'ocr')), false, 'Rtio public/ocr bloat must be removed');
-  assert.equal(fs.existsSync(path.join(rtioFrontend, 'public', 'pdfjs')), false, 'Rtio public/pdfjs bloat must be removed');
-
-  const pairs = [
-    ['vendor/wasm/verisieve_clean.wasm', 'public/wasm/verisieve_clean.wasm'],
-    ['vendor/wasm/verisieve_dl.wasm', 'public/wasm/verisieve_dl.wasm'],
-    ['vendor/wasm/verisieve_sql.wasm', 'public/wasm/verisieve_sql.wasm'],
-    ['vendor/cactus/cactus.wasm', 'public/wasm/cactus.wasm'],
-  ];
-  const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-  for (const [srcRel, dstRel] of pairs) {
-    const srcPath = path.resolve(srcRel);
-    const dstPath = path.join(rtioFrontend, dstRel);
-    assert.ok(fs.existsSync(dstPath), `Rtio missing Option B WASM artifact: ${dstRel}`);
-    assert.equal(sha(dstPath), sha(srcPath), `Rtio WASM checksum mismatch for ${dstRel}`);
-  }
 });
 
 test('T9: paper/mlsys2027-verisieve.tex remains untouched', () => {

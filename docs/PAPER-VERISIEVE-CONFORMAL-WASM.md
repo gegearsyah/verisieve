@@ -486,7 +486,7 @@ VeriSieve demonstrates that unstructured document curation for language models d
 
 Coupling this statistical foundation with a $512 \times 512$ square-canvas 2D tiling geometry, synchronized dual text+pixel redaction, and an air-gapped 60.1 KB WebAssembly 1.58-bit BitNet/VeRA kernel enables sovereign AI systems, clinical trial workflows, and privacy-sensitive enterprises to ingest high-value unstructured archives locally with zero egress, 62x faster processing, and zero privacy leakage.
 
-All benchmark scripts, datasets, and WASM binaries are fully open-sourced under the MIT license and reproducible via `npm run bench:scale` and `npm test`.
+The scripts and WASM binaries in this repository are MIT. FUNSD, ai4privacy, and PubMedQA stay under their upstream licenses. Download them with `node scripts/fetch-public-benchmarks.mjs`, then run `npm run bench:scale`.
 
 ---
 

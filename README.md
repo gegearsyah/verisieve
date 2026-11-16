@@ -1,9 +1,9 @@
 # VeriSieve
 
-[![CI](https://img.shields.io/badge/tests-ci%20passing-brightgreen)](#verification) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Zero-Egress Document Curation, Customer-Label Conformal Gatekeeping, and Local WebAssembly Training**  
-*Author: Gege Ardiyansyah*
+*Author: Geye Ardiansyah*
 
 VeriSieve is the portable curation engine powering the **RTIO** browser sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)), backed by three zero-import `#![no_std]` Rust WebAssembly kernels (`verisieve_clean.wasm`, `verisieve_dl.wasm`, `verisieve_sql.wasm`) and a pure-memory `cactus.wasm` runtime for Option B 2D-tiled optical recognition.
 
@@ -13,7 +13,7 @@ VeriSieve is the portable curation engine powering the **RTIO** browser sandbox 
 
 | Layer | Component | Responsibility & Verification |
 |---|---|---|
-| **Interface** | **RTIO** ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Interactive browser workspace for URL/document upload, PII/triage inspection, customer chunk labeling, SQL exploration, and local adapter runs. Zero `tesseract.js` / `pdfjs-dist` bloat. |
+| **Interface** | **RTIO** ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Interactive browser workspace for URL/document upload, PII/triage inspection, customer chunk labeling, SQL exploration, and local adapter runs. That app still depends on `tesseract.js` and `@tesseract.js-data/eng`. |
 | **Portable Engine** | **VeriSieve** (`src/`, `include/verisieve.h`) | Zero-dependency PDF (`/FlateDecode`, `/ASCII85Decode`, `/ObjStm`, scoped `/ToUnicode` CMaps, `TJ` kerning) + `.docx` (bit-3 Data Descriptor ZIP) ingestion, PII redaction (`334`-word exclusion lexicon), `520`-dim logistic gatekeeper, LTT conformal calibration, SSRF-hardened URL ingest, and MCP server (`8` tools). Runs across Browser, Node CLI, MCP, and C99. |
 | **Rust WASM Cores** | **Clean + DL + SQL WASM** (`vendor/wasm/`) | Three zero-import (`imports.length === 0`) `#![no_std]` Rust binaries: `verisieve_clean.wasm` (`13,757 B`), `verisieve_dl.wasm` (`60,096 B`, `23` `mle_dl_*` kernels for BitNet/VeRA & 64-dim needle embeddings), and `verisieve_sql.wasm` (`49,642 B`, `MAX_ROWS=4096` SQL subset engine). |
 | **Vision OCR Runtime** | **Cactus WASM** (`vendor/cactus/cactus.wasm`) | Pure-memory sandbox (`1,240,671 B`, `16` internal `module "a"` WASI stubs, `0` network/host-disk calls). Executes 2D `512x512` tiled OCR when local Mirage `.cact` vision weights are supplied and fails closed (`MIRAGE_WEIGHTS_REQUIRED`) when absent. |
@@ -30,7 +30,7 @@ Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (
 | **PDF & `.docx` Capture** | Bit-3 Data Descriptor ZIP OOXML `.docx` parser + PDF 1.5 `/ObjStm`, `/FlateDecode`, `/ASCII85Decode`, scoped `/ToUnicode` CMaps & `TJ` kerning (`8/8` PMC PDFs clean) | Encrypted PDFs (`/Encrypt`) fail closed; image-only PDFs require `.cact` weights |
 | **Dedupe & Manifest** | SHA-256 exact hash + 3-gram Jaccard ($\ge 0.85$) tracked with capacity-eviction accounting (`vs_clean_dedup_overflowed`); immutable `AuditChain` | Tested per shard in memory (`verisieve_sql.wasm` bounded at `4,096` rows per query table) |
 | **Multi-Axis Customer Gate** | Independent `safe`, `useful`, `topic` logistic heads + LTT + C99 UTF-8 FNV-1a parity; fail-closed `tauKeep = 1.0` when `n_cal,unsafe` is below finite-sample bound | Conditional LTT at $\alpha=0.01, \delta=0.05$ requires $n_{\text{cal,unsafe}} \ge 299$ (`206` unsafe cal items hit fail-closed floor; `40`-item multi-axis calibration fails closed on sparse negative classes) |
-| **Zero-Egress Runtime** | All 4 WASM binaries audited via `npm run audit-wasm`; `Rtio` converged onto Option B pure WASM without `tesseract.js` / `pdfjs-dist` | Process cold-start favors C99/Node+WASM, while warm batched matrix dot products favor Python+NumPy BLAS |
+| **Zero-Egress Runtime** | All 4 WASM binaries audited via `npm run audit-wasm`. This package has zero npm dependencies. The separate RTIO app still depends on `tesseract.js` | Process cold-start favors C99/Node+WASM, while warm batched matrix dot products favor Python+NumPy BLAS |
 
 ---
 
@@ -79,24 +79,40 @@ Means of 7 interleaved OS process spawns scoring `1,207 x 520` rows on Windows 1
 - **Python 3.12 + NumPy 2.4.3**: `285.02 ms` spawn (`148.15 ms` import) | `31.58 MB` RSS | **`0.1076 ms` BLAS hot loop (warm compute winner)**
 - **Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5**: `8,539.29 ms` spawn (`7,626.69 ms` import) | `432.5 MB` RSS | `21.92 ms` hot loop
 
-On held-out `n_test = 299` across `N_train in {100, 300, 607}`: Gate BCE drops `26.7%` (`0.2577 -> 0.2244 -> 0.189`, `94.0%` Acc vs. `64.2%` Naive Regex / `31.4%` Raw), WASM VeRA BCE (`mle_dl_vera_loss_grad`) drops `0.9432 -> 0.6698 -> 0.6141`, contact PII leak stays `<= 1.05%`, and 64-dim Needle R@5 (`125` PubMedQA Q->Body queries) preserves `60.0%` parity.
+On held-out `n_test = 299` across `N_train in {100, 300, 607}`: Gate BCE drops `26.7%` (`0.2577 -> 0.2244 -> 0.189`, `94.0%` Acc vs. `64.2%` Naive Regex / `31.4%` Raw), WASM VeRA BCE (`mle_dl_vera_loss_grad`) drops `0.9432 -> 0.6698 -> 0.6141`, contact PII leak stays `<= 1.05%`, and 64-dim Needle R@5 (`125` PubMedQA Q->Body queries) preserves `60.0%` cosine-only parity. That 60% is not the sandbox blend. The blend on the same rows is in `docs/2026-11-16-rag-redaction-verdict.md`.
+
+### 16 Nov 2026 check — measured, and it does not change the shipped ranker
+
+The probe ran. The 0.55/0.45 blend, the regex, and the gate are unchanged.
+
+On the same 125 held-out PubMedQA questions: cosine recall@5 is `75/125` (`60%`), lexical is `123/125` (`98.4%`), and the blend is `120/125` (`96%`). Lexical leads because those questions repeat the passage. A local VeRA head inside `verisieve_dl.wasm`, with no checkpoint loaded, reorders the blend's top 30 and then keeps 6. Gold in that top 6 falls from `121/125` to `39/125`. A second local head lowers bare-name recall on the ai4privacy test 250 from `56/119` to `42/119`. The regex stays. Full counts: `docs/2026-11-16-rag-redaction-verdict.md`.
+
+RTIO chat, separate from these numbers: the current question and earlier turns are masked on the way out, including a flagged name, and a citation number outside the excerpts sent is marked. Retrieval still uses the raw question and the same blend.
+
+### Research still to run
+
+- Questions that do not copy the passage, before any change to the 0.55/0.45 mix.
+- Questions with no supporting chunk, before a retrieval floor. On this 125, a 0.15 floor would abstain on `0` questions.
+- Fine-tune the 0.5B named in the RTIO Train tab on the exported SAFE JSONL, and score it against the untouched base model. The Train tab writes the export and the command. That run has not happened.
+- Whether a cited sentence is supported by that chunk. The drawer check only tests that the citation number was sent.
 
 ---
 
 ## Verification & Quickstart
 
 ```bash
-# Run self-contained portable CI test suite (unit + MCP checks)
+# Portable tests. These do not need the downloaded benchmark rows.
 npm run test:ci
-
-# Run full suite including 1,207-document scale & C99/Python/PyTorch race
-npm test
 
 # Verify zero-egress WASM static census across all 4 binaries
 npm run audit-wasm
 
-# Run deterministic 1,207-document benchmark & 7-trial substrate suite
+# FUNSD, ai4privacy, and PubMedQA are not in this git clone. Download them, then measure.
+node scripts/fetch-public-benchmarks.mjs
 npm run bench:scale
+
+# Full suite, including the 1,207-document scale tests. Requires the download above.
+npm test
 
 # Compile the Technical Note PDF (paper/mlsys2027-verisieve.pdf)
 cd paper && pdflatex mlsys2027-verisieve && bibtex mlsys2027-verisieve && pdflatex mlsys2027-verisieve && pdflatex mlsys2027-verisieve

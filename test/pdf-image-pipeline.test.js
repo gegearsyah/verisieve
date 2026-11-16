@@ -221,7 +221,12 @@ test('8. Real PMC clinical research PDF & FUNSD benchmark data integration', asy
   assert.ok(fs.existsSync(path.join(untrustedDir, 'funsd-sample.json')), 'funsd-sample.json must exist');
 });
 
-test('9. 100% Real External Data Pipeline execution (Zero Mock Strings & Byte-Identical SVG)', async () => {
+test('9. 100% Real External Data Pipeline execution (Zero Mock Strings & Byte-Identical SVG)', async (t) => {
+  const funsdFull = path.resolve('results/untrusted-benchmarks/funsd-full.json');
+  if (!fs.existsSync(funsdFull)) {
+    t.skip('FUNSD is a separate download. Run: node scripts/fetch-public-benchmarks.mjs');
+    return;
+  }
   const { runRealExternalDataPipeline } = await import('../src/pdf-image-pipeline.js');
   const run1 = runRealExternalDataPipeline({ write: false });
 
