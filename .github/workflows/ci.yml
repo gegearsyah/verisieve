@@ -25,5 +25,5 @@ jobs:
     - name: Verify Zero-Egress WASM Audit
       run: node bin/verisieve.mjs audit-wasm
 
-    - name: Run Complete Test Suite
-      run: npm test
+    - name: Run Portable Test Suite
+      run: npm run test:ci

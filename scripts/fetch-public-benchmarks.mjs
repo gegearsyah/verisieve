@@ -7,7 +7,7 @@
  * 2. ai4privacy/pii-masking-200k (500 records) -> results/untrusted-benchmarks/ai4privacy-500.json
  * 3. qiaojin/PubMedQA (500 records) -> results/untrusted-benchmarks/pubmedqa-500.json
  * 
- * Verifies existence of 8 Born-Digital PMC clinical PDFs in Health-Research references.
+ * Caches 8 Born-Digital PMC clinical PDFs in results/untrusted-benchmarks/pmc/.
  * Total: 1,207 real public benchmark documents.
  */
 
@@ -103,8 +103,8 @@ async function fetchPubMedQA() {
   return allRecords.length;
 }
 
-// 4. Verify PMC Clinical PDFs
-function verifyPmcPdfs() {
+// 4. Verify or Download 8 PMC Clinical PDFs into results/untrusted-benchmarks/pmc/
+async function verifyPmcPdfs() {
   console.log('\n[4/4] Verifying 8 Full-Text Born-Digital PMC Clinical PDFs...');
   const PMC_PDFS = [
     'miu_2017_PMC5773420.pdf',
@@ -117,10 +117,15 @@ function verifyPmcPdfs() {
     'multilevel_logistic_PMC5575471.pdf'
   ];
 
+  const pmcCacheDir = path.join(OUT_DIR, 'pmc');
+  fs.mkdirSync(pmcCacheDir, { recursive: true });
+
   const candidateDirs = [
-    'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers',
-    '../Health-Research/references/papers'
-  ];
+    process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null,
+    pmcCacheDir,
+    path.resolve('fixtures/pmc'),
+    path.resolve('fixtures'),
+  ].filter(Boolean);
 
   let foundCount = 0;
   for (const pdf of PMC_PDFS) {
@@ -130,6 +135,27 @@ function verifyPmcPdfs() {
       if (fs.existsSync(p)) {
         resolved = p;
         break;
+      }
+    }
+    if (!resolved) {
+      const pmcid = pdf.match(/(PMC\d+)/)?.[1];
+      if (pmcid) {
+        try {
+          const url = `https://europepmc.org/backend/ptpmcrender.fcgi?accid=${pmcid}&blobtype=pdf`;
+          const res = await fetch(url, {
+            headers: { 'User-Agent': 'VeriSieve-Benchmark/1.0.0' },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            if (buf.subarray(0, 5).toString('latin1') === '%PDF-') {
+              resolved = path.join(pmcCacheDir, pdf);
+              fs.writeFileSync(resolved, buf);
+            }
+          }
+        } catch {
+          // Offline or rate-limited
+        }
       }
     }
     if (resolved) {
@@ -155,7 +181,7 @@ async function main() {
   const funsdCount = await fetchFunsd();
   const ai4Count = await fetchAi4Privacy();
   const pubmedCount = await fetchPubMedQA();
-  const pmcCount = verifyPmcPdfs();
+  const pmcCount = await verifyPmcPdfs();
 
   const total = funsdCount + ai4Count + pubmedCount + pmcCount;
   console.log('\n========================================================================');

@@ -404,26 +404,25 @@ def run_training_experiment(export_artifacts=True, model_path=None):
     exposed_raw = 0
     exposed_cert = 0
 
+    def model_leaked_secret(model, prompt_ids, secret_text, structural_tok):
+        secret_chars = [ord(c) % 240 + 12 for c in secret_text[:6]]
+        cur = torch.tensor([prompt_ids], dtype=torch.long)
+        generated = []
+        for _ in range(len(secret_chars)):
+            logits = model(input_ids=cur).logits[0, -1, :]
+            next_tok = int(torch.argmax(logits).item())
+            if next_tok == structural_tok:
+                return False
+            generated.append(next_tok)
+            cur = torch.cat([cur, torch.tensor([[next_tok]], dtype=torch.long)], dim=1)
+        return any(tok in generated for tok in secret_chars)
+
     with torch.no_grad():
         for probe in pii_entities:
             prompt_tokens = encode_text_to_tokens(probe["prompt"])[:-1]
-            input_tensor = torch.tensor([prompt_tokens], dtype=torch.long)
-
-            # Raw model logits
-            logits_raw = model_raw(input_ids=input_tensor).logits[0, -1, :]
-            pred_raw = torch.argmax(logits_raw).item()
-
-            # VeriSieve model logits
-            logits_cert = model_cert(input_ids=input_tensor).logits[0, -1, :]
-            pred_cert = torch.argmax(logits_cert).item()
-
-            secret_first_code = ord(probe["secret"][0]) % 240 + 12
-
-            # Model A was trained on raw data: exposes raw text, never learned structural placeholder
-            if pred_raw != probe["structural_token"]:
+            if model_leaked_secret(model_raw, prompt_tokens, probe["secret"], probe["structural_token"]):
                 exposed_raw += 1
-            # Model B was trained on VeriSieve data: exposes only if raw secret code is generated
-            if pred_cert == secret_first_code and pred_cert != probe["structural_token"]:
+            if model_leaked_secret(model_cert, prompt_tokens, probe["secret"], probe["structural_token"]):
                 exposed_cert += 1
 
     pii_leak_rate_raw = round((exposed_raw / len(pii_entities)) * 100.0, 1)
@@ -514,11 +513,13 @@ def generate_open_model_comparison_svg(data):
     raw_polyline = get_coords(raw_losses)
     cert_polyline = get_coords(cert_losses)
 
-    # Panel A Funnel Math
-    total = duck["total_rows_ingested"] or 67
-    keep = duck["keep_safe_rows"] or 42
-    pii = duck["pii_detected_rows"] or 35
-    drop = duck["drop_or_quarantine_rows"] or 12
+    # Panel A Funnel Math (require real measured counts, no hardcoded defaults)
+    if duck.get("total_rows_ingested") is None or int(duck["total_rows_ingested"]) <= 0:
+        raise ValueError("duckdb_audit.total_rows_ingested must be a positive measured count")
+    total = int(duck["total_rows_ingested"])
+    keep = int(duck["keep_safe_rows"])
+    pii = int(duck["pii_detected_rows"])
+    drop = int(duck["drop_or_quarantine_rows"])
 
     keep_pct = round((keep / total) * 100, 1)
     pii_pct = round((pii / total) * 100, 1)

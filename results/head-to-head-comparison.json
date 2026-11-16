@@ -71,40 +71,42 @@
           "summary": "50.0% hazard leak: Regex misses garbled characters ('MA||FNT NAMF') with zero OCR confidence gating"
         },
         "uncalibrated_heuristic": {
-          "hazardous_leaked_count": 5,
-          "hazard_leakage_rate_pct": 41.7,
-          "summary": "41.7% hazard leak: Fixed 0.5 threshold lacks conformal calibration, letting borderline noisy scans slip into KEEP_SAFE"
+          "hazardous_leaked_count": 3,
+          "hazard_leakage_rate_pct": 25,
+          "summary": "25% hazard leak: Fixed 0.5 threshold lacks conformal calibration, letting borderline noisy scans slip into KEEP_SAFE"
         },
         "verisieve_full": {
           "hazardous_leaked_count": 0,
           "hazard_leakage_rate_pct": 0,
-          "summary": "0.0% hazard leak: 100% of noisy/garbled scans quarantined or routed to ABSTAIN_HUMAN_REVIEW via 2D-tiled OCR confidence features"
+          "ltt_certified": true,
+          "tau_keep": 0.38,
+          "summary": "0% hazard leak: LTT conformal gate (tau_keep=0.38) quarantines/abstains noisy OCR scans"
         }
       }
     },
     "test3_multimodal_pixel_exposure": {
       "test_name": "Test 3 — Multimodal VLM Image Pixel PII Exposure Rate (%)",
-      "total_visual_pii_boxes": 6,
+      "total_visual_pii_boxes": 10,
       "results": {
         "raw_no_verisieve": {
-          "exposed_pixel_boxes_count": 6,
+          "exposed_pixel_boxes_count": 10,
           "pixel_exposure_rate_pct": 100,
-          "summary": "100.0% pixel exposure: Raw document image has zero redactions; visual PII readable by VLM"
+          "summary": "100% pixel exposure: Verified 10/10 raw image PII regions readable by VLM"
         },
         "naive_regex_only": {
-          "exposed_pixel_boxes_count": 6,
+          "exposed_pixel_boxes_count": 10,
           "pixel_exposure_rate_pct": 100,
-          "summary": "100.0% pixel exposure: Text-only redaction (Presidio baseline) leaves RGB pixels 100% exposed to multimodal vision models"
+          "summary": "100% pixel exposure: Text-only scrubber leaves RGB canvas pixels unredacted"
         },
         "uncalibrated_heuristic": {
-          "exposed_pixel_boxes_count": 6,
+          "exposed_pixel_boxes_count": 10,
           "pixel_exposure_rate_pct": 100,
-          "summary": "100.0% pixel exposure: Classifier without synchronized canvas bounding box redaction exposes image pixels"
+          "summary": "100% pixel exposure: Without synchronized bounding-box RGB blackout, VLM sees raw pixels"
         },
         "verisieve_full": {
           "exposed_pixel_boxes_count": 0,
           "pixel_exposure_rate_pct": 0,
-          "summary": "0.0% pixel exposure: Dual text + RGB [18, 18, 22] blackout guarantees zero visual leakage to multimodal VLMs"
+          "summary": "0% pixel exposure: Real RGB [18, 18, 22] bounding-box blackout verified across all 10 regions"
         }
       }
     },
@@ -120,23 +122,23 @@
           "summary": "100.0% false alarm rate (Gross violation of alpha = 0.05 budget)"
         },
         "naive_regex_only": {
-          "false_alarms_count": 16,
-          "empirical_fpr_pct": 26.7,
+          "false_alarms_count": 30,
+          "empirical_fpr_pct": 50,
           "satisfies_alpha_budget": false,
-          "summary": "26.7% false alarm rate: Misses non-regex boilerplate & faxes, severely violating the 5% budget"
+          "summary": "50% false alarm rate: Misses non-regex boilerplate & faxes, violating the 5% budget"
         },
         "uncalibrated_heuristic": {
-          "false_alarms_count": 16,
-          "empirical_fpr_pct": 26.7,
+          "false_alarms_count": 35,
+          "empirical_fpr_pct": 58.3,
           "satisfies_alpha_budget": false,
-          "summary": "26.7% false alarm rate: Fixed 0.5 threshold violates the 5% bound without conformal guarantee"
+          "summary": "58.3% false alarm rate: Fixed 0.5 threshold lacks conformal guarantee"
         },
         "verisieve_full": {
           "false_alarms_count": 0,
           "empirical_fpr_pct": 0,
           "satisfies_alpha_budget": true,
           "binomial_cdf_p_value": 0.0461,
-          "summary": "0.0% false alarms: Strictly satisfies alpha = 0.05 budget, certified by binomCdf(0, 60, 0.05) = 0.0461 <= 0.05"
+          "summary": "0% false alarms (0/60) on disjoint held-out negatives: binomCdf(0, 60, 0.05) = 0.0461"
         }
       }
     },
@@ -146,8 +148,8 @@
       "results": {
         "raw_no_verisieve": {
           "top3_retrieval_purity_pct": 33.3,
-          "wasm_val_loss": 0.6952,
-          "wasm_val_perplexity": 2,
+          "wasm_val_loss": 1.5319,
+          "wasm_val_perplexity": 4.63,
           "top3_matches": [
             {
               "score": 0.664,
@@ -162,24 +164,24 @@
               "text": "Hip fracture incidence is increasing among the elderly and is ass"
             }
           ],
-          "summary": "Purity 33.3% (Polluted by fax cover sheets); Perplexity 2"
+          "summary": "Purity 33.3%; Perplexity 4.63"
         },
         "naive_regex_only": {
           "top3_retrieval_purity_pct": 66.7,
-          "wasm_val_loss": 0.7449,
-          "wasm_val_perplexity": 2.11,
-          "summary": "Purity 66.7% (Partially polluted by surviving boilerplate); Perplexity 2.11"
+          "wasm_val_loss": 0.0562,
+          "wasm_val_perplexity": 1.06,
+          "summary": "Purity 66.7%; Perplexity 1.06"
         },
         "uncalibrated_heuristic": {
           "top3_retrieval_purity_pct": 66.7,
-          "wasm_val_loss": 0.0019,
-          "wasm_val_perplexity": 1,
-          "summary": "Purity 66.7%; Perplexity 1"
+          "wasm_val_loss": 0.5984,
+          "wasm_val_perplexity": 1.82,
+          "summary": "Purity 66.7%; Perplexity 1.82"
         },
         "verisieve_full": {
           "top3_retrieval_purity_pct": 100,
-          "wasm_val_loss": 0.0049,
-          "wasm_val_perplexity": 1,
+          "wasm_val_loss": 0.0064,
+          "wasm_val_perplexity": 1.01,
           "top3_matches": [
             {
               "score": 0.3874,
@@ -194,7 +196,7 @@
               "text": "Effects of Nutritional Status on 6-Month Outcome in Elderly Hip F"
             }
           ],
-          "summary": "Purity 100% PURE (100% relevant clinical sentences, zero junk); Perplexity 1"
+          "summary": "Purity 100% PURE; Perplexity 1.01"
         }
       }
     }
@@ -214,23 +216,23 @@
       100,
       100,
       33.3,
-      2
+      4.63
     ],
     "naive_regex_only": [
       84,
       50,
       100,
-      26.7,
+      50,
       66.7,
-      2.11
+      1.06
     ],
     "uncalibrated_heuristic": [
       0,
-      41.7,
+      25,
       100,
-      26.7,
+      58.3,
       66.7,
-      1
+      1.82
     ],
     "verisieve_full": [
       0,
@@ -238,7 +240,7 @@
       0,
       0,
       100,
-      1
+      1.01
     ]
   }
 }

@@ -700,7 +700,9 @@ export function extractFeatureRow(block, tokenIdsOrEnc) {
       : Array.isArray(block?.charConfidences)
         ? block.charConfidences
         : null;
-  const defaultConf = block?.confidence !== undefined ? block.confidence : 1.0;
+  const defaultConf = block?.confidence !== undefined
+    ? block.confidence
+    : (block?.ocrConfidence !== undefined ? block.ocrConfidence : 1.0);
   let minConf = block?.minConfidence !== undefined ? block.minConfidence : defaultConf;
   let meanConf = block?.meanConfidence !== undefined ? block.meanConfidence : defaultConf;
   if (confArr && confArr.length > 0) {

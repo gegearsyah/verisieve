@@ -1,40 +1,46 @@
 # Security Policy & Zero-Egress Guarantees
 
-VeriSieve is engineered specifically for privacy-critical and sovereign AI environments where untrusted or sensitive unstructured documents (clinical PDFs, financial statements, emails, and scanned archival forms) must be processed **locally at the source with mathematical guarantees of zero data leakage**.
+VeriSieve is engineered specifically for privacy-critical and sovereign AI environments where untrusted or sensitive unstructured documents (clinical PDFs, financial statements, emails, and scanned archival forms) must be processed **locally at the source with verifiable zero-egress controls**.
 
 ## Zero-Egress Architecture Guarantees
 
 1. **Zero External Runtime Dependencies**:
-   - The entire VeriSieve core library, CLI, and HTTP server are written using standard Node.js runtime primitives with **0 npm dependencies**.
-   - No supply-chain vector can inject phone-home telemetry or egress sockets into the execution environment.
+   - The entire VeriSieve core library, CLI, MCP server, and local UI server are written using standard Node.js runtime primitives with **0 npm dependencies**.
+   - Browser integration in RTIO converges onto the same Option B pure-memory WASM runtimes without third-party `tesseract.js` or `pdfjs-dist` bundles.
 
 2. **WebAssembly Zero-Network-Import Static Census**:
-   - The embedded OCR WebAssembly runtime (`cactus.wasm`) is mathematically audited via `npm run audit-wasm`.
-   - Native WebAssembly reflection (`WebAssembly.Module.imports`) confirms that of all imported functions, **zero** represent network sockets, HTTP clients, disk I/O, or browser DOM interfaces. All imported functions are strictly localized memory/arithmetic primitives.
+   - All four shipped WebAssembly binaries (`vendor/wasm/verisieve_clean.wasm`, `vendor/wasm/verisieve_dl.wasm`, `vendor/wasm/verisieve_sql.wasm`, and `vendor/cactus/cactus.wasm`) are audited via `npm run audit-wasm`.
+   - Native WebAssembly reflection (`WebAssembly.Module.imports`) confirms:
+     - `verisieve_clean.wasm` (`13,757 B`): **0 imports**
+     - `verisieve_dl.wasm` (`60,096 B`, 23 exports): **0 imports**
+     - `verisieve_sql.wasm` (`49,642 B`, ABI v1): **0 imports**
+     - `cactus.wasm` (`1,240,671 B`, 21 exports): **16 internal `module "a"` WASI/memory stubs**, **0 network imports**, and **0 host filesystem imports** inside our pure-memory VFS runtime (`hostDiskAccesses === 0`, `networkCalls === 0`).
 
-3. **Untrusted Data Isolation**:
-   - External raw files and downloaded benchmark datasets are quarantined under `results/untrusted-benchmarks/`.
-   - Parsing buffers are strictly validated with bounds checking to prevent buffer overflow attacks.
+3. **SSRF, Loopback & Path Traversal Guards**:
+   - `scripts/ui-server.mjs` binds strictly to `127.0.0.1` without wildcard `*` CORS headers and enforces `path.relative` traversal containment with explicit `404` responses.
+   - `src/ingestor.js` and `ingestFromUrlOrPath` validate schemes and pin resolved DNS addresses against loopback, link-local, RFC1918 private ranges, and cloud metadata IPs prior to HTTP fetch, with redirect re-validation and response byte caps.
+   - `verisieve_sql.wasm` and `scripts/duckdb-query.py` enforce strict query/parameter validation (`read_csv_auto(?)`).
 
 4. **Cryptographic Provenance with PII Payload Stripping**:
-   - The `AuditChain` implements an append-only SHA-256 tamper-evident provenance log.
-   - To guarantee that sensitive unmasked PII cannot be exfiltrated through log inspection or telemetry payloads, the audit logger automatically strips raw text, tables, and rows (`.raw`, `.data`, `.rows`) before computing cryptographic node hashes and training receipts.
+   - `AuditChain` implements an append-only SHA-256 tamper-evident provenance log.
+   - To prevent unmasked PII exfiltration in logs or receipts, raw text/table payloads are stripped and exported excerpts use `redactExcerptWithSha256` prior to persistence.
 
-5. **Client-Side Conformal Risk Boundary**:
-   - The LTT gatekeeper classifies chunks into `KEEP_SAFE`, `DROP_OR_QUARANTINE`, or `ABSTAIN_HUMAN_REVIEW` before any token is passed to external foundation models, ensuring personal data and noisy OCR junk are stopped at the perimeter.
+5. **Fail-Closed OCR & Client-Side Conformal Risk Boundary**:
+   - Raster images and image-only scanned PDFs fail closed with `MIRAGE_WEIGHTS_REQUIRED` when local `.cact` vision weights are absent (zero placeholder or hardcoded sample prose).
+   - The LTT gatekeeper classifies chunks into `KEEP_SAFE`, `DROP_OR_QUARANTINE`, or `ABSTAIN_HUMAN_REVIEW`, failing closed (`tauKeep = 1.0`) whenever finite-sample calibration bounds cannot be satisfied.
 
 ---
 
 ## Verifying Zero Egress
 
-You can audit the repository's zero-egress state at any time with:
+Audit the repository's zero-egress state at any time with:
 
 ```bash
-# Verify WebAssembly artifact has zero network imports
+# Verify WebAssembly artifacts have zero network imports
 npm run audit-wasm
 
-# Verify test suite and tamper detection
-npm test
+# Verify portable CI test suite (or npm test for full 1,207-doc scale + race checks)
+npm run test:ci
 ```
 
 ---

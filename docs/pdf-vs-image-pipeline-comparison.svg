@@ -88,17 +88,17 @@
 
     <g transform="translate(25, 85)" font-family="system-ui, sans-serif" font-size="12" fill="#e2e8f0">
       <rect x="0" y="0" width="12" height="12" rx="2" fill="#10b981" />
-      <text x="22" y="10">KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">8 lines (38%)</tspan></text>
+      <text x="22" y="10">KEEP_SAFE: <tspan font-weight="bold" fill="#10b981">0 lines (0%)</tspan></text>
 
       <rect x="0" y="40" width="12" height="12" rx="2" fill="#f43f5e" />
-      <text x="22" y="50">DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">10 lines (48%)</tspan></text>
+      <text x="22" y="50">DROP_OR_QUARANTINE: <tspan font-weight="bold" fill="#f43f5e">12 lines (57%)</tspan></text>
 
       <rect x="0" y="80" width="12" height="12" rx="2" fill="#fbbf24" />
-      <text x="22" y="90">ABSTAIN_HUMAN_REVIEW: <tspan font-weight="bold" fill="#fbbf24">3 lines (14%)</tspan></text>
+      <text x="22" y="90">ABSTAIN_HUMAN_REVIEW: <tspan font-weight="bold" fill="#fbbf24">9 lines (43%)</tspan></text>
     </g>
 
     <text x="25" y="225" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Calibration: alpha = 0.05 (Risk Bound)</text>
-    <text x="25" y="245" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Thresholds: tau_keep = 0.5, tau_drop = 0.25</text>
+    <text x="25" y="245" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Thresholds: tau_keep = 1, tau_drop = 0.33</text>
     <text x="25" y="272" font-family="system-ui, sans-serif" font-size="12" fill="#10b981" font-weight="bold">Status: CERTIFIED (Zero Leakage)</text>
   </g>
 
@@ -123,9 +123,9 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">display_serif</text>
       <text x="280" y="0" fill="#38bdf8">MATILDA SECURE CLINICAL RESEARCH REHABILITATION RECORD</text>
-      <text x="770" y="0">51 ids</text>
-      <text x="860" y="0">0.3516</text>
-      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
+      <text x="770" y="0">56 ids</text>
+      <text x="860" y="0">0.2725</text>
+      <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
     </g>
     <line x1="25" y1="98" x2="1075" y2="98" stroke="#1e293b" stroke-width="0.8" />
   
@@ -133,10 +133,10 @@
       <text x="0" y="0">1</text>
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">display_serif</text>
-      <text x="280" y="0" fill="#38bdf8">Hip fracture incidence is increasing among the elderly</text>
-      <text x="770" y="0">49 ids</text>
-      <text x="860" y="0">0.6685</text>
-      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+      <text x="280" y="0" fill="#38bdf8">Effects of Nutritional Status on 6-Month Outcome</text>
+      <text x="770" y="0">50 ids</text>
+      <text x="860" y="0">0.5571</text>
+      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
     </g>
     <line x1="25" y1="129" x2="1075" y2="129" stroke="#1e293b" stroke-width="0.8" />
   
@@ -144,10 +144,10 @@
       <text x="0" y="0">2</text>
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">sans_serif</text>
-      <text x="280" y="0" fill="#38bdf8">Malnutrition in the elderly is an important global health</text>
-      <text x="770" y="0">51 ids</text>
-      <text x="860" y="0">0.6826</text>
-      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+      <text x="280" y="0" fill="#38bdf8">Objective To identify the prevalence of malnutrition in el...</text>
+      <text x="770" y="0">114 ids</text>
+      <text x="860" y="0">0.6667</text>
+      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
     </g>
     <line x1="25" y1="160" x2="1075" y2="160" stroke="#1e293b" stroke-width="0.8" />
   
@@ -156,9 +156,9 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">monospace</text>
       <text x="280" y="0" fill="#38bdf8">Grant ID 800-555-0199 approved for clinical evaluation.</text>
-      <text x="770" y="0">51 ids</text>
-      <text x="860" y="0">0.6614</text>
-      <text x="945" y="0" font-weight="bold" fill="#10b981">KEEP_SAFE</text>
+      <text x="770" y="0">57 ids</text>
+      <text x="860" y="0">0.6624</text>
+      <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
     </g>
     <line x1="25" y1="191" x2="1075" y2="191" stroke="#1e293b" stroke-width="0.8" />
   
@@ -167,8 +167,8 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">sans_serif</text>
       <text x="280" y="0" fill="#38bdf8">Patient Name: <PII:NAME_LIKELY></text>
-      <text x="770" y="0">15 ids</text>
-      <text x="860" y="0">0.1448</text>
+      <text x="770" y="0">17 ids</text>
+      <text x="860" y="0">0.1234</text>
       <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
     </g>
     <line x1="25" y1="222" x2="1075" y2="222" stroke="#1e293b" stroke-width="0.8" />
@@ -178,8 +178,8 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">italic</text>
       <text x="280" y="0" fill="#38bdf8">Email: <PII:EMAIL></text>
-      <text x="770" y="0">9 ids</text>
-      <text x="860" y="0">0.1422</text>
+      <text x="770" y="0">10 ids</text>
+      <text x="860" y="0">0.1177</text>
       <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
     </g>
     <line x1="25" y1="253" x2="1075" y2="253" stroke="#1e293b" stroke-width="0.8" />
@@ -189,8 +189,8 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">monospace</text>
       <text x="280" y="0" fill="#38bdf8">SSN: <PII:SSN></text>
-      <text x="770" y="0">7 ids</text>
-      <text x="860" y="0">0.1263</text>
+      <text x="770" y="0">8 ids</text>
+      <text x="860" y="0">0.1089</text>
       <text x="945" y="0" font-weight="bold" fill="#f43f5e">DROP_OR_QUARANTINE</text>
     </g>
     <line x1="25" y1="284" x2="1075" y2="284" stroke="#1e293b" stroke-width="0.8" />
@@ -200,8 +200,8 @@
       <text x="45" y="0">pdf_born_digital</text>
       <text x="170" y="0">display_serif</text>
       <text x="280" y="0" fill="#38bdf8">Confidentiality Notice: Restricted Research Archive Access...</text>
-      <text x="770" y="0">59 ids</text>
-      <text x="860" y="0">0.494</text>
+      <text x="770" y="0">65 ids</text>
+      <text x="860" y="0">0.422</text>
       <text x="945" y="0" font-weight="bold" fill="#fbbf24">ABSTAIN_HUMAN_REVIEW</text>
     </g>
     <line x1="25" y1="315" x2="1075" y2="315" stroke="#1e293b" stroke-width="0.8" />

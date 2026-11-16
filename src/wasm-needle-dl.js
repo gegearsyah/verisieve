@@ -794,6 +794,16 @@ function rankTopKFromEmbedMap(query, documents, topK, dim, wasmPath, embedMap) {
   return scored.slice(0, topK);
 }
 
+function buildPiiProbeText(rawText, hits) {
+  const cleaned = String(rawText || '')
+    .replace(/\[REDACTED sha256:[^\]]+\]\s*/g, '')
+    .replace(/<PII:[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const firstWords = cleaned.split(/\s+/).filter(Boolean).slice(0, 8).join(' ');
+  return firstWords || (hits && hits.length > 0 ? hits.map((h) => h.category).join(' ') : '');
+}
+
 function measureNeedleRetrievalMetrics({
   allRows,
   safeRows,
@@ -812,16 +822,23 @@ function measureNeedleRetrievalMetrics({
   for (let i = 0; i < allRows.length; i++) {
     const rawText = rawDocs[i];
     const hits = rawPiiCache ? rawPiiCache[i] : scanRecordsForPII(rawText);
-    rawHasPiiFlags[i] = hits.length > 0;
-    if (hits.length > 0) {
+    const hasPii = hits.length > 0 || allRows[i]?.pii_detected === true;
+    rawHasPiiFlags[i] = hasPii;
+    if (hasPii) {
       piiRows.push({ row: allRows[i], text: rawText, hits });
-      for (const h of hits) {
-        if (h.value && !detectedEntities.includes(h.value)) {
-          detectedEntities.push(h.value);
+      if (hits.length > 0) {
+        for (const h of hits) {
+          if (h.value && !detectedEntities.includes(h.value)) {
+            detectedEntities.push(h.value);
+          }
         }
+      } else if (allRows[i]?.pii_types) {
+        const label = `[REDACTED:${allRows[i].pii_types}]`;
+        if (!detectedEntities.includes(label)) detectedEntities.push(label);
       }
     }
   }
+  // Safe shard text is already masked (<PII:*> tokens); only residual unmasked PII counts as exposure
   const safeHasPiiFlags = safeDocs.map((text) => scanRecordsForPII(text).length > 0);
 
   const topicProbes =
@@ -829,10 +846,12 @@ function measureNeedleRetrievalMetrics({
       ? explicitProbes
       : valSafeTexts.slice(0, 2);
 
-  const piiProbes = piiRows.slice(0, 4).map((p) => {
-    const firstWords = p.text.split(/\s+/).slice(0, 8).join(' ');
-    return firstWords || p.hits.map((h) => h.category).join(' ');
-  });
+  const piiProbes = [];
+  for (const p of piiRows) {
+    if (piiProbes.length >= 4) break;
+    const probeText = buildPiiProbeText(p.text, p.hits);
+    if (probeText) piiProbes.push(probeText);
+  }
 
   const piiProbeSet = new Set(piiProbes);
   const evalProbes = [...topicProbes, ...piiProbes].filter(Boolean);
@@ -972,9 +991,9 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
   const prePiiProbes = [];
   for (let i = 0; i < rawDocs.length && prePiiProbes.length < 4; i++) {
     const hits = rawPiiCache[i];
-    if (hits.length > 0) {
-      const firstWords = rawDocs[i].split(/\s+/).slice(0, 8).join(' ');
-      prePiiProbes.push(firstWords || hits.map((h) => h.category).join(' '));
+    if (hits.length > 0 || allRows[i]?.pii_detected === true) {
+      const probeText = buildPiiProbeText(rawDocs[i], hits);
+      if (probeText) prePiiProbes.push(probeText);
     }
   }
   const embedMap = buildEmbedLookup(
@@ -1429,8 +1448,15 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
 
   // Model 1: Raw Unfiltered Retrieval
   const rawPiiItems = rawHits.flatMap((h) => scanRecordsForPII(h.text));
-  const piiLeaked = rawPiiItems.length > 0;
-  const leakedSecrets = Array.from(new Set(rawPiiItems.map((p) => `${p.category || p.type}: "${p.value}"`)));
+  // Raw shard rows exported with redacted excerpts still carry pii_detected + hidden preview metadata
+  const flaggedRows = rawHits
+    .map((h) => allRows[h.index])
+    .filter((r) => r && r.pii_detected === true);
+  const piiLeaked = rawPiiItems.length > 0 || flaggedRows.length > 0;
+  const leakedSecrets = Array.from(new Set([
+    ...rawPiiItems.map((p) => `${p.category || p.type}: "${p.value}"`),
+    ...flaggedRows.map((r) => `${r.pii_types || 'pii'}: "${r.hidden_pii_preview || 'REDACTED'}"`),
+  ]));
   const rawMeanScore = rawHitScores.length > 0
     ? Number((rawHitScores.reduce((a, b) => a + b, 0) / rawHitScores.length).toFixed(4))
     : 0;

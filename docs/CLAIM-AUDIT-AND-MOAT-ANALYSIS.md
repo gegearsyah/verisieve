@@ -25,7 +25,7 @@ This document presents a senior-engineering audit of VeriSieve:
 
 | # | Feature / Claim Statement | Original Status | Code Location | Measured Ground Truth & Audit Verdict |
 | :--- | :--- | :---: | :--- | :--- |
-| **1** | **Title-Case Detection accurately flags Person Names without corrupting scientific titles** | ⚠️ **OVERCLAIM (Fixed in Audit)** | `src/clean-and-tokenize.js` (`name_likely`) | **Pre-Audit Flaw**: In line 0 of `results/real-data-pmc-pdf.csv`, the title `"Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients"` had `"Nutritional Status"`, `"Month Outcome"`, `"Elderly Hip"`, and `"Fracture Patients"` flagged as `<PII:NAME_LIKELY>` because the naive regex matched any two capitalized words.<br>**Remediation**: Added `EXCLUDED_NAME_WORDS` (52 clinical, anatomical, scientific, administrative, and mathematical nouns) and lookalike guards for grant identifiers and IP/kernel versions.<br>**Measured Truth**: In `results/real-data-pmc-pdf.csv`, line 0 evaluates to `pii_detected: false, KEEP_SAFE` (0.0% false-positive corruption), while real author names (`Ka Ying Doris Miu`, `Betty D. Montgomery`, `George Baroody`) maintain **100.0% recall**. |
+| **1** | **Title-Case Detection accurately flags Person Names without corrupting scientific titles** | ⚠️ **OVERCLAIM (Fixed in Audit)** | `src/clean-and-tokenize.js` (`name_likely`) | **Pre-Audit Flaw**: In line 0 of `results/real-data-pmc-pdf.csv`, the title `"Effects of Nutritional Status on 6-Month Outcome in Elderly Hip Fracture Patients"` had `"Nutritional Status"`, `"Month Outcome"`, `"Elderly Hip"`, and `"Fracture Patients"` flagged as `<PII:NAME_LIKELY>` because the naive regex matched any two capitalized words.<br>**Remediation**: Added `EXCLUDED_NAME_WORDS` (`334` clinical, anatomical, scientific, administrative, and mathematical nouns) and lookalike guards for grant identifiers and IP/kernel versions.<br>**Measured Truth**: Line 0 evaluates to `pii_detected: false, KEEP_SAFE` (0.0% false-positive corruption), while real author names (`Ka Ying Doris Miu`, `Betty D. Montgomery`, `George Baroody`) maintain **100.0% recall**. |
 | **2** | **WASM Small Model validation loss and perplexity are computed directly in WebAssembly** | ⚠️ **OVERCLAIM (Fixed in Audit)** | `src/wasm-needle-dl.js` (`trainWasmSmallModel`) | **Pre-Audit Flaw**: Previously, validation perplexities (`18.5` raw vs. `17.5` VeriSieve) were hardcoded constants.<br>**Remediation**: Replaced constants with dynamic validation evaluation directly inside WebAssembly via `mle_dl_vera_train` and `mle_dl_vera_loss_grad`. Validation perplexity is now computed as `Number(Math.exp(actualValLoss).toFixed(2))`.<br>**Measured Truth**: Validated across real tokens. Clean VeriSieve shard yields lower validation loss than raw noisy shards. |
 | **3** | **Conformal Gatekeeper guarantees "Zero Leakage"** | ⚠️ **OVERCLAIM (Fixed in Audit)** | `bin/verisieve.mjs`, `src/gatekeeper.js` | **Pre-Audit Flaw**: Stating "CERTIFIED (Zero Leakage)" is statistically dishonest. In statistical learning theory, no distribution-free finite-sample conformal method can guarantee zero error without rejecting all data.<br>**Remediation**: Replaced marketing language with mathematically sound phrasing: `"CERTIFIED (Empirical FPR <= alpha under Exchangeability)"`. Dual thresholds $(\tau_{\text{drop}}, \tau_{\text{keep}})$ invert exact binomial tail probabilities $\sum_{j=k}^n \binom{n}{j} \alpha^j (1-\alpha)^{n-j} \le \delta$.<br>**Measured Truth**: Empirical FPR on held-out test data is **0.0%**, strictly satisfying the $\alpha=0.05$ budget ($p = 0.0461 \le 0.05$). |
 | **4** | **Air-gapped 60KB pure WebAssembly kernel with zero external dependencies and zero Python** | 🛡️ **TRUE & PROVEN** | `wasm/verisieve_dl.wasm` (`auditVerisieveDlWasm`) | **Measured Truth**: Exactly 60,096 bytes on disk. WASM header analysis confirms **zero imports** (`imports.length === 0`), 23 exported deep learning kernels (BitNet 1.58b, VeRA, Matryoshka embeddings). Pure Node.js / Browser execution with 0 npm dependencies and 0 Python runtime requirements. |
@@ -63,7 +63,7 @@ Industrial data scrubbers blindly flag capitalized phrase sequences as `PERSON` 
 - Scientific Titles: `"Effects of Nutritional Status on 6-Month Outcome"` $\to$ `"Effects of <PII:NAME> on 6-<PII:NAME>"`
 - Grant Identifiers: `"Grant ID 800-555-0199"` $\to$ `"Grant ID <PII:PHONE>"`
 - System Kernels: `"Kernel v10.24.108.3"` $\to$ `"Kernel v<PII:IP_ADDRESS>"`
-VeriSieve implements positive context lookalike disambiguation and a 52-word clinical/scientific exclusion dictionary, preserving domain vocabulary while catching genuine names with 100% recall.
+VeriSieve implements positive context lookalike disambiguation and a 334-word clinical/scientific exclusion dictionary, preserving domain vocabulary while catching genuine names with 100% recall.
 
 ---
 
@@ -81,11 +81,11 @@ To evaluate performance rigorously, VeriSieve was benchmarked against three indu
 | :--- | :---: | :---: | :---: | :---: |
 | **Test 1: Scientific FP Corruption (%)** | **0.0%** (0 caught) | **84.0%** (21/25 corrupted) | **0.0%** (0 corrupted) | **0.0%** (0 corrupted) |
 | **Test 1: Real Person Name Recall (%)** | **0.0%** (0/10 caught) | **80.0%** (8/10 caught) | **100.0%** (10/10 caught) | **100.0%** (10/10 caught) |
-| **Test 2: Noisy OCR Hazard Leakage (%)** | **100.0%** (12/12 leaked) | **50.0%** (6/12 leaked) | **41.7%** (5/12 leaked) | **0.0%** (0/12 leaked) |
-| **Test 3: Multimodal Pixel Exposure (%)** | **100.0%** (6/6 exposed) | **100.0%** (6/6 exposed) | **100.0%** (6/6 exposed) | **0.0%** (0/6 exposed) |
-| **Test 4: Held-Out False Alarm Rate (%)** | **100.0%** (Fails Budget) | **26.7%** (Fails Budget) | **26.7%** (Fails Budget) | **0.0%** ($\le 5\%$ Budget, $p=0.0461$) |
+| **Test 2: Noisy OCR Hazard Leakage (%)** | **100.0%** (12/12 leaked) | **50.0%** (6/12 leaked) | **25.0%** (3/12 leaked) | **0.0%** (0/12 leaked) |
+| **Test 3: Multimodal Pixel Exposure (%)** | **100.0%** (10/10 exposed) | **100.0%** (10/10 exposed) | **100.0%** (10/10 exposed) | **0.0%** (0/10 exposed) |
+| **Test 4: Held-Out False Alarm Rate (%)** | **100.0%** (Fails Budget) | **50.0%** (Fails Budget) | **58.3%** (Fails Budget) | **0.0%** ($\le 5\%$ Budget, $p=0.0461$) |
 | **Test 5: WASM Retrieval Purity (%)** | **33.3%** (Fax noise) | **66.7%** (Boilerplate) | **66.7%** (Boilerplate) | **100.0% PURE** (0 junk) |
-| **Test 5: WASM Validation Perplexity** | **2.00** | **2.11** | **1.00** | **1.00** (Optimal) |
+| **Test 5: WASM Validation Perplexity** | **4.63** | **1.06** | **1.82** | **1.01** (Optimal) |
 
 ### Visual Benchmark Chart
 
@@ -136,7 +136,7 @@ npm run train:model
 # 3. Run the real PMC clinical PDF & FUNSD pipeline:
 npm run demo:real
 
-# 4. Run the full unit and integration test suite (45 tests + 4 MCP tests):
+# 4. Run the full unit, integration, scale, and MCP test suite:
 npm test
 
 # 5. Launch the local interactive Studio & A/B Chat Playground:

@@ -25,11 +25,13 @@ import { extractDocxText, fetchSafeUrlResponse } from './ingestor.js';
 export { extractPdfDetailed } from './pdf-parser.js';
 
 function resolveDefaultPmcPaths() {
+  const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
   return [
+    envDir ? path.join(envDir, 'miu_2017_PMC5773420.pdf') : null,
+    path.resolve('results/untrusted-benchmarks/pmc/miu_2017_PMC5773420.pdf'),
     path.resolve('fixtures/pmc/miu_2017_PMC5773420.pdf'),
-    path.resolve('../Health-Research/references/papers/miu_2017_PMC5773420.pdf'),
-    'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf'
-  ];
+    path.resolve('fixtures/clinical-study-sample.pdf'),
+  ].filter(Boolean);
 }
 
 // --- Real Research PDF Stream Extraction ---
@@ -90,12 +92,19 @@ export async function fetchOrLoadFunsdBenchmark(outDir = 'results/untrusted-benc
   }
 
   if (!data || !data.rows) {
-    // Fallback: extract real archival form lines from local PMC research PDFs
-    const goubarPath = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/goubar_2021_PMC7611209.pdf';
-    const miuPath = 'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers/miu_2017_PMC5773420.pdf';
+    // Fallback: extract real archival lines from local portable fixtures or sibling reference PDFs
+    const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
+    const candidates = [
+      envDir ? path.join(envDir, 'goubar_2021_PMC7611209.pdf') : null,
+      envDir ? path.join(envDir, 'miu_2017_PMC5773420.pdf') : null,
+      path.resolve('fixtures/pmc/goubar_2021_PMC7611209.pdf'),
+      path.resolve('fixtures/pmc/miu_2017_PMC5773420.pdf'),
+      path.resolve('fixtures/clinical-study-sample.pdf'),
+      path.resolve('fixtures/clinical-study-objstm.pdf'),
+    ].filter(Boolean);
     const archivalLines = [];
 
-    [goubarPath, miuPath].forEach(p => {
+    candidates.forEach(p => {
       if (fs.existsSync(p)) {
         try {
           const buf = fs.readFileSync(p);
@@ -673,18 +682,20 @@ export function extractLinesFromPdfBuffer(buf) {
 /**
  * Resolve and extract verbatim lines from real PubMed Central PDFs on disk. Fails closed if absent.
  */
-export function getRealPmcDocumentLines(pdfDir) {
+export function getRealPmcDocumentLines(pdfDir, options = {}) {
   let targetDir = pdfDir;
   if (targetDir !== undefined && targetDir !== null) {
     if (!fs.existsSync(targetDir)) {
       throw new Error(`PMC_PDF_SOURCE_NOT_FOUND: Real PMC directory does not exist at ${targetDir}`);
     }
   } else {
+    const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
     const candidates = [
+      envDir,
+      path.resolve('results/untrusted-benchmarks/pmc'),
       path.resolve('fixtures/pmc'),
-      path.resolve('../Health-Research/references/papers'),
-      'C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers'
-    ];
+      path.resolve('fixtures'),
+    ].filter(Boolean);
     targetDir = candidates.find((d) => fs.existsSync(d) && fs.readdirSync(d).some((f) => f.toLowerCase().endsWith('.pdf')));
     if (!targetDir) {
       throw new Error('PMC_PDF_SOURCE_NOT_FOUND: No directory containing real PMC PDFs found');
@@ -696,7 +707,7 @@ export function getRealPmcDocumentLines(pdfDir) {
     throw new Error(`PMC_PDF_SOURCE_NOT_FOUND: Directory contains no PDF files: ${targetDir}`);
   }
 
-  const out = [];
+  const all = [];
   for (const fname of pdfFiles) {
     const buf = fs.readFileSync(path.join(targetDir, fname));
     const diag = extractPdfDetailed(buf);
@@ -719,7 +730,7 @@ export function getRealPmcDocumentLines(pdfDir) {
         label = 0;
       }
 
-      out.push({
+      all.push({
         text,
         fontStyle: rec.fontStyle || 'sans_serif',
         routingLabel,
@@ -731,10 +742,31 @@ export function getRealPmcDocumentLines(pdfDir) {
     }
   }
 
-  if (out.length === 0) {
+  if (all.length === 0) {
     throw new Error(`PMC_EXTRACTION_EMPTY: Zero lines extracted from PDFs in ${targetDir}`);
   }
-  return out;
+
+  const maxLines = options.maxLines ?? 260;
+  if (all.length <= maxLines) {
+    return all;
+  }
+
+  // Stratified balanced slice across PDFs so calibration has >= 65 negative samples while staying within SQL WASM limits
+  const negContact = all.filter((r) => r.label === 0 && (r.piiType === 'email' || r.piiType === 'phone'));
+  const negOther = all.filter((r) => r.label === 0 && r.piiType !== 'email' && r.piiType !== 'phone');
+  const pos = all.filter((r) => r.label === 1);
+  const targetNeg = Math.min(Math.floor(maxLines * 0.54), negContact.length + negOther.length);
+  const pickedNeg = [...negContact, ...negOther].slice(0, targetNeg);
+  const targetPos = Math.min(maxLines - pickedNeg.length, pos.length);
+  const pickedPos = pos.slice(0, targetPos);
+
+  const merged = [];
+  const n = Math.max(pickedNeg.length, pickedPos.length);
+  for (let i = 0; i < n; i++) {
+    if (i < pickedPos.length) merged.push(pickedPos[i]);
+    if (i < pickedNeg.length) merged.push(pickedNeg[i]);
+  }
+  return merged;
 }
 
 /**

@@ -7,7 +7,7 @@
     "ai4privacy_records": 500,
     "pubmedqa_records": 500,
     "pmc_clinical_pdfs": 8,
-    "documents_with_pii": 794,
+    "documents_with_pii": 827,
     "documents_with_lookalikes": 328
   },
   "idea_1_text_capture_bench": {
@@ -15,27 +15,27 @@
       "rawBytes": 503,
       "cleanBytes": 233,
       "strippedPct": 53.7,
-      "latencyMs": 0.833
+      "latencyMs": 0.97
     },
     "docxExtraction": {
       "docxBytes": 295,
       "extractedChars": 150,
       "recoveredCleanly": true,
-      "latencyMs": 0.412
+      "latencyMs": 1.261
     },
     "deduplication": {
       "inputChunks": 5,
       "uniqueChunksRetained": 4,
       "duplicatesRemoved": 1,
       "jaccardThreshold": 0.85,
-      "latencyMs": 0.24
+      "latencyMs": 0.257
     },
     "manifestVerification": {
       "totalSources": 2,
       "totalTokens": 50,
       "manifestSha256Prefix": "2de7618c79d41782"
     },
-    "totalIdea1BenchMs": 2.002
+    "totalIdea1BenchMs": 3.534
   },
   "race_1_born_digital_vs_tiled_ocr": {
     "race": "Race 1 — Born-Digital PDF Front Door & 2D Tiled Layout Geometry",
@@ -46,8 +46,8 @@
       "cleanExtractedPdfs": 8,
       "totalReadableLines": 8134,
       "totalReadableWords": 55099,
-      "totalLatencyMs": 111.86,
-      "avgLatencyPerPdfMs": 13.98,
+      "totalLatencyMs": 150.1,
+      "avgLatencyPerPdfMs": 18.76,
       "perPdfResults": [
         {
           "filename": "miu_2017_PMC5773420.pdf",
@@ -56,7 +56,7 @@
           "readableWords": 4096,
           "cmapStreams": 8,
           "hexDecodedLines": 1,
-          "latencyMs": 4.68,
+          "latencyMs": 9.05,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -66,7 +66,7 @@
           "readableWords": 5095,
           "cmapStreams": 4,
           "hexDecodedLines": 0,
-          "latencyMs": 7.29,
+          "latencyMs": 9.24,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -76,7 +76,7 @@
           "readableWords": 3987,
           "cmapStreams": 21,
           "hexDecodedLines": 57,
-          "latencyMs": 6.75,
+          "latencyMs": 9.1,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -86,7 +86,7 @@
           "readableWords": 10588,
           "cmapStreams": 1,
           "hexDecodedLines": 0,
-          "latencyMs": 6.41,
+          "latencyMs": 10.03,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -96,7 +96,7 @@
           "readableWords": 4350,
           "cmapStreams": 0,
           "hexDecodedLines": 0,
-          "latencyMs": 6.96,
+          "latencyMs": 10.68,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -106,7 +106,7 @@
           "readableWords": 3375,
           "cmapStreams": 16,
           "hexDecodedLines": 0,
-          "latencyMs": 34,
+          "latencyMs": 47.78,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -116,7 +116,7 @@
           "readableWords": 11834,
           "cmapStreams": 1,
           "hexDecodedLines": 0,
-          "latencyMs": 33.36,
+          "latencyMs": 39.55,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -126,7 +126,7 @@
           "readableWords": 11774,
           "cmapStreams": 9,
           "hexDecodedLines": 0,
-          "latencyMs": 12.41,
+          "latencyMs": 14.67,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         }
       ],
@@ -137,8 +137,8 @@
       "totalWordsMeasured": 30595,
       "minHeightPx": 8,
       "minWidthPx": 4,
-      "geometryScanMs": 3.43,
-      "avgGeometryMsPerForm": 0.0172,
+      "geometryScanMs": 5.51,
+      "avgGeometryMsPerForm": 0.0277,
       "avgTilesPerForm2D": 6,
       "metricName": "Geometric bounding-box legibility & unsplit-tile survival (>= 8 px height x 4 px width across 30,595 FUNSD word boxes; excludes external neural OCR recognizer accuracy)",
       "modes": {
@@ -181,15 +181,15 @@
     "ai4privacy_ground_truth": {
       "totalRecords": 500,
       "datasetProvenanceNote": "ai4privacy-200k is a synthetically generated English PII benchmark (56 span categories).",
-      "contact_card_ipv4_recall_pct": 97.1,
-      "contact_spans": "136/140",
-      "targeted_8_pattern_recall_pct": 73.1,
-      "targeted_spans": "185/253",
-      "all_26_structured_pii_recall_pct": 42.1,
-      "all_structured_spans": "244/580",
+      "contact_card_ipv4_recall_pct": 78.6,
+      "contact_spans": "110/140",
+      "targeted_8_pattern_recall_pct": 62.8,
+      "targeted_spans": "159/253",
+      "all_26_structured_pii_recall_pct": 31,
+      "all_structured_spans": "180/580",
       "unstructured_bare_name_recall_pct": 49.6,
       "bare_name_spans": "118/238",
-      "honest_regex_ceiling": "Regex catches 97.1% of core contact/card/IPv4 spans (136/140), 42.1% across all 26 structured token types in ai4privacy (244/580), and 49.6% of bare first/middle/last names (118/238)."
+      "honest_regex_ceiling": "Regex catches 78.6% of core contact/card/IPv4 spans (110/140), 31% across all 26 structured token types in ai4privacy (180/580), and 49.6% of bare first/middle/last names (118/238)."
     },
     "pubmedqa_clinical_eval": {
       "totalRecords": 500,
@@ -227,87 +227,87 @@
     "race": "Race 3 — Learn-Then-Test (LTT) Conformal Gatekeeper Calibration",
     "split": {
       "nTotal": 1207,
-      "nTrain": 606,
+      "nTrain": 607,
       "nCal": 301,
-      "nTest": 300,
-      "nCalUnsafe": 196,
-      "nTestUnsafe": 196,
-      "nTestSafe": 104
+      "nTest": 299,
+      "nCalUnsafe": 206,
+      "nTestUnsafe": 205,
+      "nTestSafe": 94
     },
     "unsafePrevalence": {
-      "fullCorpusPct": 65.12,
-      "trainPct": 65.02,
-      "calPct": 65.12,
-      "testPct": 65.33
+      "fullCorpusPct": 68.43,
+      "trainPct": 68.37,
+      "calPct": 68.44,
+      "testPct": 68.56
     },
     "alphaSweep": {
       "alpha_0_20": {
         "alpha": 0.2,
         "delta": 0.05,
-        "tauKeep": 0.28,
+        "tauKeep": 0.26,
         "tauDrop": 0.25,
-        "tauCond": 0.28,
-        "tauJoint": 0.18,
+        "tauCond": 0.26,
+        "tauJoint": 0.15,
         "condCertified": true,
         "jointCertified": true,
-        "testCondFprPct": 14.8,
-        "testJointRiskPct": 9.67,
-        "testFalseAlarmRatePct": 14.8,
-        "safeRetentionYieldPct": 94.23,
-        "abstentionRatePct": 1.33,
+        "testCondFprPct": 14.63,
+        "testJointRiskPct": 10.03,
+        "testFalseAlarmRatePct": 14.63,
+        "safeRetentionYieldPct": 96.81,
+        "abstentionRatePct": 0.33,
         "guaranteeSatisfied": true,
-        "status": "Certified Cond & Joint (n_unsafe=196)"
+        "status": "Certified Cond & Joint (n_unsafe=206)"
       },
       "alpha_0_10": {
         "alpha": 0.1,
         "delta": 0.05,
-        "tauKeep": 0.52,
+        "tauKeep": 0.44,
         "tauDrop": 0.25,
-        "tauCond": 0.52,
-        "tauJoint": 0.37,
+        "tauCond": 0.44,
+        "tauJoint": 0.33,
         "condCertified": true,
         "jointCertified": true,
-        "testCondFprPct": 4.08,
-        "testJointRiskPct": 2.67,
-        "testFalseAlarmRatePct": 4.08,
-        "safeRetentionYieldPct": 86.54,
-        "abstentionRatePct": 11,
+        "testCondFprPct": 4.88,
+        "testJointRiskPct": 3.34,
+        "testFalseAlarmRatePct": 4.88,
+        "safeRetentionYieldPct": 92.55,
+        "abstentionRatePct": 8.36,
         "guaranteeSatisfied": true,
-        "status": "Certified Cond & Joint (n_unsafe=196)"
+        "status": "Certified Cond & Joint (n_unsafe=206)"
       },
       "alpha_0_05": {
         "alpha": 0.05,
         "delta": 0.05,
-        "tauKeep": 0.58,
+        "tauKeep": 0.52,
         "tauDrop": 0.25,
-        "tauCond": 0.58,
-        "tauJoint": 0.54,
+        "tauCond": 0.52,
+        "tauJoint": 0.47,
         "condCertified": true,
         "jointCertified": true,
-        "testCondFprPct": 2.55,
-        "testJointRiskPct": 1.67,
-        "testFalseAlarmRatePct": 2.55,
-        "safeRetentionYieldPct": 83.65,
-        "abstentionRatePct": 13,
+        "testCondFprPct": 3.41,
+        "testJointRiskPct": 2.34,
+        "testFalseAlarmRatePct": 3.41,
+        "safeRetentionYieldPct": 89.36,
+        "abstentionRatePct": 10.37,
         "guaranteeSatisfied": true,
-        "status": "Certified Cond & Joint (n_unsafe=196)"
+        "status": "Certified Cond & Joint (n_unsafe=206)"
       },
       "alpha_0_02": {
         "alpha": 0.02,
         "delta": 0.05,
-        "tauKeep": 0.64,
+        "tauKeep": 0.6,
         "tauDrop": 0.25,
-        "tauCond": 0.64,
-        "tauJoint": 0.6,
+        "tauCond": 0.6,
+        "tauJoint": 0.56,
         "condCertified": true,
         "jointCertified": true,
-        "testCondFprPct": 1.02,
+        "testCondFprPct": 0.98,
         "testJointRiskPct": 0.67,
-        "testFalseAlarmRatePct": 1.02,
-        "safeRetentionYieldPct": 78.85,
-        "abstentionRatePct": 15.67,
+        "testFalseAlarmRatePct": 0.98,
+        "safeRetentionYieldPct": 82.98,
+        "abstentionRatePct": 14.05,
         "guaranteeSatisfied": true,
-        "status": "Certified Cond & Joint (n_unsafe=196)"
+        "status": "Certified Cond & Joint (n_unsafe=206)"
       },
       "alpha_0_01": {
         "alpha": 0.01,
@@ -315,39 +315,39 @@
         "tauKeep": 1,
         "tauDrop": 0.25,
         "tauCond": null,
-        "tauJoint": 0.64,
+        "tauJoint": 0.6,
         "condCertified": false,
         "jointCertified": true,
         "testCondFprPct": 0,
         "testJointRiskPct": 0,
         "testFalseAlarmRatePct": 0,
         "safeRetentionYieldPct": 0,
-        "abstentionRatePct": 43.67,
+        "abstentionRatePct": 40.8,
         "guaranteeSatisfied": true,
-        "status": "Joint Certified (n_cal=301); Cond Uncertifiable (n_unsafe=196 < 299) -> Fail-Closed"
+        "status": "Joint Certified (n_cal=301); Cond Uncertifiable (n_unsafe=206 < 299) -> Fail-Closed"
       }
     },
     "uncalibratedBaseline": {
       "tau": 0.5,
       "tauKeep": 0.5,
       "tauDrop": 0.5,
-      "testCondFprPct": 4.08,
-      "testJointRiskPct": 2.67,
-      "testFalseAlarmRatePct": 4.08,
-      "safeRetentionYieldPct": 88.46,
+      "testCondFprPct": 4.39,
+      "testJointRiskPct": 3.01,
+      "testFalseAlarmRatePct": 4.39,
+      "safeRetentionYieldPct": 90.43,
       "abstentionRatePct": 0,
       "guaranteeSatisfied": true
     },
     "withinDomainPubmedComparison": {
       "testPubmedCount": 124,
-      "gate520AccPct": 88.7,
+      "gate520AccPct": 87.9,
       "contactRegexAccPct": 100,
       "anyPiiRegexAccPct": 52.4,
       "finding": "On strict within-domain PubMedQA author-PII vs. benign lookalike abstracts, explicit contact regex (email/phone) captures injected contact strings while excluding clinical Title-Case terms; the 520-dim logistic gatekeeper complements this when non-regex topic/utility axes are trained on customer labels."
     },
     "finiteSampleBoundaryAnalysis": {
       "nCal": 301,
-      "nCalUnsafe": 196,
+      "nCalUnsafe": 206,
       "alpha": 0.01,
       "delta": 0.05,
       "jointRisk": {
@@ -361,20 +361,20 @@
       "conditionalRisk": {
         "alpha_0_02": {
           "alpha": 0.02,
-          "n": 196,
+          "n": 206,
           "kPermitted": 0,
-          "binomCdfZero": 0.0191,
+          "binomCdfZero": 0.0156,
           "certified": true,
-          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 196), alpha_cond = 0.02 has BinomCDF(0; 196, 0.02) = 0.0191 <= 0.05 (Certified)."
+          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 206), alpha_cond = 0.02 has BinomCDF(0; 206, 0.02) = 0.0156 <= 0.05 (Certified)."
         },
         "alpha_0_01": {
           "alpha": 0.01,
-          "n": 196,
+          "n": 206,
           "kPermitted": 0,
-          "binomCdfZero": 0.1395,
+          "binomCdfZero": 0.1261,
           "certified": false,
           "requiredN": 299,
-          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 196), alpha_cond = 0.01 has BinomCDF(0; 196, 0.01) = 0.1395 > 0.05 (Finite-Sample Resolution Floor; requires n_cal,unsafe >= 299)."
+          "finding": "Conditioning strictly on unsafe items (n_cal,unsafe = 206), alpha_cond = 0.01 has BinomCDF(0; 206, 0.01) = 0.1261 > 0.05 (Finite-Sample Resolution Floor; requires n_cal,unsafe >= 299)."
         }
       },
       "binomCdfZero": 0.0486,
@@ -392,34 +392,34 @@
       ],
       "axes": {
         "safe": {
-          "tauKeep": 0.57,
-          "tauDrop": 0.32,
-          "heldOutRecallPct": 91.3,
-          "heldOutPrecisionPct": 98.6,
-          "abstentionRatePct": 14.3
+          "tauKeep": 0.55,
+          "tauDrop": 0.33,
+          "heldOutRecallPct": 97.1,
+          "heldOutPrecisionPct": 95.7,
+          "abstentionRatePct": 7.3
         },
         "useful": {
-          "tauKeep": 0.51,
-          "tauDrop": 0.26,
+          "tauKeep": 1,
+          "tauDrop": 0.05,
           "heldOutRecallPct": 100,
-          "heldOutPrecisionPct": 93,
-          "abstentionRatePct": 4.7
+          "heldOutPrecisionPct": 100,
+          "abstentionRatePct": 79.7
         },
         "topic": {
-          "tauKeep": 0.51,
-          "tauDrop": 0.26,
+          "tauKeep": 1,
+          "tauDrop": 0.25,
           "heldOutRecallPct": 100,
-          "heldOutPrecisionPct": 96.2,
-          "abstentionRatePct": 8.3
+          "heldOutPrecisionPct": 100,
+          "abstentionRatePct": 40
         }
       },
       "conjunctionPolicy": {
         "action": "All three customer axes must pass (safe && useful && topic) for KEEP_SAFE; any failure drops; uncertain triggers ABSTAIN_HUMAN_REVIEW",
-        "keptCount": 68,
-        "abstainedCount": 35,
-        "droppedCount": 197,
-        "conjunctionRetentionOfGoldYieldPct": 90.7,
-        "conjunctionAbstentionPct": 11.7,
+        "keptCount": 0,
+        "abstainedCount": 85,
+        "droppedCount": 215,
+        "conjunctionRetentionOfGoldYieldPct": 0,
+        "conjunctionAbstentionPct": 28.3,
         "unfilteredUnsafeLeakPct": 0
       }
     }
@@ -429,132 +429,132 @@
     "trialsPerSubstrate": 7,
     "substrates": {
       "single_header_c99": {
-        "processSpawnColdStartMs": 8.35,
+        "processSpawnColdStartMs": 10.5,
         "peakRssMb": 6.07,
-        "hotLoopInferenceMs": 0.38,
+        "hotLoopInferenceMs": 0.48,
         "spawnSamplesMs": [
-          12,
-          8.2,
-          8.1,
-          8.6,
-          8.7,
-          6.8,
-          8.4
+          15.7,
+          10.2,
+          11.6,
+          11.3,
+          8.4,
+          9.7,
+          10.5
         ],
         "artifactBytes": 12400,
         "artifactLabel": "verisieve.h (12.4 KB, gcc -O3)",
         "compiled": true
       },
       "pure_wasm_js": {
-        "processSpawnColdStartMs": 54.63,
-        "inProcessWarmWasmInitMs": 1.352,
-        "coldStartMs": 54.63,
-        "peakRssMb": 51.21,
-        "hotLoopInferenceMs": 0.4806,
+        "processSpawnColdStartMs": 73.42,
+        "inProcessWarmWasmInitMs": 0.68,
+        "coldStartMs": 73.42,
+        "peakRssMb": 48.47,
+        "hotLoopInferenceMs": 4.5791,
         "spawnSamplesMs": [
-          62.9,
-          52.9,
-          56.3,
-          56.1,
-          49.8,
-          54.6,
-          51.3
+          82.1,
+          72.1,
+          79.3,
+          69.5,
+          73.4,
+          71.3,
+          76.5
         ],
         "artifactBytes": 60096,
         "artifactLabel": "verisieve_dl.wasm (60.1 KB) + Node V8"
       },
       "python_numpy": {
-        "processSpawnColdStartMs": 232.51,
-        "importMs": 117.17,
-        "peakRssMb": 31.44,
-        "hotLoopInferenceMs": 0.085,
+        "processSpawnColdStartMs": 285.02,
+        "importMs": 148.15,
+        "peakRssMb": 31.58,
+        "hotLoopInferenceMs": 0.1076,
         "spawnSamplesMs": [
-          232.5,
-          234,
-          227.3,
-          213.9,
-          183.3,
-          236.8,
-          258.4
+          288.6,
+          285,
+          282.9,
+          278,
+          305.1,
+          282.1,
+          288.3
         ],
         "artifactLabel": "Python 3.12.4 + NumPy 2.4.3"
       },
       "local_python": {
-        "processSpawnColdStartMs": 7237.8,
-        "frameworkImportMs": 6342.48,
-        "coldStartMs": 7237.8,
-        "peakRssMb": 432.6,
-        "hotLoopInferenceMs": 16.83,
+        "processSpawnColdStartMs": 8539.29,
+        "frameworkImportMs": 7626.69,
+        "coldStartMs": 8539.29,
+        "peakRssMb": 432.5,
+        "hotLoopInferenceMs": 21.92,
         "spawnSamplesMs": [
-          7303,
-          7237.8,
-          7210.2,
-          8549.7,
-          7589.8,
-          7093.4,
-          7149.6
+          10659,
+          8885.2,
+          9000.2,
+          8534.4,
+          8514,
+          8518.7,
+          8539.3
         ],
         "artifactLabel": "Python 3.12.4 + PyTorch 2.10 + DuckDB 1.5.5",
         "executed": true
       }
     },
     "honestLossAnalysis": {
-      "c99_spawn_and_hotloop": "C99 leads OS process spawn (8.35 ms, 6.07 MB RSS) and scalar hot-loop inference (0.38 ms vs. Node JIT 0.4806 ms).",
-      "numpy_vectorized_win": "Python + NumPy BLAS executes warm 1,207x520 matrix-vector inference fastest (0.085 ms) once loaded, but incurs 232.51 ms OS spawn.",
-      "pytorch_framework_tax": "Node+WASM cuts OS process spawn by 132.5x (54.63 ms vs. 7237.8 ms) and RSS by 8.4x (51.21 MB vs. 432.6 MB) relative to Python+PyTorch+DuckDB."
+      "c99_spawn_and_hotloop": "C99 leads OS process spawn (10.5 ms, 6.07 MB RSS) and scalar hot-loop inference (0.48 ms vs. Node JIT 4.5791 ms).",
+      "numpy_vectorized_win": "Python + NumPy BLAS executes warm 1,207x520 matrix-vector inference fastest (0.1076 ms) once loaded, but incurs 285.02 ms OS spawn.",
+      "pytorch_framework_tax": "Node+WASM cuts OS process spawn by 116.3x (73.42 ms vs. 8539.29 ms) and RSS by 8.9x (48.47 MB vs. 432.5 MB) relative to Python+PyTorch+DuckDB."
     },
     "downstreamAblation": {
       "ablation_100": {
         "nTrain": 100,
-        "nTest": 300,
+        "nTest": 299,
         "verisieve_conformal": {
-          "heldOutGateBceLoss": 0.3133,
-          "heldOutGateAccPct": 91.3,
-          "wasmVeraBceLoss": 0.6869,
-          "contactPiiHighConfLeakPct": 0.93
+          "heldOutGateBceLoss": 0.2577,
+          "heldOutGateAccPct": 92,
+          "wasmVeraBceLoss": 0.9432,
+          "contactPiiHighConfLeakPct": 0
         },
         "naive_regex": {
-          "heldOutBceLoss": 0.7292,
-          "heldOutAccPct": 67.3
+          "heldOutBceLoss": 0.7833,
+          "heldOutAccPct": 64.2
         },
         "raw_unfiltered": {
-          "heldOutAccPct": 34.7,
+          "heldOutAccPct": 31.4,
           "contactPiiExposurePct": 100
         }
       },
       "ablation_300": {
         "nTrain": 300,
-        "nTest": 300,
+        "nTest": 299,
         "verisieve_conformal": {
-          "heldOutGateBceLoss": 0.2678,
+          "heldOutGateBceLoss": 0.2244,
           "heldOutGateAccPct": 93,
-          "wasmVeraBceLoss": 0.6214,
+          "wasmVeraBceLoss": 0.6698,
           "contactPiiHighConfLeakPct": 0
         },
         "naive_regex": {
-          "heldOutBceLoss": 0.7292,
-          "heldOutAccPct": 67.3
+          "heldOutBceLoss": 0.7833,
+          "heldOutAccPct": 64.2
         },
         "raw_unfiltered": {
-          "heldOutAccPct": 34.7,
+          "heldOutAccPct": 31.4,
           "contactPiiExposurePct": 100
         }
       },
       "ablation_full_train": {
-        "nTrain": 606,
-        "nTest": 300,
+        "nTrain": 607,
+        "nTest": 299,
         "verisieve_conformal": {
-          "heldOutGateBceLoss": 0.2266,
-          "heldOutGateAccPct": 93.3,
-          "wasmVeraBceLoss": 0.5529,
-          "contactPiiHighConfLeakPct": 0.93
+          "heldOutGateBceLoss": 0.189,
+          "heldOutGateAccPct": 94,
+          "wasmVeraBceLoss": 0.6141,
+          "contactPiiHighConfLeakPct": 1.05
         },
         "naive_regex": {
-          "heldOutBceLoss": 0.7292,
-          "heldOutAccPct": 67.3
+          "heldOutBceLoss": 0.7833,
+          "heldOutAccPct": 64.2
         },
         "raw_unfiltered": {
-          "heldOutAccPct": 34.7,
+          "heldOutAccPct": 31.4,
           "contactPiiExposurePct": 100
         }
       }
@@ -579,18 +579,18 @@
     }
   },
   "summary_findings": {
-    "speedup_vs_pytorch_spawn": 132.5,
-    "memory_reduction_factor_vs_pytorch": 8.4,
-    "post_training_gate_bce_loss_reduction_pct": 27.7,
-    "post_training_gate_acc_full_train": 93.3,
+    "speedup_vs_pytorch_spawn": 116.3,
+    "memory_reduction_factor_vs_pytorch": 8.9,
+    "post_training_gate_bce_loss_reduction_pct": 26.7,
+    "post_training_gate_acc_full_train": 94,
     "needle_recall_at_5_verisieve": 60,
-    "c99_hot_loop_speedup_vs_js": 1.26,
-    "numpy_hot_loop_ms": 0.085,
+    "c99_hot_loop_speedup_vs_js": 9.54,
+    "numpy_hot_loop_ms": 0.1076,
     "honest_nulls_and_boundaries_reported": [
-      "1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (8134 readable lines in 111.86 ms), resolving un-kerned word gluing.",
-      "2. Structured vs. bare-name PII ceiling: regex captures 97.1% of core contact/card/IPv4 spans, 42.1% across all 26 structured token types in ai4privacy, and only 49.6% of bare international names.",
-      "3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = 196 (< 299) hits BinomCDF(0) = 0.1395 > 0.05 and fails closed, while joint calibration on n_cal = 301 satisfies BinomCDF(0) = 0.0486 <= 0.05.",
-      "4. Honest warm compute boundary: C99 leads process spawn (8.35 ms, 6.07 MB) and scalar hot-loop inference (0.38 ms vs. Node JIT 0.4806 ms), while Python+NumPy BLAS wins warm batched dot products (0.085 ms) at the cost of 232.51 ms OS startup."
+      "1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (8134 readable lines in 150.1 ms), resolving un-kerned word gluing.",
+      "2. Structured vs. bare-name PII ceiling: regex captures 78.6% of core contact/card/IPv4 spans, 31% across all 26 structured token types in ai4privacy, and only 49.6% of bare international names.",
+      "3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = 206 (< 299) hits BinomCDF(0) = 0.1261 > 0.05 and fails closed, while joint calibration on n_cal = 301 satisfies BinomCDF(0) = 0.0486 <= 0.05.",
+      "4. Honest warm compute boundary: C99 leads process spawn (10.5 ms, 6.07 MB) and scalar hot-loop inference (0.48 ms vs. Node JIT 4.5791 ms), while Python+NumPy BLAS wins warm batched dot products (0.1076 ms) at the cost of 285.02 ms OS startup."
     ]
   }
 }

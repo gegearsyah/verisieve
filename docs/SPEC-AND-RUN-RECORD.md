@@ -13,12 +13,12 @@ All core functional stages have been implemented, verified, and backed by automa
 - [x] **Realistic Degradation Pipeline (`applyScanDegradations`)**: Models physical scan anomalies (Gaussian ink bleed, speckle dust noise, contrast non-linearity, and bilinear rotoshear) yielding verifiable SHA-256 image buffers.
 - [x] **Born-Digital Lookalike Corpus (`getBornDigitalCorpus`)**: Generates structured clinical, legal, and operational documents with planted PII categories and layout edge cases.
 
-### ✅ Stage 2: 2D Canvas Tiling & Zero-Egress OCR Engine (`src/ocr-engine.js`)
-- [x] **Square Canvas (`512x512`) Tiling (`computeCanvasScaleGeometry`, `tileAndRead`)**:
-  - Implements uniform aspect-ratio preserving scaling with symmetric padding.
-  - Benchmarks `tile_2d` vs. `horizontal_1d_band` vs. `untiled_512`.
-- [x] **Zero-Egress WASM Static Census (`auditCactusWasmArtifact`)**: Audits `cactus.wasm` imports/exports using native WebAssembly reflection; verifies exactly 0 network/socket/DOM imports.
-- [x] **Inline Form Grammar Sanitizer (`sanitizeMirageFormSchema`, `restoreMirageFormOutput`)**: Bijectively escapes forbidden separator tokens (`;|=#@$*`) into unambiguous unicode control markers prior to OCR tokenization.
+### ✅ Stage 2: 2D Canvas Tiling, Pure-Memory `cactus.wasm` Sandbox & Rust WASM SQL/DL Cores
+- [x] **Square Canvas (`512x512`) Tiling & Fail-Closed Image OCR (`src/ocr-engine.js`)**:
+  - Decodes real PNG/BMP images and PDF `/Image` XObjects, runs 2D overlapping `512x512` tiles into pure-memory `cactus.wasm` VFS when local Mirage `.cact` weights or an `ocrProvider` are present, and fails closed (`MIRAGE_WEIGHTS_REQUIRED`) when absent.
+  - Benchmarks `tile_2d` vs. `horizontal_1d_band` vs. `untiled_512` on synthetic multi-font ground truth.
+- [x] **Zero-Egress WASM Static Census (`auditCactusWasmArtifact`, `auditVerisieveDlWasm`, `auditVerisieveSqlWasm`, `auditCleanWasmArtifact`)**: Audits all 4 binaries (`verisieve_clean.wasm`, `verisieve_dl.wasm`, `verisieve_sql.wasm`, `cactus.wasm`); verifies zero network/host-disk imports.
+- [x] **Inline Form Grammar Sanitizer (`sanitizeMirageFormSchema`, `restoreMirageFormOutput`)**: Bijectively escapes forbidden separator tokens (`;|=#@$*`) before OCR tokenization.
 
 ### ✅ Stage 3: Born-Digital Ingest, Dual PII Redaction & Audit Provenance (`src/clean-and-tokenize.js`)
 - [x] **Text-First Extraction Front Door (`ingestUnstructuredText`)**: Ingests raw UTF-8 text, HTML DOM trees, and RFC 5322 MIME emails without rasterization.
@@ -43,11 +43,12 @@ All core functional stages have been implemented, verified, and backed by automa
 - [x] **Multi-Tier Comparative Pipeline Demo (`scripts/run-pdf-vs-image-demo.mjs`)**: Directly benchmarks Born-Digital PDF vs. Clean 2D OCR vs. Torture Fax Scan vs. Naive Untiled OCR.
 - [x] **Automated Vector Visualizations (`scripts/generate-figures.mjs`)**: Emits byte-identical standalone SVG audit charts in `docs/`.
 
-### ✅ Stage 6: Universal BYOD Interface, Local UI & MCP Server (`bin/`, `demo/`, `src/mcp-server.js`)
-- [x] **Bring Your Own Data CLI (`bin/verisieve.mjs run`)**: Universal file, directory, or URL runner with automatic offline fallback.
-- [x] **Local Interactive UI Studio (`scripts/ui-server.mjs`)**: Zero-dependency browser interface with drag-and-drop file processing and live export generators.
-- [x] **Full MCP Server Suite (`src/mcp-server.js`)**: Exposes `ingest_and_tokenize`, `train_local_gatekeeper`, `gatekeeper_decide`, and `verify_provenance_chain` for Claude Code / Matilda Code.
-- [x] **100% Automated Test Suite (`npm test`)**: 38/38 unit and parity tests passing.
+### ✅ Stage 6: Universal BYOD Interface, Local UI, SQL Engine & MCP Server (`bin/`, `demo/`, `src/mcp-server.js`, `src/sql-wasm.js`)
+- [x] **Bring Your Own Data CLI (`bin/verisieve.mjs run`)**: Universal file, directory, or SSRF-pinned URL runner that fails closed when `.cact` weights or remote hosts are unavailable.
+- [x] **Local Interactive UI Studio (`scripts/ui-server.mjs`)**: Loopback-only (`127.0.0.1`) HTTP interface with `path.relative` traversal containment, strict `404` responses, async MCP handling, and XSS-safe DOM rendering (`demo/index.html`).
+- [x] **Pure Rust `#![no_std]` SQL WASM (`rust/verisieve-sql/`, `vendor/wasm/verisieve_sql.wasm`)**: `49,642` bytes, zero imports, strict subset query engine (`MAX_ROWS = 4096`) replacing regex-based fallbacks.
+- [x] **Full MCP Server Suite (`src/mcp-server.js`)**: Exposes `8` tools (`ingest_and_tokenize`, `train_local_gatekeeper`, `gatekeeper_decide`, `verify_provenance_chain`, plus multi-axis calibration & SSRF checks).
+- [x] **100% Automated Test Suite (`npm run test:ci` / `npm test`)**: Zero-skip CI + local 1,207-doc scale & C99/Python/PyTorch race verification.
 
 ---
 
@@ -63,7 +64,7 @@ These items are deliberately tracked as optional progressive improvements:
 
 | # | Technical Question / Critique | Exact Verification Command | Empirical Run Result | Generated Output Artifact |
 | :- | :--- | :--- | :--- | :--- |
-| **1** | **Circular OCR vs. Real/Noisy Data**: *Does the system rely on mock strings or fragile synthetic text?* | `npm run demo:real` | Processed 742 lines of real clinical PDF text (`PMC5773420`) and 100% real ICDAR-2019 FUNSD archival fax forms without mock strings. Scanned and redacted 275 real PII occurrences (emails, faxes, phone numbers, addresses). | `results/real-data-pmc-pdf.csv`<br>`results/real-data-funsd-noisy-ocr.csv`<br>`docs/real-data-pipeline-comparison.svg` |
+| **1** | **Circular OCR vs. Real/Noisy Data**: *Does the system rely on mock strings or fragile synthetic text?* | `npm run demo:real` | Processed `260` verbatim PMC clinical PDF lines + `35` real ICDAR-2019 FUNSD archival lines (`295` total) with `0` mock strings, quarantining `150` PII lines (`CERTIFIED`, `tau_keep=0.88`, `tau_drop=0.73`). | `results/real-data-pmc-pdf.csv`<br>`results/real-data-funsd-noisy-ocr.csv`<br>`docs/real-data-pipeline-comparison.svg` |
 | **2** | **Square Canvas 2D Tiling vs. 1D Bands**: *Why use 2D square patches instead of slicing horizontal bands?* | `npm run demo:pdf-vs-image` | Naive 1D bands truncate 2-column medical papers and multi-column tables horizontally (42% character loss). VeriSieve's 2D square tiling (`512x512`) preserves aspect ratio and layout geometry, achieving 100% token retention across dense columns. | `results/pipeline-pdf-born-digital.csv`<br>`results/pipeline-image-ocr.csv`<br>`docs/pdf-vs-image-pipeline-comparison.svg` |
 | **3** | **Zero-Egress WASM Audit vs. Python OCR Telemetry**: *How do we know the WASM OCR engine isn't phoning home or exfiltrating data?* | `npm run audit-wasm` | Native static binary inspection confirms: 16 function imports (all internal module `"a"`), 21 exports, and **exactly 0 network/socket/fetch/file imports**. Zero egress mathematically audited. | Terminal audit output & `src/ocr-engine.js` `auditCactusWasmArtifact()` report |
 | **4** | **Born-Digital Front Door vs. Rasterization Fallback**: *Why rasterize and OCR born-digital PDFs that already contain vector text?* | `npm run demo:pdf-vs-image` | Born-digital text stream extractor executes in **~2 ms** with 0 OCR errors. Rasterization fallback is invoked **only** when font dictionaries or text streams are absent, saving 99% CPU compute on digital docs. | `results/pipeline-pdf-born-digital.csv`<br>`docs/pdf-vs-image-pipeline-comparison.svg` |

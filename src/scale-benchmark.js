@@ -7,7 +7,7 @@
  *    - 199 ICDAR-2019 FUNSD noisy scanned archival forms (results/untrusted-benchmarks/funsd-full.json)
  *    - 500 ai4privacy-200k ground-truth PII records (results/untrusted-benchmarks/ai4privacy-500.json)
  *    - 500 PubMedQA labeled biomedical research QA records (results/untrusted-benchmarks/pubmedqa-500.json)
- *    - 8 Full-Text Born-Digital PubMed Central clinical research PDFs (Health-Research/references/papers)
+ *    - 8 Full-Text Born-Digital PubMed Central clinical research PDFs (VERISIEVE_PAPERS_DIR / fixtures)
  * 2. Race 1: Born-Digital PDF Front Door vs. 2D Tiled OCR (8 PMC PDFs + 199 FUNSD forms)
  *    - Measures /FlateDecode stream extraction and documents the 4/8 CIDFont ToUnicode CMap null
  *    - Measures word recovery across Stock capped-8 vs. Untiled-512 vs. Horizontal-1D vs. 2D Tiling
@@ -80,12 +80,14 @@ export const PMC_PDF_FILENAMES = [
  * Resolves path to a clinical research PDF with graceful fallback
  */
 function resolvePdfPath(filename) {
+  const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
   const candidates = [
-    path.join('C:/Users/GEYE ARDIANSYAH/Downloads/Innovation Hub/Health-Research/references/papers', filename),
-    path.resolve('../Health-Research/references/papers', filename),
-    path.resolve('../../Health-Research/references/papers', filename),
+    envDir ? path.join(envDir, filename) : null,
+    path.resolve('results/untrusted-benchmarks/pmc', filename),
+    path.resolve('fixtures/pmc', filename),
+    path.resolve('fixtures', filename),
     path.resolve('references/papers', filename)
-  ];
+  ].filter(Boolean);
   for (const c of candidates) {
     if (fs.existsSync(c)) return c;
   }
@@ -440,7 +442,9 @@ export function buildPublicBenchmarkCorpus(options = {}) {
         const enc = tokenizer.encode(text);
         const piiHits = scanRecordsForPII(text);
         const contactHits = piiHits.filter(h => ['email', 'phone', 'ssn', 'credit_card', 'ip_address'].includes(h.type));
-        const isSafe = (((idx * 5 + 1) % 3 === 0) && contactHits.length === 0);
+        const isBoilerplateForm = /\b(?:confidential|facsimile|transmission|cover\s+sheet|fax\s+no|sender|recipient|page\s+\d+)\b/i.test(text);
+        const hasReadableProse = words.length >= 25 && /[a-z]{3,}/.test(text);
+        const isSafe = contactHits.length === 0 && piiHits.length === 0 && !isBoilerplateForm && hasReadableProse;
         docs.push({
           id: `funsd_${f.id || idx}`,
           corpusIndex: docs.length,
@@ -558,6 +562,8 @@ export function buildPublicBenchmarkCorpus(options = {}) {
       const text = lines.join('\n');
       const enc = tokenizer.encode(text);
       const piiHits = scanRecordsForPII(text);
+      const hasContactPii = piiHits.some(h => ['email', 'phone', 'ssn', 'credit_card', 'ip_address'].includes(h.type));
+      const isSafe = !hasContactPii;
       docs.push({
         id: `pmc_${filename}`,
         corpusIndex: docs.length,
@@ -572,9 +578,9 @@ export function buildPublicBenchmarkCorpus(options = {}) {
         piiHits,
         hasOcrNoise: false,
         hasLookalikes: true,
-        isSafe: true,
-        routingLabel: 'keep_safe',
-        label: 1
+        isSafe,
+        routingLabel: isSafe ? 'keep_safe' : 'quarantine_pii',
+        label: isSafe ? 1 : 0
       });
     }
   }
