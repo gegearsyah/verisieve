@@ -581,12 +581,66 @@ export function jaccardSimilarity(setA, setB) {
   return union === 0 ? 1.0 : intersection / union;
 }
 
+const MINHASH_NUM_HASHES = 64;
+const MINHASH_BANDS = 16;
+const MINHASH_ROWS_PER_BAND = 4;
+// Deterministic odd multipliers & offsets for 64-hash MinHash family (2^32 modulus)
+const MINHASH_COEFF_A = new Uint32Array(MINHASH_NUM_HASHES);
+const MINHASH_COEFF_B = new Uint32Array(MINHASH_NUM_HASHES);
+{
+  let s = 0x9e3779b9;
+  const nextU32 = () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return (t ^ (t >>> 14)) >>> 0;
+  };
+  for (let i = 0; i < MINHASH_NUM_HASHES; i++) {
+    MINHASH_COEFF_A[i] = (nextU32() | 1) >>> 0;
+    MINHASH_COEFF_B[i] = nextU32();
+  }
+}
+
+function fnv1a32(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+function computeMinHashSignature(shingles) {
+  const sig = new Uint32Array(MINHASH_NUM_HASHES);
+  sig.fill(0xffffffff);
+  for (const sh of shingles) {
+    const base = fnv1a32(sh);
+    for (let i = 0; i < MINHASH_NUM_HASHES; i++) {
+      const hv = (Math.imul(MINHASH_COEFF_A[i], base) + MINHASH_COEFF_B[i]) >>> 0;
+      if (hv < sig[i]) sig[i] = hv;
+    }
+  }
+  return sig;
+}
+
+function bandKeysForSignature(sig) {
+  const keys = new Array(MINHASH_BANDS);
+  for (let b = 0; b < MINHASH_BANDS; b++) {
+    const off = b * MINHASH_ROWS_PER_BAND;
+    keys[b] = `${b}:${sig[off]}:${sig[off + 1]}:${sig[off + 2]}:${sig[off + 3]}`;
+  }
+  return keys;
+}
+
 export function deduplicateChunks(chunks, options = {}) {
   const threshold = options.threshold ?? 0.85;
   const uniqueChunks = [];
   const duplicateIds = [];
   const seenHashes = new Set();
   const seenShingles = [];
+  // O(N) MinHash+LSH candidate index for normal chunks + exact shingle bucket for tiny chunks (<=4 shingles)
+  const lshBuckets = new Map();
+  const smallShingleBuckets = new Map();
 
   let duplicatesRemoved = 0;
 
@@ -601,10 +655,29 @@ export function deduplicateChunks(chunks, options = {}) {
     }
 
     const shingles = computeShingles(text);
-    let isDuplicate = false;
+    const isSmall = shingles.size <= 4;
+    const bandKeys = isSmall ? null : bandKeysForSignature(computeMinHashSignature(shingles));
 
-    for (const existing of seenShingles) {
-      const sim = jaccardSimilarity(shingles, existing);
+    const candidateIndices = new Set();
+    if (isSmall) {
+      for (const sh of shingles) {
+        const bucket = smallShingleBuckets.get(sh);
+        if (bucket) {
+          for (let j = 0; j < bucket.length; j++) candidateIndices.add(bucket[j]);
+        }
+      }
+    } else {
+      for (let b = 0; b < bandKeys.length; b++) {
+        const bucket = lshBuckets.get(bandKeys[b]);
+        if (bucket) {
+          for (let j = 0; j < bucket.length; j++) candidateIndices.add(bucket[j]);
+        }
+      }
+    }
+
+    let isDuplicate = false;
+    for (const candIdx of candidateIndices) {
+      const sim = jaccardSimilarity(shingles, seenShingles[candIdx]);
       if (sim >= threshold) {
         isDuplicate = true;
         break;
@@ -615,9 +688,29 @@ export function deduplicateChunks(chunks, options = {}) {
       duplicatesRemoved++;
       duplicateIds.push(chunk.id || sha);
     } else {
+      const newIdx = seenShingles.length;
       seenHashes.add(sha);
       seenShingles.push(shingles);
       uniqueChunks.push(chunk);
+      if (isSmall) {
+        for (const sh of shingles) {
+          let bucket = smallShingleBuckets.get(sh);
+          if (!bucket) {
+            bucket = [];
+            smallShingleBuckets.set(sh, bucket);
+          }
+          bucket.push(newIdx);
+        }
+      } else {
+        for (let b = 0; b < bandKeys.length; b++) {
+          let bucket = lshBuckets.get(bandKeys[b]);
+          if (!bucket) {
+            bucket = [];
+            lshBuckets.set(bandKeys[b], bucket);
+          }
+          bucket.push(newIdx);
+        }
+      }
     }
   }
 

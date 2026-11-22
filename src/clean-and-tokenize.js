@@ -378,16 +378,27 @@ export function maskValue(val, type, strategy = 'token') {
   return `<PII:${type.toUpperCase()}>`;
 }
 
+const COMPILED_DEFAULT_PII_PATTERNS = Object.entries(PII_PATTERNS).map(([type, rx]) => [
+  type,
+  [new RegExp(rx.source, rx.flags.includes('g') ? rx.flags : `${rx.flags}g`)],
+]);
+
 export function scanRecordsForPII(text, options = {}) {
   const domainCfg = options?.domainConfig || null;
   const extraExcluded = domainCfg?.extraExcludedWords
     ? new Set(domainCfg.extraExcludedWords.map((w) => String(w).toLowerCase()))
     : null;
-  const patternEntries = Object.entries(PII_PATTERNS).map(([type, rx]) => [type, [rx]]);
+
+  let patternEntries = COMPILED_DEFAULT_PII_PATTERNS;
   if (domainCfg?.additionalPatterns) {
+    patternEntries = COMPILED_DEFAULT_PII_PATTERNS.map(([type, list]) => [type, [...list]]);
     for (const [type, extraRx] of Object.entries(domainCfg.additionalPatterns)) {
       if (!extraRx) continue;
-      const list = Array.isArray(extraRx) ? extraRx : [extraRx];
+      const list = (Array.isArray(extraRx) ? extraRx : [extraRx]).map((r) =>
+        r instanceof RegExp
+          ? new RegExp(r.source, r.flags.includes('g') ? r.flags : `${r.flags}g`)
+          : new RegExp(String(r), 'g')
+      );
       const existing = patternEntries.find(([t]) => t === type);
       if (existing) existing[1].push(...list);
       else patternEntries.push([type, list]);
@@ -396,10 +407,8 @@ export function scanRecordsForPII(text, options = {}) {
 
   const items = [];
   for (const [type, regexList] of patternEntries) {
-    for (const rawRegex of regexList) {
-      const regex = rawRegex instanceof RegExp
-        ? new RegExp(rawRegex.source, rawRegex.flags.includes('g') ? rawRegex.flags : `${rawRegex.flags}g`)
-        : new RegExp(String(rawRegex), 'g');
+    for (const regex of regexList) {
+      regex.lastIndex = 0;
       let match;
       while ((match = regex.exec(text)) !== null) {
         if (match[0].length === 0) {
@@ -452,15 +461,13 @@ export function scanRecordsForPII(text, options = {}) {
   // Sort by start index, preferring longer matches when starts collide
   items.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
 
-  // Remove overlapping matches (keep earlier/longer)
+  // Remove overlapping matches in O(M) using lastEnd cursor (items are sorted by start ASC, length DESC)
   const deduped = [];
+  let lastEnd = -1;
   for (const item of items) {
-    const overlap = deduped.find(prev =>
-      (item.start >= prev.start && item.start < prev.end) ||
-      (item.end > prev.start && item.end <= prev.end)
-    );
-    if (!overlap) {
+    if (item.start >= lastEnd) {
       deduped.push(item);
+      lastEnd = item.end;
     }
   }
   return deduped;

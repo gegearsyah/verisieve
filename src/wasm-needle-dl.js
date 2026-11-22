@@ -329,6 +329,8 @@ export function embedNeedleWasm(texts, options = {}) {
     nHeads = 4,
     nLayers = 2,
     seed = 42,
+    subwordOnly = false,
+    batchSize = 512,
     cactModelPath = null,
     wasmPath = VERISIEVE_DL_WASM_PATH
   } = options;
@@ -338,6 +340,20 @@ export function embedNeedleWasm(texts, options = {}) {
 
   if (textArray.length === 0) {
     return isSingle ? new Float32Array(dim) : [];
+  }
+
+  // Batch large inputs to bound peak WASM linear memory allocation
+  const effectiveBatch = Math.max(1, batchSize);
+  if (!isSingle && textArray.length > effectiveBatch) {
+    const allResults = [];
+    for (let start = 0; start < textArray.length; start += effectiveBatch) {
+      const slice = textArray.slice(start, start + effectiveBatch);
+      const part = embedNeedleWasm(slice, {
+        dim, dModel, nHeads, nLayers, seed, subwordOnly, batchSize: slice.length, cactModelPath, wasmPath
+      });
+      for (let i = 0; i < part.length; i++) allResults.push(part[i]);
+    }
+    return allResults;
   }
 
   const inst = getVerisieveDlInstanceSync(wasmPath);
@@ -371,6 +387,30 @@ export function embedNeedleWasm(texts, options = {}) {
   // Kernel 1: Matryoshka Subword Embedding
   exp.mle_dl_embed_subword(txtPtr, totalBytes, offsPtr, nRows, subOutPtr, dim, dim, seed);
 
+  const results = [];
+  if (subwordOnly) {
+    const subArr = new Float32Array(exp.memory.buffer, subOutPtr, nRows * dim);
+    for (let i = 0; i < nRows; i++) {
+      const row = new Float32Array(dim);
+      let norm = 0;
+      const base = i * dim;
+      for (let j = 0; j < dim; j++) {
+        const val = subArr[base + j];
+        row[j] = val;
+        norm += val * val;
+      }
+      const l2 = Math.sqrt(norm) || 1e-12;
+      for (let j = 0; j < dim; j++) {
+        row[j] /= l2;
+      }
+      results.push(row);
+    }
+    exp.mle_dl_free(txtPtr, totalBytes);
+    exp.mle_dl_free(offsPtr, offsets.byteLength);
+    exp.mle_dl_free(subOutPtr, nRows * dim * 4);
+    return isSingle ? results[0] : results;
+  }
+
   // Kernel 2: 1.58-Bit BitNet Text Encoder
   const bnBytes = exp.mle_dl_bitnet_packed_bytes(dModel, nLayers);
   const bnScales = exp.mle_dl_bitnet_scale_count(nLayers);
@@ -384,7 +424,6 @@ export function embedNeedleWasm(texts, options = {}) {
   const subArr = new Float32Array(exp.memory.buffer, subOutPtr, nRows * dim);
   const bnArr = new Float32Array(exp.memory.buffer, bnOutPtr, nRows * dim);
 
-  const results = [];
   for (let i = 0; i < nRows; i++) {
     const row = new Float32Array(dim);
     let norm = 0;
@@ -424,7 +463,16 @@ export function cosineSimilarityUnitNorm(vecA, vecB) {
   return dot;
 }
 
+const MAX_DOC_EMBEDDING_CACHE = 12000;
 const docEmbeddingCache = new Map();
+
+function setCachedDocEmbedding(key, value) {
+  if (docEmbeddingCache.size >= MAX_DOC_EMBEDDING_CACHE && !docEmbeddingCache.has(key)) {
+    const oldestKey = docEmbeddingCache.keys().next().value;
+    if (oldestKey !== undefined) docEmbeddingCache.delete(oldestKey);
+  }
+  docEmbeddingCache.set(key, value);
+}
 
 /**
  * 3. searchNeedleWasm(query, documents, options)
@@ -432,10 +480,12 @@ const docEmbeddingCache = new Map();
  */
 export function searchNeedleWasm(query, documents, options = {}) {
   const { topK = 3, dim = 64, seed = 42 } = options;
+  const subwordOnly = options.subwordOnly ?? (documents.length > 400);
+  const modePrefix = subwordOnly ? 'sub' : 'full';
   const t0 = performance.now();
 
   const docTexts = documents.map(d => (typeof d === 'string' ? d : (d.masked_text || d.text || d.raw_excerpt || '')));
-  const qEmb = embedNeedleWasm(query, { dim, seed });
+  const qEmb = embedNeedleWasm(query, { dim, seed, subwordOnly });
 
   const docEmbs = [];
   const toCompute = [];
@@ -443,7 +493,7 @@ export function searchNeedleWasm(query, documents, options = {}) {
 
   for (let i = 0; i < docTexts.length; i++) {
     const text = docTexts[i];
-    const cacheKey = `${dim}:${seed}:${text}`;
+    const cacheKey = `${modePrefix}:${dim}:${seed}:${text}`;
     if (docEmbeddingCache.has(cacheKey)) {
       docEmbs[i] = docEmbeddingCache.get(cacheKey);
     } else {
@@ -453,13 +503,13 @@ export function searchNeedleWasm(query, documents, options = {}) {
   }
 
   if (toCompute.length > 0) {
-    const computed = embedNeedleWasm(toCompute, { dim, seed });
+    const computed = embedNeedleWasm(toCompute, { dim, seed, subwordOnly });
     const computedArr = Array.isArray(computed) ? computed : [computed];
     for (let j = 0; j < toCompute.length; j++) {
       const idx = toComputeIndices[j];
       const emb = computedArr[j];
       docEmbs[idx] = emb;
-      docEmbeddingCache.set(`${dim}:${seed}:${toCompute[j]}`, emb);
+      setCachedDocEmbedding(`${modePrefix}:${dim}:${seed}:${toCompute[j]}`, emb);
     }
   }
 

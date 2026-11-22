@@ -265,31 +265,64 @@ function tokenizeBm25(text) {
     .match(/[a-z0-9]+(?:[.,][0-9]+)*/g) || [];
 }
 
-function rankBm25Texts(query, texts) {
+function buildBm25Index(texts) {
   const N = texts.length;
-  if (N === 0) return [];
-  const docTokens = texts.map(tokenizeBm25);
-  const avgdl = docTokens.reduce((s, t) => s + t.length, 0) / Math.max(1, N);
-  const df = new Map();
-  for (const toks of docTokens) {
-    for (const w of new Set(toks)) df.set(w, (df.get(w) || 0) + 1);
+  const docLens = new Uint32Array(N);
+  const postings = new Map();
+  let totalLen = 0;
+
+  for (let i = 0; i < N; i++) {
+    const toks = tokenizeBm25(texts[i]);
+    docLens[i] = toks.length;
+    totalLen += toks.length;
+    if (toks.length === 0) continue;
+    const tf = new Map();
+    for (let j = 0; j < toks.length; j++) {
+      const w = toks[j];
+      tf.set(w, (tf.get(w) || 0) + 1);
+    }
+    for (const [w, f] of tf.entries()) {
+      let list = postings.get(w);
+      if (!list) {
+        list = [];
+        postings.set(w, list);
+      }
+      list.push(i, f);
+    }
   }
+
+  return {
+    N,
+    avgdl: totalLen / Math.max(1, N),
+    docLens,
+    postings,
+  };
+}
+
+function rankBm25Indexed(query, index) {
+  const N = index.N;
+  if (N === 0) return [];
+  const scores = new Float64Array(N);
   const qToks = tokenizeBm25(query);
+  if (qToks.length === 0) return Array.from(scores);
+
   const k1 = 1.5;
   const b = 0.75;
-  return docTokens.map((toks) => {
-    const tf = new Map();
-    for (const w of toks) tf.set(w, (tf.get(w) || 0) + 1);
-    let score = 0;
-    for (const q of qToks) {
-      const f = tf.get(q) || 0;
-      if (!f) continue;
-      const n = df.get(q) || 0;
-      const idf = Math.log(1 + (N - n + 0.5) / (n + 0.5));
-      score += (idf * (f * (k1 + 1))) / (f + k1 * (1 - b + (b * toks.length) / Math.max(1, avgdl)));
+  const avgdl = Math.max(1, index.avgdl);
+  const docLens = index.docLens;
+
+  for (let qi = 0; qi < qToks.length; qi++) {
+    const list = index.postings.get(qToks[qi]);
+    if (!list) continue;
+    const df = list.length >> 1;
+    const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+    for (let j = 0; j < list.length; j += 2) {
+      const docIdx = list[j];
+      const f = list[j + 1];
+      scores[docIdx] += (idf * (f * (k1 + 1))) / (f + k1 * (1 - b + (b * docLens[docIdx]) / avgdl));
     }
-    return score;
-  });
+  }
+  return Array.from(scores);
 }
 
 function rrfFuse(scoreArrays, k = 60) {
@@ -319,6 +352,17 @@ export class PortableDocumentGraph {
     this.edges = [];
     this.provenance = [];
     this.idToIdx = new Map();
+    this.byId = new Map();
+    this.passages = [];
+    this.passageIndices = [];
+    this.sections = [];
+    this.documents = [];
+    this.pasBm25Index = buildBm25Index([]);
+    this.secBm25Index = buildBm25Index([]);
+    this.entitiesByPas = new Map();
+    this.childSections = new Map();
+    this.blocksByParent = new Map();
+    this.pasCounts = new Map();
   }
 
   indexDocuments(documents = [], artifacts = []) {
@@ -476,6 +520,56 @@ export class PortableDocumentGraph {
     this.edges = edges;
     this.provenance = provenance;
     this.idToIdx = new Map(this.nodes.map((n, i) => [n.node_id, i]));
+    this.byId = nodeMap;
+
+    // Precompute query-time lookup tables and inverted BM25 indexes once at index time
+    this.passages = [];
+    this.passageIndices = [];
+    this.sections = [];
+    this.documents = [];
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
+      if (n.node_type === 'PASSAGE' || n.node_type === 'TABLE_ROW') {
+        this.passages.push(n);
+        this.passageIndices.push(i);
+      } else if (n.node_type === 'SECTION') {
+        this.sections.push(n);
+      } else if (n.node_type === 'DOCUMENT') {
+        this.documents.push(n);
+      }
+    }
+    this.pasBm25Index = buildBm25Index(this.passages.map((p) => p.text_contextualized));
+    this.secBm25Index = buildBm25Index(this.sections.map((s) => s.text_contextualized));
+
+    this.entitiesByPas = new Map();
+    this.childSections = new Map();
+    this.blocksByParent = new Map();
+    this.pasCounts = new Map();
+    for (const e of this.edges) {
+      if (e.edge_type === 'MENTIONS') {
+        let list = this.entitiesByPas.get(e.src_id);
+        if (!list) {
+          list = [];
+          this.entitiesByPas.set(e.src_id, list);
+        }
+        list.push(e.dst_id);
+      } else if (e.edge_type === 'CONTAINS_SECTION') {
+        let list = this.childSections.get(e.src_id);
+        if (!list) {
+          list = [];
+          this.childSections.set(e.src_id, list);
+        }
+        list.push(e.dst_id);
+      } else if (e.edge_type === 'CONTAINS_BLOCK') {
+        let list = this.blocksByParent.get(e.src_id);
+        if (!list) {
+          list = [];
+          this.blocksByParent.set(e.src_id, list);
+        }
+        list.push(e.dst_id);
+        this.pasCounts.set(e.src_id, (this.pasCounts.get(e.src_id) || 0) + 1);
+      }
+    }
 
     // Load into verisieve_graph.wasm Dual-CSR
     const srcs = [];
@@ -545,21 +639,13 @@ export class PortableDocumentGraph {
   pprRetrieve(query, options = {}) {
     const topK = Math.max(1, options.topK ?? 6);
     const passageResetScale = options.passageResetScale ?? 0.05;
-    const passages = this.nodes.filter((n) => n.node_type === 'PASSAGE' || n.node_type === 'TABLE_ROW');
+    const passages = this.passages;
     if (!passages.length) return { rankedPassages: [], seedSections: [], seedEntities: [] };
 
-    const sections = this.nodes.filter((n) => n.node_type === 'SECTION');
-    const pasBm25 = rankBm25Texts(query, passages.map((p) => p.text_contextualized));
-    const secBm25 = sections.length ? rankBm25Texts(query, sections.map((s) => s.text_contextualized)) : [];
-
-    const entitiesByPas = new Map();
-    for (const e of this.edges) {
-      if (e.edge_type === 'MENTIONS') {
-        const list = entitiesByPas.get(e.src_id) || [];
-        list.push(e.dst_id);
-        entitiesByPas.set(e.src_id, list);
-      }
-    }
+    const sections = this.sections;
+    const pasBm25 = rankBm25Indexed(query, this.pasBm25Index);
+    const secBm25 = sections.length ? rankBm25Indexed(query, this.secBm25Index) : [];
+    const entitiesByPas = this.entitiesByPas;
 
     const seedMap = new Map();
     const seedSections = [];
@@ -608,7 +694,7 @@ export class PortableDocumentGraph {
         })
       : new Float32Array(this.nodes.length);
 
-    const pprPas = passages.map((p) => pprAll[this.idToIdx.get(p.node_id)] || 0);
+    const pprPas = this.passageIndices.map((idx) => pprAll[idx] || 0);
     const fused = rrfFuse([pprPas, pasBm25], 60);
 
     const rankedPassages = passages
@@ -629,18 +715,9 @@ export class PortableDocumentGraph {
   }
 
   getDocumentTree(docIdFilter) {
-    const byId = new Map(this.nodes.map((n) => [n.node_id, n]));
-    const children = new Map();
-    const pasCounts = new Map();
-    for (const e of this.edges) {
-      if (e.edge_type === 'CONTAINS_SECTION') {
-        const list = children.get(e.src_id) || [];
-        list.push(e.dst_id);
-        children.set(e.src_id, list);
-      } else if (e.edge_type === 'CONTAINS_BLOCK') {
-        pasCounts.set(e.src_id, (pasCounts.get(e.src_id) || 0) + 1);
-      }
-    }
+    const byId = this.byId;
+    const children = this.childSections;
+    const pasCounts = this.pasCounts;
     const build = (secId) => {
       const n = byId.get(secId);
       if (!n || n.node_type !== 'SECTION') return null;
@@ -655,8 +732,8 @@ export class PortableDocumentGraph {
         children: (children.get(secId) || []).map(build).filter(Boolean),
       };
     };
-    return this.nodes
-      .filter((n) => n.node_type === 'DOCUMENT' && (!docIdFilter || n.node_id === docIdFilter))
+    return this.documents
+      .filter((n) => !docIdFilter || n.node_id === docIdFilter)
       .map((doc) => ({
         docId: doc.node_id,
         source: doc.props.source,
@@ -666,20 +743,9 @@ export class PortableDocumentGraph {
 
   readSectionNodes(sectionNodeIds = [], options = {}) {
     const includeDescendants = options.includeDescendants !== false;
-    const byId = new Map(this.nodes.map((n) => [n.node_id, n]));
-    const childSecs = new Map();
-    const blocksByParent = new Map();
-    for (const e of this.edges) {
-      if (e.edge_type === 'CONTAINS_SECTION') {
-        const list = childSecs.get(e.src_id) || [];
-        list.push(e.dst_id);
-        childSecs.set(e.src_id, list);
-      } else if (e.edge_type === 'CONTAINS_BLOCK') {
-        const list = blocksByParent.get(e.src_id) || [];
-        list.push(e.dst_id);
-        blocksByParent.set(e.src_id, list);
-      }
-    }
+    const byId = this.byId;
+    const childSecs = this.childSections;
+    const blocksByParent = this.blocksByParent;
     const targets = [];
     const seenSec = new Set();
     const walk = (id) => {
