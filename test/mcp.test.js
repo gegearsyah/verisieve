@@ -14,7 +14,7 @@ test('MCP Server initialize and tools/list', () => {
   const listReq = { jsonrpc: '2.0', method: 'tools/list', id: 2 };
   const listRes = handleJsonRpcRequest(listReq);
   assert.strictEqual(listRes.id, 2);
-  assert.strictEqual(listRes.result.tools.length, 8);
+  assert.strictEqual(listRes.result.tools.length, 14);
 });
 
 test('MCP Server tool call: ingest_and_tokenize', () => {

@@ -11,6 +11,7 @@ import {
 import { AuditChain } from './clean-and-tokenize.js';
 import { inspectLocalOpenWeightPath } from './wasm-needle-dl.js';
 import { ingestUrl, ingestLinkList, stripHtmlBoilerplate, buildCorpusManifest } from './ingestor.js';
+import { PortableDocumentGraph } from './graph-wasm.js';
 
 function sanitizePiiItems(piiItems = [], includeRawPii = false) {
   if (includeRawPii) return piiItems;
@@ -55,9 +56,10 @@ function splitMultiAxisHoldout(fRows, labelsMap, calRatio = 0.5) {
   return { train: pick(trainIdx), cal: pick(calIdx) };
 }
 
-// Module-level cached gatekeeper bundles for stateful CLI / agent sessions
+// Module-level cached gatekeeper bundles and active Dual-CSR graph for stateful CLI / agent sessions
 let lastTrainedBundle = null;
 let lastMultiAxisBundle = null;
+let activeDocumentGraph = null;
 
 function extractUrlsList(text) {
   if (typeof text !== 'string') return [];
@@ -254,6 +256,80 @@ export function handleJsonRpcRequest(request) {
                   url: { type: 'string' },
                   urls: { type: 'array' },
                   options: { type: 'object' }
+                }
+              }
+            },
+            {
+              name: 'index_document_graph',
+              description: 'Builds a strictly redacted Document Knowledge Graph (DOCUMENT/SECTION/PASSAGE/ENTITY/ARTIFACT) in verisieve_graph.wasm Dual-CSR with salted pseudonyms.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  documents: { type: 'array' },
+                  artifacts: { type: 'array' },
+                  workspaceSalt: { type: 'string' }
+                }
+              }
+            },
+            {
+              name: 'blast_radius',
+              description: 'Runs bidirectional k-hop PII Blast Radius / W3C PROV-O taint traversal over verisieve_graph.wasm.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  seedIds: { type: 'array' },
+                  direction: { type: 'string', enum: ['in', 'out', 'both'] },
+                  maxHops: { type: 'number' },
+                  edgeTypes: { type: 'array' }
+                }
+              }
+            },
+            {
+              name: 'ppr_retrieve',
+              description: 'Runs HippoRAG-2 Personalized PageRank over verisieve_graph.wasm to retrieve multi-hop redacted passages.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  query: { type: 'string' },
+                  topK: { type: 'number' },
+                  alpha: { type: 'number' },
+                  iterations: { type: 'number' },
+                  passageResetScale: { type: 'number' }
+                }
+              }
+            },
+            {
+              name: 'trace_path',
+              description: 'Finds shortest path between two graph nodes in verisieve_graph.wasm (BFS or weighted Dijkstra).',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  srcId: { type: 'string' },
+                  dstId: { type: 'string' },
+                  direction: { type: 'string', enum: ['out', 'in', 'both'] },
+                  maxHops: { type: 'number' },
+                  weighted: { type: 'boolean' }
+                }
+              }
+            },
+            {
+              name: 'get_document_tree',
+              description: 'Returns PageIndex-style strictly redacted hierarchical Table of Contents (TOC) trees for indexed documents.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  docId: { type: 'string' }
+                }
+              }
+            },
+            {
+              name: 'read_section_nodes',
+              description: 'Reads strictly redacted passages under selected PageIndex TOC section nodeIds.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  sectionNodeIds: { type: 'array' },
+                  includeDescendants: { type: 'boolean' }
                 }
               }
             }
@@ -496,6 +572,47 @@ export function handleJsonRpcRequest(request) {
           } else {
             throw new Error('URL network fetching requires handleJsonRpcRequestAsync');
           }
+        } else if (toolName === 'index_document_graph') {
+          const docs = Array.isArray(args.documents) ? args.documents : [];
+          const artifacts = Array.isArray(args.artifacts) ? args.artifacts : [];
+          activeDocumentGraph = new PortableDocumentGraph({ workspaceSalt: args.workspaceSalt });
+          const summary = activeDocumentGraph.indexDocuments(docs, artifacts);
+          result = { content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }] };
+        } else if (toolName === 'blast_radius') {
+          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+          const hits = activeDocumentGraph.blastRadius(args.seedIds || [], {
+            direction: args.direction || 'in',
+            maxHops: args.maxHops ?? 3,
+            edgeTypes: args.edgeTypes,
+          });
+          result = { content: [{ type: 'text', text: JSON.stringify({ hits }, null, 2) }] };
+        } else if (toolName === 'ppr_retrieve') {
+          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+          const out = activeDocumentGraph.pprRetrieve(String(args.query || ''), {
+            topK: args.topK ?? 6,
+            alpha: args.alpha ?? 0.85,
+            iterations: args.iterations ?? 15,
+            passageResetScale: args.passageResetScale ?? 0.05,
+          });
+          result = { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] };
+        } else if (toolName === 'trace_path') {
+          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+          const traced = activeDocumentGraph.tracePath(String(args.srcId || ''), String(args.dstId || ''), {
+            direction: args.direction || 'both',
+            maxHops: args.maxHops ?? 6,
+            weighted: Boolean(args.weighted),
+          });
+          result = { content: [{ type: 'text', text: JSON.stringify({ path: traced }, null, 2) }] };
+        } else if (toolName === 'get_document_tree') {
+          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+          const trees = activeDocumentGraph.getDocumentTree(args.docId);
+          result = { content: [{ type: 'text', text: JSON.stringify({ trees }, null, 2) }] };
+        } else if (toolName === 'read_section_nodes') {
+          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+          const passages = activeDocumentGraph.readSectionNodes(args.sectionNodeIds || [], {
+            includeDescendants: args.includeDescendants !== false,
+          });
+          result = { content: [{ type: 'text', text: JSON.stringify({ passages }, null, 2) }] };
         } else {
           throw new Error(`Unknown tool: ${toolName}`);
         }

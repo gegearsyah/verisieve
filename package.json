@@ -12,6 +12,10 @@
     "url": "https://github.com/gegearsyah/verisieve.git"
   },
   "license": "MIT",
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "tesseract.js": "^7.0.0"
+  },
   "bin": {
     "verisieve": "./bin/verisieve.mjs",
     "rtio-portable": "./bin/rtio-portable.mjs",
@@ -19,7 +23,7 @@
   },
   "scripts": {
     "start": "node bin/verisieve.mjs run",
-    "test:ci": "node --test test/clean-wasm.test.js test/multi-font-fixture.test.js test/ocr-engine.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-docx-ingest.test.js test/cli-ssrf.test.js test/wasm-needle-dl.test.js test/sql-wasm.test.js test/ui-server.test.js test/pdf-image-pipeline.test.js test/head-to-head-comparison.test.js test/t9-portable-benchmarks.test.js && node --test test/mcp.test.js",
+    "test:ci": "node --test test/clean-wasm.test.js test/graph-wasm.test.js test/multi-font-fixture.test.js test/ocr-engine.test.js test/local-tesseract-ocr.test.js test/clean-and-tokenize.test.js test/gatekeeper.test.js test/pdf-docx-ingest.test.js test/cli-ssrf.test.js test/wasm-needle-dl.test.js test/sql-wasm.test.js test/ui-server.test.js test/pdf-image-pipeline.test.js test/head-to-head-comparison.test.js test/t9-portable-benchmarks.test.js && node --test test/mcp.test.js",
     "test": "npm run test:ci && node --test test/scale-benchmark.test.js",
     "demo:real": "node scripts/run-real-data-benchmark.mjs",
     "demo:pdf-vs-image": "node scripts/run-pdf-vs-image-demo.mjs",
