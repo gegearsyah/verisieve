@@ -7,9 +7,20 @@ import zlib from 'node:zlib';
 import { loadMediaWasmSync, DEFAULT_MEDIA_WASM_PATH } from '../src/media-wasm.js';
 import { parseEnterpriseBuffer } from '../src/enterprise-parsers.js';
 import { scanEnterprisePiiAndSecrets, redactEnterpriseText } from '../src/secret-scanner.js';
-import { encodePcm16Wav, measureWavWindowRms, redactAudioCall } from '../src/audio-redactor.js';
+import {
+  encodePcm16Wav,
+  measureWavWindowRms,
+  redactAudioCall,
+  collapseRepeatedSpeechPhrases,
+  deduplicateSpeechSegments,
+} from '../src/audio-redactor.js';
 import { buildSlidingWindows, createLocalNeuralPiiRunner, redactWithHybridNeuralPii } from '../src/neural-pii-onnx.js';
-import { redactVideoKeyframes, scrubBinaryMediaMetadata } from '../src/video-redactor.js';
+import {
+  redactVideoKeyframes,
+  scrubBinaryMediaMetadata,
+  filterReadableOcrSlideLines,
+} from '../src/video-redactor.js';
+import { deduplicateChunks } from '../src/ingestor.js';
 import { handleJsonRpcRequest, handleJsonRpcRequestAsync } from '../src/mcp-server.js';
 
 // ---------------------------------------------------------------------------
@@ -561,4 +572,38 @@ test('Track E6: Cross-modal Knowledge Graph + GDPR Art. 17 blast_radius + new MC
   const audioData = JSON.parse(audioResp.result.content[0].text);
   assert.doesNotMatch(audioData.redactedTranscript, /elena@acme\.com/);
   assert.equal(audioData.redactionLog.length, 1);
+
+  // Verify backported dark-mode OCR readability gate, Whisper phrase collapse, and timestamp-agnostic dedup
+  assert.deepEqual(
+    filterReadableOcrSlideLines(
+      [
+        '® Tle Fd Secon View Go Rn Temi Wp EO « 1 cpu alma ia RCo CHINE - 0 save',
+        'Quarterly Compliance Evaluation: contact elena.vance@acme.com',
+      ],
+      0.82
+    ),
+    ['Quarterly Compliance Evaluation: contact elena.vance@acme.com']
+  );
+
+  assert.equal(
+    collapseRepeatedSpeechPhrases(
+      'the first part is that, the first part is that, the first part is that, like, you are not going to be able to do anything.'
+    ),
+    'the first part is that, like, you are not going to be able to do anything.'
+  );
+
+  const dedupedSpeech = deduplicateSpeechSegments([
+    { startSec: 107, endSec: 110, text: 'And then you are going to be able to do anything.' },
+    { startSec: 110, endSec: 113, text: 'And then you are going to be able to do anything.' },
+    { startSec: 113, endSec: 116, text: 'And then you are going to be able to do' },
+  ]);
+  assert.equal(dedupedSpeech.length, 1);
+
+  const chunkDedup = deduplicateChunks([
+    '[Speech 01:47–01:50] And then you are going to be able to do anything.',
+    '[Speech 01:50–01:53] And then you are going to be able to do anything.',
+    '[Speech 01:53–01:56] And then you are going to be able to do anything.',
+  ]);
+  assert.equal(chunkDedup.uniqueChunks.length, 1);
+  assert.equal(chunkDedup.duplicatesRemoved, 2);
 });

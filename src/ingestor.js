@@ -646,7 +646,10 @@ export function deduplicateChunks(chunks, options = {}) {
 
   for (const chunk of chunks) {
     const text = chunk.text || chunk;
-    const sha = crypto.createHash('sha256').update(text).digest('hex');
+    // Strip leading media/subtitle timestamp tags ([Speech MM:SS–MM:SS], [Slide MM:SS], [00:01:23])
+    // when computing SHA-256 and shingle signatures so identical sentences at consecutive timestamps dedup!
+    const probeText = String(text).replace(/^\[(?:Speech|Slide|\d{1,2}:\d{2})[^\]]*\]\s*/i, '').trim() || String(text);
+    const sha = crypto.createHash('sha256').update(probeText).digest('hex');
 
     if (seenHashes.has(sha)) {
       duplicatesRemoved++;
@@ -654,7 +657,7 @@ export function deduplicateChunks(chunks, options = {}) {
       continue;
     }
 
-    const shingles = computeShingles(text);
+    const shingles = computeShingles(probeText);
     const isSmall = shingles.size <= 4;
     const bandKeys = isSmall ? null : bandKeysForSignature(computeMinHashSignature(shingles));
 

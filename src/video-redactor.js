@@ -33,6 +33,59 @@ function formatSecTimestamp(ms) {
   return `${h}:${m}:${s}`;
 }
 
+const OCR_NOISE_SYMBOL_RE = /[®©«»§|~^\\{}[\]<>—†‡•¬¦¨´¸]/g;
+
+/**
+ * Filters out garbled low-confidence OCR noise (e.g., tiny dark-mode IDE menus read as
+ * random symbols/fragments) while preserving genuine slide, document, email, or code text.
+ */
+export function filterReadableOcrSlideLines(lines, confidence) {
+  if (typeof confidence === 'number' && Number.isFinite(confidence) && confidence < 0.55) {
+    return [];
+  }
+  const kept = [];
+  for (const raw of lines || []) {
+    const clean = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (clean.length < 10) continue;
+
+    const noiseMatches = clean.match(OCR_NOISE_SYMBOL_RE);
+    const noiseCount = noiseMatches ? noiseMatches.length : 0;
+    if (noiseCount >= 2 || noiseCount / clean.length > 0.03) continue;
+
+    const tokens = clean.split(/\s+/).filter(Boolean);
+    if (tokens.length < 3) continue;
+
+    let singleCharCount = 0;
+    let plausibleWords = 0;
+    let alnumLenSum = 0;
+    for (const tok of tokens) {
+      const stripped = tok.replace(/^["'([{\u2018\u201c]+|["')\]}.,:;!?\u2019\u201d]+$/g, '');
+      const alnum = stripped.replace(/[^A-Za-z0-9]/g, '');
+      alnumLenSum += alnum.length;
+      if (alnum.length <= 1) {
+        singleCharCount++;
+        continue;
+      }
+      const isEmailOrUrl = /@|\.[a-z]{2,}$|^https?:\/\//i.test(stripped);
+      const hasDigit = /\d/.test(alnum);
+      const hasVowel = /[aeiouyAEIOUY]/.test(alnum);
+      const weirdMixedMid = /[A-Z]{2,}[a-z]{4,}/.test(alnum) && alnum.length >= 12;
+      const cleanCharset = /^[A-Za-z0-9'._:/@+-]+$/.test(stripped);
+      if (cleanCharset && !weirdMixedMid && (isEmailOrUrl || hasDigit || hasVowel || alnum.length <= 4)) {
+        plausibleWords++;
+      }
+    }
+
+    const avgAlnumLen = alnumLenSum / tokens.length;
+    const singleCharRatio = singleCharCount / tokens.length;
+    const plausibleRatio = plausibleWords / tokens.length;
+    if (avgAlnumLen < 2.6 || singleCharRatio > 0.35 || plausibleRatio < 0.72) continue;
+
+    kept.push(clean);
+  }
+  return kept;
+}
+
 /**
  * Process a sequence of video frames `{ timeMs, width, height, channels?, pixels }` through:
  * 1. Scene-change keyframe selection (`sceneDelta > threshold` or cadence `intervalMs`)
@@ -344,7 +397,7 @@ export async function redactLocalVideoFile(videoPath, options = {}) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-vid-'));
   const fps = options.fps ?? 0.5;
   const maxSeconds = options.maxSeconds ?? 30;
-  const scaleWidth = options.scaleWidth ?? 960;
+  const scaleWidth = options.scaleWidth ?? 1920;
   const startSeconds = options.startSeconds ?? 0;
 
   let tess = null;

@@ -31,6 +31,84 @@ function formatVttTime(ms) {
 }
 
 /**
+ * Collapses Whisper decoder repetition loops inside a single utterance
+ * (e.g. "the first part is that, the first part is that, the first part is that, like..."
+ *  -> "the first part is that, like...")
+ */
+export function collapseRepeatedSpeechPhrases(rawText) {
+  let text = String(rawText || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const phraseRepeatRe = /\b([A-Za-z0-9']+(?:[\s,]+[A-Za-z0-9']+){0,7})(?:[\s,]+\1\b)+/gi;
+  for (let pass = 0; pass < 4; pass++) {
+    const next = text.replace(phraseRepeatRe, '$1');
+    if (next === text) break;
+    text = next;
+  }
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Deduplicates timestamped speech segments by comparing their normalized spoken content
+ * (ignoring `[Speech MM:SS–MM:SS]` prefixes) via exact match, prefix/substring containment,
+ * and symmetric token Jaccard >= 0.78 so repeated Whisper chunks never flood training sets.
+ */
+export function deduplicateSpeechSegments(segments = []) {
+  const accepted = [];
+  for (const seg of segments) {
+    const collapsed = collapseRepeatedSpeechPhrases(seg.text);
+    const norm = collapsed
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (norm.length < 3) continue;
+
+    if (/^(thank you( for watching)?|thanks for watching|subtitles by .*|you)$/i.test(norm)) {
+      continue;
+    }
+
+    const tokens = norm.split(' ').filter(Boolean);
+    const tokenSet = new Set(tokens);
+    if (tokenSet.size <= 1 && tokens.length >= 3) continue;
+
+    let isDuplicate = false;
+    for (const prev of accepted) {
+      if (
+        prev.norm === norm ||
+        (prev.norm.startsWith(norm) && norm.length >= prev.norm.length * 0.65) ||
+        (norm.startsWith(prev.norm) && prev.norm.length >= norm.length * 0.65)
+      ) {
+        isDuplicate = true;
+        break;
+      }
+      if (tokenSet.size >= 4 && prev.tokenSet.size >= 4) {
+        let shared = 0;
+        tokenSet.forEach((tok) => {
+          if (prev.tokenSet.has(tok)) shared++;
+        });
+        const union = tokenSet.size + prev.tokenSet.size - shared;
+        const jaccard = union > 0 ? shared / union : 0;
+        if (jaccard >= 0.78) {
+          isDuplicate = true;
+          break;
+        }
+      }
+    }
+
+    if (!isDuplicate) {
+      accepted.push({
+        startSec: seg.startSec,
+        endSec: seg.endSec,
+        text: collapsed,
+        norm,
+        tokenSet,
+      });
+    }
+  }
+  return accepted.map(({ startSec, endSec, text }) => ({ startSec, endSec, text }));
+}
+
+/**
  * Pure JS PCM16 mono/stereo WAV generator (handy for fixtures & tests; decoding/redaction uses WASM).
  */
 export function encodePcm16Wav(samplesFloat32, sampleRate = 16000, channels = 1) {
