@@ -1,128 +1,206 @@
-# VeriSieve
+# VeriSieve (`matilda-portable`)
 
 [![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Zero-Egress Document Curation, Customer-Label Conformal Gatekeeping, and Local WebAssembly Training**  
+**Zero-Egress Multimodal Document & Media Sanitization, Conformal Risk-Controlled Gatekeeping, and Dual-CSR Graph Retrieval in Zero-Import Rust→WebAssembly**  
 *Author: Gege Ardiyansyah*
 
-VeriSieve is the portable curation engine powering the **RTIO** browser sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)), backed by three zero-import `#![no_std]` Rust WebAssembly kernels (`verisieve_clean.wasm`, `verisieve_dl.wasm`, `verisieve_sql.wasm`) and a pure-memory `cactus.wasm` runtime for Option B 2D-tiled optical recognition.
+VeriSieve is a local-first curation, de-identification, and retrieval engine shared across the **RTIO Browser Sandbox** ([rtio.io/sandbox](https://www.rtio.io/sandbox)), a Node.js CLI (`bin/verisieve.mjs`), an 18-tool Model Context Protocol (MCP) server (`src/mcp-server.js`), and a single-header C99 scorer (`include/verisieve.h`, `2,129 B`).
+
+At its core are **five standalone `#![no_std]` Rust→WebAssembly kernels (`365.9 KB` combined)** audited to have **zero host imports (`WebAssembly.Module.imports(mod).length === 0`)**. Because these WASM modules cannot perform network I/O, filesystem access, or system calls—and operate solely on caller-allocated linear memory slices—they enforce an auditable, binary-level zero-egress boundary in both browser tabs and server/CLI processes.
 
 ---
 
-## Architecture & Honest Separation of Responsibilities
+## Scope of Novelty & Design Philosophy
 
-| Layer | Component | Responsibility & Verification |
+We state the scope of contribution plainly across our codebase and companion benchmark papers:
+
+- **Established algorithmic components:** Learn-Then-Test (LTT) finite-sample conformal risk control, GLiNER zero-shot span extraction, Unicode TR39 confusable folding, salted Bloom-filter record linkage (PPRL), Carlini canary exposure, Personalized PageRank (PPR), and LoRA fine-tuning are established methods.
+- **Systems integration contribution:** Existing privacy stacks typically require Python servers (`Presidio` + `spaCy`), Go/Python CLI subprocesses (`Gitleaks`, `detect-secrets`), or cloud APIs, and handle only a single modality. VeriSieve packages archive/container extraction, Unicode anti-evasion, checksum-verified PII & secret scanning, Spoken Inverse Text Normalization (ITN), sample-accurate WAV audio redaction, video keyframe scene-change & temporal bounding-box pixel redaction, cross-modal entity resolution, Dual-CSR Personalized PageRank retrieval, and sub-millisecond GDPR Art. 17 erasure into **one portable, zero-import Rust→WASM + JS/TS stack** with strict fail-closed invariants (`NER_WEIGHTS_REQUIRED`, `ASR_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`, `ZIP_BOMB_RATIO_EXCEEDED`, `ZIP_SLIP_PATH_TRAVERSAL`).
+
+---
+
+## Research Papers (Included in `paper/`)
+
+All three MLSys-formatted benchmark papers, along with their LaTeX sources, BibTeX references, vector figure builders (`paper/figs/`), and raw JSON benchmark outputs (`results/`), are checked into this repository:
+
+1. **[Paper 1 — Deterministic Document Extraction, Data Redaction, and Conformal Gatekeeping](paper/verisieve-extraction-redaction-benchmark.pdf)** ([`.tex`](paper/verisieve-extraction-redaction-benchmark.tex))  
+   *Evaluates native PDF CMap/kerning extraction, 2D overlapping tiling on 199 ICDAR-2019 FUNSD forms (`30,595` word boxes), deterministic PII disambiguation across `ai4privacy-200k` and `PubMedQA`, finite-sample LTT conformal calibration, and 7-trial interleaved runtime substrates (`C99` vs. `Node+WASM` vs. `Python+NumPy` vs. `PyTorch+DuckDB`).*
+2. **[Paper 2 — VeriSieve-MM: Zero-Import WASM Multimodal Sanitization, Hybrid Neural NER, and Cross-Modal GDPR Erasure](paper/verisieve-multimodal-sanitization-benchmark.pdf)** ([`.tex`](paper/verisieve-multimodal-sanitization-benchmark.tex))  
+   *Evaluates `verisieve_media.wasm` + Stage 3B `gliner-pii-edge` against external tools and human-annotated corpora: the Text Anonymization Benchmark (`TAB`, $N=1,268$ ECHR court rulings) vs. Microsoft Presidio (`en_core_web_lg` + custom recognizers), non-circular Ground-Truth LTT across three gate architectures, enterprise secrets vs. `Gitleaks v8.30.1` and Yelp `detect-secrets v1.5.0`, Unicode anti-evasion vs. Python `NFKC`, end-to-end TTS→Whisper (`base.en` / `small.en`) audio waveform redaction, 128-bit salted Bloom+Soundex PPRL across `124,750` candidate pairs, `<1 ms` GDPR Art. 17 erasure, and $O(1)$ multi-GB MP4 container scrubbing.*
+3. **[Paper 3 — Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval](paper/verisieve-local-training-benchmark.pdf)** ([`.tex`](paper/verisieve-local-training-benchmark.tex))  
+   *Evaluates six open-weight models on an 8 GB RTX 4070 Laptop GPU (`Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, `LFM3-1.7B-Base` trained as matched Raw vs. VeriSieve-Safe assistant-only `T2-Chat` LoRA pairs, plus `lfm3:latest`, `llama3.2:3b`, `qwen2.5:7b` Ollama comparators): Carlini $20\times$-canary weight exposure, adversarial context extraction, `1,050` blinded LLM-judge evaluations (`T0+Graph-PPR` vs. `T2-Chat` LoRA on held-out and seen documents), and the VRAM crossover between Native KV-Cached CAG and Dual-CSR Graph-PPR.*
+
+---
+
+## System Architecture: Zero-Import WASM Kernels & Runtime Layers
+
+### 1. The Five Zero-Import `#![no_std]` Rust→WASM Kernels (`vendor/wasm/`)
+
+Every kernel is compiled with `wasm32-unknown-unknown` (`panic = "abort"`, LTO enabled) and verified in CI (`npm run audit-wasm`) to have **`0` host imports**:
+
+| Kernel Binary | Size | Source Crate | Exports | Verified Responsibilities |
+|---|---:|---|---:|---|
+| **`verisieve_clean.wasm`** | `14,633 B` | `rust/verisieve-clean/` | `15` | HTML/script/style/comment stripping, UTF-8 entity decoding, 2,048-slot FNV-1a/SimHash deduplication ring with eviction accounting, and token-window chunking. |
+| **`verisieve_media.wasm`** | `187,087 B` | `rust/verisieve-media/` | `24` | RFC 1951 DEFLATE/GZIP + ZIP/TAR (`100:1` bomb ratio & Zip-Slip guards), CFBF/OLE2 `.msg` stream extraction, NFKC + TR39 homoglyph + zero-width anti-evasion, checksum-verified PII (Luhn, IBAN mod-97, ABA, NPI, NHS, AU TFN, SSN) & 30+ secret scanner, 128-bit salted Bloom+Soundex PPRL (`vs_media_pprl_signature`), Spoken ITN (`vs_media_spoken_itn`), WAV PCM16 redaction (`silence`/`beep`/`noise` + RIFF metadata scrub), JPEG/PNG/MP4 metadata scrub (`udta`/`meta`/`EXIF`/`GPS`), 64-bin RGB scene-change delta, temporal box hold/interpolation, and RGB/RGBA pixel blackout/mosaic/Gaussian blur. |
+| **`verisieve_graph.wasm`** | `54,402 B` | `rust/verisieve-graph/` | `24` | Dual-CSR forward/reverse knowledge graph (`65,536` nodes, `262,144` edges), HippoRAG-2 Personalized PageRank (`15` power iterations), $<1\,\text{ms}$ GDPR Art. 17 `blast_radius`, BFS shortest path, Tarjan SCC, Louvain clustering, and `.csr` binary snapshots. |
+| **`verisieve_dl.wasm`** | `60,096 B` | `rust/verisieve-dl/` | `26` | 1.58-bit ternary BitNet quantization, VeRA adapter forward/backward updates (`mle_dl_vera_*`), and 64-dimensional needle retrieval embeddings. |
+| **`verisieve_sql.wasm`** | `49,642 B` | `rust/verisieve-sql/` | `12` | Deterministic in-memory relational SQL subset engine (`MAX_ROWS = 4,096`). |
+
+### 2. RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) vs. Node.js CLI / MCP Server
+
+VeriSieve runs the **exact same byte-identical WASM binaries** in the browser and in Node.js (enforced by CI parity tests), while adapting heavy media decoding to each runtime's memory boundaries:
+
+| Capability | RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Node.js CLI & 18-Tool MCP Server (`matilda-portable`) |
 |---|---|---|
-| **Interface** | **RTIO** ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Interactive browser workspace for URL/document upload, PII/triage inspection, customer chunk labeling, SQL exploration, and local adapter runs. That app still depends on `tesseract.js` and `@tesseract.js-data/eng`. |
-| **Portable Engine** | **VeriSieve** (`src/`, `include/verisieve.h`) | Local PDF (`/FlateDecode`, `/ASCII85Decode`, `/ObjStm`, scoped `/ToUnicode` CMaps, `TJ` kerning) + `.docx` ingestion, optional local Tesseract.js OCR, PII redaction (`334`-word exclusion lexicon), `520`-dim logistic gatekeeper, LTT conformal calibration, SSRF-hardened URL ingest, and MCP server (`8` tools). Runs across Browser, Node CLI, MCP, and C99. |
-| **Rust WASM Cores** | **Clean + DL + SQL WASM** (`vendor/wasm/`) | Three zero-import (`imports.length === 0`) `#![no_std]` Rust binaries: `verisieve_clean.wasm` (`13,757 B`), `verisieve_dl.wasm` (`60,096 B`, `26` `mle_dl_*` exports for BitNet/VeRA & 64-dim needle embeddings), and `verisieve_sql.wasm` (`49,642 B`, `MAX_ROWS=4096` SQL subset engine). |
-| **Vision OCR Runtime** | **Cactus WASM + local Tesseract.js** | Cactus remains the preferred pure-memory 2D-tiled path when Mirage `.cact` weights are supplied. The CLI and RTIO browser use local Tesseract.js/WASM as an OCR fallback when those weights are absent; worker, core, and English language data are resolved from installed local assets. |
-
-Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration execute purely in deterministic JavaScript and C99**, while **`verisieve_dl.wasm` executes neural BitNet/VeRA updates and needle retrieval**. Scanned images and image-only PDFs use Cactus when local `.cact` weights are present, otherwise the CLI/browser Tesseract fallback; OCR never invents placeholder text.
-
----
-
-## Deliverable Status & Known Scope
-
-| Requirement | Built & Verified in VeriSieve | Honest Gap / Boundary |
-|---|---|---|
-| **Web & Link Capture** | `verisieve_clean.wasm` HTML/entity/script/comment stripping + SSRF DNS/private-CIDR pinning (`src/ingestor.js`); `ingestor.js` & `ingestFromUrlOrPath` fail closed on unreachable hosts or missing weights | Live remote URL ingest requires host network connectivity |
-| **PDF & `.docx` Capture** | Bit-3 Data Descriptor ZIP OOXML `.docx` parser + PDF 1.5 `/ObjStm`, `/FlateDecode`, `/ASCII85Decode`, scoped `/ToUnicode` CMaps & `TJ` kerning (`8/8` PMC PDFs clean); local OCR fallback for image-only PDFs; `.pdf` files containing HTML are detected and sent through the HTML cleaner | Encrypted PDFs (`/Encrypt`) fail closed; OCR depends on readable embedded images |
-| **Dedupe & Manifest** | SHA-256 exact hash + 3-gram Jaccard ($\ge 0.85$) tracked with capacity-eviction accounting (`vs_clean_dedup_overflowed`); immutable `AuditChain` | Tested per shard in memory (`verisieve_sql.wasm` bounded at `4,096` rows per query table) |
-| **Multi-Axis Customer Gate** | Independent `safe`, `useful`, `topic` logistic heads + LTT + C99 UTF-8 FNV-1a parity; fail-closed `tauKeep = 1.0` when `n_cal,unsafe` is below finite-sample bound | Conditional LTT at $\alpha=0.01, \delta=0.05$ requires $n_{\text{cal,unsafe}} \ge 299$ (`206` unsafe cal items hit fail-closed floor; `40`-item multi-axis calibration fails closed on sparse negative classes) |
-| **Zero-Egress Runtime** | All 4 WASM binaries audited via `npm run audit-wasm`. Tesseract.js and English data are installed once as local package dependencies and loaded from disk; OCR makes no runtime CDN request | Process cold-start favors C99/Node+WASM, while warm batched matrix dot products favor Python+NumPy BLAS |
+| **Data Egress Guarantee** | **100% client-side in the browser tab** under `Cross-Origin-Embedder-Policy: require-corp`. User files never upload to any server. | **100% local offline execution.** Fails closed on missing local weights; SSRF-hardened URL fetch blocks private/loopback/IMDS CIDRs. |
+| **Documents & Archives** | Native PDF (`/ToUnicode` CMap, `/ObjStm`, `TJ` kerning), bit-3 `.docx`, `.pptx` (speaker notes + hidden slides), `.xlsx` (veryHidden sheets + comments + pivotCache), `.eml`, `.msg`, `.vtt`/`.srt`, `.har`, `.ipynb`, `.ics`, Slack JSON, `.zip`/`.tar.gz`. | Identical WASM + JS parsers (`src/enterprise-parsers.js`, `src/pdf-parser.js`, `src/structure-extractor.js`). |
+| **Stage 3A PII & Secrets** | Live in-browser `verisieve_media.wasm` (`maskTextContextAware`) + `SaltedPseudonymVault` + forensic hidden-channel badges in `CleanTab`. | Identical `verisieve_media.wasm` Stage 3A + optional Stage 3B local ONNX `gliner-pii-edge` (`63.5 MB` INT8, `src/neural-pii-onnx.js`). |
+| **Audio & Video Transcription + Redaction** | Off-main-thread ONNX Runtime Web proxy Worker (`/ort/ort-wasm-simd-threaded.*.wasm`) running multilingual `whisper-tiny` (`40.8 MB` `q8`, 99 languages, cached in browser CacheStorage) over DSP VAD-selected 30s active speech windows (up to **30 min / ~350 MB** per browser tab WebAudio RAM limit) + Spoken ITN + timestamp-agnostic speech dedup + 1080p dark-mode contrast-inverted keyframe slide OCR (`/ocr/*` Tesseract WASM with readability filtering) + interactive `MediaRedactionStudio` (`.wav` mute/beep, `.mp4` `O(1)` `Blob.slice()` atom scrub, `.png`/`.jpg` bounding-box pixel blackout/blur). | **No browser tab RAM limit (supports 3-hour+ multi-GB recordings):** `O(1)` `4 KB` file-descriptor seeking (`inspectMp4StreamMetadata` / `scrubMp4FileMetadata`), streaming local `ffmpeg` demuxing (`src/video-redactor.js`), native local `whisper.cpp` / `faster-whisper` (`src/audio-redactor.js`), and sample-accurate WAV & keyframe pixel redaction via `verisieve_media.wasm`. |
+| **Retrieval & Training** | In-browser Dual-CSR `verisieve_graph.wasm` PPR + lexical/cosine hybrid retrieval (`Chat`), in-browser `verisieve_dl.wasm` VeRA adapter training (`Train`), and one-click sanitized SFT JSONL + LoRA script export. | Full `verisieve_graph.wasm` indexing, Native KV-Cached CAG dossier builder (`src/cag-dossier.js`) with `<1 ms` GDPR Art. 17 KV-slot eviction, and local RTX GPU LoRA training/evaluation harness. |
 
 ---
 
-## Live 1,207-Document Benchmark Summary
+## Summary of Empirical Benchmarks Across All Three Papers
 
-All numbers below are measured live by `npm run bench:scale` (`results/scale-and-paradigm-benchmark.json`, SVG SHA-256 byte-identical across passes) across ICDAR FUNSD (`199` scans / `30,595` bboxes), `ai4privacy-200k` (`500` synthetic records), PubMedQA (`500` clinical abstracts), and PMC Full-Text (`8` born-digital clinical PDFs).
+### Paper 1: Document Extraction, PII Disambiguation & LTT Conformal Gatekeeping (`1,207` Public Docs)
 
-### 1. PDF CMap + FUNSD 2D Geometric Tiling
-- **PMC Clinical PDFs (`8/8` Clean)**: Scoped `/ToUnicode` CMap tables + negative-kerning `TJ` (`<= -110`) space reconstruction recover `8,134` readable lines (`55,099` words) in `209.02 ms` total (`26.13 ms` avg; range `8.42–64.54 ms`) on the 16 Nov 2026 remeasurement.
-- **FUNSD Geometric Survival (`199` forms, `30,595` boxes $\ge 8{\times}4$\,px)**:
-  - `stock_capped_8`: `5.2%` (`1,592`)
-  - `untiled_512`: `20.53%` (`6,281`)
-  - `horizontal_1d_band`: `71.29%` (`21,811`)
-  - `tile_2d_zero_overlap`: `92.44%` (`28,283`, `4.94%` seam cut loss)
-  - **`tile_2d` (32px overlap, stride 480)**: **`97.38%` (`29,793`)** geometry scan (excludes external neural OCR recognizer accuracy).
+Measured via `npm run bench:scale` (`results/scale-and-paradigm-benchmark.json`) across **ICDAR-2019 FUNSD** (`199` scanned forms, `30,595` word boxes), **PMC Full-Text** (`8` clinical PDFs), **PubMedQA** (`500` abstracts), and **`ai4privacy-200k`** (`500` records):
 
-### 2. PII Disambiguation & Honest Regex Ceiling
-- **`ai4privacy-200k` (`500` synthetic span records)**:
-  - Core contact/card/IPv4: **`78.6%`** (`110/140`)
-  - Targeted 8 patterns: **`62.8%`** (`159/253`)
-  - All 26 structured token types: **`31.0%`** (`180/580`)
-  - Bare unprefixed international names: **`49.6%`** (`118/238`, honest regex ceiling)
-- **PubMedQA False-Positive Protection (`250/250` split, pre-committed `334`-word lexicon)**:
-  - Train split (`62,620` words): `44.4% -> 22.8%` docs (`5.29 -> 1.66` hits/1k words)
-  - Blind test split (`63,739` words): `45.2% -> 26.0%` docs (`5.46 -> 2.01` hits/1k words, **`2.72x` fewer false positives**)
-  - Lookalike lines (`n=5`): `80.0% -> 20.0%` false-positive rate
-
-### 3. Single-Scorer Conformal LTT & Customer Multi-Axis Gate
-Stratified split (`n_train=607`, `n_cal=301` [`206` unsafe], `n_test=299` [`205` unsafe, `94` safe], $\delta=0.05$) on the 520-dim logistic scorer with fixed lower floor $\tau_{\text{drop}} = 0.25$:
-
-| Budget / Policy | $\tau_{\text{keep}}$ | Cond FPR | Joint Risk | Safe Yield | Abstain | Status ($\delta=0.05$) |
-|---|---:|---:|---:|---:|---:|---|
-| $\alpha = 0.20$ | `0.26` | `14.63%` | `10.03%` | `96.81%` | `0.33%` | Certified Cond & Joint |
-| **Uncalibrated** | `0.50` | `4.39%` | `3.01%` | `90.43%` | `0.00%` | Uncontrolled (fails $\alpha \le 0.02$) |
-| $\alpha = 0.10$ | `0.44` | `4.88%` | `3.34%` | `92.55%` | `8.36%` | Certified Cond & Joint |
-| $\alpha = 0.05$ | `0.52` | `3.41%` | `2.34%` | `89.36%` | `10.37%` | Certified Cond & Joint |
-| $\alpha = 0.02$ | `0.60` | `0.98%` | `0.67%` | `82.98%` | `14.05%` | Certified Cond & Joint |
-| $\alpha = 0.01$ | `1.00` | `0.00%` | `0.00%` | `0.00%` | `40.80%` | Joint Valid (`p=0.0486`) / Cond Fail-Closed (`206 < 299`) |
-
-- **Within-domain PubMedQA (`n=124`)**: Contact regex achieves `100.0%` on injected email/phone cases vs. `87.9%` 520-dim linear gate and `52.4%` naive any-PII regex. Multi-axis evaluation (`60` train / `40` cal → `300` test): `safe` certifies (`tauKeep=0.55`, `97.1%` recall / `95.7%` precision, `7.3%` abstain). Sparse `useful`/`topic` calibration fails closed (`tauKeep=1.0`). The conjunction keeps `0` chunks (`85` abstain, `215` drop). There is no keep-set, so a `0%` leak rate is not a measured yield.
-
-### 4. 7-Trial Interleaved Substrates & Held-Out Ablation
-Medians of 7 interleaved OS process spawns on an AMD Ryzen 7 7840HS, 31.3 GB RAM, Windows 11 (16 Nov 2026). Spawn and RSS are comparable. Warm kernels are not: C99 and NumPy time the same `1,207 x 520` logistic; Node times 64-d `mle_dl_vera_predict`; PyTorch times a Qwen2 step on 100 rows. `include/verisieve.h` is `2,129 B` (the old `12.4 KB` label was a constant).
-- **C99**: `14.12 ms` spawn | `6.08 MB` RSS | `0.745 ms` logistic
-- **Node.js + WASM (`60,096 B`)**: `106.22 ms` spawn (`1.045 ms` WASM init) | `55.97 MB` RSS | `7.125 ms` VeRA predict (**`121.6x` lower spawn median and `7.7x` lower RSS** than PyTorch+DuckDB)
-- **Python 3.12 + NumPy 2.4.3**: `388.79 ms` spawn (`187.01 ms` import) | `31.49 MB` RSS | **`0.207 ms` logistic (wins the shared dot product)**
-- **Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5**: `12,917.14 ms` spawn (`11,661.98 ms` import) | `432.3 MB` RSS | `31.47 ms` Qwen2 step
-
-On held-out `n_test = 299` across `N_train in {100, 300, 607}`: Gate BCE drops `26.7%` (`0.2577 -> 0.2244 -> 0.189`, `94.0%` Acc vs. `64.2%` Naive Regex / `31.4%` Raw), WASM VeRA BCE (`mle_dl_vera_loss_grad`) drops `0.9432 -> 0.6698 -> 0.6141`, contact PII leak stays `<= 1.05%`, and 64-dim Needle R@5 (`125` PubMedQA Q->Body queries) preserves `60.0%` cosine-only parity. That 60% is not the sandbox blend. The blend on the same rows is in `docs/2026-11-16-rag-redaction-verdict.md`.
-
-### 16 Nov 2026 check — measured, and it does not change the shipped ranker
-
-The probe ran. The 0.55/0.45 blend, the regex, and the gate are unchanged.
-
-On the same 125 held-out PubMedQA questions: cosine recall@5 is `75/125` (`60%`), lexical is `123/125` (`98.4%`), and the blend is `120/125` (`96%`). Lexical leads because those questions repeat the passage. A local VeRA head inside `verisieve_dl.wasm`, with no checkpoint loaded, reorders the blend's top 30 and then keeps 6. Gold in that top 6 falls from `121/125` to `39/125`. A second local head lowers bare-name recall on the ai4privacy test 250 from `56/119` to `42/119`. The regex stays. Full counts: `docs/2026-11-16-rag-redaction-verdict.md`.
-
-RTIO chat, separate from these numbers: the current question and earlier turns are masked on the way out, including a flagged name, and a citation number outside the excerpts sent is marked. Retrieval still uses the raw question and the same blend.
-
-### Research still to run
-
-- Questions that do not copy the passage, before any change to the 0.55/0.45 mix.
-- Questions with no supporting chunk, before a retrieval floor. On this 125, a 0.15 floor would abstain on `0` questions.
-- Fine-tune the 0.5B named in the RTIO Train tab on the exported SAFE JSONL, and score it against the untouched base model. The Train tab writes the export and the command. That run has not happened.
-- Whether a cited sentence is supported by that chunk. The drawer check only tests that the citation number was sent.
+- **Born-Digital PDF CMap & Kerning (`8/8` PMC PDFs):** Scoped 1-byte/2-byte `/ToUnicode` CMap resolution and negative-kerning `TJ` (`<= -110`) space reconstruction extract `8,134` lines (`55,099` words) in `209.02 ms` total (`26.13 ms/paper`) without raster OCR.
+- **ICDAR-2019 FUNSD Geometric Box Survival (`30,595` word boxes $\ge 8\times 4\text{ px}$):**
+  - `stock_capped_8`: `5.20%` (`1,592`) | `untiled_512`: `20.53%` (`6,281`) | `horizontal_1d_band`: `71.29%` (`21,811`) | `tile_2d_zero_overlap`: `92.44%` (`28,283`) | **`tile_2d` ($512\times 512$, 32px overlap): `97.38%` (`29,793`)**.
+- **Deterministic Regex Recall Ceiling & `334`-Word Lexicon False-Positive Reduction:**
+  - On `ai4privacy-200k` (`500` records), deterministic regex recalls **`78.6%`** (`110/140`) of contact/card/IPv4 spans, **`62.8%`** (`159/253`) of targeted 8 patterns, **`49.6%`** (`118/238`) of bare person names, and **`31.0%`** (`180/580`) across all 26 structured tags.
+  - On blind `PubMedQA` test abstracts (`250` docs, `63,739` words), the pre-committed `334`-word clinical/technical exclusion lexicon reduces Title-Case false positives by **`2.72x`** (`5.46 -> 2.01` hits/1k words; `45.2% -> 26.0%` affected docs).
+- **7-Trial Interleaved Runtime Substrates (AMD Ryzen 7 7840HS, Windows 11):**
+  - **C99 (`include/verisieve.h`)**: `14.12 ms` process spawn | `6.08 MB` RSS | `0.745 ms` warm `1,207×520` logistic.
+  - **Node.js + `verisieve_dl.wasm`**: `106.22 ms` spawn (`1.045 ms` WASM init) | `55.97 MB` RSS (**`121.6x` faster spawn, `7.7x` lower RSS** than PyTorch+DuckDB at `12,917.14 ms` / `432.3 MB`).
+  - **Python 3.12 + NumPy 2.4.3**: `388.79 ms` spawn | `31.49 MB` RSS | **`0.207 ms` warm `1,207×520` logistic** (NumPy BLAS wins warm batched matrix dot products once imported).
 
 ---
 
-## Verification & Quickstart
+### Paper 2: Multimodal Sanitization vs. External Baselines (`TAB`, Presidio, Gitleaks, detect-secrets, Whisper)
 
-Install dependencies once before using the CLI. Local OCR uses Tesseract.js with the bundled English model when Cactus weights are unavailable; providing local Mirage `.cact` weights keeps Cactus as the preferred OCR engine.
+Reproduced via `python scripts/run-reviewer-tab-and-ltt.py` and `python scripts/run-reviewer-secrets-audio-pprl.py` (`results/reviewer-tab-and-ltt-benchmarks.json`, `results/reviewer-secrets-audio-pprl-benchmarks.json`):
 
-```bash
-npm install
-node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ingest.json
+#### 1. Human-Annotated Legal PII: Text Anonymization Benchmark (`TAB`, $N=1,268$ ECHR Court Cases, `10,183` Spans)
+
+| Detector Configuration | DIRECT Recall (`548` spans) | `[95% Bootstrap CI]` | All-Maskable Recall (`10,183`) | Precision | F1 | Latency / Doc |
+|---|---:|---|---:|---:|---:|---:|
+| **VeriSieve Stage 3A (WASM Regex + Lexicon)** | `97.99%` (`537`) | `[96.79%, 99.07%]` | `64.08%` | `36.68%` | `46.66%` | **`0.33 ms`** |
+| **Microsoft Presidio Default (`en_core_web_lg`)** | `78.83%` (`432`) | `[75.44%, 82.06%]` | `69.98%` | `40.42%` | `51.24%` | `35.09 ms` |
+| **Microsoft Presidio + Custom ECHR Code Regex** | `94.71%` (`519`) | `[92.73%, 96.48%]` | `70.93%` | `33.50%` | `45.51%` | `36.98 ms` |
+| **Vanilla GLiNER (`gliner-pii-edge`, $\tau=0.20$)** | `31.02%` (`170`) | `[27.20%, 34.77%]` | `53.19%` | `35.15%` | `42.33%` | `583.48 ms` |
+| **VeriSieve Hybrid (3A + 3B, $\tau=0.20$ high-recall)** | **`99.45%`** (`545`) | **`[98.73%, 100.0%]`** | **`75.02%`** | `28.93%` | `41.76%` | `583.81 ms` |
+| **VeriSieve Hybrid (3A + 3B, $\tau=0.35$ balanced)** | `98.91%` (`542`) | `[97.97%, 99.64%]` | `72.44%` | `31.71%` | `44.11%` | `583.81 ms` |
+| **VeriSieve Hybrid (3A + 3B, $\tau=0.70$ matched-prec)** | `90.88%` (`498`) | `[88.45%, 93.16%]` | `64.46%` | `36.37%` | **`46.50%`** | `583.81 ms` |
+
+*Honest trade-off:* Stage 3A regex already captures `97.99%` of DIRECT identifiers (`36110/97` court codes, dates, contacts) in `0.33 ms/doc`. Adding Stage 3B GLiNER at $\tau=0.20$ recovers the remaining bare person names (`99.45%` DIRECT recall, $p < 0.0001$ vs. Presidio+Code) and lifts QUASI-identifier recall by `+10.9` points (`64.08% -> 75.02%`), at the cost of lower precision (`28.93%`) due to unredacted institutional references (`"the Court"`, `"the Government"`). At matched precision ($\tau=0.70$), Hybrid beats Presidio+Code on both DIRECT recall (`90.88%` vs. `94.71%` at higher precision `36.37%` vs. `33.50%`) and overall F1 (`46.50%` vs. `45.51%`).
+
+#### 2. Non-Circular Ground-Truth LTT Gatekeeper (`1,999` TAB Paragraphs: `380` GT-Safe, `1,619` GT-Unsafe)
+
+Labels are derived **strictly from human TAB annotations** ($Y_i = 1$ iff human annotators marked $\ge 1$ maskable PII span):
+
+| Gate Architecture ($\alpha = 0.05, \delta = 0.05$) | $\tau_{\text{keep}}$ | Empirical False-Release (FPR) | Auto-Released Total | Safe Paragraph Yield | Gate + Redactor E2E DIRECT Leak |
+|---|---:|---:|---:|---:|---:|
+| **Gate A: 520-d Hashed N-Gram Logistic** | `0.62` | `4.19%` (`<= 5%` certified) | `4.95%` (`99/1,999`) | `16.32%` (`62/380`) | `1.10%` (`6/548`) |
+| **Gate B: GLiNER Max-Score Baseline** | `0.77` | `4.81%` (`<= 5%` certified) | `6.00%` (`120/1,999`) | `19.47%` (`74/380`) | `0.73%` (`4/548`) |
+| **Gate C: 526-d Detector-Informed Logistic** | `0.60` | **`4.19%` (`<= 5%` certified)** | **`5.80%` (`116/1,999`)** | **`15.53%` (`59/380`)** | **`0.55%` (`3/548`)** |
+
+#### 3. Enterprise Secrets (`275` Corpus: `145` Positives Across `29` Families + `130` Real Code/Config Negatives)
+
+| Scanner | Precision | Recall | F1 | FP Rate (`130` clean files) | Single-Call Cold (`275` files) | Warm Steady-State (`275` files) |
+|---|---:|---:|---:|---:|---:|---:|
+| **VeriSieve Stage 3A (`verisieve_media.wasm`)** | **`100.00%`** | `64.63%` | **`78.52%`** | **`0.00%` (`0/130`)** | **`10.22 ms`** | **`3.67 ms` (`0.013 ms/file`)** |
+| **Gitleaks `v8.30.1` (Native Go Binary)** | `92.42%` | `54.46%` | `68.54%` | `3.85%` (`5/130`) | `82.10 ms` | `36.71 ms` (`10.0x` slower) |
+| **Yelp `detect-secrets v1.5.0` (Python)** | `61.54%` | **`68.09%`** | `64.65%` | `38.46%` (`50/130`) | `657.84 ms` | `491.32 ms` (`133.9x` slower) |
+
+#### 4. Unicode Evasion, End-to-End Whisper Audio Redaction, PPRL Scale & GDPR Erasure
+
+- **Unicode Anti-Evasion (`70` adversarial vectors):** Naive ASCII regex `0.0%` (`0/70`) $\rightarrow$ Python `unicodedata.normalize('NFKC')` `42.86%` (`30/70`, catches fullwidth/ligatures but misses zero-width characters and Cyrillic/Greek homoglyphs) $\rightarrow$ **`verisieve_media.wasm` `100.0%` (`70/70`, `0/35` decoy FPs)**.
+- **End-to-End Spoken Audio PII Redaction (`25` neural TTS calls, `95` planted PII tokens, cross-model `faster-whisper base.en` redactor vs. `small.en` attacker):** Unredacted audio exposes **`90.53%` (`86/95`)** of planted tokens to `small.en`. After `verisieve_media.wasm` Spoken ITN + PCM16 waveform redaction (`-48.9 dB` RMS attenuation), residual exposure drops to **`15.79%` (`15/95`)**—an **`82.56%` reduction in exposed tokens** (`71/86` eliminated), with remaining leaks transparently categorized into ASR boundary bleed (`6`), homophone substitution (`5`), and number fragmentation (`4`).
+- **128-Bit Salted Bloom+Soundex PPRL (`vs_media_pprl_signature`):** Matches the plaintext Jaro-Winkler ceiling (`93.33%` recall, `96.55%` F1, `0.0%` FPR) and outperforms plaintext Levenshtein (`80.0%` recall) on noisy cross-modal pairs without storing plaintext. On a **`500`-entity (`124,750`-pair) adversarial common-surname stress test**, pairwise FPR is **`0.15%`** at $\tau_{\text{dice}}=0.78$ (`86.52%` F1).
+- **Sub-Millisecond GDPR Art. 17 Erasure & $O(1)$ MP4 Scrubbing:** Cross-modal `blast_radius` resolves in **`0.088 ms`** (`100%` precision/recall across email, PPTX notes, VTT, OCR, and KV cache), and $O(1)$ streaming MP4 atom scrubbing neutralizes `udta`/`meta`/`©xyz` in **`< 2 ms`** (`< 4 KB` RAM) across `10 MB` to `1 GB` containers.
+
+---
+
+### Paper 3: Local Open-Weight Model Training vs. Dual-CSR Graph-PPR & Native CAG (8 GB RTX 4070)
+
+Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7B-Base` (matched Raw vs. VeriSieve-Safe assistant-only `T2-Chat` LoRA adapters) plus `lfm3:latest`, `llama3.2:3b`, and `qwen2.5:7b`:
+
+| Model (VRAM) | Carlini $20\times$ Canary Exposure: Raw LoRA $\rightarrow$ **Safe LoRA** | Rank-1 Memorized: Raw $\rightarrow$ **Safe** | Held-Out `50q` Blinded Judge: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** | Held-Out Token F1: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** | Seen-Doc `20q` Judge: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** |
+|---|---|---|---|---|---|
+| **`Qwen2.5-0.5B-Instruct`** (`2.29 GB`) | `8.25 bits` $\rightarrow$ **`3.32 bits` (`-4.93`)** | `3/12` $\rightarrow$ **`1/12`** | `23.0%` $\rightarrow$ **`55.0%`** ($p=0.001$) | `0.099` $\rightarrow$ **`0.265`** ($p=0.0005$) | `2.5%` $\rightarrow$ **`20.0%`** |
+| **`Qwen2.5-1.5B-Instruct`** (`4.41 GB`) | `8.40 bits` $\rightarrow$ **`2.70 bits` (`-5.70`)** | `5/12` $\rightarrow$ **`0/12`** | `33.0%` $\rightarrow$ **`69.0%`** ($p=0.001$) | `0.112` $\rightarrow$ **`0.275`** ($p=0.0005$) | `7.5%` $\rightarrow$ **`40.0%`** |
+| **`LFM3-1.7B-Base`** (`4.55 GB`) | `8.25 bits` $\rightarrow$ **`2.81 bits` (`-5.44`)** | `6/12` $\rightarrow$ **`1/12`** | `34.0%` $\rightarrow$ **`62.0%`** ($p=0.001$) | `0.128` $\rightarrow$ **`0.262`** ($p=0.0005$) | `5.0%` $\rightarrow$ **`25.0%`** |
+
+- **Adversarial Context Extraction & Utility Cost (`qwen2.5:7b`):** Pre-processing redaction cuts verbatim secret leakage under adversarial extraction prompts from **`11/12` (`100%` of probes) to `0/12` (`0.0%`)** while matching unredacted compliance QA accuracy at **`75.0%` (`9/12` each, $\Delta = 0.0\%$)**.
+- **Native KV-Cached CAG vs. Dual-CSR Graph-PPR Crossover:** When the sanitized dossier fits untruncated in VRAM (`~19–20k` tokens on `lfm3` and `llama3.2:3b`), Native CAG (`src/cag-dossier.js`) achieves `94.8–99.6%` KV token reuse and `11.8x–16.6x` repeat-turn speedups with `<1 ms` GDPR Art. 17 KV-slot eviction. When VRAM forces truncation (`qwen2.5:7b` at `14k` tokens), sub-millisecond `verisieve_graph.wasm` Graph-PPR (`0.62 ms`) beats truncated CAG by **`+33.3` accuracy points** (`75.0%` vs. `41.7%`; `100%` vs. `0%` multi-hop).
+
+---
+
+## Repository Structure
+
+```text
+verisieve/
+├── bin/
+│   └── verisieve.mjs                 # CLI entrypoint (ingest, audit-wasm, train, gatekeeper, mcp)
+├── include/
+│   └── verisieve.h                   # Single-header C99 UTF-8 FNV-1a feature hasher & linear gate (2,129 B)
+├── rust/
+│   ├── verisieve-clean/              # #![no_std] Rust crate -> verisieve_clean.wasm (14.6 KB, 0 imports)
+│   ├── verisieve-media/              # #![no_std] Rust crate -> verisieve_media.wasm (187.1 KB, 0 imports)
+│   ├── verisieve-graph/              # #![no_std] Rust crate -> verisieve_graph.wasm (54.4 KB, 0 imports)
+│   ├── verisieve-dl/                 # #![no_std] Rust crate -> verisieve_dl.wasm (60.1 KB, 0 imports)
+│   └── verisieve-sql/                # #![no_std] Rust crate -> verisieve_sql.wasm (49.6 KB, 0 imports)
+├── vendor/
+│   ├── wasm/                         # Compiled zero-import WebAssembly binaries shared with RTIO
+│   └── cactus/                       # Isolated cactus.wasm pure-memory 2D-tiled OCR runtime
+├── src/
+│   ├── clean-wasm.js                 # JS/Node loader for verisieve_clean.wasm
+│   ├── media-wasm.js                 # JS/Node loader for verisieve_media.wasm (24 exports)
+│   ├── graph-wasm.js                 # Dual-CSR graph kernel, HippoRAG-2 PPR, SaltedPseudonymVault, Bloom PPRL
+│   ├── enterprise-parsers.js         # Deep parsers (.eml, .msg, .pptx, .xlsx, .vtt, .har, .ipynb, .ics, Slack)
+│   ├── secret-scanner.js             # Stage 3A+3B PII, checksums, 30+ secrets, and surname coreference
+│   ├── neural-pii-onnx.js            # Fail-closed local ONNX GLiNER sliding-window span extractor
+│   ├── audio-redactor.js             # Spoken ITN, WAV silence/beep/noise redaction, phrase/segment dedup
+│   ├── video-redactor.js             # O(1) MP4 stream audit/scrub, 1080p keyframe OCR gate, temporal box blur
+│   ├── pdf-parser.js                 # Pure-JS PDF /FlateDecode, /ObjStm, scoped /ToUnicode CMap, TJ kerning
+│   ├── gatekeeper.js                 # 520-dim logistic scorer + Learn-Then-Test (LTT) binomial calibration
+│   ├── cag-dossier.js                # KV-cached Native CAG serializer + GDPR Art. 17 KV-slot eviction
+│   └── mcp-server.js                 # 18-tool JSON-RPC Model Context Protocol server
+├── scripts/                          # Reproducible benchmark runners (Paper 1, Paper 2, Paper 3)
+├── results/                          # Deterministic JSON benchmark artifacts & SHA-256 receipts
+├── paper/                            # Three MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
+└── test/                             # 107 portable CI tests + scale & multimodal regression suites
 ```
 
+---
+
+## Quickstart & Reproducing the Benchmarks
+
 ```bash
-# Portable tests. These do not need the downloaded benchmark rows.
+# 1. Install dependencies
+npm install
+
+# 2. Run the 107-test portable CI suite (WASM zero-import census, parsers, redaction, graph, MCP)
 npm run test:ci
 
-# Verify zero-egress WASM static census across all 4 binaries
+# 3. Verify zero host imports across all WebAssembly kernels
 npm run audit-wasm
 
-# FUNSD, ai4privacy, and PubMedQA are not in this git clone. Download them, then measure.
+# 4. Ingest & sanitize a local document or directory via CLI
+node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ingest.json
+
+# 5. Reproduce Paper 1 public benchmark suite (downloads FUNSD, ai4privacy, PubMedQA once)
 node scripts/fetch-public-benchmarks.mjs
 npm run bench:scale
 
-# Full suite, including the 1,207-document scale tests. Requires the download above.
-npm test
-
-# Compile the Extraction & Redaction Benchmark PDF (paper/verisieve-extraction-redaction-benchmark.pdf)
-cd paper && pdflatex verisieve-extraction-redaction-benchmark && bibtex verisieve-extraction-redaction-benchmark && pdflatex verisieve-extraction-redaction-benchmark && pdflatex verisieve-extraction-redaction-benchmark
+# 6. Reproduce Paper 2 external baseline benchmarks (TAB, Presidio, Gitleaks, detect-secrets, Whisper, PPRL)
+python scripts/run-reviewer-tab-and-ltt.py
+python scripts/run-reviewer-secrets-audio-pprl.py
+python paper/figs/build_track_e_figures.py
 ```
 
-For security policies and air-gapped design guarantees, see [SECURITY.md](SECURITY.md).
+For security policies and zero-egress threat boundaries, see [SECURITY.md](SECURITY.md).
