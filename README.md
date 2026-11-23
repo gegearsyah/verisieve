@@ -1,13 +1,63 @@
-# Versieve (`matilda-portable`)
+# Versieve
 
 [![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Zero-Egress Multimodal Document & Media Sanitization, Conformal Risk-Controlled Gatekeeping, and Dual-CSR Graph Retrieval in Zero-Import Rust→WebAssembly**  
-*Author: Gege Ardiyansyah*
+**Versieve turns raw documents, spreadsheets, emails, audio calls, and screen-recorded videos into clean, PII- and secret-redacted data for AI retrieval and fine-tuning—running 100% locally in WebAssembly with zero server uploads.**
 
-Versieve is a local-first curation, de-identification, and retrieval engine shared across the **RTIO Browser Sandbox** ([rtio.io/sandbox](https://www.rtio.io/sandbox)), a Node.js CLI (`bin/verisieve.mjs`), an 18-tool Model Context Protocol (MCP) server (`src/mcp-server.js`), and a single-header C99 scorer (`include/verisieve.h`, `2,129 B`).
+---
 
-At its core are **five standalone `#![no_std]` Rust→WebAssembly kernels (`365.9 KB` combined)** audited to have **zero host imports (`WebAssembly.Module.imports(mod).length === 0`)**. Because these WASM modules cannot perform network I/O, filesystem access, or system calls—and operate solely on caller-allocated linear memory slices—they enforce an auditable, binary-level zero-egress boundary in both browser tabs and server/CLI processes.
+## Why Versieve Exists
+
+Before you can feed internal files into an LLM (for RAG retrieval or fine-tuning), you have to extract clean text and strip personal data, API keys, and hidden metadata. In practice, teams hit three walls:
+
+1. **Leaks hide outside visible text:** Sensitive data regularly slips through in PowerPoint speaker notes, Excel `veryHidden` sheets and `pivotCache` records, deleted Word `<w:delText>` revisions, Outlook `.msg` binary streams, MP4 container atoms (`udta`), spoken phone numbers/emails in audio recordings, and on-screen slides in meeting videos.
+2. **Existing redaction stacks require backend servers or cloud APIs:** Tools like Microsoft Presidio (`Python + spaCy`), `Gitleaks` (`Go` binary), or cloud DLP endpoints either require uploading raw files to external servers or cannot run inside a client-side browser application.
+3. **"We promise we don't upload your data" isn't a technical guarantee:** Versieve compiles its core text cleaner, archive/container parsers, checksum-verified PII & secret scanners, spoken-text normalizer, audio/video redactors, and graph retriever into **five standalone `#![no_std]` Rust→WebAssembly binaries (`365.9 KB` combined)** audited to have **zero host imports (`WebAssembly.Module.imports(mod).length === 0`)**. A WASM binary with zero imports has no network, filesystem, or OS syscalls—it can only read and write the memory buffer you pass to it.
+
+---
+
+## How Easy Is It to Use?
+
+### 1. Try It Instantly in Your Browser (Zero Install)
+Open **[rtio.io/sandbox](https://www.rtio.io/sandbox)** and drop a PDF, `.docx`, `.pptx`, `.xlsx`, `.eml`, `.wav`, or `.mp4` into the tab.  
+Everything—including hidden-channel forensic inspection, PII/secret redaction, background ONNX Whisper speech transcription, 1080p keyframe slide OCR, waveform/pixel redaction preview, and Dual-CSR graph retrieval—runs locally inside your browser tab.
+
+### 2. Run It from the CLI
+```bash
+git clone https://github.com/gegearsyah/verisieve.git
+cd verisieve
+npm install
+
+# Extract, deduplicate, and redact a local PDF, Office document, or folder
+node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ingest.json
+
+# Verify that all WebAssembly kernels have 0 host imports
+npm run audit-wasm
+```
+
+### 3. Use It as a Standalone Node.js / JavaScript Library
+```javascript
+import { redactEnterpriseText } from './src/secret-scanner.js';
+import { parseEnterpriseBuffer } from './src/enterprise-parsers.js';
+import { redactAudioCall } from './src/audio-redactor.js';
+import { WasmGraphKernel } from './src/graph-wasm.js';
+
+// 1. Redact PII, API keys, and Unicode-evaded secrets in < 0.02 ms
+const clean = redactEnterpriseText(
+  'Contact Elena Vance (elena@acme.com) or use AWS key AKIAIOSFODNN7X9K2M4P. Follow up with Ms. Vance.'
+);
+console.log(clean.maskedText);
+// -> "Contact <PII:PERSON_1> (<PII:EMAIL_1>) or use AWS key <SECRET:AWS_ACCESS_KEY_1>. Follow up with <PII:PERSON_1>."
+
+// 2. Extract visible text + hidden forensic channels (.pptx speaker notes, .xlsx veryHidden/pivotCache, .msg)
+const deck = parseEnterpriseBuffer('board-deck.pptx', pptxBytes);
+
+// 3. Mute/beep spoken PII in WAV audio via Spoken ITN ("sarah dot chen at acme dot com")
+const call = await redactAudioCall('support.wav', wavBytes, { mode: 'beep', wordTimestamps });
+
+// 4. Sub-millisecond Personalized PageRank retrieval & GDPR Art. 17 blast-radius erasure
+const graph = new WasmGraphKernel();
+```
 
 ---
 
@@ -16,7 +66,7 @@ At its core are **five standalone `#![no_std]` Rust→WebAssembly kernels (`365.
 We state the scope of contribution plainly across our codebase and companion benchmark papers:
 
 - **Established algorithmic components:** Learn-Then-Test (LTT) finite-sample conformal risk control, GLiNER zero-shot span extraction, Unicode TR39 confusable folding, salted Bloom-filter record linkage (PPRL), Carlini canary exposure, Personalized PageRank (PPR), and LoRA fine-tuning are established methods.
-- **Systems integration contribution:** Existing privacy stacks typically require Python servers (`Presidio` + `spaCy`), Go/Python CLI subprocesses (`Gitleaks`, `detect-secrets`), or cloud APIs, and handle only a single modality. Versieve packages archive/container extraction, Unicode anti-evasion, checksum-verified PII & secret scanning, Spoken Inverse Text Normalization (ITN), sample-accurate WAV audio redaction, video keyframe scene-change & temporal bounding-box pixel redaction, cross-modal entity resolution, Dual-CSR Personalized PageRank retrieval, and sub-millisecond GDPR Art. 17 erasure into **one portable, zero-import Rust→WASM + JS/TS stack** with strict fail-closed invariants (`NER_WEIGHTS_REQUIRED`, `ASR_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`, `ZIP_BOMB_RATIO_EXCEEDED`, `ZIP_SLIP_PATH_TRAVERSAL`).
+- **Systems integration contribution:** Versieve unifies archive/container extraction, Unicode anti-evasion, checksum-verified PII & secret scanning, Spoken Inverse Text Normalization (ITN), sample-accurate WAV audio redaction, video keyframe scene-change & temporal bounding-box pixel redaction, cross-modal entity resolution, Dual-CSR Personalized PageRank retrieval, and sub-millisecond GDPR Art. 17 erasure into **one portable, zero-import Rust→WASM + JS/TS stack** with strict fail-closed invariants (`NER_WEIGHTS_REQUIRED`, `ASR_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`, `ZIP_BOMB_RATIO_EXCEEDED`, `ZIP_SLIP_PATH_TRAVERSAL`).
 
 ---
 
@@ -47,11 +97,11 @@ Every kernel is compiled with `wasm32-unknown-unknown` (`panic = "abort"`, LTO e
 | **`verisieve_dl.wasm`** | `60,096 B` | `rust/verisieve-dl/` | `26` | 1.58-bit ternary BitNet quantization, VeRA adapter forward/backward updates (`mle_dl_vera_*`), and 64-dimensional needle retrieval embeddings. |
 | **`verisieve_sql.wasm`** | `49,642 B` | `rust/verisieve-sql/` | `12` | Deterministic in-memory relational SQL subset engine (`MAX_ROWS = 4,096`). |
 
-### 2. RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) vs. Node.js CLI / MCP Server
+### 2. RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) vs. Standalone Versieve CLI / MCP Server
 
 Versieve runs the **exact same byte-identical WASM binaries** in the browser and in Node.js (enforced by CI parity tests), while adapting heavy media decoding to each runtime's memory boundaries:
 
-| Capability | RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Node.js CLI & 18-Tool MCP Server (`matilda-portable`) |
+| Capability | RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Versieve Node.js CLI & 18-Tool MCP Server |
 |---|---|---|
 | **Data Egress Guarantee** | **100% client-side in the browser tab** under `Cross-Origin-Embedder-Policy: require-corp`. User files never upload to any server. | **100% local offline execution.** Fails closed on missing local weights; SSRF-hardened URL fetch blocks private/loopback/IMDS CIDRs. |
 | **Documents & Archives** | Native PDF (`/ToUnicode` CMap, `/ObjStm`, `TJ` kerning), bit-3 `.docx`, `.pptx` (speaker notes + hidden slides), `.xlsx` (veryHidden sheets + comments + pivotCache), `.eml`, `.msg`, `.vtt`/`.srt`, `.har`, `.ipynb`, `.ics`, Slack JSON, `.zip`/`.tar.gz`. | Identical WASM + JS parsers (`src/enterprise-parsers.js`, `src/pdf-parser.js`, `src/structure-extractor.js`). |
@@ -96,7 +146,7 @@ Reproduced via `python scripts/run-reviewer-tab-and-ltt.py` and `python scripts/
 | **Versieve Hybrid (3A + 3B, $\tau=0.35$ balanced)** | `98.91%` (`542`) | `[97.97%, 99.64%]` | `72.44%` | `31.71%` | `44.11%` | `583.81 ms` |
 | **Versieve Hybrid (3A + 3B, $\tau=0.70$ matched-prec)** | `90.88%` (`498`) | `[88.45%, 93.16%]` | `64.46%` | `36.37%` | **`46.50%`** | `583.81 ms` |
 
-*Honest trade-off:* Stage 3A regex already captures `97.99%` of DIRECT identifiers (`36110/97` court codes, dates, contacts) in `0.33 ms/doc`. Adding Stage 3B GLiNER at $\tau=0.20$ recovers the remaining bare person names (`99.45%` DIRECT recall, $p < 0.0001$ vs. Presidio+Code) and lifts QUASI-identifier recall by `+10.9` points (`64.08% -> 75.02%`), at the cost of lower precision (`28.93%`) due to unredacted institutional references (`"the Court"`, `"the Government"`). At matched precision ($\tau=0.70$), Hybrid beats Presidio+Code on both DIRECT recall (`90.88%` vs. `94.71%` at higher precision `36.37%` vs. `33.50%`) and overall F1 (`46.50%` vs. `45.51%`).
+*Honest trade-off:* Stage 3A regex already captures `97.99%` of DIRECT identifiers (`36110/97` court codes, dates, contacts) in `0.33 ms/doc`. Adding Stage 3B GLiNER at $\tau=0.20$ recovers the remaining bare person names (`99.45%` DIRECT recall, $p < 0.0001$ vs. Presidio+Code) and lifts QUASI-identifier recall by `+10.9` points (`64.08% -> 75.02%`), at the cost of lower precision (`28.93%`) due to unredacted institutional references (`"the Court"`, `"the Government"`). At matched precision ($\tau=0.70$), Hybrid beats Presidio+Code on overall F1 (`46.50%` vs. `45.51%`).
 
 #### 2. Non-Circular Ground-Truth LTT Gatekeeper (`1,999` TAB Paragraphs: `380` GT-Safe, `1,619` GT-Unsafe)
 
@@ -143,7 +193,7 @@ Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7
 ## Repository Structure
 
 ```text
-verisieve/
+versieve/
 ├── bin/
 │   └── verisieve.mjs                 # CLI entrypoint (ingest, audit-wasm, train, gatekeeper, mcp)
 ├── include/
@@ -178,26 +228,17 @@ verisieve/
 
 ---
 
-## Quickstart & Reproducing the Benchmarks
+## Reproducing the Benchmarks & Test Suites
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Run the 107-test portable CI suite (WASM zero-import census, parsers, redaction, graph, MCP)
+# 1. Run the 107-test portable CI suite (WASM zero-import census, parsers, redaction, graph, MCP)
 npm run test:ci
 
-# 3. Verify zero host imports across all WebAssembly kernels
-npm run audit-wasm
-
-# 4. Ingest & sanitize a local document or directory via CLI
-node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ingest.json
-
-# 5. Reproduce Paper 1 public benchmark suite (downloads FUNSD, ai4privacy, PubMedQA once)
+# 2. Reproduce Paper 1 public benchmark suite (downloads FUNSD, ai4privacy, PubMedQA once)
 node scripts/fetch-public-benchmarks.mjs
 npm run bench:scale
 
-# 6. Reproduce Paper 2 external baseline benchmarks (TAB, Presidio, Gitleaks, detect-secrets, Whisper, PPRL)
+# 3. Reproduce Paper 2 external baseline benchmarks (TAB, Presidio, Gitleaks, detect-secrets, Whisper, PPRL)
 python scripts/run-reviewer-tab-and-ltt.py
 python scripts/run-reviewer-secrets-audio-pprl.py
 python paper/figs/build_track_e_figures.py
