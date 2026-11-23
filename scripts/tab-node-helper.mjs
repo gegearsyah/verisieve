@@ -35,94 +35,144 @@ if (mode === 'scan-docs') {
   });
   fs.writeFileSync(outPath, JSON.stringify(results), 'utf8');
 } else if (mode === 'gt-ltt') {
-  // Non-circular Ground-Truth LTT on human-annotated TAB ECHR paragraphs (zero regex features, zero scanner labels!)
-  // payload = { train: [{text, unsafe}], cal: [{text, unsafe}], test: [{text, unsafe}], alphas: [...] }
+  // Non-circular Ground-Truth LTT on human-annotated TAB ECHR paragraphs (compares Text-Only,
+  // NER-Max-Confidence baseline, and Detector-Informed Hybrid LTT; reports Automation Rate, Safe Yield,
+  // Conditional FPR, and End-to-End Redactor+Gate Residual Unmasked PII Rate!)
+  // payload = { train: [{text, unsafe, detCount, maxConf, residualUnsafe}], cal: [...], test: [...], alphas: [...] }
   const tok = createTokenizer();
-  const featurize = (rows) =>
+  const buildFeats = (rows, useDetectorSignals) =>
     rows.map((r) => {
       const txt = r.text || '';
       const enc = tok.encode(txt);
+      const piiCount = useDetectorSignals ? Number(r.detCount || 0) : 0;
+      const conf = useDetectorSignals ? Math.max(0.05, 1.0 - Number(r.maxConf || 0)) : 1.0;
       const feat = extractFeatureRow(
-        { text: txt, cleanText: txt, piiCount: 0, piiHits: [], sourceMode: 'tab_echr' },
+        { text: txt, cleanText: txt, piiCount, piiHits: [], sourceMode: 'tab_echr', confidence: conf },
         enc
       );
+      const arr = Array.from(feat);
+      if (useDetectorSignals) {
+        // Explicit detector-signal slots in structural tail [512..519]
+        arr[512] = Math.min(1.0, Number(r.maxConf || 0));
+        arr[513] = Math.min(1.0, Number(r.detCount || 0) / 5.0);
+        arr[514] = Number(r.detCount || 0) > 0 ? 1.0 : 0.0;
+        arr[515] = Math.min(1.0, Number(r.meanConf || 0));
+      }
       return {
-        features: Array.from(feat),
-        // trainGatekeeper / calibrateGatekeeper convention: y=1 is SAFE, y=0 is UNSAFE (human-annotated TAB PII)
+        features: arr,
         ySafe: r.unsafe ? 0 : 1,
+        residualUnsafe: Boolean(r.residualUnsafe),
+        nerSafeScore: Math.max(0.0, Math.min(1.0, 1.0 - Number(r.maxConf || 0))),
       };
     });
 
-  const tr = featurize(payload.train);
-  const ca = featurize(payload.cal);
-  const te = featurize(payload.test);
+  const runLttSweep = (calItems, testItems, getCalProb, getTestProb, alphas) => {
+    const calUnsafeN = calItems.filter((x) => x.ySafe === 0).length;
+    const testUnsafeN = testItems.filter((x) => x.ySafe === 0).length;
+    const testSafeN = testItems.length - testUnsafeN;
+    const calProbs = calItems.map(getCalProb);
+    const testProbs = testItems.map(getTestProb);
 
-  const bundle = trainGatekeeper(
-    tr.map((x) => x.features),
-    tr.map((x) => x.ySafe),
-    { epochs: 15, lr: 0.25, l2: 1e-4 }
+    const sweep = [];
+    for (const alpha of alphas) {
+      let tauKeep = 1.0;
+      let certified = false;
+      let calK = 0;
+      for (let step = 1; step <= 99; step++) {
+        const t = step / 100;
+        let k = 0;
+        for (let i = 0; i < calItems.length; i++) {
+          if (calItems[i].ySafe === 0 && calProbs[i] >= t) k++;
+        }
+        if (binomCdf(k, calUnsafeN, alpha) <= 0.05) {
+          tauKeep = Number(t.toFixed(2));
+          calK = k;
+          certified = true;
+          break;
+        }
+      }
+      let keptUnsafe = 0, keptSafe = 0, keptResidualUnsafe = 0;
+      if (certified) {
+        for (let i = 0; i < testItems.length; i++) {
+          if (testProbs[i] >= tauKeep) {
+            if (testItems[i].ySafe === 0) keptUnsafe++;
+            else keptSafe++;
+            if (testItems[i].residualUnsafe) keptResidualUnsafe++;
+          }
+        }
+      }
+      const autoReleased = keptUnsafe + keptSafe;
+      sweep.push({
+        alpha,
+        certified,
+        threshold: certified ? tauKeep : null,
+        calPValue: certified ? Number(binomCdf(calK, calUnsafeN, alpha).toFixed(5)) : null,
+        testConditionalFprPct: testUnsafeN > 0 ? Number(((keptUnsafe / testUnsafeN) * 100).toFixed(2)) : 0,
+        testSafeYieldPct: testSafeN > 0 ? Number(((keptSafe / testSafeN) * 100).toFixed(2)) : 0,
+        overallAutoReleasePct: testItems.length > 0 ? Number(((autoReleased / testItems.length) * 100).toFixed(2)) : 0,
+        autoReleasedCount: autoReleased,
+        keptUnsafe,
+        keptSafe,
+        e2eResidualLeakCount: keptResidualUnsafe,
+        e2eResidualLeakOfReleasedPct: autoReleased > 0 ? Number(((keptResidualUnsafe / autoReleased) * 100).toFixed(2)) : 0,
+        e2eResidualLeakOfUnsafePct: testUnsafeN > 0 ? Number(((keptResidualUnsafe / testUnsafeN) * 100).toFixed(2)) : 0,
+      });
+    }
+    return sweep;
+  };
+
+  const alphas = payload.alphas || [0.01, 0.02, 0.05, 0.10, 0.15, 0.20];
+
+  // 1. Text-Only 520-d Gate
+  const trText = buildFeats(payload.train, false);
+  const caText = buildFeats(payload.cal, false);
+  const teText = buildFeats(payload.test, false);
+  const bundleText = trainGatekeeper(trText.map((x) => x.features), trText.map((x) => x.ySafe), { epochs: 15, lr: 0.25, l2: 1e-4 });
+  const textOnlySweep = runLttSweep(
+    caText,
+    teText,
+    (x) => decideGatekeeper(bundleText, x.features).prob,
+    (x) => decideGatekeeper(bundleText, x.features).prob,
+    alphas
   );
 
-  const calFeatures = ca.map((x) => x.features);
-  const calLabels = ca.map((x) => x.ySafe);
-  const calUnsafeN = calLabels.filter((y) => y === 0).length;
-  const calSafeN = calLabels.length - calUnsafeN;
+  // 2. Baseline: NER-Max-Confidence LTT Gate (p_safe = 1 - max_i conf_i)
+  const caDet = buildFeats(payload.cal, true);
+  const teDet = buildFeats(payload.test, true);
+  const nerMaxConfSweep = runLttSweep(
+    caDet,
+    teDet,
+    (x) => x.nerSafeScore,
+    (x) => x.nerSafeScore,
+    alphas
+  );
 
-  const testProbs = te.map((x) => ({
-    prob: decideGatekeeper(bundle, x.features).prob,
-    isUnsafe: x.ySafe === 0,
-  }));
-  const testUnsafeN = testProbs.filter((x) => x.isUnsafe).length;
-  const testSafeN = testProbs.length - testUnsafeN;
-
-  const uncalKeptUnsafe = testProbs.filter((x) => x.isUnsafe && x.prob >= 0.5).length;
-  const uncalKeptSafe = testProbs.filter((x) => !x.isUnsafe && x.prob >= 0.5).length;
-
-  const sweep = [];
-  for (const alpha of payload.alphas || [0.01, 0.02, 0.05, 0.10, 0.15, 0.20]) {
-    const clone = structuredClone(bundle);
-    const calibrated = calibrateGatekeeper(clone, calFeatures, calLabels, { alpha, delta: 0.05 });
-    const c = calibrated.calibration;
-    const certified = Boolean(c.certified);
-    const tau = c.tauKeep;
-    let keptUnsafe = 0;
-    let keptSafe = 0;
-    if (certified) {
-      keptUnsafe = testProbs.filter((x) => x.isUnsafe && x.prob >= tau).length;
-      keptSafe = testProbs.filter((x) => !x.isUnsafe && x.prob >= tau).length;
-    }
-    const calK = Math.round(c.empiricalFpr * calUnsafeN);
-    sweep.push({
-      alpha,
-      certified,
-      threshold: certified ? tau : null,
-      calPValue: Number(binomCdf(calK, calUnsafeN, alpha).toFixed(5)),
-      testConditionalFprPct: testUnsafeN > 0 ? Number(((keptUnsafe / testUnsafeN) * 100).toFixed(2)) : 0,
-      testJointRiskPct: testProbs.length > 0 ? Number(((keptUnsafe / testProbs.length) * 100).toFixed(2)) : 0,
-      testSafeYieldPct: testSafeN > 0 ? Number(((keptSafe / testSafeN) * 100).toFixed(2)) : 0,
-      keptUnsafe,
-      keptSafe,
-      abstainedPct: Number((((testProbs.length - keptUnsafe - keptSafe) / Math.max(1, testProbs.length)) * 100).toFixed(2)),
-    });
-  }
+  // 3. Detector-Informed Hybrid LTT Gate (520-d text + Stage 3A/3B detector features)
+  const trDet = buildFeats(payload.train, true);
+  const bundleHybrid = trainGatekeeper(trDet.map((x) => x.features), trDet.map((x) => x.ySafe), { epochs: 20, lr: 0.30, l2: 1e-4 });
+  const hybridDetSweep = runLttSweep(
+    caDet,
+    teDet,
+    (x) => decideGatekeeper(bundleHybrid, x.features).prob,
+    (x) => decideGatekeeper(bundleHybrid, x.features).prob,
+    alphas
+  );
 
   fs.writeFileSync(
     outPath,
     JSON.stringify({
       splits: {
-        trainTotal: tr.length,
-        calTotal: ca.length,
-        calUnsafe: calUnsafeN,
-        calSafe: calSafeN,
-        testTotal: te.length,
-        testUnsafe: testUnsafeN,
-        testSafe: testSafeN,
+        trainTotal: trDet.length,
+        calTotal: caDet.length,
+        calUnsafe: caDet.filter((x) => x.ySafe === 0).length,
+        calSafe: caDet.filter((x) => x.ySafe === 1).length,
+        testTotal: teDet.length,
+        testUnsafe: teDet.filter((x) => x.ySafe === 0).length,
+        testSafe: teDet.filter((x) => x.ySafe === 1).length,
       },
-      uncalibratedTau050: {
-        testConditionalFprPct: Number(((uncalKeptUnsafe / Math.max(1, testUnsafeN)) * 100).toFixed(2)),
-        testSafeYieldPct: Number(((uncalKeptSafe / Math.max(1, testSafeN)) * 100).toFixed(2)),
-      },
-      sweep,
+      textOnly520dLtt: textOnlySweep,
+      nerMaxConfBaselineLtt: nerMaxConfSweep,
+      detectorInformedHybridLtt: hybridDetSweep,
     }),
     'utf8'
   );
