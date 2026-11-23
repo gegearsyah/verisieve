@@ -21,6 +21,7 @@ import {
   filterReadableOcrSlideLines,
 } from '../src/video-redactor.js';
 import { deduplicateChunks } from '../src/ingestor.js';
+import { perceive, perceiveMulti, runGraphCoupledConformalRedaction } from '../src/perceive.js';
 import { handleJsonRpcRequest, handleJsonRpcRequestAsync } from '../src/mcp-server.js';
 
 // ---------------------------------------------------------------------------
@@ -606,4 +607,52 @@ test('Track E6: Cross-modal Knowledge Graph + GDPR Art. 17 blast_radius + new MC
   ]);
   assert.equal(chunkDedup.uniqueChunks.length, 1);
   assert.equal(chunkDedup.duplicatesRemoved, 2);
+
+  // Verify GC-CRC (Graph-Coupled Cross-Modal Conformal Redaction) & one-shot perceiveMulti()
+  const gccrcRes = runGraphCoupledConformalRedaction(
+    [
+      {
+        source: 'ruling.pdf',
+        modality: 'document',
+        text: 'The applicant, Mr. Markus Pentikainen, lodged application 11882/10.',
+        neuralSpans: [{ start: 19, end: 37, type: 'PERSON', score: 0.91 }],
+      },
+      {
+        source: 'call_asr.vtt',
+        modality: 'audio',
+        text: 'Later in the hearing, Pentikainen and Elena Vans testified.',
+        // Weak local neural scores (< 0.50 anchorThreshold) that isolated τ=0.50 would miss!
+        neuralSpans: [
+          { start: 22, end: 33, type: 'PERSON', score: 0.24 },
+          { start: 38, end: 48, type: 'PERSON', score: 0.26 },
+        ],
+      },
+      {
+        source: 'mail.eml',
+        modality: 'email',
+        text: 'Lead counsel Dr. Elena Vance confirmed the schedule.',
+        neuralSpans: [{ start: 17, end: 28, type: 'PERSON', score: 0.93 }],
+      },
+    ],
+    { anchorThreshold: 0.50, lowNeuralThreshold: 0.20, workspaceSalt: 'test-gccrc' }
+  );
+  assert.ok(gccrcRes.anchorPoolSize >= 2, 'GC-CRC must populate Salted Reference Anchor Pool');
+  assert.ok(gccrcRes.propagatedSpansCount >= 2, 'GC-CRC must propagate anchors to weak/phonetic mentions');
+  assert.doesNotMatch(
+    gccrcRes.blocks[1].maskedText,
+    /Pentikainen|Elena Vans/,
+    'GC-CRC must redact weak cross-modal and ASR-corrupted mentions coupled to high-precision anchors'
+  );
+
+  const perceived = await perceiveMulti([
+    { name: 'mail/deal.eml', text: 'From: elena.vance@acme.com\r\nSubject: Q4\r\n\r\nDr. Elena Vance signed off.' },
+    { name: 'decks/board.pptx', bytes: pptxBuf },
+    { name: 'calls/standup.vtt', text: 'WEBVTT\n\n00:00:10.000 --> 00:00:15.000\n<v Speaker>Elena Vans reviewed the deck.\n' },
+  ]);
+  assert.match(perceived.perceptionStream, /<DOC src="mail\/deal\.eml">/);
+  assert.match(perceived.perceptionStream, /<BLOCK id="b1"/);
+  assert.doesNotMatch(perceived.markdown, /elena\.vance@acme\.com|Elena Vans/);
+  assert.ok(perceived.chunks.length >= 2);
+  assert.ok(perceived.sftJsonl.includes('"role":"assistant"'));
+  assert.equal(perceived.receipt.engine, 'versieve-gccrc-v1');
 });

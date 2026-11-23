@@ -16,3 +16,4 @@ export * from './secret-scanner.js';
 export * from './audio-redactor.js';
 export * from './neural-pii-onnx.js';
 export * from './video-redactor.js';
+export * from './perceive.js';

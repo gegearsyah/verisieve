@@ -1,0 +1,55 @@
+{
+  "benchmark": "Versieve GC-CRC Cross-Modal Context-Horizon Evaluation",
+  "cases": 60,
+  "blocks": 240,
+  "regimes": {
+    "isolatedStage3A": {
+      "totalBlocks": 240,
+      "totalGtSpans": 360,
+      "caughtGtSpans": 125,
+      "overallRecallPct": 34.72,
+      "crossModalFollowupRecallPct": 0,
+      "falsePositives": 75,
+      "precisionPct": 62.5,
+      "f1Pct": 44.64,
+      "crossModalLinkRatePct": 0,
+      "elapsedMs": 21.98
+    },
+    "isolatedHybridTau060": {
+      "totalBlocks": 240,
+      "totalGtSpans": 360,
+      "caughtGtSpans": 125,
+      "overallRecallPct": 34.72,
+      "crossModalFollowupRecallPct": 0,
+      "falsePositives": 75,
+      "precisionPct": 62.5,
+      "f1Pct": 44.64,
+      "crossModalLinkRatePct": 0,
+      "elapsedMs": 10.26
+    },
+    "isolatedHybridTau020": {
+      "totalBlocks": 240,
+      "totalGtSpans": 360,
+      "caughtGtSpans": 305,
+      "overallRecallPct": 84.72,
+      "crossModalFollowupRecallPct": 100,
+      "falsePositives": 180,
+      "precisionPct": 62.89,
+      "f1Pct": 72.19,
+      "crossModalLinkRatePct": 100,
+      "elapsedMs": 13.91
+    },
+    "versieveGcCrc": {
+      "totalBlocks": 240,
+      "totalGtSpans": 360,
+      "caughtGtSpans": 262,
+      "overallRecallPct": 72.78,
+      "crossModalFollowupRecallPct": 76.11,
+      "falsePositives": 75,
+      "precisionPct": 77.74,
+      "f1Pct": 75.18,
+      "crossModalLinkRatePct": 83.03,
+      "elapsedMs": 37.78
+    }
+  }
+}
