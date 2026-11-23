@@ -31,6 +31,7 @@ Use this portable workflow when cleaning raw documents or URLs locally on a user
 
 4. **Local Open-Weight LoRA Fine-Tuning (Zero-Code Companion)**
    - Remember: WebAssembly (`verisieve_dl.wasm`) trains compact 1.58-bit / VeRA local gatekeeper routers directly in the browser, whereas full multi-hundred-million-parameter `.gguf` / `.safetensors` open weights fine-tune natively via Python/Metal on the host CPU/GPU.
+   - JSONL `messages` rows use the selected tokenizer's chat template when available; the runner falls back to explicit role-tagged text otherwise. CPU-only runs load without CUDA device mapping.
    - Generate the native training command using MCP `plan_local_open_weight_training` or the RTIO `/sandbox` `Train` tab:
 
    **Linux / Windows CUDA / CPU (PEP-723 single command via Astral `uv`):**
@@ -54,4 +55,4 @@ Use this portable workflow when cleaning raw documents or URLs locally on a user
    ```
 
 5. **Optional Live Loss Bridge (`127.0.0.1`)**
-   - `scripts/verisieve-train.py` binds a read-only `127.0.0.1:8765` status endpoint returning `Access-Control-Allow-Private-Network: true` and CORS headers so the browser Sandbox can display real-time training step and loss curves locally while keeping weights and raw data offline.
+   - `scripts/verisieve-train.py` binds a read-only `127.0.0.1:8765` status endpoint returning `Access-Control-Allow-Private-Network: true` and CORS headers so the browser Sandbox can display real-time training step, epoch, and loss curves locally while keeping weights and raw data offline. The endpoint remains available for five seconds after training by default; adjust with `--hold-seconds`.

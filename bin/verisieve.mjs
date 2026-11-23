@@ -5,7 +5,7 @@
  * - Zero-Egress Unstructured Document Sieve, Dual PII Redactor & Conformal Client-Side Token Gatekeeper
  * - BYOD file/folder/URL processing (PDF, PNG, BMP, HTML, EML, CSV, JSON, TXT)
  * - Conformal gatekeeper training, calibration & routing inference
- * - Zero external npm dependencies.
+ * - Local OCR dependencies are installed with the package; OCR assets load from disk at runtime.
  */
 
 import fs from 'node:fs';
@@ -28,6 +28,8 @@ import { loadCleanWasm } from '../src/clean-wasm.js';
 import { extractPdfDetailed } from '../src/pdf-parser.js';
 import { extractDocxText, stripHtmlBoilerplate, ingestUrl } from '../src/ingestor.js';
 import { ingestFromUrlOrPath } from '../src/pdf-image-pipeline.js';
+import { createLocalTesseractOcrProvider } from '../src/local-tesseract-ocr.js';
+import { isHtmlDocumentBuffer, isPdfDocumentBuffer } from '../src/document-format.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +141,18 @@ function isUrlTarget(target) {
   return typeof target === 'string' && (/^[a-zA-Z][a-zA-Z0-9+.-]+:/.test(target) || target.startsWith('arxiv:'));
 }
 
+async function withCliOcrProvider(options, callback) {
+  if (typeof options.ocrProvider === 'function' || resolveCactusWeightsBytes(options)) {
+    return await callback(options);
+  }
+  const ocrProvider = createLocalTesseractOcrProvider();
+  try {
+    return await callback({ ...options, ocrProvider });
+  } finally {
+    await ocrProvider.close();
+  }
+}
+
 async function readBinaryOrTextForCli(targetPath, options = {}) {
   if (isUrlTarget(targetPath)) {
     const urlRes = await ingestUrl(targetPath, options);
@@ -159,13 +173,27 @@ async function readBinaryOrTextForCli(targetPath, options = {}) {
   const ext = path.extname(fullPath).toLowerCase();
   const buf = fs.readFileSync(fullPath);
   if (ext === '.pdf') {
+    if (isHtmlDocumentBuffer(buf)) {
+      const stripped = stripHtmlBoilerplate(buf.toString('utf8'));
+      return {
+        sourceType: 'html',
+        format: 'text',
+        title: stripped.title,
+        links: stripped.links,
+        cleanText: stripped.cleanText,
+        text: stripped.cleanText,
+      };
+    }
+    if (!isPdfDocumentBuffer(buf)) {
+      throw new Error(`INVALID_PDF_HEADER: ${path.basename(fullPath)} is neither a PDF nor HTML`);
+    }
     const pdfRes = await extractPdfDetailed(buf);
     const lines = pdfRes.lines || [];
     if (lines.length === 0) {
       if ((pdfRes.images || []).length > 0) {
-        if (!resolveCactusWeightsBytes(options)) {
+        if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
           throw new Error(
-            `PDF_IMAGE_ONLY_REQUIRES_OCR: ${path.basename(fullPath)} has 0 selectable text lines and ${pdfRes.images.length} embedded images; supply local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
+            `PDF_IMAGE_ONLY_REQUIRES_OCR: ${path.basename(fullPath)} has 0 selectable text lines and ${pdfRes.images.length} embedded images; install the local Tesseract OCR dependencies or supply ${DEFAULT_MIRAGE_WEIGHTS_PATH}`
           );
         }
         const ocrTexts = [];
@@ -175,6 +203,9 @@ async function readBinaryOrTextForCli(targetPath, options = {}) {
           ocrTexts.push(...(ocr.lines || []).map((l) => l.text));
         }
         const joined = ocrTexts.join('\n');
+        if (!joined.trim()) {
+          throw new Error(`PDF_OCR_NO_TEXT: Local OCR found no readable text in ${path.basename(fullPath)}`);
+        }
         return { sourceType: 'pdf_ocr', format: 'text', text: joined, cleanText: joined };
       }
       throw new Error(`PDF_EMPTY_TEXT_LAYER: ${path.basename(fullPath)} yielded zero extractable text lines`);
@@ -189,13 +220,16 @@ async function readBinaryOrTextForCli(targetPath, options = {}) {
   }
   if (ext === '.png' || ext === '.bmp') {
     const decoded = decodeImageBuffer(buf, path.basename(fullPath));
-    if (!resolveCactusWeightsBytes(options)) {
+    if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
       throw new Error(
-        `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${path.basename(fullPath)} without local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
+        `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${path.basename(fullPath)} without local Tesseract OCR dependencies or ${DEFAULT_MIRAGE_WEIGHTS_PATH}`
       );
     }
     const ocrRes = await runTiledOcrAsync(decoded, { ...options, filename: path.basename(fullPath), sourceFormat: 'image' });
     const joined = (ocrRes.lines || []).map((l) => l.text).join('\n');
+    if (!joined.trim()) {
+      throw new Error(`IMAGE_OCR_NO_TEXT: Local OCR found no readable text in ${path.basename(fullPath)}`);
+    }
     return { sourceType: 'image', format: 'text', text: joined, cleanText: joined };
   }
   if (ext === '.html' || ext === '.htm') {
@@ -363,6 +397,11 @@ if (command === 'audit-wasm') {
     piiStrategy: flags['pii-strategy'] || flags['strategy'] || 'token',
     alpha: flags['alpha'] ? parseFloat(flags['alpha']) : 0.05,
     maxSeqLen: flags['max-seq-len'] ? parseInt(flags['max-seq-len'], 10) : 256,
+    chunkMode: flags['chunk-mode'],
+    chunkTokens: flags['chunk-tokens'] ? parseInt(flags['chunk-tokens'], 10) : undefined,
+    chunkOverlap: flags['chunk-overlap'] ? parseInt(flags['chunk-overlap'], 10) : undefined,
+    pseudonymize: flags['pseudonymize'] === true || flags['pseudonymize'] === 'true',
+    workspaceSalt: flags['workspace-salt'],
     outDir: flags['out-dir'] || flags['outDir'],
     csv: flags['csv'],
     json: flags['json'],
@@ -373,7 +412,9 @@ if (command === 'audit-wasm') {
 
   try {
     console.log(`Processing: ${target}...`);
-    const result = await ingestFromUrlOrPath(target, options);
+    const result = await withCliOcrProvider(options, (ocrOptions) =>
+      ingestFromUrlOrPath(target, ocrOptions)
+    );
     const { stats, fetchStatus, gatekeeperBundle } = result;
 
     const total = stats.total_lines || 1;
@@ -411,6 +452,8 @@ if (command === 'audit-wasm') {
       console.log(`   - ${path.join(options.outDir, 'results.csv')}`);
       console.log(`   - ${path.join(options.outDir, 'results.json')}`);
       console.log(`   - ${path.join(options.outDir, 'train-qwen-llama-sft.jsonl')}`);
+      console.log(`   - ${path.join(options.outDir, 'rtio-graph-sft.jsonl')}`);
+      console.log(`   - ${path.join(options.outDir, 'triples.jsonl')}`);
       console.log(`   - ${path.join(options.outDir, 'train-tokens.bin')}`);
       console.log(`   - ${path.join(options.outDir, 'gatekeeper-bundle.json')}`);
       console.log(`   - ${path.join(options.outDir, 'summary-report.svg')}`);
@@ -435,9 +478,10 @@ if (command === 'audit-wasm') {
     process.exit(1);
   }
   try {
-    const loaded = await readBinaryOrTextForCli(target, {
-      weightsPath: flags.weights || flags['weights-path'],
-    });
+    const loaded = await withCliOcrProvider(
+      { weightsPath: flags.weights || flags['weights-path'] },
+      (ocrOptions) => readBinaryOrTextForCli(target, ocrOptions)
+    );
     const result = runCleanAndTokenizePipeline(loaded.text, { format: loaded.format || 'text' });
     const payload = {
       sourceType: loaded.sourceType,
@@ -538,9 +582,10 @@ if (command === 'audit-wasm') {
     if (typeof flags.text === 'string') {
       text = flags.text;
     } else if (flags.input) {
-      const loaded = await readBinaryOrTextForCli(flags.input, {
-        weightsPath: flags.weights || flags['weights-path'],
-      });
+      const loaded = await withCliOcrProvider(
+        { weightsPath: flags.weights || flags['weights-path'] },
+        (ocrOptions) => readBinaryOrTextForCli(flags.input, ocrOptions)
+      );
       text = loaded.cleanText;
     } else {
       throw new Error('Provide --text "<string>" or --input <file> to evaluate');

@@ -15,70 +15,63 @@
 
 \begin{document}
 \begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily]
-  % Wide canvas with 3.0cm inter-panel gap
   \fill[mlesurf] (-1.0, -1.35) rectangle (16.2, 5.45);
 
   % ================= PANEL A =================
   \begin{scope}[shift={(0,0)}]
     \node[anchor=west, text=mleink, font=\bfseries\footnotesize] at (-0.2, 5.05) {Panel A: Test Risk vs. Conformal Budget $\alpha$};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {Same scorer ($n_{\text{cal}}=301$, $n_{\text{test}}=300$, $\delta=0.05$)};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {Same scorer ($n_{\text{cal}}=301$, $n_{\text{test}}=299$, $\delta=0.05$)};
 
-    % Grid lines (0% to 16%, 4.0cm => 0.25cm per 1%)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (5.6,0);
     \draw[mlegrid, line width=0.5pt] (0,1.0) -- (5.6,1.0);
     \draw[mlegrid, line width=0.5pt] (0,2.0) -- (5.6,2.0);
     \draw[mlegrid, line width=0.5pt] (0,3.0) -- (5.6,3.0);
     \draw[mlegrid, line width=0.5pt] (0,4.0) -- (5.6,4.0);
 
-    % Y Axis labels
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 0) {0\%};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {4\%};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {8\%};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {12\%};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {16\%};
 
-    % Axes
     \draw[mlegray, line width=0.8pt] (0,0) -- (5.6,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % Uncalibrated tau = 0.50: 4.08% Cond FPR (y = 1.02)
-    \draw[mleorange, dashed, line width=1.1pt] (0, 1.02) -- (5.6, 1.02);
-    \node[anchor=west, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (0.15, 1.52) {Uncalibrated $\tau=0.50$: 4.08\%};
-    \draw[->, mleorange, line width=0.6pt] (1.35, 1.38) -- (1.35, 1.05);
+    % Uncalibrated tau = 0.50: 4.39% Cond FPR (y = 1.098)
+    \draw[mleorange, dashed, line width=1.1pt] (0, 1.098) -- (5.6, 1.098);
+    \node[anchor=west, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (0.15, 1.55) {Uncalibrated $\tau=0.50$: 4.39\%};
+    \draw[->, mleorange, line width=0.6pt] (1.55, 1.42) -- (1.55, 1.12);
 
-    % Cond FPR line: (0.5, 0.00) -> (1.65, 0.255) -> (2.80, 0.638) -> (3.95, 1.020) -> (5.10, 3.700)
-    \draw[mleblue, line width=1.8pt] (0.5, 0.00) -- (1.65, 0.255) -- (2.80, 0.638) -- (3.95, 1.020) -- (5.10, 3.700);
+    % Cond FPR: 0.00, 0.98, 3.41, 4.88, 14.63 at y = pct/4
+    \draw[mleblue, line width=1.8pt] (0.5, 0.00) -- (1.65, 0.245) -- (2.80, 0.853) -- (3.95, 1.220) -- (5.10, 3.658);
     \fill[mleblue] (0.5, 0.00) circle (2.2pt);
-    \fill[mleblue] (1.65, 0.255) circle (2.2pt);
-    \fill[mleblue] (2.80, 0.638) circle (2.2pt);
-    \fill[mleblue] (3.95, 1.020) circle (2.2pt);
-    \fill[mleblue] (5.10, 3.700) circle (2.2pt);
+    \fill[mleblue] (1.65, 0.245) circle (2.2pt);
+    \fill[mleblue] (2.80, 0.853) circle (2.2pt);
+    \fill[mleblue] (3.95, 1.220) circle (2.2pt);
+    \fill[mleblue] (5.10, 3.658) circle (2.2pt);
 
-    % Joint Risk line: (0.5, 0.00) -> (1.65, 0.168) -> (2.80, 0.418) -> (3.95, 0.668) -> (5.10, 2.418)
-    \draw[mleteal, dotted, line width=1.4pt] (0.5, 0.00) -- (1.65, 0.168) -- (2.80, 0.418) -- (3.95, 0.668) -- (5.10, 2.418);
+    % Joint risk: 0.00, 0.67, 2.34, 3.34, 10.03
+    \draw[mleteal, dotted, line width=1.4pt] (0.5, 0.00) -- (1.65, 0.168) -- (2.80, 0.585) -- (3.95, 0.835) -- (5.10, 2.508);
     \fill[mleteal] (0.43, -0.07) rectangle (0.57, 0.07);
     \fill[mleteal] (1.58, 0.098) rectangle (1.72, 0.238);
-    \fill[mleteal] (2.73, 0.348) rectangle (2.87, 0.488);
-    \fill[mleteal] (3.88, 0.598) rectangle (4.02, 0.738);
-    \fill[mleteal] (5.03, 2.348) rectangle (5.17, 2.488);
+    \fill[mleteal] (2.73, 0.515) rectangle (2.87, 0.655);
+    \fill[mleteal] (3.88, 0.765) rectangle (4.02, 0.905);
+    \fill[mleteal] (5.03, 2.438) rectangle (5.17, 2.578);
 
-    % Non-overlapping value annotations strictly clear of box and lines
-    \node[anchor=south west, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (0.56, 0.10) {0.0\%};
-    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (1.65, 0.34) {1.02\%};
-    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (2.80, 0.70) {2.55\%};
-    \node[anchor=south east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (3.88, 1.08) {4.08\%};
-    \node[anchor=east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.94, 3.70) {14.8\%};
-    \node[anchor=west, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (5.20, 2.42) {9.67\% Joint};
+    \node[anchor=south west, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (0.56, 0.08) {0.0\%};
+    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (1.65, 0.32) {0.98\%};
+    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (2.80, 0.92) {3.41\%};
+    \node[anchor=south east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (3.88, 1.28) {4.88\%};
+    \node[anchor=east, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.94, 3.66) {14.63\%};
+    \node[anchor=west, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (5.20, 2.51) {10.03\% Joint};
 
-    % Auto-sized legend node guaranteed zero border overflow
     \node[anchor=north west, draw=mlegray, fill=white, rounded corners=2pt, line width=0.5pt, inner sep=3.5pt, align=left, font=\fontsize{5.3}{6.5}\selectfont] at (0.14, 3.98) {
       \textbf{\color{mleink}Same Scorer Under LTT:}\\
-      \textcolor{mleblue}{--- Cond FPR ($\tau_{\text{keep}}: 0.28\uparrow$)}\\
+      \textcolor{mleblue}{--- Cond FPR ($\tau_{\text{keep}}: 0.26 \to 1.00$)}\\
       \textcolor{mleteal}{$\cdots$ Joint Risk $\Pr(\text{keep} \land Y{=}1)$}\\
-      \textcolor{mlesub}{Abstain: $1.3\% \to 15.7\% \to 43.7\%$}
+      \textcolor{mlesub}{Abstain: $0.33\% \to 14.05\% \to 40.8\%$}
     };
 
-    % X Axis labels
     \node[anchor=north, text=mlesub, font=\tiny] at (0.50, -0.14) {0.01};
     \node[anchor=north, text=mlesub, font=\tiny] at (1.65, -0.14) {0.02};
     \node[anchor=north, text=mlesub, font=\tiny] at (2.80, -0.14) {0.05};
@@ -92,48 +85,43 @@
     \node[anchor=west, text=mleink, font=\bfseries\footnotesize] at (-0.2, 5.05) {Panel B: Finite-Sample Resolution Floor};
     \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {$\text{BinomCDF}(k; n, \alpha=0.01)$ vs. $\delta=0.05$};
 
-    % Grid lines (0.00 to 0.20, 4.0cm => 20cm per 1.0)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (6.0,0);
     \draw[mlegrid, line width=0.5pt] (0,1.0) -- (6.0,1.0);
     \draw[mlegrid, line width=0.5pt] (0,2.0) -- (6.0,2.0);
     \draw[mlegrid, line width=0.5pt] (0,3.0) -- (6.0,3.0);
     \draw[mlegrid, line width=0.5pt] (0,4.0) -- (6.0,4.0);
 
-    % Y Axis labels
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 0) {0.00};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {0.05};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {0.10};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {0.15};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {0.20};
 
-    % Axes
     \draw[mlegray, line width=0.8pt] (0,0) -- (6.0,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % Critical threshold delta = 0.05 (y = 1.0)
     \draw[mleorange, dashed, line width=1.1pt] (0, 1.0) -- (6.0, 1.0);
     \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (3.78, 1.06) {$\delta{=}0.05$};
 
-    % Bar 1: Joint n_cal = 301, k = 0 => 0.0486 (y = 0.972)
+    % Joint n=301, k=0 => 0.0486 (y = 0.972)
     \fill[mleblue, rounded corners=2pt] (0.55, 0) rectangle (1.45, 0.972);
     \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (1.00, 1.05) {$0.0486 \le \delta$};
     \node[anchor=north, text=mlesub, font=\tiny, align=center] at (1.00, -0.14) {Joint ($k{=}0$)\\[-1pt]\textcolor{mleblue}{$n{=}301$ Valid}};
 
-    % Bar 2: Cond n_unsafe = 196, k = 0 => 0.1395 (y = 2.790)
-    \fill[mleorange, rounded corners=2pt] (2.40, 0) rectangle (3.30, 2.790);
-    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (2.85, 2.84) {$0.1395 > \delta$};
-    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (2.85, -0.14) {Cond ($k{=}0$)\\[-1pt]\textcolor{mleorange}{$n{=}196$ Floor}};
+    % Cond n_unsafe=206, k=0 => 0.1261 (y = 2.522)
+    \fill[mleorange, rounded corners=2pt] (2.40, 0) rectangle (3.30, 2.522);
+    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (2.85, 2.58) {$0.1261 > \delta$};
+    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (2.85, -0.14) {Cond ($k{=}0$)\\[-1pt]\textcolor{mleorange}{$n{=}206$ Floor}};
 
-    % Bar 3: Joint n_cal = 301, k = 1 => 0.1962 (y = 3.924)
+    % Joint n=301, k=1 => 0.1962 (y = 3.924)
     \fill[mleorange!70!mlegray, rounded corners=2pt] (4.25, 0) rectangle (5.15, 3.924);
     \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (4.70, 3.97) {$0.1962 > \delta$};
     \node[anchor=north, text=mlesub, font=\tiny, align=center] at (4.70, -0.14) {Joint ($k{=}1$)\\[-1pt]\textcolor{mlesub}{$n{=}301$ Rej.}};
 
-    % Auto-sized white card above Bar 1
     \node[anchor=north west, draw=mlegray, fill=white, rounded corners=2pt, line width=0.5pt, inner sep=3.5pt, align=left, font=\fontsize{5}{6}\selectfont, text width=1.88cm] at (0.12, 4.02) {
       \textbf{\color{mleink}Sample Bound:}\\
       \color{mlesub}Joint $k{=}0$ valid ($0.0486{\le}\delta$).\\[1.5pt]
-      Cond needs $n_{\text{uns}}{\ge}299$ (fails closed here).
+      Cond needs $n_{\text{uns}}{\ge}299$ ($206$ fails closed).
     };
 
     \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (3.00, -0.82) {Calibration Mode at $\alpha = 0.01$};

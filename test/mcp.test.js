@@ -14,7 +14,11 @@ test('MCP Server initialize and tools/list', () => {
   const listReq = { jsonrpc: '2.0', method: 'tools/list', id: 2 };
   const listRes = handleJsonRpcRequest(listReq);
   assert.strictEqual(listRes.id, 2);
-  assert.strictEqual(listRes.result.tools.length, 14);
+  assert.strictEqual(listRes.result.tools.length, 18);
+  const toolNames = new Set(listRes.result.tools.map((t) => t.name));
+  for (const name of ['ingest_enterprise_bundle', 'scan_enterprise_secrets', 'redact_audio_call', 'audit_forensic_leaks']) {
+    assert.ok(toolNames.has(name), `Expected Track E MCP tool ${name}`);
+  }
 });
 
 test('MCP Server tool call: ingest_and_tokenize', () => {

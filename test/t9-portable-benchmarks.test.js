@@ -106,7 +106,14 @@ test('T9: benchmark modules eliminate synthetic formulas, PRNG fake calibration,
   assert.ok(parsedCold.hotLoopMs >= 0 && parsedCold.wasmKernelExecuted === true);
 });
 
-test('T9: paper/mlsys2027-verisieve.tex remains untouched', () => {
-  const diff = execFileSync('git', ['diff', '--name-only', '--', 'paper/mlsys2027-verisieve.tex'], { encoding: 'utf8' }).trim();
-  assert.equal(diff, '', 'paper/mlsys2027-verisieve.tex must remain untouched');
+test('T9: technical note cites the live deterministic benchmark headlines', () => {
+  const report = JSON.parse(fs.readFileSync(path.resolve('results/scale-and-paradigm-benchmark.json'), 'utf8'));
+  const tex = fs.readFileSync(path.resolve('paper/verisieve-extraction-redaction-benchmark.tex'), 'utf8');
+  const contactSpans = report.race_2_pii_disambiguation_regex_ceiling.ai4privacy_ground_truth.contact_spans;
+  const nCalUnsafe = report.race_3_ltt_conformal_calibration.split.nCalUnsafe;
+  assert.match(tex, new RegExp(contactSpans.replace('/', '\\/')));
+  assert.match(tex, new RegExp(String(nCalUnsafe)));
+  assert.match(tex, /0\.1261/);
+  assert.match(tex, /110\/140/);
+  assert.equal(report.race_4_substrate_and_downstream_race.substrates.single_header_c99.artifactBytes, 2129);
 });

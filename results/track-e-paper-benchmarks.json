@@ -1,0 +1,414 @@
+{
+  "generatedAt": "2026-11-23T10:59:09.236Z",
+  "exp1_piiAndEvasion": {
+    "ai4privacy500": {
+      "paper1RegexLexicon": {
+        "contactCardIpv4": {
+          "detected": 110,
+          "total": 140,
+          "recallPct": 78.57
+        },
+        "targeted8": {
+          "detected": 159,
+          "total": 253,
+          "recallPct": 62.85
+        },
+        "bareNames": {
+          "detected": 118,
+          "total": 238,
+          "recallPct": 49.58
+        },
+        "all26Structured": {
+          "detected": 180,
+          "total": 580,
+          "recallPct": 31.03
+        },
+        "all56Tags": {
+          "detected": 468,
+          "total": 1556,
+          "recallPct": 30.08
+        }
+      },
+      "stage3aWasm": {
+        "contactCardIpv4": {
+          "detected": 112,
+          "total": 140,
+          "recallPct": 80
+        },
+        "targeted8": {
+          "detected": 161,
+          "total": 253,
+          "recallPct": 63.64
+        },
+        "bareNames": {
+          "detected": 121,
+          "total": 238,
+          "recallPct": 50.84
+        },
+        "all26Structured": {
+          "detected": 188,
+          "total": 580,
+          "recallPct": 32.41
+        },
+        "all56Tags": {
+          "detected": 479,
+          "total": 1556,
+          "recallPct": 30.78
+        }
+      },
+      "stage3bGlinerEdge45M": {
+        "contactCardIpv4": {
+          "detected": 100,
+          "total": 140,
+          "recallPct": 71.43
+        },
+        "targeted8": {
+          "detected": 193,
+          "total": 253,
+          "recallPct": 76.28
+        },
+        "bareNames": {
+          "detected": 205,
+          "total": 238,
+          "recallPct": 86.13
+        },
+        "all26Structured": {
+          "detected": 361,
+          "total": 580,
+          "recallPct": 62.24
+        },
+        "all56Tags": {
+          "detected": 997,
+          "total": 1556,
+          "recallPct": 64.07
+        }
+      },
+      "hybridStructuredPlusGlinerEdge": {
+        "contactCardIpv4": {
+          "detected": 135,
+          "total": 140,
+          "recallPct": 96.43
+        },
+        "targeted8": {
+          "detected": 232,
+          "total": 253,
+          "recallPct": 91.7
+        },
+        "bareNames": {
+          "detected": 205,
+          "total": 238,
+          "recallPct": 86.13
+        },
+        "all26Structured": {
+          "detected": 408,
+          "total": 580,
+          "recallPct": 70.34
+        },
+        "all56Tags": {
+          "detected": 1057,
+          "total": 1556,
+          "recallPct": 67.93
+        }
+      },
+      "hybridFull3A3B": {
+        "contactCardIpv4": {
+          "detected": 133,
+          "total": 140,
+          "recallPct": 95
+        },
+        "targeted8": {
+          "detected": 230,
+          "total": 253,
+          "recallPct": 90.91
+        },
+        "bareNames": {
+          "detected": 218,
+          "total": 238,
+          "recallPct": 91.6
+        },
+        "all26Structured": {
+          "detected": 404,
+          "total": 580,
+          "recallPct": 69.66
+        },
+        "all56Tags": {
+          "detected": 1118,
+          "total": 1556,
+          "recallPct": 71.85
+        }
+      },
+      "glinerEdgeOnnxBytes": 45820894,
+      "glinerEdgeCpuMedianMs": 19.51,
+      "glinerEdgeCpuP95Ms": 32.12
+    },
+    "blindPubmedqa250": {
+      "totalWords": 50288,
+      "naiveRegex": {
+        "hits": 278,
+        "hitsPer1k": 5.53,
+        "docsPct": 41.2
+      },
+      "paper1Lexicon": {
+        "hits": 94,
+        "hitsPer1k": 1.87,
+        "docsPct": 22.4
+      },
+      "glinerEdge45M": {
+        "hits": 37,
+        "hitsPer1k": 0.74,
+        "docsPct": 9.6,
+        "reductionVsNaive": 7.51,
+        "reductionVsPaper1Lexicon": 2.54
+      }
+    },
+    "lowercaseSpokenNames100": {
+      "paper1TitleCaseRegexRecallPct": 0,
+      "glinerEdge45MRecallPct": 58
+    },
+    "adversarialUnicodeEvasion": {
+      "clean": {
+        "total": 87,
+        "regexDetected": 82,
+        "regexRecallPct": 94.25,
+        "wasmDetected": 82,
+        "wasmRecallPct": 94.25
+      },
+      "zwsp": {
+        "total": 87,
+        "regexDetected": 31,
+        "regexRecallPct": 35.63,
+        "wasmDetected": 82,
+        "wasmRecallPct": 94.25
+      },
+      "homoglyph": {
+        "total": 47,
+        "regexDetected": 0,
+        "regexRecallPct": 0,
+        "wasmDetected": 47,
+        "wasmRecallPct": 100
+      },
+      "fullwidth": {
+        "total": 40,
+        "regexDetected": 0,
+        "regexRecallPct": 0,
+        "wasmDetected": 35,
+        "wasmRecallPct": 87.5
+      }
+    }
+  },
+  "exp2_enronEmails": {
+    "dataset": "Yale-LILY/aeslc (Enron)",
+    "emailCount": 500,
+    "rawBytes": 406306,
+    "cleanBytesAfterStrip": 402306,
+    "byteReductionPct": 0.98,
+    "quotedLinesStripped": 0,
+    "signatureLinesStripped": 0,
+    "totalPiiSpansDetected": 2769,
+    "emailSpans": 1053,
+    "phoneSpans": 34,
+    "personSpans": 1477,
+    "medianMsPerEmail": 0.219,
+    "throughputEmailsPerSec": 3399,
+    "forensicContainerMicroBench": [
+      {
+        "label": "EML Reply/Sig Strip",
+        "medianMs": 0.014,
+        "forensicCount": 1,
+        "detected": true
+      },
+      {
+        "label": "DOCX <w:delText> Strip",
+        "medianMs": 0.063,
+        "forensicCount": 1,
+        "detected": true
+      },
+      {
+        "label": "PPTX Hidden+Notes",
+        "medianMs": 0.104,
+        "forensicCount": 2,
+        "detected": true
+      },
+      {
+        "label": "XLSX veryHidden+Pivot",
+        "medianMs": 0.162,
+        "forensicCount": 2,
+        "detected": true
+      },
+      {
+        "label": "HAR Auth/Cookie Scrub",
+        "medianMs": 0.038,
+        "forensicCount": 1,
+        "detected": true
+      },
+      {
+        "label": "K8s Base64 Secret",
+        "medianMs": 0.078,
+        "forensicCount": 1,
+        "detected": true
+      },
+      {
+        "label": "JPEG EXIF/APP1 Scrub",
+        "medianMs": 0.009,
+        "forensicCount": 1,
+        "detected": true
+      }
+    ]
+  },
+  "exp3_secretScanning": {
+    "cleanCorpus": "google-research-datasets/mbpp + injected SHA-256 & UUIDv4 decoys",
+    "cleanFilesTested": 374,
+    "cleanCodeBytes": 111221,
+    "cleanFalsePositiveFiles": 0,
+    "cleanFalsePositiveSpans": 0,
+    "falsePositiveRatePct": 0,
+    "secretSamplesTotal": 120,
+    "secretTruePositives": 120,
+    "precisionPct": 100,
+    "recallPct": 100,
+    "f1Pct": 100,
+    "wasmThroughputMBps": 3.21,
+    "perClassRecall": {
+      "AWS_ACCESS_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "OPENAI_API_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "ANTHROPIC_API_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "GITHUB_PAT": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "GITLAB_PAT": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "STRIPE_LIVE_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "SLACK_BOT_TOKEN": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "GOOGLE_API_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "NPM_TOKEN": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "JWT": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "PRIVATE_KEY": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      },
+      "DB_CONNECTION_URI": {
+        "detected": 10,
+        "total": 10,
+        "recallPct": 100
+      }
+    }
+  },
+  "exp4_audioSpokenItnAndWaveform": {
+    "spokenItn100": {
+      "totalUtterances": 100,
+      "rawRegexDetected": 0,
+      "rawRegexRecallPct": 0,
+      "wasmSpokenItnDetected": 100,
+      "wasmSpokenItnRecallPct": 100
+    },
+    "librispeech40": {
+      "utterances": 40,
+      "totalAudioSeconds": 280.1,
+      "totalWasmRedactMs": 63.95,
+      "realtimeSpeedupX": 4379,
+      "maxInsideRedactedRms": 0,
+      "outsideSpeechBitPreservedCount": 40,
+      "forensicRiffChunksStripped": 40
+    }
+  },
+  "exp5_scaleSecurityAndCrossModalGraph": {
+    "wasmBinaryBytes": 179397,
+    "wasmHostImports": 0,
+    "streamingMp4SeekScaling": [
+      {
+        "sizeMB": 1,
+        "medianSeekMs": 0.55,
+        "sensitiveAtomsFound": 2
+      },
+      {
+        "sizeMB": 10,
+        "medianSeekMs": 0.574,
+        "sensitiveAtomsFound": 2
+      },
+      {
+        "sizeMB": 100,
+        "medianSeekMs": 0.438,
+        "sensitiveAtomsFound": 2
+      },
+      {
+        "sizeMB": 1024,
+        "medianSeekMs": 0.493,
+        "sensitiveAtomsFound": 2
+      }
+    ],
+    "archiveDefense": {
+      "bombCompressedBytes": 65353,
+      "bombUncompressedMB": 64,
+      "bombAbortMs": 0.521,
+      "bombError": "ZIP_BOMB_SIZE_EXCEEDED",
+      "zipSlipError": "ZIP_SLIP_REJECTED"
+    },
+    "crossModalGdprBlastRadius": [
+      {
+        "blocks": 100,
+        "nodes": 222,
+        "edges": 405,
+        "indexMs": 3.34,
+        "blastRadiusMedianMs": 0.019,
+        "blastHits": 20,
+        "modalitiesLinked": 5
+      },
+      {
+        "blocks": 1000,
+        "nodes": 2022,
+        "edges": 4040,
+        "indexMs": 11.45,
+        "blastRadiusMedianMs": 0.223,
+        "blastHits": 265,
+        "modalitiesLinked": 5
+      },
+      {
+        "blocks": 5000,
+        "nodes": 10022,
+        "edges": 20200,
+        "indexMs": 57.51,
+        "blastRadiusMedianMs": 0.915,
+        "blastHits": 1385,
+        "modalitiesLinked": 5
+      }
+    ]
+  }
+}

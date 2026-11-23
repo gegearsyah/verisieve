@@ -20,7 +20,24 @@ import {
 import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
 import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from './gatekeeper.js';
 import { extractPdfDetailed } from './pdf-parser.js';
-import { extractDocxText, fetchSafeUrlResponse } from './ingestor.js';
+import { isHtmlDocumentBuffer, isPdfDocumentBuffer } from './document-format.js';
+import { extractDocxText, fetchSafeUrlResponse, stripHtmlBoilerplate } from './ingestor.js';
+import { loadCleanWasmSync } from './clean-wasm.js';
+import { SaltedPseudonymVault } from './graph-wasm.js';
+import {
+  extractStructuredPdfBlocks,
+  parseDelimitedRows,
+  formatDelimitedTableBlocks,
+  extractDocxStructured,
+  extractMarkdownStructured,
+} from './structure-extractor.js';
+import {
+  buildGraphGroundedSft,
+  serializeGraphSftJsonl,
+  serializeTriplesJsonl,
+  stripTrailingSpecialEos,
+} from './graph-sft-builder.js';
+import { isEnterpriseFile, parseEnterpriseBuffer } from './enterprise-parsers.js';
 
 export { extractPdfDetailed } from './pdf-parser.js';
 
@@ -669,7 +686,7 @@ export function runPdfVsImageComparison(options = {}) {
  * Extract decompressed content streams from a PDF binary buffer
  */
 export function extractPdfTextStreams(buf) {
-  return extractPdfDetailed(buf).streams;
+  return extractPdfDetailed(buf, { includeStreams: true }).streams;
 }
 
 /**
@@ -1367,8 +1384,20 @@ export function generateRealDataComparisonSvg(comparisonJson) {
 </svg>`;
 }
 
+function buildDiverseLegacyPrompt(row, index) {
+  const sectionLabel = row.breadcrumb || row.source_file || row.source_mode || 'verified section';
+  const templates = [
+    `Explain the verified findings and operational rules documented under "${sectionLabel}".`,
+    `Detail the domain facts, numeric criteria, and obligations recorded in "${sectionLabel}".`,
+    `Provide a grounded domain summary of the redacted record from "${sectionLabel}".`,
+    `Outline the key provisions and contextual details captured in "${sectionLabel}".`,
+  ];
+  return templates[index % templates.length];
+}
+
 /**
- * Export ready-to-train HuggingFace / Qwen2.5 / Llama-3 / Unsloth SFT JSONL & packed binary token shard
+ * Export ready-to-train Graph-Grounded SFT (`rtio-graph-sft.jsonl`, `triples.jsonl`)
+ * alongside backward-compatible HuggingFace/Unsloth SFT JSONL & packed binary token shard.
  */
 export function exportTrainingArtifacts(rows, outDir, options = {}) {
   const tokenizer = options.tokenizer || createTokenizer({ maxSeqLen: options.maxSeqLen || 256 });
@@ -1378,25 +1407,28 @@ export function exportTrainingArtifacts(rows, outDir, options = {}) {
   const packedTokenList = [];
 
   keepSafeRows.forEach((row, i) => {
-    const text = row.masked_text || row.raw_excerpt || '';
+    const text = stripTrailingSpecialEos(row.masked_text || row.raw_excerpt || '');
     const enc = row.enc || tokenizer.encode(text);
     const validTokens = Array.from(enc.tokenIds.slice(0, enc.tokenCount));
 
-    // Ensure tokens end in EOS (2)
+    // Ensure tokens end in single clean EOS (2)
     if (validTokens.length === 0 || validTokens[validTokens.length - 1] !== 2) {
       validTokens.push(2);
     }
 
     const rowId = row.line_index !== undefined ? row.line_index : i;
     const nodeHash = computeNodeHash('sft_sample', { id: rowId, text });
+    const userPrompt = buildDiverseLegacyPrompt(row, i);
 
     const sftItem = {
       id: rowId,
-      text: `<|im_start|>user\nExtract verified domain knowledge from document segment.<|im_end|>\n<|im_start|>assistant\n${text}<|im_end|>`,
+      breadcrumb: row.breadcrumb || '',
+      section_id: row.section_id || 'sec:root',
+      text: `<|im_start|>user\n${userPrompt}<|im_end|>\n<|im_start|>assistant\n${text}<|im_end|>`,
       raw_clean_text: text,
       messages: [
         { role: 'system', content: 'Verified domain assistant (PII redacted by VeriSieve).' },
-        { role: 'user', content: 'Summarize verified segment.' },
+        { role: 'user', content: userPrompt },
         { role: 'assistant', content: text }
       ],
       input_ids: validTokens,
@@ -1414,10 +1446,21 @@ export function exportTrainingArtifacts(rows, outDir, options = {}) {
   const uint32Array = new Uint32Array(packedTokenList);
   const tokenBinBuffer = Buffer.from(uint32Array.buffer, uint32Array.byteOffset, uint32Array.byteLength);
 
+  // Build canonical Graph-Grounded SFT (`rtio-graph-sft.jsonl`) + AtlasKV/KBLaM `triples.jsonl`
+  const graphBuilt = buildGraphGroundedSft(keepSafeRows, {
+    workspaceSalt: options.workspaceSalt,
+    minTokens: options.minSftTokens ?? 256,
+    maxTokens: options.maxSftTokens ?? 1536,
+  });
+  const graphSftJsonlText = serializeGraphSftJsonl(graphBuilt.sftRecords);
+  const triplesJsonlText = serializeTriplesJsonl(graphBuilt.triples);
+
   if (outDir) {
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(path.join(outDir, 'train-qwen-llama-sft.jsonl'), sftJsonlText);
     fs.writeFileSync(path.join(outDir, 'train-tokens.bin'), tokenBinBuffer);
+    fs.writeFileSync(path.join(outDir, 'rtio-graph-sft.jsonl'), graphSftJsonlText);
+    fs.writeFileSync(path.join(outDir, 'triples.jsonl'), triplesJsonlText);
   }
 
   return {
@@ -1425,7 +1468,12 @@ export function exportTrainingArtifacts(rows, outDir, options = {}) {
     tokenBinBuffer,
     keepSafeCount: keepSafeRows.length,
     totalTokens: packedTokenList.length,
-    sftRows: keepSafeRows
+    sftRows: keepSafeRows,
+    graphSftJsonlText,
+    graphSftRecords: graphBuilt.sftRecords,
+    triplesJsonlText,
+    triples: graphBuilt.triples,
+    graphSftStats: graphBuilt.stats,
   };
 }
 
@@ -1445,8 +1493,49 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   let fetchStatus = 'local_file';
   let localFilename = typeof inputUrlOrPath === 'string' ? path.basename(inputUrlOrPath) : 'input_data';
   let pdfDiagnostics = null;
+  const structuredBlocks = [];
+  const documentTrees = [];
+
+  const appendTextAsStructured = (source, text, formatHint = 'text') => {
+    const str = String(text || '');
+    if (!str.trim()) return;
+    if (formatHint === 'csv' || formatHint === 'tsv') {
+      const parsed = parseDelimitedRows(str, formatHint === 'tsv' ? '\t' : undefined);
+      const out = formatDelimitedTableBlocks(source, parsed);
+      if (out.blocks.length > 0) {
+        structuredBlocks.push(...out.blocks);
+        return;
+      }
+    }
+    const mdOut = extractMarkdownStructured(source, str);
+    if (mdOut.tree.length > 0) documentTrees.push({ source, nodes: mdOut.tree });
+    if (mdOut.blocks.length > 0) {
+      structuredBlocks.push(...mdOut.blocks);
+    } else {
+      structuredBlocks.push({
+        text: str.trim(),
+        source,
+        breadcrumb: '',
+        sectionPath: [],
+        sectionId: 'sec:root',
+        pageStart: null,
+        pageEnd: null,
+        fontStyle: 'sans_serif',
+        structRole: 'PARAGRAPH',
+      });
+    }
+  };
 
   const extractPdfOrFail = async (pdfBuf, filename) => {
+    if (isHtmlDocumentBuffer(pdfBuf)) {
+      if (sourceFormat !== 'directory') sourceFormat = 'html';
+      const cleaned = stripHtmlBoilerplate(pdfBuf.toString('utf8')).cleanText;
+      appendTextAsStructured(filename, cleaned, 'html');
+      return cleaned;
+    }
+    if (!isPdfDocumentBuffer(pdfBuf)) {
+      throw new Error(`INVALID_PDF_HEADER: ${filename} is neither a PDF nor HTML`);
+    }
     const diag = extractPdfDetailed(pdfBuf);
     pdfDiagnostics = {
       pageCount: diag.pageCount,
@@ -1460,6 +1549,17 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       throw new Error(`PDF_ENCRYPTED_UNSUPPORTED: ${filename} uses encrypted streams/strings`);
     }
     if (diag.lines.length > 0) {
+      if (Array.isArray(diag.lineRecords) && diag.lineRecords.length > 0) {
+        const pdfStruct = extractStructuredPdfBlocks(filename, diag.lineRecords);
+        if (pdfStruct.tree.length > 0) documentTrees.push({ source: filename, nodes: pdfStruct.tree });
+        if (pdfStruct.blocks.length > 0) {
+          structuredBlocks.push(...pdfStruct.blocks);
+        } else {
+          appendTextAsStructured(filename, diag.lines.join('\n'), 'pdf');
+        }
+      } else {
+        appendTextAsStructured(filename, diag.lines.join('\n'), 'pdf');
+      }
       return diag.lines.join('\n');
     }
     if (diag.isLikelyScanned) {
@@ -1477,7 +1577,12 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
             if (line?.text?.trim()) extractedLines.push(line.text.trim());
           }
         }
-        if (extractedLines.length > 0) return extractedLines.join('\n');
+        if (extractedLines.length > 0) {
+          const joined = extractedLines.join('\n');
+          appendTextAsStructured(filename, joined, 'pdf');
+          return joined;
+        }
+        throw new Error(`PDF_OCR_NO_TEXT: Local OCR found no readable text in ${filename}`);
       }
       throw new Error(
         `PDF_IMAGE_ONLY_REQUIRES_OCR: ${filename} contains ${diag.imageXObjectCount} image XObject(s) and zero born-digital text; ` +
@@ -1486,6 +1591,45 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     }
     throw new Error(`PDF_EMPTY_TEXT_LAYER: ${filename} yielded zero extractable text lines`);
   };
+
+  const extractDocxOrFail = (docxBuf, filename) => {
+    const legacy = extractDocxText(docxBuf, options);
+    const structured = extractDocxStructured(filename, docxBuf, options);
+    if (structured.tree.length > 0) documentTrees.push({ source: filename, nodes: structured.tree });
+    if (structured.blocks.length > 0) {
+      structuredBlocks.push(...structured.blocks);
+    } else if (legacy.lines.length > 0) {
+      appendTextAsStructured(filename, legacy.lines.join('\n'), 'docx');
+    }
+    return legacy.lines.join('\n');
+  };
+
+  const extractImageOrFail = async (imageBuf, filename) => {
+    if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
+      throw new Error(
+        `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${filename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH}`
+      );
+    }
+    const decodedImg = decodeImageBuffer(imageBuf, filename);
+    const ocrRes = await runTiledOcrAsync(decodedImg, {
+      ...options,
+      filename,
+      sourceFormat: 'image',
+    });
+    const text = (ocrRes.lines || []).map((line) => line.text).join('\n');
+    if (!text.trim()) throw new Error(`IMAGE_OCR_NO_TEXT: Local OCR found no readable text in ${filename}`);
+    appendTextAsStructured(filename, text, 'image');
+    return text;
+  };
+
+  const listFilesRecursively = (dir) =>
+    fs.readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap((entry) => {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) return listFilesRecursively(fullPath);
+        return entry.isFile() ? [fullPath] : [];
+      });
 
   // 1. Check if input is a URL scheme (excluding single-letter Windows drive paths like C:\...) or arxiv id
   const isOnlineUrl = typeof inputUrlOrPath === 'string' && (
@@ -1520,26 +1664,22 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       rawContent = await extractPdfOrFail(buf, localFilename);
     } else if (cType.includes('wordprocessingml') || fetchedRes.finalUrl.toLowerCase().endsWith('.docx')) {
       sourceFormat = 'docx';
-      rawContent = extractDocxText(buf, options).lines.join('\n');
+      rawContent = extractDocxOrFail(buf, localFilename);
     } else if (cType.includes('image/png') || cType.includes('image/bmp') || fetchedRes.finalUrl.toLowerCase().endsWith('.png') || fetchedRes.finalUrl.toLowerCase().endsWith('.bmp')) {
       sourceFormat = 'image';
-      const decodedImg = decodeImageBuffer(buf, localFilename);
-      if (typeof options.ocrProvider !== 'function' && !resolveCactusWeightsBytes(options)) {
-        throw new Error(
-          `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
-        );
-      }
-      const ocrRes = await runTiledOcrAsync(decodedImg, { ...options, filename: localFilename, sourceFormat: 'image' });
-      rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
+      rawContent = await extractImageOrFail(buf, localFilename);
     } else if (cType.includes('html') || fetchedRes.finalUrl.toLowerCase().endsWith('.html')) {
       sourceFormat = 'html';
       rawContent = buf.toString('utf8');
+      appendTextAsStructured(localFilename, rawContent, 'html');
     } else if (cType.includes('json') || fetchedRes.finalUrl.toLowerCase().endsWith('.json')) {
       sourceFormat = 'json';
       rawContent = buf.toString('utf8');
+      appendTextAsStructured(localFilename, rawContent, 'json');
     } else {
       sourceFormat = 'text';
       rawContent = buf.toString('utf8');
+      appendTextAsStructured(localFilename, rawContent, 'text');
     }
     fetchStatus = 'online_live';
   } else {
@@ -1552,20 +1692,26 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     const stat = fs.statSync(resolvedPath);
     if (stat.isDirectory()) {
       sourceFormat = 'directory';
-      const files = fs.readdirSync(resolvedPath).sort();
+      const files = listFilesRecursively(resolvedPath);
       const parts = [];
-      for (const f of files) {
-        const full = path.join(resolvedPath, f);
-        if (fs.statSync(full).isFile()) {
-          const fl = f.toLowerCase();
-          const b = fs.readFileSync(full);
-          if (fl.endsWith('.pdf')) {
-            parts.push(...(await extractPdfOrFail(b, f)).split('\n'));
-          } else if (fl.endsWith('.docx')) {
-            parts.push(...extractDocxText(b, options).lines);
-          } else {
-            parts.push(b.toString('utf8'));
-          }
+      for (const full of files) {
+        const relativePath = path.relative(resolvedPath, full);
+        const ext = path.extname(full).toLowerCase();
+        const b = fs.readFileSync(full);
+        if (ext === '.pdf') {
+          parts.push(...(await extractPdfOrFail(b, relativePath)).split('\n'));
+        } else if (ext === '.docx') {
+          parts.push(...extractDocxOrFail(b, relativePath).split('\n'));
+        } else if (ext === '.png' || ext === '.bmp') {
+          parts.push(...(await extractImageOrFail(b, relativePath)).split('\n'));
+        } else if (ext === '.csv' || ext === '.tsv') {
+          const text = b.toString('utf8');
+          appendTextAsStructured(relativePath, text, ext.slice(1));
+          parts.push(text);
+        } else {
+          const text = b.toString('utf8');
+          appendTextAsStructured(relativePath, text, 'text');
+          parts.push(text);
         }
       }
       rawContent = parts.join('\n');
@@ -1579,76 +1725,217 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       } else if (ext === '.docx') {
         sourceFormat = 'docx';
         const b = fs.readFileSync(resolvedPath);
-        rawContent = extractDocxText(b, options).lines.join('\n');
+        rawContent = extractDocxOrFail(b, localFilename);
       } else if (ext === '.png' || ext === '.bmp') {
         sourceFormat = 'image';
         const b = fs.readFileSync(resolvedPath);
-        const decodedImg = decodeImageBuffer(b, ext);
-        if (typeof options.ocrProvider === 'function' || resolveCactusWeightsBytes(options)) {
-          const ocrRes = await runTiledOcrAsync(decodedImg, {
-            ...options,
-            filename: localFilename,
-            sourceFormat: 'image',
-          });
-          rawContent = (ocrRes.lines || []).map((l) => l.text).join('\n');
-        } else {
-          throw new Error(
-            `IMAGE_REQUIRES_OCR_PROVIDER: Cannot extract real text from ${localFilename} without an ocrProvider or local ${DEFAULT_MIRAGE_WEIGHTS_PATH} (MIRAGE_WEIGHTS_REQUIRED)`
-          );
-        }
+        rawContent = await extractImageOrFail(b, localFilename);
       } else if (ext === '.html' || ext === '.htm') {
         sourceFormat = 'html';
         rawContent = fs.readFileSync(resolvedPath, 'utf8');
-      } else if (ext === '.eml') {
-        sourceFormat = 'email';
+        appendTextAsStructured(localFilename, rawContent, 'html');
+      } else if (ext === '.eml' || isEnterpriseFile(localFilename)) {
+        const b = fs.readFileSync(resolvedPath);
+        const parsed = parseEnterpriseBuffer(localFilename, b, options);
+        sourceFormat = parsed.modality || 'enterprise';
+        for (const blk of parsed.blocks) {
+          structuredBlocks.push({
+            text: blk.text,
+            source: blk.source || localFilename,
+            breadcrumb: blk.breadcrumb || localFilename,
+            sectionPath: blk.breadcrumb ? String(blk.breadcrumb).split(/\s*>\s*/).filter(Boolean) : [localFilename],
+            sectionId: `ent:${structuredBlocks.length}`,
+            pageStart: null,
+            fontStyle: 'regular',
+            structRole: blk.structRole === 'TABLE_ROW' ? 'TABLE_ROW' : 'SECTION_BODY',
+            tableHeaders: blk.tableHeaders || null,
+          });
+        }
+        rawContent = parsed.blocks.map((blk) => blk.text).join('\n');
+      } else if (ext === '.csv' || ext === '.tsv') {
+        sourceFormat = ext === '.tsv' ? 'tsv' : 'csv';
         rawContent = fs.readFileSync(resolvedPath, 'utf8');
-      } else if (ext === '.csv') {
-        sourceFormat = 'csv';
-        rawContent = fs.readFileSync(resolvedPath, 'utf8');
+        appendTextAsStructured(localFilename, rawContent, sourceFormat);
       } else if (ext === '.json' || ext === '.jsonl') {
         sourceFormat = 'json';
         rawContent = fs.readFileSync(resolvedPath, 'utf8');
+        appendTextAsStructured(localFilename, rawContent, 'json');
       } else {
         sourceFormat = 'text';
         rawContent = fs.readFileSync(resolvedPath, 'utf8');
+        appendTextAsStructured(localFilename, rawContent, 'text');
       }
     }
   }
 
-  // 3. Extract & Clean Blocks (fail closed on empty inputs)
-  const lines = rawContent
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
+  // 3. Extract & Clean Blocks via verisieve_clean.wasm (fail closed on empty inputs)
+  const cleanWasm = loadCleanWasmSync();
+  const useTokenWindowChunking =
+    options.chunkMode === 'token_window' ||
+    options.chunkMode === 'wasm' ||
+    Number.isFinite(options.chunkTokens);
+  const chunkMaxTokens = Math.max(32, Math.round(options.chunkTokens ?? 320));
+  const chunkOverlapTokens = Math.max(0, Math.round(options.chunkOverlap ?? 32));
+  const useSaltedPseudonyms = options.pseudonymize === true || piiStrategy === 'pseudonym';
+  const vault = new SaltedPseudonymVault(options.workspaceSalt);
 
-  if (lines.length === 0) {
+  const isGenuineBoilerplate = (rawText) => {
+    const trimmed = String(rawText || '').trim();
+    if (!trimmed) return true;
+    // Delegate chrome removal to verisieve_clean.wasm (preserves "privacy policy", GFM tables, $3,000,000 metrics, and URLs)
+    const stripped = cleanWasm.stripBoilerplate(trimmed, { html: false, chrome: true }).trim();
+    if (!stripped || stripped.length < trimmed.length * 0.4) {
+      return true;
+    }
+    // Genuine fax/copyright/confidential-intake chrome ONLY (never drop citation URLs like https://...)
+    return /(?:^|\b)(?:copyright\s+notice|all\s+rights\s+reserved|reproduction\s+prohibited|urgent\s+facsimile\s+transmission|confidential\s+patient\s+intake|confidential\s+internal\s+only)(?:\b|$)|^\s*(?:confidential|page\s+\d+(?:\s+of\s+\d+)?)\s*$/i.test(trimmed);
+  };
+
+  const maskSpanSorted = (rawText, piiItems) => {
+    if (!piiItems.length) return { masked: rawText, entityIds: [] };
+    if (useSaltedPseudonyms) {
+      const res = vault.maskText(rawText);
+      return { masked: res.maskedText, entityIds: res.entityIds };
+    }
+    const sorted = [...piiItems].sort((a, b) => a.start - b.start);
+    let out = '';
+    let lastIdx = 0;
+    const entityIds = [];
+    for (const item of sorted) {
+      if (item.start < lastIdx) continue;
+      out += rawText.slice(lastIdx, item.start);
+      const rawVal = item.value ?? rawText.slice(item.start, item.end);
+      const entry = vault.pseudonymize(rawVal, item.category || item.type);
+      if (!entityIds.includes(entry.entity_id)) entityIds.push(entry.entity_id);
+      out += maskValue(rawVal, item.type, piiStrategy);
+      lastIdx = item.end;
+    }
+    out += rawText.slice(lastIdx);
+    return { masked: out, entityIds };
+  };
+
+  const rawUnits = [];
+  if (useTokenWindowChunking && structuredBlocks.length > 0) {
+    for (const sb of structuredBlocks) {
+      const text = String(sb.text || '').trim();
+      if (!text) continue;
+      if (sb.structRole === 'TABLE_ROW') {
+        rawUnits.push({
+          text,
+          source: sb.source || localFilename,
+          breadcrumb: sb.breadcrumb || '',
+          sectionPath: sb.sectionPath || [],
+          sectionId: sb.sectionId || 'sec:table',
+          pageNo: sb.pageStart ?? null,
+          fontStyle: sb.fontStyle || 'sans_serif',
+          structRole: sb.structRole,
+          tableHeaders: sb.tableHeaders || null,
+        });
+        continue;
+      }
+      // Chunk long section blocks via verisieve_clean.wasm token-window chunker
+      // Mask first if salted pseudonyms are active? We keep raw text per chunk for accurate
+      // boilerplate detection while ensuring verisieve_clean.wasm snaps cleanly on sentences.
+      const chunks = cleanWasm.chunkByTokenWindow(text, {
+        maxTokens: chunkMaxTokens,
+        overlapTokens: chunkOverlapTokens,
+      });
+      if (chunks.length > 0) {
+        for (const ch of chunks) {
+          const ct = String(ch.text || '').trim();
+          if (!ct) continue;
+          rawUnits.push({
+            text: ct,
+            source: sb.source || localFilename,
+            breadcrumb: sb.breadcrumb || '',
+            sectionPath: sb.sectionPath || [],
+            sectionId: sb.sectionId || 'sec:root',
+            pageNo: sb.pageStart ?? null,
+            fontStyle: sb.fontStyle || 'sans_serif',
+            structRole: sb.structRole || 'SECTION_BODY',
+            tableHeaders: sb.tableHeaders || null,
+          });
+        }
+      } else {
+        rawUnits.push({
+          text,
+          source: sb.source || localFilename,
+          breadcrumb: sb.breadcrumb || '',
+          sectionPath: sb.sectionPath || [],
+          sectionId: sb.sectionId || 'sec:root',
+          pageNo: sb.pageStart ?? null,
+          fontStyle: sb.fontStyle || 'sans_serif',
+          structRole: sb.structRole || 'SECTION_BODY',
+          tableHeaders: sb.tableHeaders || null,
+        });
+      }
+    }
+  } else {
+    // Default line-level mode (backward compatible with existing CLI & test contracts) while attaching Tier-0 metadata
+    const metaByLine = new Map();
+    for (const sb of structuredBlocks) {
+      for (const l of String(sb.text || '').split(/\r?\n/)) {
+        const t = l.trim();
+        if (t && !metaByLine.has(t)) {
+          metaByLine.set(t, sb);
+        }
+      }
+    }
+    const rawLines = rawContent
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    for (const lineText of rawLines) {
+      const sb = metaByLine.get(lineText);
+      rawUnits.push({
+        text: lineText,
+        source: sb?.source || localFilename,
+        breadcrumb: sb?.breadcrumb || '',
+        sectionPath: sb?.sectionPath || [],
+        sectionId: sb?.sectionId || 'sec:root',
+        pageNo: sb?.pageStart ?? null,
+        fontStyle: sb?.fontStyle || 'sans_serif',
+        structRole: sb?.structRole || 'PARAGRAPH',
+        tableHeaders: sb?.tableHeaders || null,
+      });
+    }
+  }
+
+  if (rawUnits.length === 0) {
     throw new Error(`EMPTY_DOCUMENT_NO_LINES: ${localFilename} produced zero non-empty text lines`);
   }
 
   // 4. Run Tokenization & Gatekeeper Calibration
   const tokenizer = createTokenizer({ maxSeqLen });
   const includeRawExcerpt = options.includeRawExcerpt === true;
-  const blocks = lines.map((text, idx) => {
+  const blocks = rawUnits.map((unit, idx) => {
+    const text = unit.text;
     const piiItems = scanRecordsForPII(text);
-    let masked = text;
-    let hiddenPreview = '';
-
-    if (piiItems.length > 0) {
-      hiddenPreview = piiItems.map((p) => maskValue(p.value, p.type, 'partial')).join('; ');
-      for (const item of piiItems) {
-        masked = masked.replace(item.value, maskValue(item.value, item.type, piiStrategy));
-      }
-    }
+    const hiddenPreview = piiItems.length > 0
+      ? piiItems.map((p) => maskValue(p.value, p.type, 'partial')).join('; ')
+      : '';
+    const { masked, entityIds } = maskSpanSorted(text, piiItems);
 
     const isPii = piiItems.length > 0;
-    const isBoilerplate = /confidential|copyright|all rights reserved|page \d+|http:\/\/|https:\/\//i.test(text);
-    const label = (isPii || isBoilerplate) ? 0 : 1;
+    const isBoilerplate = isGenuineBoilerplate(text);
+    // Cleanly redacted prose (pseudonym/token/hash/redact) is SAFE (label = 1) unless genuine chrome/boilerplate.
+    // Partial masking leaves raw PII fragments in masked_text, so partial PII stays label = 0.
+    const leavesPartialRawPii = isPii && piiStrategy === 'partial';
+    const label = (leavesPartialRawPii || isBoilerplate) ? 0 : 1;
 
     const enc = tokenizer.encode(masked);
     return {
       line_index: idx,
       source_mode: sourceFormat,
-      font_style: 'sans_serif',
+      source_file: unit.source,
+      breadcrumb: unit.breadcrumb,
+      section_path: unit.sectionPath,
+      section_id: unit.sectionId,
+      page_no: unit.pageNo,
+      struct_role: unit.structRole,
+      table_headers: unit.tableHeaders,
+      entity_ids: entityIds,
+      font_style: unit.fontStyle || 'sans_serif',
       raw_excerpt: includeRawExcerpt ? text : redactExcerptWithSha256(text, masked),
       pii_detected: isPii,
       pii_types: [...new Set(piiItems.map((p) => p.type))],
@@ -1696,6 +1983,12 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     return {
       line_index: b.line_index,
       source_mode: b.source_mode,
+      source_file: b.source_file,
+      breadcrumb: b.breadcrumb,
+      section_id: b.section_id,
+      page_no: b.page_no,
+      struct_role: b.struct_role,
+      entity_ids: b.entity_ids,
       font_style: b.font_style,
       raw_excerpt: b.raw_excerpt,
       pii_detected: b.pii_detected,
@@ -1724,7 +2017,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   audit.log('INGEST', {
     input_source: typeof inputUrlOrPath === 'string' ? inputUrlOrPath : 'in_memory_buffer',
     source_format: sourceFormat,
-    lines_ingested: lines.length
+    lines_ingested: rawUnits.length
   });
   audit.log('PII_SCAN_REDACT', {
     pii_strategy: piiStrategy,
@@ -1739,10 +2032,18 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     tau_drop: calibrated.calibration.tauDrop
   });
 
-  const trainArtifacts = exportTrainingArtifacts(finalRows, options.outDir, { tokenizer, maxSeqLen });
+  const trainArtifacts = exportTrainingArtifacts(finalRows, options.outDir, {
+    tokenizer,
+    maxSeqLen,
+    workspaceSalt: options.workspaceSalt,
+    minSftTokens: options.minSftTokens,
+    maxSftTokens: options.maxSftTokens,
+  });
 
   audit.log('EXPORT_TRAIN_TOKENS', {
     sft_rows: trainArtifacts.keepSafeCount,
+    graph_sft_records: trainArtifacts.graphSftRecords?.length ?? 0,
+    triples_count: trainArtifacts.triples?.length ?? 0,
     total_tokens: trainArtifacts.totalTokens,
     eos_token_id: 2
   });
@@ -1778,13 +2079,11 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   const json = JSON.stringify(jsonReport, null, 2);
   const summarySvg = generateSummaryReportSvg(jsonReport);
 
-  // Write outputs if requested
+  // Write outputs if requested (train-qwen-llama-sft.jsonl and train-tokens.bin are already written by exportTrainingArtifacts)
   if (options.outDir) {
     fs.mkdirSync(options.outDir, { recursive: true });
     fs.writeFileSync(path.join(options.outDir, 'results.csv'), csv);
     fs.writeFileSync(path.join(options.outDir, 'results.json'), json);
-    fs.writeFileSync(path.join(options.outDir, 'train-qwen-llama-sft.jsonl'), trainArtifacts.sftJsonlText);
-    fs.writeFileSync(path.join(options.outDir, 'train-tokens.bin'), trainArtifacts.tokenBinBuffer);
     fs.writeFileSync(path.join(options.outDir, 'gatekeeper-bundle.json'), JSON.stringify(calibrated, null, 2));
     fs.writeFileSync(path.join(options.outDir, 'summary-report.svg'), summarySvg);
   }
@@ -1808,6 +2107,8 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   return {
     blocks: finalRows,
     rows: finalRows,
+    documentTrees,
+    redactedEntities: vault.exportRedactedEntities(),
     csv,
     json,
     gatekeeperBundle: calibrated,

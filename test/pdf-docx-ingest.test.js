@@ -26,6 +26,7 @@ import {
   runPdfVsImageComparison,
   ingestFromUrlOrPath,
 } from '../src/pdf-image-pipeline.js';
+import { parseToUnicodeCMap } from '../src/pdf-parser.js';
 import { extractDocxText } from '../src/ingestor.js';
 
 function encodeAscii85(buf) {
@@ -117,6 +118,32 @@ function makeZipEntry(filename, xmlContent, { bit3 = false, inflateRatioBomb = f
 
   return Buffer.concat([lfh, compBuf, dd, cdh, eocd]);
 }
+
+test('PDF ToUnicode bfrange increments multi-code-unit UTF-16BE destinations', () => {
+  const cmap = [
+    '1 begincodespacerange <01> <02> endcodespacerange',
+    '1 beginbfrange <01> <02> <D83DDE00> endbfrange',
+  ].join('\n');
+  const decoded = parseToUnicodeCMap(cmap);
+
+  assert.equal(decoded.decodeHex('01'), '😀');
+  assert.equal(decoded.decodeHex('02'), '😁');
+});
+
+test('PDF parser follows an indirect Contents array to its text streams', () => {
+  const content = 'BT /F1 12 Tf (Indirect content stream parsed) Tj ET';
+  const pdf = buildPdf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 5 0 R >> >> /Contents 6 0 R >>',
+    `<< /Length ${Buffer.byteLength(content, 'latin1')} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    '[4 0 R]',
+  ]);
+
+  const result = extractPdfDetailed(pdf);
+  assert.match(result.lines.join('\n'), /Indirect content stream parsed/);
+});
 
 test('T2: PDF parser decodes ObjStm, ASCII85+Flate filter arrays, scoped 1/2-byte ToUnicode, TJ kerning, coordinates, multiplicity & short tokens', () => {
   const cmapF1 = [

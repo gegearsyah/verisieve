@@ -15,120 +15,109 @@
 
 \begin{document}
 \begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily]
-  % Wide canvas with 3.0cm inter-panel gap
   \fill[mlesurf] (-1.0, -1.35) rectangle (16.2, 5.45);
 
-  % ================= PANEL A =================
+  % ================= PANEL A: spawn medians, log10(ms) =================
   \begin{scope}[shift={(0,0)}]
-    \node[anchor=west, text=mleink, font=\bfseries\footnotesize] at (-0.2, 5.05) {Panel A: 7-Run Process-Spawn Cold Start};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {$N=1,207$ rows; Interleaved OS spawn \& peak RSS};
+    \node[anchor=west, text=mleink, font=\bfseries\footnotesize] at (-0.2, 5.05) {Panel A: 7-Run Process-Spawn Median};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {16 Nov 2026 session; peak RSS under each bar};
 
-    % Grid lines (log-scale 1 ms to 10 s, 4.0cm = 4 decades)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (5.6,0);
     \draw[mlegrid, line width=0.5pt] (0,1.0) -- (5.6,1.0);
     \draw[mlegrid, line width=0.5pt] (0,2.0) -- (5.6,2.0);
     \draw[mlegrid, line width=0.5pt] (0,3.0) -- (5.6,3.0);
     \draw[mlegrid, line width=0.5pt] (0,4.0) -- (5.6,4.0);
 
-    % Y Axis labels
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 0) {1 ms};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {10 ms};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {100 ms};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {1 s};
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {10 s};
 
-    % Axes
     \draw[mlegray, line width=0.8pt] (0,0) -- (5.6,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % Bar 1: Single-Header C99 (8.35 ms => 0.922)
-    \fill[mleblue, rounded corners=2pt] (0.30, 0) rectangle (1.15, 0.922);
-    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (0.725, 0.96) {8.35 ms};
-    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (0.725, -0.14) {C99\\[-1pt]6.1 MB};
+    % log10(14.12)=1.150
+    \fill[mleblue, rounded corners=2pt] (0.30, 0) rectangle (1.15, 1.150);
+    \node[anchor=south, text=mleblue, font=\tiny\bfseries] at (0.725, 1.19) {14.1 ms};
+    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (0.725, -0.14) {C99\\[-1pt]6.08 MB};
 
-    % Bar 2: Node + WASM (54.63 ms => 1.737)
-    \fill[mleblue!72!mlegray, rounded corners=2pt] (1.65, 0) rectangle (2.50, 1.737);
-    \node[anchor=south, text=mlesub, font=\tiny\bfseries] at (2.075, 1.77) {54.6 ms};
-    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (2.075, -0.14) {WASM/JS\\[-1pt]51.2 MB};
+    % log10(106.22)=2.026
+    \fill[mleblue!72!mlegray, rounded corners=2pt] (1.65, 0) rectangle (2.50, 2.026);
+    \node[anchor=south, text=mlesub, font=\tiny\bfseries] at (2.075, 2.07) {106 ms};
+    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (2.075, -0.14) {WASM/JS\\[-1pt]56.0 MB};
 
-    % Bar 3: Python + NumPy (232.51 ms => 2.366)
-    \fill[mlegray, rounded corners=2pt] (3.00, 0) rectangle (3.85, 2.366);
-    \node[anchor=south, text=mlesub, font=\tiny\bfseries] at (3.425, 2.40) {232.5 ms};
-    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (3.425, -0.14) {Py+NumPy\\[-1pt]31.4 MB};
+    % log10(388.79)=2.590
+    \fill[mlegray, rounded corners=2pt] (3.00, 0) rectangle (3.85, 2.590);
+    \node[anchor=south, text=mlesub, font=\tiny\bfseries] at (3.425, 2.63) {389 ms};
+    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (3.425, -0.14) {Py+NumPy\\[-1pt]31.5 MB};
 
-    % Bar 4: Python + PyTorch + DuckDB (7237.8 ms => 3.860)
-    \fill[mleorange, rounded corners=2pt] (4.35, 0) rectangle (5.20, 3.860);
-    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (4.775, 3.90) {7,238 ms};
-    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (4.775, -0.14) {Py+Torch\\[-1pt]\textcolor{mleorange}{433 MB}};
+    % log10(12917)=4.111
+    \fill[mleorange, rounded corners=2pt] (4.35, 0) rectangle (5.20, 4.111);
+    \node[anchor=south, text=mleorange, font=\tiny\bfseries] at (4.775, 4.15) {12.9 s};
+    \node[anchor=north, text=mlesub, font=\tiny, align=center] at (4.775, -0.14) {Py+Torch\\[-1pt]\textcolor{mleorange}{432 MB}};
 
-    % Auto-sized hot-loop card sitting in clear upper-left space
-    \node[anchor=north west, draw=mlegray, fill=white, rounded corners=2pt, line width=0.5pt, inner sep=3.5pt, align=left, font=\fontsize{5}{6.2}\selectfont] at (0.12, 4.02) {
-      \textbf{\color{mleink}Warm Hot Loop ($1,207{\times}520$):}\\
-      \textcolor{mleteal}{\textbf{$\bullet$ NumPy BLAS: 0.085 ms (Win)}}\\
-      \textcolor{mleblue}{$\bullet$ C99: 0.38 ms ($1.26{\times}$ JIT)}\\
-      \textcolor{mlesub}{$\bullet$ Node: 0.48 ms (init 1.35 ms)}
+    \node[anchor=north west, draw=mlegray, fill=white, rounded corners=2pt, line width=0.5pt, inner sep=3.5pt, align=left, font=\fontsize{5}{6.2}\selectfont] at (0.12, 3.85) {
+      \textbf{\color{mleink}Warm work (different kernels):}\\
+      \textcolor{mleteal}{\textbf{NumPy $1{,}207{\times}520$ logistic: 0.207 ms}}\\
+      \textcolor{mleblue}{C99 same logistic: 0.745 ms}\\
+      \textcolor{mlesub}{Node 64-d VeRA predict: 7.13 ms}
     };
 
-    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (2.80, -0.82) {Execution Substrate ($N=7$ trials)};
+    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (2.80, -0.82) {Execution Substrate (median of $N=7$)};
   \end{scope}
 
-  % ================= PANEL B =================
+  % ================= PANEL B: loss, y = loss * 4 (axis 0 to 1.00) =================
   \begin{scope}[shift={(9.0,0)}]
     \node[anchor=west, text=mleink, font=\bfseries\footnotesize] at (-0.2, 5.05) {Panel B: Downstream Curation Size Ablation};
-    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {Held-out ($n_{\text{test}}=300$); Gate \& VeRA BCE Loss};
+    \node[anchor=west, text=mlemut, font=\scriptsize] at (-0.2, 4.62) {Held-out ($n_{\text{test}}=299$); Gate \& VeRA BCE Loss};
 
-    % Grid lines (Loss 0.0 to 0.80, 4.0cm = 0.80 => 5.0cm per 1.0)
     \draw[mlegrid, line width=0.5pt] (0,0) -- (6.0,0);
     \draw[mlegrid, line width=0.5pt] (0,1.0) -- (6.0,1.0);
     \draw[mlegrid, line width=0.5pt] (0,2.0) -- (6.0,2.0);
     \draw[mlegrid, line width=0.5pt] (0,3.0) -- (6.0,3.0);
     \draw[mlegrid, line width=0.5pt] (0,4.0) -- (6.0,4.0);
 
-    % Y Axis labels
     \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 0) {0.00};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {0.20};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {0.40};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {0.60};
-    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {0.80};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 1.0) {0.25};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 2.0) {0.50};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 3.0) {0.75};
+    \node[anchor=east, text=mlemut, font=\tiny] at (-0.1, 4.0) {1.00};
 
-    % Axes
     \draw[mlegray, line width=0.8pt] (0,0) -- (6.0,0);
     \draw[mlegray, line width=0.8pt] (0,0) -- (0,4.2);
 
-    % X coordinates: N=100 => 0.9, N=300 => 2.8, N=606 => 4.7
-    % 1. Naive Regex Gate Baseline: 0.7292 (y = 3.646, Acc 67.3%)
-    \draw[mleorange, dashed, line width=1.4pt] (0.4, 3.646) -- (5.5, 3.646);
-    \node[anchor=south, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (2.8, 3.70) {Naive Regex Baseline (BCE 0.729, Acc 67.3\%)};
+    % Naive regex BCE 0.7833 => y 3.133
+    \draw[mleorange, dashed, line width=1.4pt] (0.4, 3.133) -- (5.5, 3.133);
+    \node[anchor=south west, text=mleorange, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (0.45, 3.18) {Naive regex BCE 0.783 (acc 64.2\%)};
 
-    % 2. WASM VeRA 2-bit Adapter BCE Loss: (0.9, 3.435) -> (2.8, 3.107) -> (4.7, 2.765)
-    \draw[mleteal, dash pattern=on 3pt off 2pt, line width=1.5pt] (0.9, 3.435) -- (2.8, 3.107) -- (4.7, 2.765);
-    \fill[mleteal] (0.9, 3.435) circle (2pt);
-    \fill[mleteal] (2.8, 3.107) circle (2pt);
-    \fill[mleteal] (4.7, 2.765) circle (2pt);
-    \node[anchor=north, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (0.90, 3.30) {VeRA: 0.687};
-    \node[anchor=north, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (2.80, 2.98) {0.621};
-    \node[anchor=west, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.80, 2.765) {0.553};
+    % VeRA: 0.9432, 0.6698, 0.6141 => 3.773, 2.679, 2.456
+    \draw[mleteal, dash pattern=on 3pt off 2pt, line width=1.5pt] (0.9, 3.773) -- (2.8, 2.679) -- (4.7, 2.456);
+    \fill[mleteal] (0.9, 3.773) circle (2pt);
+    \fill[mleteal] (2.8, 2.679) circle (2pt);
+    \fill[mleteal] (4.7, 2.456) circle (2pt);
+    \node[anchor=south, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (0.90, 3.82) {VeRA 0.943};
+    \node[anchor=north, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont] at (2.80, 2.58) {0.6698};
+    \node[anchor=west, text=mleteal, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.80, 2.456) {0.614};
 
-    % 3. VeriSieve 520-dim Gate BCE Loss: (0.9, 1.567) -> (2.8, 1.339) -> (4.7, 1.133)
-    \draw[mleblue, line width=2.0pt] (0.9, 1.567) -- (2.8, 1.339) -- (4.7, 1.133);
-    \fill[mleblue] (0.9, 1.567) circle (2.4pt);
-    \fill[mleblue] (2.8, 1.339) circle (2.4pt);
-    \fill[mleblue] (4.7, 1.133) circle (2.4pt);
-    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (0.9, 1.65) {0.313 (91.3\%)};
-    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (2.8, 1.42) {0.268 (93.0\%)};
-    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.7, 1.22) {0.227 (93.3\%)};
+    % Gate: 0.2577, 0.2244, 0.189 => 1.031, 0.898, 0.756
+    \draw[mleblue, line width=2.0pt] (0.9, 1.031) -- (2.8, 0.898) -- (4.7, 0.756);
+    \fill[mleblue] (0.9, 1.031) circle (2.4pt);
+    \fill[mleblue] (2.8, 0.898) circle (2.4pt);
+    \fill[mleblue] (4.7, 0.756) circle (2.4pt);
+    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (0.9, 1.10) {0.258 (92\%)};
+    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont] at (2.8, 0.96) {0.224 (93\%)};
+    \node[anchor=south, text=mleblue, font=\fontsize{5.5}{6.5}\selectfont\bfseries] at (4.7, 0.82) {0.189 (94\%)};
 
-    % Compact 2-line auto-sized summary box well inside 0.14..5.95
     \node[anchor=south west, draw=mlegray, fill=white, rounded corners=2pt, line width=0.5pt, inner sep=2.6pt, align=left, font=\fontsize{4.5}{5.4}\selectfont] at (0.14, 0.08) {
-      \textbf{\color{mleink}Gate:} $-27.7\%$ BCE ($100{\to}606$), Leak ${\le}0.93\%$ (Raw $34.7\%$).\\
-      \color{mlesub}\textbf{Needle R@5:} VeriSieve $60.0\%$ vs. Raw $60.0\%$ ($n{=}125$).
+      \textbf{\color{mleink}Gate:} $-26.7\%$ BCE ($100{\to}607$), contact leak $1.05\%$ at full train.\\
+      \color{mlesub}\textbf{Needle R@5:} VeriSieve $60.0\%$ vs.\ Raw $60.0\%$ ($n{=}125$).
     };
 
-    % X Axis labels
     \node[anchor=north, text=mlesub, font=\tiny] at (0.9, -0.14) {$N_{\text{tr}}=100$};
     \node[anchor=north, text=mlesub, font=\tiny] at (2.8, -0.14) {$N_{\text{tr}}=300$};
-    \node[anchor=north, text=mlesub, font=\tiny] at (4.7, -0.14) {$N_{\text{tr}}=606$};
-    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (3.0, -0.62) {Training Shard Size (Subset of $n_{\text{train}}=606$)};
+    \node[anchor=north, text=mlesub, font=\tiny] at (4.7, -0.14) {$N_{\text{tr}}=607$};
+    \node[anchor=north, text=mleink, font=\scriptsize\bfseries] at (3.0, -0.62) {Training Shard Size (Subset of $n_{\text{train}}=607$)};
   \end{scope}
 \end{tikzpicture}
 \end{document}

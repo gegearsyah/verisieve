@@ -1023,7 +1023,14 @@ function normalizeProviderOutput(rawOut, tile) {
     if (Array.isArray(rawOut.lines)) items = rawOut.lines;
     else if (Array.isArray(rawOut.regions)) items = rawOut.regions;
     else if (Array.isArray(rawOut.detections)) items = rawOut.detections;
-    else if (typeof rawOut.text === 'string') return normalizeProviderOutput(rawOut.text, tile);
+    else if (typeof rawOut.text === 'string') {
+      const normalized = normalizeProviderOutput(rawOut.text, tile);
+      if (typeof rawOut.confidence === 'number') {
+        const confidence = Math.max(0, Math.min(1, rawOut.confidence));
+        return normalized.map((item) => ({ ...item, confidence }));
+      }
+      return normalized;
+    }
   }
 
   const invScale = tile.scaleFactor > 0 ? (1 / tile.scaleFactor) : 1.0;
@@ -1115,54 +1122,91 @@ export function resolveCactusWeightsBytes(options = {}) {
 }
 
 export async function runTiledOcrAsync(input, options = {}) {
-  const mode = options.mode || 'tile_2d';
+  let mode = options.mode || 'tile_2d';
   const tileSize = options.tileSize || 512;
   const overlap = options.overlap || 64;
   const tStart = performance.now();
 
   const decoded = decodeImageBuffer(input, options.extHint || options.filename || '');
-  const tiles = extractImageTiles2D(decoded, { mode, tileSize, overlap });
   const detections = [];
+  let geometry;
 
-  if (typeof options.ocrProvider === 'function') {
-    for (const tile of tiles) {
-      const out = await options.ocrProvider(tile, {
-        filename: options.filename,
-        sourceFormat: options.sourceFormat || decoded.format || 'image',
-        fullWidth: decoded.width,
-        fullHeight: decoded.height,
-        mode
-      });
-      detections.push(...normalizeProviderOutput(out, tile));
-    }
+  if (
+    mode === 'tile_2d' &&
+    typeof options.ocrProvider === 'function' &&
+    typeof options.ocrProvider.recognizeImage === 'function' &&
+    decoded.width * decoded.height <= 16_000_000
+  ) {
+    mode = 'full_image';
+    const tile = {
+      x: 0,
+      y: 0,
+      x2: decoded.width,
+      y2: decoded.height,
+      scaleFactor: 1,
+      maxReadsCap: Number.MAX_SAFE_INTEGER,
+      width: decoded.width,
+      height: decoded.height,
+    };
+    const out = await options.ocrProvider.recognizeImage(decoded, {
+      filename: options.filename,
+      sourceFormat: options.sourceFormat || decoded.format || 'image',
+      fullWidth: decoded.width,
+      fullHeight: decoded.height,
+      mode,
+    });
+    detections.push(...normalizeProviderOutput(out, tile));
+    geometry = {
+      mode,
+      tiles: [[0, 0, decoded.width, decoded.height]],
+      scaleFactor: 1,
+      maxReadsCap: tile.maxReadsCap,
+      numPasses: 1,
+      latencyMultiplier: 1,
+    };
   } else {
-    const weightsBytes = resolveCactusWeightsBytes(options);
-    if (!weightsBytes) {
-      throw new Error(
-        `MIRAGE_WEIGHTS_REQUIRED: Real image OCR requires local Mirage .cact weights (${DEFAULT_MIRAGE_WEIGHTS_PATH}) or a pluggable ocrProvider`
-      );
-    }
-    const runtime = await createCactusRuntime(options);
-    try {
-      const loadRes = runtime.loadWeights(weightsBytes);
-      if (!loadRes.ok) {
-        throw new Error(`CACTUS_WEIGHTS_LOAD_FAILED: ${loadRes.error}`);
-      }
+    const tiles = extractImageTiles2D(decoded, { mode, tileSize, overlap });
+
+    if (typeof options.ocrProvider === 'function') {
       for (const tile of tiles) {
-        const rawJson = runtime.describeRgb(tile.rgb, tile.width, tile.height, {
-          max_text_lines: tile.maxReadsCap,
-          text_conf: options.textConf ?? 0.25,
-          language: options.language || 'en'
+        const out = await options.ocrProvider(tile, {
+          filename: options.filename,
+          sourceFormat: options.sourceFormat || decoded.format || 'image',
+          fullWidth: decoded.width,
+          fullHeight: decoded.height,
+          mode
         });
-        detections.push(...normalizeProviderOutput(rawJson, tile));
+        detections.push(...normalizeProviderOutput(out, tile));
       }
-    } finally {
-      runtime.dispose();
+    } else {
+      const weightsBytes = resolveCactusWeightsBytes(options);
+      if (!weightsBytes) {
+        throw new Error(
+          `MIRAGE_WEIGHTS_REQUIRED: Real image OCR requires local Mirage .cact weights (${DEFAULT_MIRAGE_WEIGHTS_PATH}) or a pluggable ocrProvider`
+        );
+      }
+      const runtime = await createCactusRuntime(options);
+      try {
+        const loadRes = runtime.loadWeights(weightsBytes);
+        if (!loadRes.ok) {
+          throw new Error(`CACTUS_WEIGHTS_LOAD_FAILED: ${loadRes.error}`);
+        }
+        for (const tile of tiles) {
+          const rawJson = runtime.describeRgb(tile.rgb, tile.width, tile.height, {
+            max_text_lines: tile.maxReadsCap,
+            text_conf: options.textConf ?? 0.25,
+            language: options.language || 'en'
+          });
+          detections.push(...normalizeProviderOutput(rawJson, tile));
+        }
+      } finally {
+        runtime.dispose();
+      }
     }
+    geometry = computeCanvasScaleGeometry(decoded.width, decoded.height, { mode, tileSize, overlap });
   }
 
   const lines = stitchTileDetections(detections);
-  const geometry = computeCanvasScaleGeometry(decoded.width, decoded.height, { mode, tileSize, overlap });
   return {
     mode,
     numPasses: geometry.numPasses,

@@ -1,8 +1,8 @@
 # VeriSieve: Zero-Egress Document Sieve and Conformal Gatekeeper: A Systems Measurement across WebAssembly, C99, and Python
 
-**Authors:** Geye Ardiansyah & The VeriSieve Systems and Sovereign AI Research Team  
+**Author:** Gege Ardiyansyah
 **Date:** November 2026  
-**Target Venue:** MLSys 2027 (Research Paper Track)  
+**Status:** Internal working note; not submitted. The summary below is superseded and contains withdrawn measurements; do not circulate it as an abstract.
 **Compiled Paper PDF:** [`paper/mlsys2027-verisieve.pdf`](../paper/mlsys2027-verisieve.pdf) (7 pages, MLSys kit)  
 **LaTeX Source:** [`paper/mlsys2027-verisieve.tex`](../paper/mlsys2027-verisieve.tex) | Bib: [`paper/mlsys2027-verisieve.bib`](../paper/mlsys2027-verisieve.bib)  
 **Artifact Repository:** `github.com/gegearsyah/verisieve` (`verisieve@1.0.0`)  
@@ -429,6 +429,74 @@ To benchmark VeriSieve against existing tools, we execute the 5-test head-to-hea
 | **Test 3: Multimodal Pixel Exposure** | **100.0%** (Full RGB) | **100.0%** (Text-only) | **100.0%** (Text-only) | **0.0%** (RGB [18,18,22] Blackout) |
 | **Test 4: Held-Out False-Alarm Rate** | 100.0% (Gross violation) | 41.7% (Violates $\alpha$) | 13.3% (Violates $\alpha$) | **0.0%** (PASS: $p = 0.0461 \le 0.05$) |
 | **Test 5: Top-3 Needle Retrieval Purity** | 33.3% (Fax noise) | 66.7% (Surviving noise) | 66.7% | **100.0% PURE CLINICAL** |
+
+---
+
+### 3.6 Track C: Graph-Grounded SFT, Two-Layer Graph-PPR vs. Native CAG, and Controlled PII-Masking Evidence
+
+To close the loop between deterministic document curation and real open-weight LLM inference/fine-tuning on consumer hardware (NVIDIA RTX 4070 Laptop GPU, 8 GB VRAM), we benchmarked **four zero-training architectures (`T0`)** across three locally hosted open-weight models (`lfm3:latest` 1.1 GB, `llama3.2:3b` 2.0 GB, `qwen2.5:7b` 4.7 GB) on a frozen **12-probe OAIC Australian Privacy Principles (APP) evaluation split** (3 single-hop, 3 multi-hop, 3 numeric/date thresholds, 3 unanswerable) alongside a **133-file (`89.3 MB`) `Compliance Research` (`APP` + `NIST`) corpus** for Graph-Grounded SFT (`T2`).
+
+#### Unified Comparison: Zero-Training Inference (`T0`) vs. Flat-Line LoRA (`T1`) vs. Graph-Grounded Packed SFT (`T2`)
+
+**Table 5: Local RTX 4070 (8 GB VRAM) Controlled Comparison on Frozen 12-Probe OAIC APP Suite.**
+
+| Model / Regime | Peak VRAM | Blank / EOS Collapse | Overall Acc | Single-Hop | Multi-Hop | Numeric | Unanswerable | Mean F1 | Mean Latency | Retrieval / KV Telemetry |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **`T1` Old Flat-Line LoRA** (`LFM3-1.7B-Base`, 49.4 tok/row, constant prompt) | — | **90.0%** *(45/50)* | — | — | — | — | — | — | — | Immediate-EOS collapse baseline |
+| **`lfm3:latest` (`T0` Base)** | 1.73 GB | 8.3% | 25.0% (3/12) | 0/3 | 0/3 | 0/3 | 3/3 | 0.291 | 409.6 ms | Zero-shot |
+| **`lfm3:latest` (`T0` + Graph-PPR)** | 1.73 GB | 41.7% | 33.3% (4/12) | 0/3 | 1/3 | 0/3 | 3/3 | 0.304 | 936.4 ms | `0.51 ms` `verisieve_graph.wasm` |
+| **`lfm3:latest` (`T0` + PageIndex TOC)** | 1.73 GB | 25.0% | 25.0% (3/12) | 0/3 | 0/3 | 0/3 | 3/3 | 0.280 | 444.3 ms | `0.49 ms` redacted TOC |
+| **`lfm3:latest` (`T0` + Native CAG, 20k)** | **1.73 GB** | **0.0%** | **58.3% (7/12)** | **2/3** | **2/3** | 0/3 | **3/3** | **0.438** | **419.8 ms** | **100% KV hit (`94.8%` tokens cached; `4.97s` cold $\to$ `0.42s` repeat = `11.8x`)** |
+| **`llama3.2:3b` (`T0` Base)** | 6.08 GB | 0.0% | 25.0% (3/12) | 0/3 | 0/3 | 0/3 | 3/3 | 0.296 | 303.4 ms | Zero-shot |
+| **`llama3.2:3b` (`T0` + Graph-PPR)** | 6.08 GB | **0.0%** | **58.3% (7/12)** | **2/3** | 1/3 | **1/3** | **3/3** | **0.480** | 1,433.4 ms | `0.78 ms` `verisieve_graph.wasm` |
+| **`llama3.2:3b` (`T0` + PageIndex TOC)** | 6.08 GB | 0.0% | 33.3% (4/12) | 1/3 | 0/3 | 0/3 | 3/3 | 0.400 | 688.6 ms | `0.69 ms` redacted TOC |
+| **`llama3.2:3b` (`T0` + Native CAG, 19k)** | 6.08 GB | **0.0%** | **58.3% (7/12)** | **2/3** | **2/3** | **1/3** | 2/3 | 0.390 | **1,001.1 ms** | **100% KV hit (`99.6%` tokens cached; `16.6s` cold $\to$ `1.00s` repeat = `16.6x`)** |
+| **`qwen2.5:7b` (`T0` Base)** | 5.32 GB | 0.0% | 25.0% (3/12) | 0/3 | 0/3 | 0/3 | 3/3 | 0.358 | 849.5 ms | Zero-shot |
+| **`qwen2.5:7b` (`T0` + Graph-PPR)** | **5.32 GB** | **0.0%** | **75.0% (9/12)** | **2/3** | **3/3 (100%)** | **1/3** | **3/3** | **0.557** | 2,101.9 ms | **`0.62 ms` `verisieve_graph.wasm` (3x Base)** |
+| **`qwen2.5:7b` (`T0` + PageIndex TOC)** | 5.32 GB | 0.0% | 33.3% (4/12) | 0/3 | 1/3 | 0/3 | 3/3 | 0.337 | 1,207.6 ms | `0.78 ms` redacted TOC |
+| **`qwen2.5:7b` (`T0` + Native CAG, 14k *trunc.*)** | 5.32 GB | 0.0% | 41.7% (5/12) | 2/3 | 0/3 | 0/3 | 3/3 | 0.414 | **1,007.2 ms** | 100% KV hit (`99.5%` cached; `11.6s` cold $\to$ `1.01s` repeat), **truncated back half** |
+
+- **Two-Layer Crossover Confirmed Empirically:** When a workspace fits **untruncated** inside the model's KV VRAM budget (`lfm3:latest` and `llama3.2:3b` at ~20k tokens), **Layer-2 Native CAG** delivers `95–99.6%` KV reuse and **`11.8x–16.6x` latency reduction** with `0.0%` blank-EOS collapse and instant `<1 ms` GDPR Art. 17 slot-eviction discovery via `verisieve_graph.wasm` `blastRadius`. Once the corpus exceeds the VRAM KV ceiling (e.g., `qwen2.5:7b` capped at `14k` tokens, or multi-document archives), **Layer-1 `verisieve_graph.wasm` Graph-PPR** (`0.62 ms` retrieval) decisively outperforms truncated CAG (**`75.0%` vs. `41.7%` overall**, **`100%` vs. `0%` multi-hop**).
+- **`T2` Graph-Grounded Packed SFT Audit (`Compliance Research`, 133 files / 89.3 MB):** Three-layer deduplication (file SHA-256 + chunk exact SHA-256 & `verisieve_clean.wasm` 64-lane MinHash at `0.85` Jaccard + output SHA-256) reduced `34,072` raw chunks (`100` unique docs) by removing `4,188` boilerplate, `3,999` exact duplicates, and `3,346` near-duplicates into **`9,567` 100%-unique Graph-SFT records** (`4,434` unique prompts, `5,857` packed `1,024`-token blocks, **`1,023.97` mean packed tokens** vs. old `49.4`-token collapse zone, **`0` double-EOS sequences**, **`0` raw PII hits**) plus **`139,770` unique redacted triples** (`triples.jsonl`) in `40.7 s` on CPU WASM.
+
+#### Cross-Family Local GPU LoRA (`T1`/`T2`/`T3`) vs. Zero-Training Graph-PPR (`50` Held-Out Compliance Questions)
+
+Using the leak-free 93-document split (all 7 copies of the 3 held-out documents—NIST AI RMF, OAIC APP Chapter 1, and Privacy Act 1988—strictly excluded), we trained `T2` packed LoRA adapters (`packing=True`, `max_seq_length=1024`, `bf16`, `r=16`, `alpha=32`, single clean EOS, `600` stratified unique records) on **two independent model families** on the RTX 4070 and evaluated all conditions under greedy decoding (`enable_thinking=False`, immediate EOS permitted):
+
+**Table 5b: Cross-Family 50-Question Held-Out Compliance Ablation (RTX 4070, Greedy Decoding).**
+
+| Model (Peak VRAM) | Condition | Blank / EOS Collapse | In-Scope F1 | Key-Point Recall (40q) | Out-of-Scope Abstention (10q) | Mean Latency |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **`LFM3-1.7B-Base`** (`3.54 GB`) | Base (Closed-Book) | `0.0%` (`0/50`) | `0.1359` | `25.7%` | `10.0%` | `4.95 s` |
+| | `T1` Old Flat Safe LoRA (`49.4 tok/row`) | **`92.0%` (`46/50`)** | `0.0181` | `0.0%` | `0.0%` | `0.13 s` |
+| | `T2` Track C Packed LoRA (`1,024 tok`) | **`0.0%` (`0/50`)** | `0.1015` | `10.1%` | `0.0%` | `8.69 s` |
+| | `T3` `T2` LoRA + Graph-PPR | `0.0%` (`0/50`) | `0.1814` | **`40.8%`** | `10.0%` | `8.17 s` |
+| | **`T0` Base + Graph-PPR (Zero Training)** | **`0.0%` (`0/50`)** | **`0.2617`** | `37.1%` | **`100.0%`** | **`2.74 s`** |
+| **`Qwen2.5-0.5B-Instruct`** (`1.15 GB`) | Base (Closed-Book) | `0.0%` (`0/50`) | `0.1455` | **`37.0%`** | `0.0%` | `5.55 s` |
+| | `T2` Track C Packed LoRA (`1,024 tok`) | `2.0%` (`1/50`) | `0.1502` | `21.3%` | `0.0%` | `8.17 s` |
+| | `T3` `T2` LoRA + Graph-PPR | `16.0%` (`8/50`) | `0.1929` | `31.5%` | `70.0%` | `3.42 s` |
+| | **`T0` Base + Graph-PPR (Zero Training)** | **`0.0%` (`0/50`)** | **`0.2646`** | `35.7%` | **`70.0%`** | **`1.21 s`** |
+
+- **Causal Proof:** Track C packed single-EOS SFT eliminated `LFM3` immediate-EOS collapse (**`92.0%` $\to$ `0.0%`**).
+- **Honest Utility Verdict:** Across **both** `LFM3-1.7B-Base` and `Qwen2.5-0.5B-Instruct`, **zero-training `T0` Base + Graph-PPR beat small-model LoRA** on in-scope F1 (`0.262` / `0.265`), out-of-scope abstention (`100%` / `70%` vs. `0%`), and latency (`2.74 s` / `1.21 s`). Mixing raw bracketed `packed_passage` continuations with `<PII:...>` tags into small-model chat SFT caused header/placeholder imitation (`[APP 1] <PII:ADDRESS_1>...`) and bullet loops.
+- **Carlini Secret-Sharer Canary Weight Exposure (`LFM3-1.7B-Base`, 12 canaries, max `9.97` bits):** Pre-training masking lowered overall exposure from **`6.83` $\to$ `2.64` bits** (`4.65` Base), dropped `20x`-repetition exposure from **`8.54` $\to$ `1.58` bits (`-6.96` bits)**, and cut Rank-1 memorized canaries from **`5/12` $\to$ `0/12`**.
+
+#### Does PII Masking Actually Matter? (Controlled Privacy vs. Utility Evidence)
+
+A critical scientific question is whether deterministic PII masking is genuinely necessary—and whether it harms downstream accuracy. Combining our controlled `qwen2.5:7b` A/B test with the `ai4privacy` and `PubMedQA` measurements gives a clear, honest answer:
+
+**Table 6: Controlled Raw (Unredacted) vs. VeriSieve Salted-Pseudonym Redacted A/B Audit.**
+
+| Dimension & Testbed | Raw Unredacted | VeriSieve Salted-Pseudonym Redacted | Verdict |
+| :--- | :---: | :---: | :--- |
+| **Adversarial PII Extraction** (`qwen2.5:7b`, 3 extraction prompts on retrieved audit note with email/SSN/phone/name) | **100.0% leak** (`3/3` probes, `11/12` secret spans verbatim) | **0.0% leak** (`0/12` secret spans; emitted `<PII:*_01>`) | **Matters decisively** — LLMs obediently regurgitate raw secrets placed in context |
+| **OAIC Compliance QA Accuracy** (`qwen2.5:7b`, 12 frozen probes, identical Graph-PPR passages) | **75.0%** (`9/12`) | **75.0%** (`9/12`, $\Delta = 0.0\%$) | **Zero accuracy loss** from salted pseudonymization |
+| **OAIC Compliance Token F1** (`qwen2.5:7b`, 12 frozen probes, identical Graph-PPR passages) | **0.619** | **0.557** ($\Delta = -0.062$) | **Real modest F1 tax** from regex `name_likely` over-masking capitalized legal phrases |
+| **PubMedQA Retrieval Recall @ 5** (`125` held-out questions, `verisieve_dl.wasm` Needle) | **60.0%** (R@1 32.0%) | **60.0%** (R@1 31.2%) | **Neutral on retrieval** — masking neither helps nor harms top-5 recall |
+| **GDPR Art. 17 Revocation / Cache Eviction** (`verisieve_graph.wasm` Dual-CSR `blastRadius`) | Not traceable (`O(N)` rescan) | **`0.75–0.92 ms`** exact slot/shard hit | **Enables deterministic unlearning / KV eviction** via salted `ent:<kind>:<hmac16>` IDs |
+| **Regex Recall Ceiling** (`ai4privacy` 500-row ground truth, Race 2) | 0.0% scrubbed | **78.6%** contact/card/IPv4 (`110/140`), **49.6%** bare names (`118/238`) | **Honest boundary** — structured PII is caught reliably; bare-name/address perfection requires an optional local span tagger (e.g., Apache-2.0 GLiNER ONNX) |
+
+**Honest takeaway on PII masking:** Masking does **not** magically boost accuracy or retrieval—its purpose is **security and compliance**. Without masking, `qwen2.5:7b` leaked **11 of 12** planted raw secrets verbatim on direct extraction prompts (and LoRA weights memorize raw training PII, per Carlini et al., 2021/2023). With VeriSieve salted pseudonyms (`<PII:PERSON_01>`), verbatim extraction drops to **0.0%** at **0.0% QA accuracy cost** (`9/12` vs `9/12`), while honestly paying a `-0.062` lexical F1 tax on Title-Case legal terms and remaining bounded by the Race 2 regex recall ceiling on unprefixed bare names until an optional neural span tagger is enabled.
 
 ---
 

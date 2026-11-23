@@ -3,7 +3,7 @@
 [![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Zero-Egress Document Curation, Customer-Label Conformal Gatekeeping, and Local WebAssembly Training**  
-*Author: Geye Ardiansyah*
+*Author: Gege Ardiyansyah*
 
 VeriSieve is the portable curation engine powering the **RTIO** browser sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)), backed by three zero-import `#![no_std]` Rust WebAssembly kernels (`verisieve_clean.wasm`, `verisieve_dl.wasm`, `verisieve_sql.wasm`) and a pure-memory `cactus.wasm` runtime for Option B 2D-tiled optical recognition.
 
@@ -14,11 +14,11 @@ VeriSieve is the portable curation engine powering the **RTIO** browser sandbox 
 | Layer | Component | Responsibility & Verification |
 |---|---|---|
 | **Interface** | **RTIO** ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Interactive browser workspace for URL/document upload, PII/triage inspection, customer chunk labeling, SQL exploration, and local adapter runs. That app still depends on `tesseract.js` and `@tesseract.js-data/eng`. |
-| **Portable Engine** | **VeriSieve** (`src/`, `include/verisieve.h`) | Zero-dependency PDF (`/FlateDecode`, `/ASCII85Decode`, `/ObjStm`, scoped `/ToUnicode` CMaps, `TJ` kerning) + `.docx` (bit-3 Data Descriptor ZIP) ingestion, PII redaction (`334`-word exclusion lexicon), `520`-dim logistic gatekeeper, LTT conformal calibration, SSRF-hardened URL ingest, and MCP server (`8` tools). Runs across Browser, Node CLI, MCP, and C99. |
-| **Rust WASM Cores** | **Clean + DL + SQL WASM** (`vendor/wasm/`) | Three zero-import (`imports.length === 0`) `#![no_std]` Rust binaries: `verisieve_clean.wasm` (`13,757 B`), `verisieve_dl.wasm` (`60,096 B`, `23` `mle_dl_*` kernels for BitNet/VeRA & 64-dim needle embeddings), and `verisieve_sql.wasm` (`49,642 B`, `MAX_ROWS=4096` SQL subset engine). |
-| **Vision OCR Runtime** | **Cactus WASM** (`vendor/cactus/cactus.wasm`) | Pure-memory sandbox (`1,240,671 B`, `16` internal `module "a"` WASI stubs, `0` network/host-disk calls). Executes 2D `512x512` tiled OCR when local Mirage `.cact` vision weights are supplied and fails closed (`MIRAGE_WEIGHTS_REQUIRED`) when absent. |
+| **Portable Engine** | **VeriSieve** (`src/`, `include/verisieve.h`) | Local PDF (`/FlateDecode`, `/ASCII85Decode`, `/ObjStm`, scoped `/ToUnicode` CMaps, `TJ` kerning) + `.docx` ingestion, optional local Tesseract.js OCR, PII redaction (`334`-word exclusion lexicon), `520`-dim logistic gatekeeper, LTT conformal calibration, SSRF-hardened URL ingest, and MCP server (`8` tools). Runs across Browser, Node CLI, MCP, and C99. |
+| **Rust WASM Cores** | **Clean + DL + SQL WASM** (`vendor/wasm/`) | Three zero-import (`imports.length === 0`) `#![no_std]` Rust binaries: `verisieve_clean.wasm` (`13,757 B`), `verisieve_dl.wasm` (`60,096 B`, `26` `mle_dl_*` exports for BitNet/VeRA & 64-dim needle embeddings), and `verisieve_sql.wasm` (`49,642 B`, `MAX_ROWS=4096` SQL subset engine). |
+| **Vision OCR Runtime** | **Cactus WASM + local Tesseract.js** | Cactus remains the preferred pure-memory 2D-tiled path when Mirage `.cact` weights are supplied. The CLI and RTIO browser use local Tesseract.js/WASM as an OCR fallback when those weights are absent; worker, core, and English language data are resolved from installed local assets. |
 
-Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration execute purely in deterministic JavaScript and C99**, while **`verisieve_dl.wasm` executes neural BitNet/VeRA updates and needle retrieval**. Scanned images and image-only PDFs route to `cactus.wasm` and **fail closed with zero synthetic text fallbacks** when `.cact` weights are absent.
+Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (LTT) binomial calibration execute purely in deterministic JavaScript and C99**, while **`verisieve_dl.wasm` executes neural BitNet/VeRA updates and needle retrieval**. Scanned images and image-only PDFs use Cactus when local `.cact` weights are present, otherwise the CLI/browser Tesseract fallback; OCR never invents placeholder text.
 
 ---
 
@@ -27,10 +27,10 @@ Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (
 | Requirement | Built & Verified in VeriSieve | Honest Gap / Boundary |
 |---|---|---|
 | **Web & Link Capture** | `verisieve_clean.wasm` HTML/entity/script/comment stripping + SSRF DNS/private-CIDR pinning (`src/ingestor.js`); `ingestor.js` & `ingestFromUrlOrPath` fail closed on unreachable hosts or missing weights | Live remote URL ingest requires host network connectivity |
-| **PDF & `.docx` Capture** | Bit-3 Data Descriptor ZIP OOXML `.docx` parser + PDF 1.5 `/ObjStm`, `/FlateDecode`, `/ASCII85Decode`, scoped `/ToUnicode` CMaps & `TJ` kerning (`8/8` PMC PDFs clean) | Encrypted PDFs (`/Encrypt`) fail closed; image-only PDFs require `.cact` weights |
+| **PDF & `.docx` Capture** | Bit-3 Data Descriptor ZIP OOXML `.docx` parser + PDF 1.5 `/ObjStm`, `/FlateDecode`, `/ASCII85Decode`, scoped `/ToUnicode` CMaps & `TJ` kerning (`8/8` PMC PDFs clean); local OCR fallback for image-only PDFs; `.pdf` files containing HTML are detected and sent through the HTML cleaner | Encrypted PDFs (`/Encrypt`) fail closed; OCR depends on readable embedded images |
 | **Dedupe & Manifest** | SHA-256 exact hash + 3-gram Jaccard ($\ge 0.85$) tracked with capacity-eviction accounting (`vs_clean_dedup_overflowed`); immutable `AuditChain` | Tested per shard in memory (`verisieve_sql.wasm` bounded at `4,096` rows per query table) |
 | **Multi-Axis Customer Gate** | Independent `safe`, `useful`, `topic` logistic heads + LTT + C99 UTF-8 FNV-1a parity; fail-closed `tauKeep = 1.0` when `n_cal,unsafe` is below finite-sample bound | Conditional LTT at $\alpha=0.01, \delta=0.05$ requires $n_{\text{cal,unsafe}} \ge 299$ (`206` unsafe cal items hit fail-closed floor; `40`-item multi-axis calibration fails closed on sparse negative classes) |
-| **Zero-Egress Runtime** | All 4 WASM binaries audited via `npm run audit-wasm`. This package has zero npm dependencies. The separate RTIO app still depends on `tesseract.js` | Process cold-start favors C99/Node+WASM, while warm batched matrix dot products favor Python+NumPy BLAS |
+| **Zero-Egress Runtime** | All 4 WASM binaries audited via `npm run audit-wasm`. Tesseract.js and English data are installed once as local package dependencies and loaded from disk; OCR makes no runtime CDN request | Process cold-start favors C99/Node+WASM, while warm batched matrix dot products favor Python+NumPy BLAS |
 
 ---
 
@@ -39,7 +39,7 @@ Note explicitly: **the 520-dimensional logistic gatekeeper and Learn-Then-Test (
 All numbers below are measured live by `npm run bench:scale` (`results/scale-and-paradigm-benchmark.json`, SVG SHA-256 byte-identical across passes) across ICDAR FUNSD (`199` scans / `30,595` bboxes), `ai4privacy-200k` (`500` synthetic records), PubMedQA (`500` clinical abstracts), and PMC Full-Text (`8` born-digital clinical PDFs).
 
 ### 1. PDF CMap + FUNSD 2D Geometric Tiling
-- **PMC Clinical PDFs (`8/8` Clean)**: Scoped `/ToUnicode` CMap tables + negative-kerning `TJ` (`<= -110`) space reconstruction recover `8,134` readable lines (`55,099` words) in `150.1 ms` total (`18.76 ms` avg).
+- **PMC Clinical PDFs (`8/8` Clean)**: Scoped `/ToUnicode` CMap tables + negative-kerning `TJ` (`<= -110`) space reconstruction recover `8,134` readable lines (`55,099` words) in `209.02 ms` total (`26.13 ms` avg; range `8.42–64.54 ms`) on the 16 Nov 2026 remeasurement.
 - **FUNSD Geometric Survival (`199` forms, `30,595` boxes $\ge 8{\times}4$\,px)**:
   - `stock_capped_8`: `5.2%` (`1,592`)
   - `untiled_512`: `20.53%` (`6,281`)
@@ -70,14 +70,14 @@ Stratified split (`n_train=607`, `n_cal=301` [`206` unsafe], `n_test=299` [`205`
 | $\alpha = 0.02$ | `0.60` | `0.98%` | `0.67%` | `82.98%` | `14.05%` | Certified Cond & Joint |
 | $\alpha = 0.01$ | `1.00` | `0.00%` | `0.00%` | `0.00%` | `40.80%` | Joint Valid (`p=0.0486`) / Cond Fail-Closed (`206 < 299`) |
 
-- **Within-domain PubMedQA (`n=124`)**: Contact regex achieves `100.0%` on injected email/phone cases vs. `87.9%` 520-dim linear gate and `52.4%` naive any-PII regex; multi-axis customer evaluation (`60` train / `40` cal $\to$ `300` test) shows honest finite-sample behavior: `safe` certifies (`tauKeep=0.55`, `97.1% R / 95.7% P`), while sparse `useful`/`topic` negative sets in `40` calibration items trigger fail-closed `tauKeep=1.0` (`28.3%` abstain, `0.0%` unsafe leak).
+- **Within-domain PubMedQA (`n=124`)**: Contact regex achieves `100.0%` on injected email/phone cases vs. `87.9%` 520-dim linear gate and `52.4%` naive any-PII regex. Multi-axis evaluation (`60` train / `40` cal → `300` test): `safe` certifies (`tauKeep=0.55`, `97.1%` recall / `95.7%` precision, `7.3%` abstain). Sparse `useful`/`topic` calibration fails closed (`tauKeep=1.0`). The conjunction keeps `0` chunks (`85` abstain, `215` drop). There is no keep-set, so a `0%` leak rate is not a measured yield.
 
 ### 4. 7-Trial Interleaved Substrates & Held-Out Ablation
-Means of 7 interleaved OS process spawns scoring `1,207 x 520` rows on Windows 11:
-- **Single-Header C99 (`12.4 KB`)**: `10.5 ms` spawn | `6.07 MB` RSS | `0.48 ms` hot loop
-- **Node.js + WASM (`60.1 KB`)**: `73.42 ms` spawn (`0.68 ms` warm WASM init) | `48.47 MB` RSS | `4.5791 ms` hot loop (**`116.3x` faster spawn & `8.9x` lower RSS** than PyTorch+DuckDB)
-- **Python 3.12 + NumPy 2.4.3**: `285.02 ms` spawn (`148.15 ms` import) | `31.58 MB` RSS | **`0.1076 ms` BLAS hot loop (warm compute winner)**
-- **Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5**: `8,539.29 ms` spawn (`7,626.69 ms` import) | `432.5 MB` RSS | `21.92 ms` hot loop
+Medians of 7 interleaved OS process spawns on an AMD Ryzen 7 7840HS, 31.3 GB RAM, Windows 11 (16 Nov 2026). Spawn and RSS are comparable. Warm kernels are not: C99 and NumPy time the same `1,207 x 520` logistic; Node times 64-d `mle_dl_vera_predict`; PyTorch times a Qwen2 step on 100 rows. `include/verisieve.h` is `2,129 B` (the old `12.4 KB` label was a constant).
+- **C99**: `14.12 ms` spawn | `6.08 MB` RSS | `0.745 ms` logistic
+- **Node.js + WASM (`60,096 B`)**: `106.22 ms` spawn (`1.045 ms` WASM init) | `55.97 MB` RSS | `7.125 ms` VeRA predict (**`121.6x` lower spawn median and `7.7x` lower RSS** than PyTorch+DuckDB)
+- **Python 3.12 + NumPy 2.4.3**: `388.79 ms` spawn (`187.01 ms` import) | `31.49 MB` RSS | **`0.207 ms` logistic (wins the shared dot product)**
+- **Python 3.12 + PyTorch 2.10 + DuckDB 1.5.5**: `12,917.14 ms` spawn (`11,661.98 ms` import) | `432.3 MB` RSS | `31.47 ms` Qwen2 step
 
 On held-out `n_test = 299` across `N_train in {100, 300, 607}`: Gate BCE drops `26.7%` (`0.2577 -> 0.2244 -> 0.189`, `94.0%` Acc vs. `64.2%` Naive Regex / `31.4%` Raw), WASM VeRA BCE (`mle_dl_vera_loss_grad`) drops `0.9432 -> 0.6698 -> 0.6141`, contact PII leak stays `<= 1.05%`, and 64-dim Needle R@5 (`125` PubMedQA Q->Body queries) preserves `60.0%` cosine-only parity. That 60% is not the sandbox blend. The blend on the same rows is in `docs/2026-11-16-rag-redaction-verdict.md`.
 
@@ -100,6 +100,13 @@ RTIO chat, separate from these numbers: the current question and earlier turns a
 
 ## Verification & Quickstart
 
+Install dependencies once before using the CLI. Local OCR uses Tesseract.js with the bundled English model when Cactus weights are unavailable; providing local Mirage `.cact` weights keeps Cactus as the preferred OCR engine.
+
+```bash
+npm install
+node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ingest.json
+```
+
 ```bash
 # Portable tests. These do not need the downloaded benchmark rows.
 npm run test:ci
@@ -114,8 +121,8 @@ npm run bench:scale
 # Full suite, including the 1,207-document scale tests. Requires the download above.
 npm test
 
-# Compile the Technical Note PDF (paper/mlsys2027-verisieve.pdf)
-cd paper && pdflatex mlsys2027-verisieve && bibtex mlsys2027-verisieve && pdflatex mlsys2027-verisieve && pdflatex mlsys2027-verisieve
+# Compile the Extraction & Redaction Benchmark PDF (paper/verisieve-extraction-redaction-benchmark.pdf)
+cd paper && pdflatex verisieve-extraction-redaction-benchmark && bibtex verisieve-extraction-redaction-benchmark && pdflatex verisieve-extraction-redaction-benchmark && pdflatex verisieve-extraction-redaction-benchmark
 ```
 
 For security policies and air-gapped design guarantees, see [SECURITY.md](SECURITY.md).

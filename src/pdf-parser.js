@@ -197,6 +197,12 @@ function hexToUnicodeString(hex) {
   return Array.from(buf, (b) => winAnsiByteToChar(b)).join('');
 }
 
+function incrementUnicodeDestination(hex, increment) {
+  const clean = hex.replace(/[^0-9a-fA-F]/g, '');
+  const value = (BigInt(`0x${clean}`) + BigInt(increment)).toString(16);
+  return hexToUnicodeString(value.padStart(clean.length, '0'));
+}
+
 export function parseToUnicodeCMap(cmapText) {
   const codeLengths = new Set();
   const csBlocks = cmapText.matchAll(/begincodespacerange([\s\S]*?)endcodespacerange/g);
@@ -239,10 +245,9 @@ export function parseToUnicodeCMap(cmapText) {
         }
       } else {
         const dstRaw = r[3].slice(1, -1);
-        const dstStart = parseInt(dstRaw, 16);
         for (let i = 0; i <= end - start; i += 1) {
           const srcHex = (start + i).toString(16).toUpperCase().padStart(padLen, '0');
-          addEntry(srcHex, String.fromCodePoint(dstStart + i));
+          addEntry(srcHex, incrementUnicodeDestination(dstRaw, i));
         }
       }
     }
@@ -971,24 +976,29 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
   expandObjectStreams(objects, options);
 
   const pages = getOrderedPages(objects);
-  const images = collectImages(objects, options);
   let streamCount = 0;
+  let imageXObjectCount = 0;
   for (const obj of objects.values()) {
-    if (obj.streamRaw) streamCount += 1;
+    if (obj.streamRaw) {
+      streamCount += 1;
+      if (/\/Subtype\s*\/Image\b/.test(obj.dictStr)) {
+        imageXObjectCount += 1;
+      }
+    }
   }
 
   if (encrypted) {
     return {
       pageCount: pages.length,
       streamCount,
-      imageXObjectCount: images.length,
+      imageXObjectCount,
       isLikelyScanned: false,
       encrypted: true,
       diagnosticReason: 'ENCRYPTED_PDF_UNSUPPORTED',
       lines: [],
       lineRecords: [],
       streams: [],
-      images,
+      images: [],
     };
   }
 
@@ -1020,7 +1030,17 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       for (const m of arrM[1].matchAll(/(\d+)\s+\d+\s+R/g)) contentIds.push(Number(m[1]));
     } else {
       const singleM = pageDict.match(/\/Contents\s+(\d+)\s+\d+\s+R/);
-      if (singleM) contentIds.push(Number(singleM[1]));
+      if (singleM) {
+        const contentObj = objects.get(Number(singleM[1]));
+        const indirectArray = contentObj && !contentObj.streamRaw
+          ? (contentObj.rawText || '').match(/\[([\s\S]*?)\]/)?.[1]
+          : null;
+        if (indirectArray !== null && indirectArray !== undefined) {
+          for (const m of indirectArray.matchAll(/(\d+)\s+\d+\s+R/g)) contentIds.push(Number(m[1]));
+        } else {
+          contentIds.push(Number(singleM[1]));
+        }
+      }
     }
 
     const decodedParts = [];
@@ -1033,7 +1053,9 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
 
     if (decodedParts.length > 0) {
       const joined = Buffer.concat(decodedParts.flatMap((p, idx) => (idx === 0 ? [p] : [Buffer.from('\n'), p])));
-      pageStreams.push(joined.toString('latin1'));
+      if (options.includeStreams) {
+        pageStreams.push(joined.toString('latin1'));
+      }
       allRuns.push(...interpretContentStream(joined, fontTable, pageIndex));
     }
   });
@@ -1056,7 +1078,9 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       if (/\/Subtype\s*\/Image\b|\/Type\s*\/ObjStm\b/.test(obj.dictStr)) continue;
       const dec = decodePdfStreamData(obj.dictStr, obj.streamRaw, options);
       if (dec.decoded && /\bBT\b[\s\S]*?\bET\b/.test(dec.decoded.toString('latin1'))) {
-        pageStreams.push(dec.decoded.toString('latin1'));
+        if (options.includeStreams) {
+          pageStreams.push(dec.decoded.toString('latin1'));
+        }
         allRuns.push(...interpretContentStream(dec.decoded, globalFontTable, idx++));
       }
     }
@@ -1065,7 +1089,12 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
 
   const lineRecords = reconstructRunsIntoLines(allRuns);
   const lines = lineRecords.map((r) => r.text);
-  const isLikelyScanned = images.length > 0 && lines.length === 0;
+  // Decode embedded image XObjects lazily ONLY when the PDF has no text layer (scanned PDF) or explicitly requested
+  const images = (lines.length === 0 || options.alwaysDecodeImages)
+    ? collectImages(objects, options)
+    : [];
+  const effectiveImageCount = images.length > 0 ? images.length : imageXObjectCount;
+  const isLikelyScanned = effectiveImageCount > 0 && lines.length === 0;
   const diagnosticReason = lines.length > 0
     ? 'BORN_DIGITAL_TEXT_EXTRACTED'
     : isLikelyScanned
@@ -1075,7 +1104,7 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
   return {
     pageCount,
     streamCount,
-    imageXObjectCount: images.length,
+    imageXObjectCount: effectiveImageCount,
     isLikelyScanned,
     encrypted: false,
     diagnosticReason,

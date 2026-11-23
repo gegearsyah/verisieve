@@ -23,7 +23,9 @@ const APP_DIR = path.resolve(
   'APP'
 );
 // Founder path is under Downloads, not Innovation Hub sibling
-const APP_DIR_ALT = String.raw`C:\Users\GEYE ARDIANSYAH\Downloads\Compliance Research\APP`;
+const APP_DIR_ALT =
+  process.env.VERISIEVE_APP_CORPUS_DIR ||
+  path.resolve(ROOT, '..', '..', 'Compliance Research', 'APP');
 const OUT_DIR = path.resolve(
   ROOT,
   '..',

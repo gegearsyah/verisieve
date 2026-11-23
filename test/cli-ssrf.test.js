@@ -263,7 +263,7 @@ test('T5: CLI implements audit-wasm (all binaries), honest run status, binary-sa
       (err) => err.status === 1
     );
 
-    // 3. CLI ingest binary PDF + DOCX + fails closed on PNG without weights
+    // 3. CLI ingest binary PDF + DOCX + uses local OCR on PNG without Cactus weights
     const pdfPath = path.join(tmpDir, 'sample.pdf');
     fs.writeFileSync(
       pdfPath,
@@ -283,7 +283,7 @@ test('T5: CLI implements audit-wasm (all binaries), honest run status, binary-sa
     fs.writeFileSync(pngPath, encodePNG(4, 4, new Uint8Array(4 * 4 * 3)));
     assert.throws(
       () => execFileSync(process.execPath, [cliPath, 'ingest', pngPath], { encoding: 'utf8', stdio: 'pipe' }),
-      (err) => err.status === 1 && /MIRAGE_WEIGHTS_REQUIRED|IMAGE_REQUIRES_OCR_PROVIDER/i.test(String(err.stderr || err.stdout))
+      (err) => err.status === 1 && /IMAGE_OCR_NO_TEXT/i.test(String(err.stderr || err.stdout))
     );
 
     // 4. CLI run reports FAIL_CLOSED_UNVERIFIED honestly on small corpus (<59 null calibration points)
@@ -327,6 +327,35 @@ test('T5: CLI implements audit-wasm (all binaries), honest run status, binary-sa
     assert.equal(decision.piiDetected, true);
     assert.ok(['DROP_OR_QUARANTINE', 'ABSTAIN_HUMAN_REVIEW', 'KEEP_SAFE'].includes(decision.action));
     assert.ok(!JSON.stringify(decision).includes('232-00-9812'), 'CLI decide must not echo raw SSN by default');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('ingestFromUrlOrPath parses HTML saved with a .pdf extension', async () => {
+  const tmpDir = makeTempDir();
+  try {
+    const mislabeledPath = path.join(tmpDir, 'compliance-guide.pdf');
+    fs.writeFileSync(
+      mislabeledPath,
+      '<!doctype html><html><head><title>Compliance guide</title></head><body><p>The retention period for compliance records is seven years.</p></body></html>'
+    );
+
+    const result = await ingestFromUrlOrPath(mislabeledPath);
+    assert.ok(
+      result.rows.some((row) => row.raw_excerpt?.includes('retention period for compliance records')),
+      'HTML text should be ingested instead of sent to the PDF parser'
+    );
+
+    const cliResult = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [path.resolve('bin/verisieve.mjs'), 'ingest', mislabeledPath],
+        { encoding: 'utf8' }
+      )
+    );
+    assert.equal(cliResult.sourceType, 'html');
+    assert.ok(cliResult.cleanText.includes('retention period for compliance records'));
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

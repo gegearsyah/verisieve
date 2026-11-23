@@ -11,7 +11,11 @@ import {
 import { AuditChain } from './clean-and-tokenize.js';
 import { inspectLocalOpenWeightPath } from './wasm-needle-dl.js';
 import { ingestUrl, ingestLinkList, stripHtmlBoilerplate, buildCorpusManifest } from './ingestor.js';
-import { PortableDocumentGraph } from './graph-wasm.js';
+import { PortableDocumentGraph, SaltedPseudonymVault } from './graph-wasm.js';
+import { parseEnterpriseBuffer } from './enterprise-parsers.js';
+import { redactEnterpriseText, scanEnterprisePiiAndSecrets } from './secret-scanner.js';
+import { redactAudioCall } from './audio-redactor.js';
+import { scrubBinaryMediaMetadata } from './video-redactor.js';
 
 function sanitizePiiItems(piiItems = [], includeRawPii = false) {
   if (includeRawPii) return piiItems;
@@ -332,6 +336,55 @@ export function handleJsonRpcRequest(request) {
                   includeDescendants: { type: 'boolean' }
                 }
               }
+            },
+            {
+              name: 'ingest_enterprise_bundle',
+              description: 'Auto-routes enterprise multimodal files (.eml, .mbox, .msg, .pptx, .xlsx, .odt/.ods/.odp, .epub, .vtt, .srt, .ics, .vcf, Slack/Jira JSON, .ipynb, .har, .env, K8s YAML, .zip, .tar.gz), redacts PII & secrets with shared workspace-salted pseudonyms, and indexes them into verisieve_graph.wasm for cross-modal GDPR Art. 17 blast_radius.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  files: { type: 'array' },
+                  workspaceSalt: { type: 'string' },
+                  artifacts: { type: 'array' }
+                }
+              }
+            },
+            {
+              name: 'scan_enterprise_secrets',
+              description: 'Runs zero-import verisieve_media.wasm Unicode anti-evasion, international checksum PII (IBAN, AU TFN/Medicare/ABN, UK NHS/NINO, Aadhaar, Luhn), and 30+ enterprise secret detectors (JWT, PEM, AWS/OpenAI/Anthropic/GitHub/Stripe/Slack/DB URIs) returning privacy-safe redacted tokens.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  text: { type: 'string' },
+                  workspaceSalt: { type: 'string' }
+                }
+              }
+            },
+            {
+              name: 'redact_audio_call',
+              description: 'Runs WASM Spoken ITN, unified Stage 3A PII/secret detection, and sample-accurate WAV waveform redaction (silence/beep/pink_noise) + RIFF metadata scrubbing.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  source: { type: 'string' },
+                  wavBase64: { type: 'string' },
+                  wordTimestamps: { type: 'array' },
+                  mode: { type: 'string', enum: ['silence', 'beep', 'pink_noise'] },
+                  padMs: { type: 'number' },
+                  workspaceSalt: { type: 'string' }
+                }
+              }
+            },
+            {
+              name: 'audit_forensic_leaks',
+              description: 'Audits and scrubs binary EXIF/XMP/IPTC/PNG/ISOBMFF MP4 metadata or hidden Office/Email forensic sub-streams via verisieve_media.wasm.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  source: { type: 'string' },
+                  contentBase64: { type: 'string' }
+                }
+              }
             }
           ]
         };
@@ -613,6 +666,133 @@ export function handleJsonRpcRequest(request) {
             includeDescendants: args.includeDescendants !== false,
           });
           result = { content: [{ type: 'text', text: JSON.stringify({ passages }, null, 2) }] };
+        } else if (toolName === 'scan_enterprise_secrets') {
+          const text = String(args.text || '');
+          const scan = scanEnterprisePiiAndSecrets(text);
+          const red = redactEnterpriseText(text, { workspaceSalt: args.workspaceSalt });
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    maskedText: red.maskedText,
+                    secretCount: red.secretCount,
+                    piiCount: red.piiCount,
+                    evasionCharsStripped: scan.evasionCharsStripped,
+                    homoglyphsFolded: scan.homoglyphsFolded,
+                    entities: red.entities.map((e) => ({
+                      type: e.type,
+                      category: e.category,
+                      token: e.token,
+                      entityId: e.entityId,
+                      start: e.start,
+                      end: e.end,
+                      confidence: e.confidence,
+                      evasionNormalized: e.evasionNormalized,
+                    })),
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        } else if (toolName === 'ingest_enterprise_bundle') {
+          const files = Array.isArray(args.files) ? args.files : [];
+          const salt = args.workspaceSalt || 'verisieve-enterprise-v1';
+          const vault = new SaltedPseudonymVault(salt);
+          const graphDocs = [];
+          const forensicFindings = [];
+
+          for (const f of files) {
+            const name = String(f.source || f.name || 'file.txt');
+            const buf =
+              typeof f.contentBase64 === 'string'
+                ? Buffer.from(f.contentBase64, 'base64')
+                : Buffer.from(String(f.text || f.content || ''), 'utf8');
+            const parsed = parseEnterpriseBuffer(name, buf, { usersMap: f.usersMap });
+            forensicFindings.push(...(parsed.forensicFindings || []));
+            const redactedBlocks = parsed.blocks.map((blk) => {
+              const red = redactEnterpriseText(blk.text, { vault });
+              return {
+                ...blk,
+                text: red.maskedText,
+                preRedacted: true,
+                entityIds: Array.from(new Set(red.entities.map((e) => e.entityId))),
+              };
+            });
+            graphDocs.push({
+              source: name,
+              modality: parsed.modality,
+              blocks: redactedBlocks,
+            });
+          }
+
+          activeDocumentGraph = new PortableDocumentGraph({ workspaceSalt: salt });
+          activeDocumentGraph.vault = vault;
+          const summary = activeDocumentGraph.indexDocuments(
+            graphDocs,
+            Array.isArray(args.artifacts) ? args.artifacts : []
+          );
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    ...summary,
+                    forensicFindings,
+                    entities: vault.exportRedactedEntities(),
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        } else if (toolName === 'audit_forensic_leaks') {
+          const src = String(args.source || 'media.bin');
+          const buf = Buffer.from(String(args.contentBase64 || ''), 'base64');
+          const lower = src.toLowerCase();
+          if (/\.(jpe?g|png|mp4|mov)$/i.test(lower)) {
+            const scrubbed = scrubBinaryMediaMetadata(buf);
+            result = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      source: src,
+                      ...scrubbed.meta,
+                      cleanBase64Length: scrubbed.cleanBytes.byteLength,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          } else {
+            const parsed = parseEnterpriseBuffer(src, buf);
+            result = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      source: src,
+                      modality: parsed.modality,
+                      blockCount: parsed.blocks.length,
+                      forensicFindings: parsed.forensicFindings,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          }
         } else {
           throw new Error(`Unknown tool: ${toolName}`);
         }
@@ -630,6 +810,54 @@ export function handleJsonRpcRequest(request) {
 }
 
 export async function handleJsonRpcRequestAsync(request) {
+  if (
+    request?.method === 'tools/call' &&
+    request?.params?.name === 'redact_audio_call'
+  ) {
+    try {
+      const args = request.params?.arguments || {};
+      const wavBuf = Buffer.from(String(args.wavBase64 || ''), 'base64');
+      const out = await redactAudioCall(String(args.source || 'call.wav'), wavBuf, {
+        wordTimestamps: Array.isArray(args.wordTimestamps) ? args.wordTimestamps : undefined,
+        mode: args.mode || 'beep',
+        padMs: args.padMs ?? 40,
+        workspaceSalt: args.workspaceSalt,
+      });
+      return {
+        jsonrpc: '2.0',
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  source: out.source,
+                  provider: out.provider,
+                  redactedTranscript: out.redactedTranscript,
+                  redactedVtt: out.redactedVtt,
+                  redactedWavSha256: out.redactedWavSha256,
+                  redactedWavBase64: Buffer.from(out.redactedWavBytes).toString('base64'),
+                  spokenTransformsCount: out.spokenTransformsCount,
+                  redactionLog: out.redactionLog,
+                  audioMeta: out.audioMeta,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        },
+        id: request.id ?? null,
+      };
+    } catch (err) {
+      return {
+        jsonrpc: '2.0',
+        error: { code: -32603, message: err.message },
+        id: request?.id ?? null,
+      };
+    }
+  }
+
   if (
     request?.method === 'tools/call' &&
     request?.params?.name === 'ingest_url_or_links'

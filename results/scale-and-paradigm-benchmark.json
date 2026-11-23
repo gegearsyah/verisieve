@@ -15,27 +15,27 @@
       "rawBytes": 503,
       "cleanBytes": 233,
       "strippedPct": 53.7,
-      "latencyMs": 0.97
+      "latencyMs": 1.345
     },
     "docxExtraction": {
       "docxBytes": 295,
       "extractedChars": 150,
       "recoveredCleanly": true,
-      "latencyMs": 1.261
+      "latencyMs": 2.477
     },
     "deduplication": {
       "inputChunks": 5,
       "uniqueChunksRetained": 4,
       "duplicatesRemoved": 1,
       "jaccardThreshold": 0.85,
-      "latencyMs": 0.257
+      "latencyMs": 0.554
     },
     "manifestVerification": {
       "totalSources": 2,
       "totalTokens": 50,
       "manifestSha256Prefix": "2de7618c79d41782"
     },
-    "totalIdea1BenchMs": 3.534
+    "totalIdea1BenchMs": 5.393
   },
   "race_1_born_digital_vs_tiled_ocr": {
     "race": "Race 1 — Born-Digital PDF Front Door & 2D Tiled Layout Geometry",
@@ -46,8 +46,8 @@
       "cleanExtractedPdfs": 8,
       "totalReadableLines": 8134,
       "totalReadableWords": 55099,
-      "totalLatencyMs": 150.1,
-      "avgLatencyPerPdfMs": 18.76,
+      "totalLatencyMs": 209.02,
+      "avgLatencyPerPdfMs": 26.13,
       "perPdfResults": [
         {
           "filename": "miu_2017_PMC5773420.pdf",
@@ -56,7 +56,7 @@
           "readableWords": 4096,
           "cmapStreams": 8,
           "hexDecodedLines": 1,
-          "latencyMs": 9.05,
+          "latencyMs": 8.42,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -66,7 +66,7 @@
           "readableWords": 5095,
           "cmapStreams": 4,
           "hexDecodedLines": 0,
-          "latencyMs": 9.24,
+          "latencyMs": 10.99,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -76,7 +76,7 @@
           "readableWords": 3987,
           "cmapStreams": 21,
           "hexDecodedLines": 57,
-          "latencyMs": 9.1,
+          "latencyMs": 15.1,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -86,7 +86,7 @@
           "readableWords": 10588,
           "cmapStreams": 1,
           "hexDecodedLines": 0,
-          "latencyMs": 10.03,
+          "latencyMs": 15.17,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -96,7 +96,7 @@
           "readableWords": 4350,
           "cmapStreams": 0,
           "hexDecodedLines": 0,
-          "latencyMs": 10.68,
+          "latencyMs": 13.65,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -106,7 +106,7 @@
           "readableWords": 3375,
           "cmapStreams": 16,
           "hexDecodedLines": 0,
-          "latencyMs": 47.78,
+          "latencyMs": 64.54,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -116,7 +116,7 @@
           "readableWords": 11834,
           "cmapStreams": 1,
           "hexDecodedLines": 0,
-          "latencyMs": 39.55,
+          "latencyMs": 59.56,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         },
         {
@@ -126,7 +126,7 @@
           "readableWords": 11774,
           "cmapStreams": 9,
           "hexDecodedLines": 0,
-          "latencyMs": 14.67,
+          "latencyMs": 21.59,
           "status": "CLEAN_TEXT_STREAM_EXTRACTED"
         }
       ],
@@ -137,8 +137,8 @@
       "totalWordsMeasured": 30595,
       "minHeightPx": 8,
       "minWidthPx": 4,
-      "geometryScanMs": 5.51,
-      "avgGeometryMsPerForm": 0.0277,
+      "geometryScanMs": 6.29,
+      "avgGeometryMsPerForm": 0.0316,
       "avgTilesPerForm2D": 6,
       "metricName": "Geometric bounding-box legibility & unsplit-tile survival (>= 8 px height x 4 px width across 30,595 FUNSD word boxes; excludes external neural OCR recognizer accuracy)",
       "modes": {
@@ -429,79 +429,79 @@
     "trialsPerSubstrate": 7,
     "substrates": {
       "single_header_c99": {
-        "processSpawnColdStartMs": 10.5,
-        "peakRssMb": 6.07,
-        "hotLoopInferenceMs": 0.48,
+        "processSpawnColdStartMs": 14.12,
+        "peakRssMb": 6.08,
+        "hotLoopInferenceMs": 0.745,
         "spawnSamplesMs": [
-          15.7,
-          10.2,
-          11.6,
-          11.3,
-          8.4,
-          9.7,
-          10.5
+          549.9,
+          15,
+          14.1,
+          14.3,
+          13,
+          12.9,
+          13.6
         ],
-        "artifactBytes": 12400,
-        "artifactLabel": "verisieve.h (12.4 KB, gcc -O3)",
+        "artifactBytes": 2129,
+        "artifactLabel": "verisieve.h (2,129 B source; gcc -O3 bench exe is separate)",
         "compiled": true
       },
       "pure_wasm_js": {
-        "processSpawnColdStartMs": 73.42,
-        "inProcessWarmWasmInitMs": 0.68,
-        "coldStartMs": 73.42,
-        "peakRssMb": 48.47,
-        "hotLoopInferenceMs": 4.5791,
+        "processSpawnColdStartMs": 106.22,
+        "inProcessWarmWasmInitMs": 1.045,
+        "coldStartMs": 106.22,
+        "peakRssMb": 55.97,
+        "hotLoopInferenceMs": 7.1254,
         "spawnSamplesMs": [
-          82.1,
-          72.1,
-          79.3,
-          69.5,
-          73.4,
-          71.3,
-          76.5
+          106.5,
+          125.3,
+          106.2,
+          104.2,
+          103.2,
+          102,
+          108.2
         ],
         "artifactBytes": 60096,
         "artifactLabel": "verisieve_dl.wasm (60.1 KB) + Node V8"
       },
       "python_numpy": {
-        "processSpawnColdStartMs": 285.02,
-        "importMs": 148.15,
-        "peakRssMb": 31.58,
-        "hotLoopInferenceMs": 0.1076,
+        "processSpawnColdStartMs": 388.79,
+        "importMs": 187.01,
+        "peakRssMb": 31.49,
+        "hotLoopInferenceMs": 0.2072,
         "spawnSamplesMs": [
-          288.6,
-          285,
-          282.9,
-          278,
-          305.1,
-          282.1,
-          288.3
+          524.8,
+          367.4,
+          388.8,
+          454.8,
+          389.1,
+          383,
+          374.7
         ],
         "artifactLabel": "Python 3.12.4 + NumPy 2.4.3"
       },
       "local_python": {
-        "processSpawnColdStartMs": 8539.29,
-        "frameworkImportMs": 7626.69,
-        "coldStartMs": 8539.29,
-        "peakRssMb": 432.5,
-        "hotLoopInferenceMs": 21.92,
+        "processSpawnColdStartMs": 12917.14,
+        "frameworkImportMs": 11661.98,
+        "coldStartMs": 12917.14,
+        "peakRssMb": 432.3,
+        "hotLoopInferenceMs": 31.47,
         "spawnSamplesMs": [
-          10659,
-          8885.2,
-          9000.2,
-          8534.4,
-          8514,
-          8518.7,
-          8539.3
+          41907.5,
+          12481.3,
+          14010.6,
+          12917.1,
+          13334.4,
+          12850.7,
+          12495.3
         ],
         "artifactLabel": "Python 3.12.4 + PyTorch 2.10 + DuckDB 1.5.5",
         "executed": true
       }
     },
     "honestLossAnalysis": {
-      "c99_spawn_and_hotloop": "C99 leads OS process spawn (10.5 ms, 6.07 MB RSS) and scalar hot-loop inference (0.48 ms vs. Node JIT 4.5791 ms).",
-      "numpy_vectorized_win": "Python + NumPy BLAS executes warm 1,207x520 matrix-vector inference fastest (0.1076 ms) once loaded, but incurs 285.02 ms OS spawn.",
-      "pytorch_framework_tax": "Node+WASM cuts OS process spawn by 116.3x (73.42 ms vs. 8539.29 ms) and RSS by 8.9x (48.47 MB vs. 432.5 MB) relative to Python+PyTorch+DuckDB."
+      "c99_spawn_and_hotloop": "C99 leads OS process spawn (14.12 ms, 6.08 MB RSS). Its warm 1,207x520 logistic is 0.745 ms. Node's 7.1254 ms warm figure is 64-d VeRA predict, not that logistic.",
+      "numpy_vectorized_win": "Python + NumPy BLAS is the faster 1,207x520 logistic (0.2072 ms vs. C99 0.745 ms) once loaded, but incurs 388.79 ms OS spawn.",
+      "pytorch_framework_tax": "Node+WASM cuts OS process spawn by 121.6x (106.22 ms vs. 12917.14 ms) and RSS by 7.7x (55.97 MB vs. 432.3 MB) relative to Python+PyTorch+DuckDB."
     },
     "downstreamAblation": {
       "ablation_100": {
@@ -579,18 +579,18 @@
     }
   },
   "summary_findings": {
-    "speedup_vs_pytorch_spawn": 116.3,
-    "memory_reduction_factor_vs_pytorch": 8.9,
+    "speedup_vs_pytorch_spawn": 121.6,
+    "memory_reduction_factor_vs_pytorch": 7.7,
     "post_training_gate_bce_loss_reduction_pct": 26.7,
     "post_training_gate_acc_full_train": 94,
     "needle_recall_at_5_verisieve": 60,
-    "c99_hot_loop_speedup_vs_js": 9.54,
-    "numpy_hot_loop_ms": 0.1076,
+    "c99_hot_loop_speedup_vs_js": 9.56,
+    "numpy_hot_loop_ms": 0.2072,
     "honest_nulls_and_boundaries_reported": [
-      "1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (8134 readable lines in 150.1 ms), resolving un-kerned word gluing.",
+      "1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (8134 readable lines in 209.02 ms), resolving un-kerned word gluing.",
       "2. Structured vs. bare-name PII ceiling: regex captures 78.6% of core contact/card/IPv4 spans, 31% across all 26 structured token types in ai4privacy, and only 49.6% of bare international names.",
       "3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = 206 (< 299) hits BinomCDF(0) = 0.1261 > 0.05 and fails closed, while joint calibration on n_cal = 301 satisfies BinomCDF(0) = 0.0486 <= 0.05.",
-      "4. Honest warm compute boundary: C99 leads process spawn (10.5 ms, 6.07 MB) and scalar hot-loop inference (0.48 ms vs. Node JIT 4.5791 ms), while Python+NumPy BLAS wins warm batched dot products (0.1076 ms) at the cost of 285.02 ms OS startup."
+      "4. Honest warm compute boundary: C99 leads process spawn (14.12 ms, 6.08 MB). NumPy wins the shared 1,207x520 logistic (0.2072 ms vs. C99 0.745 ms) at 388.79 ms OS startup. Node's 7.1254 ms warm loop is 64-d VeRA predict, not that logistic."
     ]
   }
 }

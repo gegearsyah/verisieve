@@ -1637,8 +1637,8 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
         peakRssMb: sub.c99.peakRssMb,
         hotLoopInferenceMs: sub.c99.hotLoopInferenceMs,
         spawnSamplesMs: sub.c99.spawnSamplesMs,
-        artifactBytes: 12400,
-        artifactLabel: "verisieve.h (12.4 KB, gcc -O3)",
+        artifactBytes: 2129,
+        artifactLabel: "verisieve.h (2,129 B source; gcc -O3 bench exe is separate)",
         compiled: sub.c99Compiled
       },
       pure_wasm_js: {
@@ -1671,8 +1671,8 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
       }
     },
     honestLossAnalysis: {
-      c99_spawn_and_hotloop: `C99 leads OS process spawn (${sub.c99.processSpawnColdStartMs} ms, ${sub.c99.peakRssMb} MB RSS) and scalar hot-loop inference (${sub.c99.hotLoopInferenceMs} ms vs. Node JIT ${sub.nodeWasm.hotLoopInferenceMs} ms).`,
-      numpy_vectorized_win: `Python + NumPy BLAS executes warm 1,207x520 matrix-vector inference fastest (${sub.pythonNumpy.hotLoopInferenceMs} ms) once loaded, but incurs ${sub.pythonNumpy.processSpawnColdStartMs} ms OS spawn.`,
+      c99_spawn_and_hotloop: `C99 leads OS process spawn (${sub.c99.processSpawnColdStartMs} ms, ${sub.c99.peakRssMb} MB RSS). Its warm 1,207x520 logistic is ${sub.c99.hotLoopInferenceMs} ms. Node's ${sub.nodeWasm.hotLoopInferenceMs} ms warm figure is 64-d VeRA predict, not that logistic.`,
+      numpy_vectorized_win: `Python + NumPy BLAS is the faster 1,207x520 logistic (${sub.pythonNumpy.hotLoopInferenceMs} ms vs. C99 ${sub.c99.hotLoopInferenceMs} ms) once loaded, but incurs ${sub.pythonNumpy.processSpawnColdStartMs} ms OS spawn.`,
       pytorch_framework_tax: `Node+WASM cuts OS process spawn by ${coldStartSpeedupVsPytorch}x (${sub.nodeWasm.processSpawnColdStartMs} ms vs. ${sub.pythonPyTorch.processSpawnColdStartMs} ms) and RSS by ${ramReductionVsPytorch}x (${sub.nodeWasm.peakRssMb} MB vs. ${sub.pythonPyTorch.peakRssMb} MB) relative to Python+PyTorch+DuckDB.`
     },
     downstreamAblation: {
@@ -1889,7 +1889,7 @@ export function runScaleAndParadigmBenchmark(options = {}) {
         `1. Scoped CMap & TJ-kerning fix: linear BT..ET reconstruction + /ToUnicode CMap tables extract all 8/8 PMC PDFs directly (${race1.pmc_pdf_eval.totalReadableLines} readable lines in ${race1.pmc_pdf_eval.totalLatencyMs} ms), resolving un-kerned word gluing.`,
         `2. Structured vs. bare-name PII ceiling: regex captures ${race2.ai4privacy_ground_truth.contact_card_ipv4_recall_pct}% of core contact/card/IPv4 spans, ${race2.ai4privacy_ground_truth.all_26_structured_pii_recall_pct}% across all 26 structured token types in ai4privacy, and only ${race2.ai4privacy_ground_truth.unstructured_bare_name_recall_pct}% of bare international names.`,
         `3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = ${race3.split.nCalUnsafe} (< 299) hits BinomCDF(0) = ${race3.finiteSampleBoundaryAnalysis.conditionalRisk.alpha_0_01.binomCdfZero} > 0.05 and fails closed, while joint calibration on n_cal = ${race3.split.nCal} satisfies BinomCDF(0) = ${race3.finiteSampleBoundaryAnalysis.jointRisk.binomCdfZero} <= 0.05.`,
-        `4. Honest warm compute boundary: C99 leads process spawn (${race4.substrates.single_header_c99.processSpawnColdStartMs} ms, ${race4.substrates.single_header_c99.peakRssMb} MB) and scalar hot-loop inference (${race4.substrates.single_header_c99.hotLoopInferenceMs} ms vs. Node JIT ${race4.substrates.pure_wasm_js.hotLoopInferenceMs} ms), while Python+NumPy BLAS wins warm batched dot products (${race4.substrates.python_numpy.hotLoopInferenceMs} ms) at the cost of ${race4.substrates.python_numpy.processSpawnColdStartMs} ms OS startup.`
+        `4. Honest warm compute boundary: C99 leads process spawn (${race4.substrates.single_header_c99.processSpawnColdStartMs} ms, ${race4.substrates.single_header_c99.peakRssMb} MB). NumPy wins the shared 1,207x520 logistic (${race4.substrates.python_numpy.hotLoopInferenceMs} ms vs. C99 ${race4.substrates.single_header_c99.hotLoopInferenceMs} ms) at ${race4.substrates.python_numpy.processSpawnColdStartMs} ms OS startup. Node's ${race4.substrates.pure_wasm_js.hotLoopInferenceMs} ms warm loop is 64-d VeRA predict, not that logistic.`
       ]
     }
   };

@@ -1,0 +1,358 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\setlength{\emergencystretch}{2em}
+
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+\usepackage[accepted]{mlsys2025}
+
+\makeatletter
+\renewcommand{\mlsys@appearing}{Copyright 2026 by the author.}
+\renewcommand{\Notice@String}{\mlsys@appearing}
+\makeatother
+
+\hypersetup{
+  pdftitle={VeriSieve-MM: Zero-Import WebAssembly Multimodal Enterprise Sanitization, Hybrid Neural PII Detection, and Cross-Modal Erasure},
+  pdfauthor={Gege Ardiyansyah},
+  pdfsubject={Systems for Machine Learning}
+}
+
+\mlsystitlerunning{VeriSieve-MM: Zero-Import WASM Multimodal Enterprise Sanitization}
+
+\begin{document}
+
+\twocolumn[
+\mlsystitle{VeriSieve-MM: Zero-Import WebAssembly Multimodal Enterprise Sanitization, Hybrid Neural PII Detection, and Cross-Modal Erasure}
+
+\begin{mlsysauthorlist}
+\textbf{Gege Ardiyansyah}
+\end{mlsysauthorlist}
+
+\mlsystitlerunning{VeriSieve-MM: Zero-Import WASM Multimodal Enterprise Sanitization}
+\mlsyskeywords{WebAssembly, multimodal PII redaction, GLiNER, secret scanning, spoken inverse text normalization, GDPR Article 17, zero-egress}
+
+\vskip 0.3in
+
+\begin{abstract}
+Enterprise AI corpora rarely consist solely of clean PDFs or web pages: real institutional workflows span email threads (\texttt{.eml}, \texttt{.mbox}, Outlook \texttt{.msg}), Office artifacts with hidden leak vectors (\texttt{.docx} tracked deletions, \texttt{.pptx} speaker notes and hidden slides, \texttt{.xlsx} \texttt{veryHidden} sheets and \texttt{pivotCache} tables), DevOps configurations (\texttt{.har}, \texttt{.env}, Kubernetes Secrets), recorded calls (\texttt{.wav}), and video containers (\texttt{.mp4}). Prior deterministic regex-and-lexicon pipelines leave three major blind spots: a $49.6\%$ recall ceiling on bare person names, total collapse ($0.0\%$) under adversarial Unicode evasion or spoken-form ASR transcripts, and no shared cross-modal identity graph for GDPR Article~17 erasure. We present \textbf{VeriSieve-MM}, a zero-egress multimodal sanitization architecture centered on a single $179{,}397$\,B Rust-to-WebAssembly kernel (\texttt{verisieve\_media.wasm}) compiled with \textbf{zero host imports} and deployed byte-identically across Node.js CLI/MCP and the browser sandbox. We benchmark VeriSieve-MM across five reproducible public datasets (\texttt{ai4privacy-200k}, blind \texttt{PubMedQA}, \texttt{Yale-LILY/aeslc} Enron emails, \texttt{MBPP} Python code, and $16$\,kHz \texttt{LibriSpeech} speech) plus adversarial security fixtures. Pairing zero-import WASM checksums (Stage~3A) with a local $45.8$\,MB Apache-2.0 INT8 neural detector (\texttt{gliner-pii-edge-v1.0}, Stage~3B, $19.51$\,ms median CPU latency) raises \texttt{ai4privacy-500} bare-name recall from $49.58\%$ to $86.13\%$--$91.60\%$, Contact/Card/IPv4 recall to $96.43\%$, and Targeted-8 PII recall from $62.85\%$ to $91.70\%$, while simultaneously cutting blind \texttt{PubMedQA} false-positive person hits by $7.51\times$ versus naive regex and $2.54\times$ versus our prior $334$-word lexicon ($5.53 \to 1.87 \to 0.74$ hits/$1{,}000$ words). Under Unicode evasion, standard regex drops to $35.63\%$ on zero-width spaces and $0.0\%$ on Cyrillic homoglyphs and full-width digits, whereas \texttt{verisieve\_media.wasm} recovers $94.25\%$, $100.0\%$, and $87.50\%$, respectively. On $374$ public \texttt{MBPP} Python files augmented with SHA-256 and UUIDv4 decoys plus $120$ multi-class credentials, zero-import secret scanning achieves $100.0\%$ precision, $100.0\%$ recall, and $0.0\%$ false-positive rate at $3.21$\,MB/s. On $40$ real \texttt{LibriSpeech} utterances ($280.1$\,s), WASM Spoken ITN raises spoken-form email/phone recall from $0.0\%$ to $100.0\%$ ($100/100$) and redacts PCM16 waveforms with zero residual RMS at $4{,}379\times$ real-time ($63.95$\,ms total). Finally, streaming ISOBMFF MP4 auditing executes in $O(1)$ time ($0.44$--$0.57$\,ms from $1$\,MB to $1{,}024$\,MB), mid-stream archive guards abort a $64$\,MB ZIP-bomb in $0.521$\,ms, and \texttt{verisieve\_graph.wasm} resolves cross-modal GDPR Art.~17 blast radii across $5{,}000$ blocks ($20{,}200$ edges, $5$ modalities) in $0.915$\,ms.
+\end{abstract}
+]
+
+\section{Introduction}
+\label{sec:intro}
+
+In our companion study of \textbf{VeriSieve} \citep{ardiyansyah2026verisieve}, we demonstrated that deterministic document parsing, zero-import WebAssembly kernels, and Learn-Then-Test (LTT) conformal gatekeeping enable auditable, zero-egress curation of scientific PDFs, Word reports, and scanned forms. That evaluation also exposed three structural boundaries that appear immediately when organizations ingest full enterprise corpora rather than clean document collections:
+
+\begin{enumerate}
+    \item \textbf{Deterministic PII Recall vs.\ Precision Ceiling:} Format-validated regular expressions plus a $334$-word exclusion lexicon capped recall on \texttt{ai4privacy-500} at $49.58\%$ for bare person names and $31.03\%$ across all $26$ structured PII tags, while still generating $1.87$ false-positive Title-Case person hits per $1{,}000$ words ($22.4\%$ of documents) on blind biomedical abstracts \citep{jin2019pubmedqa}.
+    \item \textbf{Adversarial Evasion, Spoken Form, and Hidden Container Vectors:} Real enterprise data contains invisible Unicode zero-width characters, homoglyph spoofing \citep{boucher2022badcharacters}, developer credentials \citep{meli2019badsecret}, spoken-form phone numbers and emails in automatic speech recognition (ASR) transcripts (\emph{``four one five...''}, \emph{``at acme dot org''}), and hidden container leak surfaces---including Word \texttt{<w:delText>} tracked deletions, PowerPoint speaker notes and hidden slides, Excel \texttt{veryHidden} sheets and \texttt{pivotCache} tables, HAR authorization headers, Kubernetes Base64 Secrets, RIFF \texttt{LIST/INFO} audio tags, JPEG EXIF GPS blocks, and ISOBMFF MP4 metadata atoms.
+    \item \textbf{Cross-Modal Identity and Archival Security:} Processing emails, slides, spreadsheets, call recordings, and video frames in isolated tools breaks pseudonym consistency and makes GDPR Article~17 (``right to erasure'') audits intractable, while naive browser/Node archive unpackers remain vulnerable to ZIP-bombs and Zip-Slip path traversal.
+\end{enumerate}
+
+We address all three challenges with \textbf{VeriSieve-MM}, extending the zero-egress architecture of \citet{ardiyansyah2026verisieve} with a single portable Rust-to-WebAssembly binary (\texttt{verisieve\_media.wasm}, $179{,}397$\,B, $23$ exported functions, \textbf{zero host imports}) paired with a local, Apache-2.0 INT8 neural PII tier (\texttt{gliner-pii-edge-v1.0}, $45.8$\,MB) and cross-modal indexing inside \texttt{verisieve\_graph.wasm} (Figure~\ref{fig:mm-arch}).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figs/fig_e0_multimodal_architecture.pdf}
+\caption{End-to-end \textbf{VeriSieve-MM} zero-egress multimodal sanitization architecture. Heterogeneous enterprise containers and media enter a single $179{,}397$\,B Rust-to-WebAssembly kernel (\texttt{verisieve\_media.wasm}, audited to have $0$ host imports) shared byte-identically between Node.js CLI/MCP and the browser sandbox. Stage~3A deterministic checksums, Unicode anti-evasion, and secret scanning fuse with optional local Stage~3B INT8 neural NER (\texttt{gliner-pii-edge-v1.0}, failing closed when weights are absent), unify entity tokens through a local HMAC-SHA256 \texttt{SaltedPseudonymVault}, and index all five modalities inside \texttt{verisieve\_graph.wasm} for sub-millisecond GDPR Article~17 blast-radius eviction.}
+\label{fig:mm-arch}
+\end{figure*}
+
+Our contributions are fourfold:
+\begin{itemize}
+    \item \textbf{Zero-Import Multimodal WASM Core:} We design and compile a dependency-free Rust crate (\texttt{verisieve-media}) targeting \texttt{wasm32-unknown-unknown} with $0$ host imports, implementing RFC~1951 DEFLATE/GZIP with mid-stream bomb guards, hardened ZIP/TAR/CFBF (\texttt{.msg}) readers, Unicode anti-evasion normalization, international PII checksums, $30+$ secret detectors with Shannon entropy and structural JWT validation, deterministic Spoken ITN, RIFF WAV PCM16/24/Float32 waveform redaction, and JPEG/PNG/MP4 metadata scrubbing plus pixel redaction.
+    \item \textbf{Hybrid Stage~3A+3B PII Architecture:} We evaluate zero-egress fusion of deterministic WASM validation (Stage~3A) with an Apache-2.0 $45$\,M-parameter INT8 ONNX token-level GLiNER model (Stage~3B) on \texttt{ai4privacy-500}, blind \texttt{PubMedQA}, lowercase ASR transcripts, and three Unicode evasion attacks.
+    \item \textbf{Reproducible Five-Dataset Public Benchmark Suite:} Every number in this paper is generated by open scripts over five public corpora---\texttt{ai4privacy-200k}, \texttt{PubMedQA}, \texttt{Yale-LILY/aeslc} (Enron), \texttt{MBPP}, and \texttt{LibriSpeech}---plus deterministic synthetic security fixtures, with zero private files.
+    \item \textbf{Honest Operating Boundaries:} We quantify where edge models and local tools still fall short---including $58.0\%$ lowercase spoken-name recall on the $45$\,M edge model, dark-frame OCR limitations relative to modern VLM/PP-OCRv5 stacks, fail-closed weight dependencies, and pending browser UI playback widgets.
+\end{itemize}
+
+\section{System Architecture}
+\label{sec:arch}
+
+\subsection{Zero-Import WebAssembly Kernel (\texttt{verisieve\_media.wasm})}
+To enforce a verifiable zero-egress boundary in both Node.js and browser Web Workers \citep{haas2017wasm}, \texttt{verisieve\_media.wasm} is compiled from pure Rust with zero external crates and zero WASI/host imports (\texttt{WebAssembly.Module.imports(mod).length === 0}). All memory exchange crosses a fixed linear-memory ABI ($23$ exported functions, $179{,}397$\,B release binary) deployed byte-identically at \texttt{vendor/wasm/verisieve\_media.wasm} and in the browser workbench (\texttt{public/wasm/verisieve\_media.wasm}). Table~\ref{tab:wasm-modules} summarizes its seven internal subsystems.
+
+\begin{table}[t]
+\caption{Internal subsystems of the zero-import \texttt{verisieve\_media.wasm} kernel ($179{,}397$\,B, $23$ exports, $0$ host imports).}
+\label{tab:wasm-modules}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l>{\raggedright\arraybackslash}p{1.95in}}
+\toprule
+\textbf{Rust Module} & \textbf{Verified Zero-Import Functionality} \\
+\midrule
+\texttt{inflate.rs} & RFC~1951 DEFLATE, RFC~1952 GZIP, IEEE CRC-32 with mid-stream size \& ratio bomb aborts \\
+\texttt{zip\_tar.rs} & ZIP Central Directory (+ bit-3 \& ZIP64) + USTAR/PAX TAR; blocks Zip-Slip \& symlinks \\
+\texttt{cfbf.rs} & Cycle-safe Microsoft CFBF/OLE2 reader for Outlook \texttt{.msg} headers, bodies, attachments \\
+\texttt{pii\_secrets.rs} & Unicode anti-evasion (ZWSP/bidi/homoglyph/full-width) + Luhn/IBAN/AU/UK/IN/US checksums + $30+$ secret detectors \\
+\texttt{spoken\_itn.rs} & Deterministic Spoken ITN (digits, \emph{oh/double/triple}, emails) with $[t_0, t_1]$ word-span pointers \\
+\texttt{audio\_dsp.rs} & RIFF WAV PCM16/24/Float32 codec, \texttt{LIST/INFO}/\texttt{bext}/\texttt{iXML}/\texttt{id3 } scrub, $5$\,ms cosine-faded redaction, stereo VAD \\
+\texttt{media\_visual.rs} & JPEG (\texttt{APP1}/\texttt{APP13}/\texttt{COM}), PNG (\texttt{tEXt}/\texttt{iTXt}/\texttt{eXIf}), MP4 (\texttt{udta}/\texttt{meta}/\texttt{uuid}/\texttt{beam}) scrub, pixel blackout/pixelate/blur, scene delta, box tracker \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\subsection{Hardened Enterprise Containers and Forensic Leak Auditing}
+Standard text extractors often miss or silently propagate non-visible document structures. VeriSieve-MM routes \texttt{.eml}, \texttt{.mbox}, \texttt{.msg}, \texttt{.docx}, \texttt{.pptx}, \texttt{.xlsx}, \texttt{.odt}/\texttt{.ods}/\texttt{.odp}, \texttt{.har}, \texttt{.env}, \texttt{.yaml}/\texttt{.yml}, \texttt{.ipynb}, \texttt{.ics}, \texttt{.vtt}/\texttt{.srt}, Slack/Teams JSON exports, and nested \texttt{.zip}/\texttt{.tar.gz} archives through a unified parser that emits structured \texttt{forensicFindings} alongside clean text blocks. Critically:
+\begin{itemize}
+    \item \textbf{Archive Safety:} Replacing legacy Local-File-Header-only decompression with the WASM Central Directory parser enforces Zip-Slip path rejection (\texttt{ZIP\_SLIP\_REJECTED}), symlink/device-node rejection, executable binary quarantine, and mid-stream expansion caps (\texttt{ZIP\_BOMB\_SIZE\_EXCEEDED}, \texttt{ZIP\_BOMB\_RATIO\_EXCEEDED}) \citep{deutsch1996rfc1951}.
+    \item \textbf{Office \& DevOps Leak Vectors:} Word \texttt{<w:delText>} tracked deletions are stripped and logged rather than leaked into downstream prose; PowerPoint \texttt{show="0"} hidden slides and \texttt{notesSlides} are surfaced with explicit provenance; Excel \texttt{hidden}/\texttt{veryHidden} worksheets and \texttt{xl/pivotCache/*} cached records are flagged; HAR \texttt{Authorization}/\texttt{Cookie}/\texttt{Set-Cookie} headers are scrubbed; and Kubernetes \texttt{kind: Secret} Base64 payloads are decoded in-memory so Stage~3A secret scanning catches embedded database URIs and tokens.
+    \item \textbf{Zero-RAM Streaming MP4 Auditing:} Because enterprise screen recordings frequently exceed $1$\,GB (exceeding $32$-bit WASM linear memory budgets), the Node.js host performs an $O(1)$ file-descriptor ISOBMFF atom walk over top-level and \texttt{moov} boxes---seeking directly past multi-gigabyte \texttt{mdat} payloads via $64$-bit \texttt{largesize} headers---to locate and zero-overwrite \texttt{udta}, \texttt{meta}, \texttt{uuid}, \texttt{beam}, and \texttt{XMP\_} atoms in place.
+\end{itemize}
+
+\subsection{Hybrid Stage~3A + Stage~3B PII and Secret Engine}
+Stage~3A runs entirely inside \texttt{verisieve\_media.wasm} in sub-millisecond time. Before pattern matching, it constructs a normalized byte stream and UTF-16 offset map that strips zero-width and bidirectional override codepoints (\texttt{U+200B}--\texttt{U+200F}, \texttt{U+202A}--\texttt{U+202E}, \texttt{U+FEFF}), folds full-width digits and Latin letters (\texttt{U+FF01}--\texttt{U+FF5E}), and folds Cyrillic and Greek confusable homoglyphs back to ASCII \citep{boucher2022badcharacters}. It then executes format and mathematical checksum validation (13--19 digit Luhn+IIN payment cards, ISO~13616 IBAN Mod-97-10, Australian TFN/Medicare/ABN, UK NHS/NINO, Indian Aadhaar Verhoeff, US SSN, contextual phones) alongside $30+$ developer secret rules gated by Shannon entropy, structural JSON \texttt{"alg"} verification for JWTs, and an explicit SHA-256/UUIDv4/git-SHA allowlist to eliminate false positives in source code.
+
+Stage~3B adds an optional, local-only Apache-2.0 neural NER tier powered by \texttt{knowledgator/gliner-pii-edge-v1.0} \citep{zaratiana2024gliner,knowledgator2025glineredge} (\texttt{model\_quint8.onnx}, $45{,}820{,}894$\,B INT8 quantized, \texttt{ettin-encoder-32m} backbone producing token-level $[B, W, L, 3]$ start/end/inside logits). When local weights are absent, the neural loader fails closed with \texttt{NER\_WEIGHTS\_REQUIRED} and never downloads models at runtime. When present, Stage~3A and Stage~3B spans merge via confidence- and specificity-prioritized overlap resolution, unifying every detected entity across text, email, slides, tables, audio, and video through a single workspace-salted HMAC-SHA256 \texttt{SaltedPseudonymVault}.
+
+\section{Public Benchmark Suite and Testbed}
+\label{sec:datasets}
+
+All experiments were executed locally on a single Windows~11 laptop (Node.js~v24.13.1, Python~3.12 with \texttt{onnxruntime} CPU execution provider, Rust~1.99.1 targeting \texttt{wasm32-unknown-unknown}) with outbound network access disabled during all benchmark runs. Table~\ref{tab:datasets} lists the five public open-access corpora and deterministic adversarial suites used in our evaluation; zero private files are used.
+
+\begin{table}[t]
+\caption{Reproducible public benchmark suite for VeriSieve-MM ($1{,}464$ public records/files + $427$ adversarial/spoken stress cases).}
+\label{tab:datasets}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llrl}
+\toprule
+\textbf{Benchmark / Dataset} & \textbf{Modality} & \textbf{Size} & \textbf{Evaluation Focus} \\
+\midrule
+\texttt{ai4privacy-200k} \citep{ai4privacy2023} & Text PII & $500$ recs & Recall across $56$ PII tags \\
+Blind \texttt{PubMedQA} \citep{jin2019pubmedqa} & Biomedical & $250$ abs & Person-name FP/$1{,}000$ words \\
+\texttt{Yale-LILY/aeslc} \citep{zhang2019aeslc} & Enron Email & $500$ msgs & Throughput \& PII extraction \\
+\texttt{MBPP} \citep{austin2021mbpp} + Decoys & Python Code & $374$ files & Secret precision / $0\%$ FP rate \\
+\texttt{LibriSpeech} \citep{panayotov2015librispeech} & $16$\,kHz WAV & $40$ utts & $280.1$\,s audio redaction RTF \\
+Unicode + Spoken + Containers & Adversarial & $427$ cases & Evasion, ITN, $O(1)$ MP4, bombs \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\section{Experimental Results}
+\label{sec:results}
+
+\subsection{Exp.~1: Hybrid Stage~3A+3B PII Recall, Blind Biomedical False Positives, and Unicode Evasion}
+\label{sec:exp1}
+
+Table~\ref{tab:ai4privacy} compares five detector configurations on the exact same $500$-record \texttt{ai4privacy-200k} evaluation slice used in Paper~1 \citep{ardiyansyah2026verisieve}. Two key findings emerge (Figure~\ref{fig:e1}):
+\begin{enumerate}
+    \item \textbf{True Complementary Fusion:} Alone, \texttt{gliner-pii-edge-v1.0} ($45.8$\,MB INT8 ONNX, $19.51$\,ms median / $32.12$\,ms p95 CPU latency) dramatically lifts bare person-name recall from $49.58\%$ to $86.13\%$ ($+36.55$\,pp) and All-26 structured recall from $31.03\%$ to $62.24\%$, yet drops \emph{below} deterministic regex on Contact/Card/IPv4 ($71.43\%$ vs.\ $78.57\%$) because small neural encoders miss checksum-heavy numeric tokens. Fusing Stage~3A structured validation with Stage~3B GLiNER-Edge eliminates both weaknesses, pushing Contact/Card/IPv4 recall to \textbf{$96.43\%$} ($135/140$), Targeted-8 PII to \textbf{$91.70\%$} ($232/253$), All-26 structured PII to \textbf{$70.34\%$} ($408/580$), and All-56 tags to \textbf{$71.85\%$} ($1{,}118/1{,}556$) under Hybrid Full~3A+3B ($91.60\%$ bare names).
+    \item \textbf{Simultaneous $7.51\times$ False-Positive Reduction:} On the blind \texttt{PubMedQA} split (indices $250$--$499$, $50{,}288$ words, zero patient names), naive Title-Case regex emits $278$ false-positive person hits ($5.53$/1k words, $41.2\%$ of abstracts) and Paper~1's $334$-word exclusion lexicon lowers this to $94$ hits ($1.87$/1k, $22.4\%$ of abstracts). Replacing heuristic Title-Case matching with Stage~3B GLiNER-Edge drops false positives to just \textbf{$37$ spans across $24/250$ abstracts ($0.74$/1k words, $9.6\%$ of docs)}---a \textbf{$7.51\times$} reduction over naive regex and \textbf{$2.54\times$} reduction over the curated Paper~1 lexicon while simultaneously boosting bare-name recall by $+36.55$\,pp.
+\end{enumerate}
+
+\begin{table}[t]
+\caption{Recall (\%) on \texttt{ai4privacy-500} across five detector tiers (same $500$-record slice as Paper~1).}
+\label{tab:ai4privacy}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Detector Configuration} & \textbf{Contact/} & \textbf{Target} & \textbf{Bare} & \textbf{All 26} & \textbf{All 56} \\
+& \textbf{Card/IP} & \textbf{8 PII} & \textbf{Names} & \textbf{Struct.} & \textbf{Tags} \\
+\midrule
+Paper 1 Regex+Lexicon & $78.57$ & $62.85$ & $49.58$ & $31.03$ & $30.08$ \\
+Stage 3A WASM Only & $80.00$ & $63.64$ & $50.84$ & $32.41$ & $30.78$ \\
+Stage 3B GLiNER-Edge 45M & $71.43$ & $76.28$ & $86.13$ & $62.24$ & $64.07$ \\
+\textbf{Hybrid (3A Struct + 3B)} & $\mathbf{96.43}$ & $\mathbf{91.70}$ & $86.13$ & $\mathbf{70.34}$ & $67.93$ \\
+\textbf{Hybrid Full (3A + 3B)} & $95.00$ & $90.91$ & $\mathbf{91.60}$ & $69.66$ & $\mathbf{71.85}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figs/fig_e1_hybrid_pii_and_fp.pdf}
+\caption{\textbf{Exp.~1 Hybrid PII Fusion and Blind False-Positive Control.} (A)~On \texttt{ai4privacy-500}, Stage~3B GLiNER-Edge ($45.8$\,MB INT8 ONNX, $19.51$\,ms CPU median) lifts bare-name recall from $49.58\%$ to $86.13\%$, while fusing with Stage~3A WASM checksums achieves $96.43\%$ on Contact/Card/IPv4, $91.70\%$ on Targeted-8 PII, and $71.85\%$ across all $56$ tags. (B)~On blind \texttt{PubMedQA} abstracts, GLiNER-Edge cuts false-positive person spans by $7.51\times$ vs.\ naive regex and $2.54\times$ vs.\ Paper~1's $334$-word lexicon ($0.74$ hits/$1{,}000$ words).}
+\label{fig:e1}
+\end{figure*}
+
+\paragraph{Adversarial Unicode Evasion.}
+We next evaluate resilience to three invisible-character and homoglyph attacks injected into real \texttt{ai4privacy} email addresses and valid Luhn/IBAN identifiers (Table~\ref{tab:evasion} and Figure~\ref{fig:e2}A). Standard regex degrades from $94.25\%$ to $35.63\%$ when a single zero-width space (\texttt{U+200B}) is inserted mid-token and collapses completely to \textbf{$0.0\%$} under Cyrillic homoglyph substitution (\texttt{a/e/o} $\to$ \texttt{U+0430/U+0435/U+043E}) and full-width Unicode digits (\texttt{U+FF10}--\texttt{U+FF19}). By normalizing directly inside \texttt{verisieve\_media.wasm} with exact UTF-16 back-mapping, Stage~3A sustains $94.25\%$ on zero-width spaces, \textbf{$100.0\%$} ($47/47$) on Cyrillic homoglyphs, and \textbf{$87.50\%$} ($35/40$) on full-width digits.
+
+\begin{table}[t]
+\caption{Adversarial Unicode evasion recall: standard regex vs.\ zero-import \texttt{verisieve\_media.wasm} anti-evasion normalization.}
+\label{tab:evasion}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Unicode Attack Vector} & \textbf{Cases} & \textbf{Regex Recall} & \textbf{WASM Recall} \\
+\midrule
+Clean Baseline & $87$ & $94.25\%$ ($82$) & $94.25\%$ ($82$) \\
+Zero-Width Space (\texttt{U+200B}) & $87$ & $35.63\%$ ($31$) & $\mathbf{94.25\%}$ ($82$) \\
+Cyrillic Homoglyphs & $47$ & $0.00\%$ ($0$) & $\mathbf{100.00\%}$ ($47$) \\
+Full-Width Digits (\texttt{U+FF10..19}) & $40$ & $0.00\%$ ($0$) & $\mathbf{87.50\%}$ ($35$) \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figs/fig_e2_evasion_and_spoken_itn.pdf}
+\caption{\textbf{Adversarial Unicode Evasion and Spoken-Audio Transcript Benchmarks.} (A)~Zero-width, Cyrillic homoglyph, and full-width digit obfuscations collapse standard regex to $0\%$--$35.6\%$, whereas \texttt{verisieve\_media.wasm} holds $87.5\%$--$100.0\%$. (B)~Raw text regex misses $100\%$ of spoken-form emails/phones and lowercase ASR person names; WASM Spoken ITN achieves $100.0\%$ ($100/100$) on spoken emails/phones and GLiNER-Edge recovers $58.0\%$ of lowercase ASR names.}
+\label{fig:e2}
+\end{figure*}
+
+\subsection{Exp.~2: Corporate Email Throughput (Enron) and Forensic Container Auditing}
+\label{sec:exp2}
+
+On $500$ real corporate emails from \texttt{Yale-LILY/aeslc} (Enron corpus, $406{,}306$\,B raw RFC~5322 messages), VeriSieve-MM parses headers and bodies and runs Stage~3A PII/secret detection in \textbf{$0.219$\,ms median per email} (\textbf{$3{,}399$ emails/sec}), identifying $2{,}769$ PII spans ($1{,}053$ email addresses, $34$ phone numbers, and $1{,}477$ person spans). Because \texttt{aeslc} bodies are pre-cleaned by dataset curators, we additionally benchmark seven spec-compliant forensic container fixtures covering every hidden enterprise leak vector (Table~\ref{tab:forensic}). Every leak vector is detected and scrubbed in $0.009$--$0.162$\,ms per artifact.
+
+\begin{table}[t]
+\caption{Forensic container micro-benchmark across seven hidden enterprise leak vectors ($7$-run median latency; $7/7$ verified caught).}
+\label{tab:forensic}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llr}
+\toprule
+\textbf{Container Fixture} & \textbf{Forensic Vector Caught / Scrubbed} & \textbf{Median} \\
+\midrule
+JPEG (\texttt{APP1} EXIF GPS) & \texttt{JPEG\_APP1\_EXIF} binary stripped & $0.009$\,ms \\
+EML Reply Chain & Quoted thread + signature stripped & $0.014$\,ms \\
+HAR Network Trace & \texttt{Authorization}/\texttt{Cookie} scrubbed & $0.038$\,ms \\
+DOCX Tracked Changes & \texttt{<w:delText>} deleted SSN dropped & $0.063$\,ms \\
+Kubernetes \texttt{Secret} & Base64 \texttt{DB\_PASS} decoded \& flagged & $0.078$\,ms \\
+PPTX Deck & Hidden slide + \texttt{notesSlide} surfaced & $0.104$\,ms \\
+XLSX Workbook & \texttt{veryHidden} sheet + \texttt{pivotCache} & $0.162$\,ms \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\subsection{Exp.~3: Zero-False-Positive Enterprise Secret Scanning on Public Python Code}
+\label{sec:exp3}
+
+Entropy-only secret scanners frequently flood developer pipelines with false alarms on SHA-256 checksums, UUIDs, and lockfile hashes. To test real-world precision, we scan all $374$ public Python files in the \texttt{MBPP} test split ($111{,}221$\,B) after injecting both a real SHA-256 digest and a UUIDv4 identifier into \emph{every single clean file} as high-entropy decoys, alongside $120$ realistic multi-class secrets ($10$ samples each across $12$ classes: AWS Access Keys, OpenAI \texttt{sk-proj-}, Anthropic \texttt{sk-ant-}, GitHub PATs, GitLab PATs, Stripe live keys, Slack bot tokens, Google API keys, NPM tokens, structural JWTs, PEM private keys, and database connection URIs).
+
+Inside \texttt{verisieve\_media.wasm}, Stage~3A achieves \textbf{$100.0\%$ precision}, \textbf{$100.0\%$ recall} ($120/120$, $10/10$ across all $12$ classes), \textbf{$100.0\%$ F1}, and \textbf{$0.0\%$ false-positive rate ($0/374$ clean files, $0$ FP spans)} at a sustained throughput of \textbf{$3.21$\,MB/s}.
+
+\subsection{Exp.~4: Spoken-Audio ITN and Real \texttt{LibriSpeech} Waveform Redaction}
+\label{sec:exp4}
+
+Raw ASR outputs break text PII engines in two ways: digits and punctuation are spoken as words (\emph{``email user zero dot test at acme dot org''}, \emph{``call four one five five five five one zero zero oh''}), and person names frequently appear without capitalization. On $100$ spoken-form PII utterances ($50$ spoken emails + $50$ spoken $10$-digit phone numbers), raw regex detects \textbf{$0.0\%$ ($0/100$)}, whereas \texttt{verisieve\_media.wasm} Spoken ITN normalizes words with exact $[t_{\text{start}}, t_{\text{end}}]$ back-pointers and raises recall to \textbf{$100.0\%$ ($100/100$)} (Figure~\ref{fig:e2}B). On $100$ lowercase spoken person-name sentences, Title-Case regex scores $0.0\%$ while Stage~3B GLiNER-Edge recovers \textbf{$58.0\%$}.
+
+To validate real waveform DSP fidelity, we inject a forensic RIFF \texttt{LIST/INFO} author tag into all $40$ real $16$\,kHz \texttt{LibriSpeech} utterances ($280.1$\,s of continuous human speech) and redact an interior PII window ($35\%$--$55\%$ of duration, $20$\,ms boundary padding, $5$\,ms cosine fade) via \texttt{verisieve\_media.wasm}:
+\begin{itemize}
+    \item \textbf{Throughput:} All $280.1$\,s of $16$\,kHz PCM16 audio are decoded, metadata-scrubbed, silenced, and re-encoded in \textbf{$63.95$\,ms total}---\textbf{$4{,}379\times$ faster than real time}.
+    \item \textbf{Zero Acoustic Leakage \& Bit Preservation:} Maximum RMS inside redacted spans is identically \textbf{$0.000000$} across $40/40$ utterances; unredacted speech outside the window is bit-preserved in \textbf{$40/40$} utterances ($|\Delta\text{RMS}| < 10^{-4}$); and \textbf{$40/40$} injected RIFF \texttt{LIST/INFO} chunks are stripped cleanly.
+\end{itemize}
+
+\subsection{Exp.~5: $O(1)$ Multi-GB MP4 Seek, Archive Defense, and Cross-Modal GDPR Art.~17 Erasure}
+\label{sec:exp5}
+
+Figure~\ref{fig:e3} and Table~\ref{tab:scale} report scaling across three enterprise stress tests:
+\begin{itemize}
+    \item \textbf{Streaming ISOBMFF MP4 Seek ($O(1)$):} Across sparse MP4 containers scaling $1{,}024\times$ from $1$\,MB to $1{,}024$\,MB (with sensitive \texttt{uuid} and trailing \texttt{moov/udta} GPS atoms bracketing a $64$-bit \texttt{mdat} payload), median audit latency stays completely flat at \textbf{$0.438$--$0.574$\,ms} with constant $O(1)$ memory and $2/2$ sensitive atoms located at every size.
+    \item \textbf{Adversarial Archive Defense:} A $64$\,MB ZIP-bomb compressed to $65{,}353$\,B ($1{,}025\times$ expansion ratio) is aborted mid-stream inside \texttt{verisieve\_media.wasm} in \textbf{$0.521$\,ms} (\texttt{ZIP\_BOMB\_SIZE\_EXCEEDED}) before allocating output memory, and traversal archives (\texttt{../../etc/passwd}) fail deterministically with \texttt{ZIP\_SLIP\_REJECTED}.
+    \item \textbf{Cross-Modal GDPR Art.~17 Blast Radius:} Indexing $100 \to 1{,}000 \to 5{,}000$ multimodal blocks evenly distributed across five modalities (\texttt{email}, \texttt{slide}, \texttt{table}, \texttt{audio}, \texttt{video\_frame}) inside \texttt{verisieve\_graph.wasm} ($0$ host imports) yields $10{,}022$ nodes and $20{,}200$ edges at $5{,}000$ blocks (indexed in $57.51$\,ms). Querying \texttt{blastRadius} for a subject's salted entity token returns all $1{,}385$ affected nodes across all $5/5$ modalities in \textbf{$0.915$\,ms median} ($0.019$\,ms at $100$ blocks; $0.223$\,ms at $1{,}000$ blocks).
+\end{itemize}
+
+\begin{table}[t]
+\caption{Exp.~5 scaling: streaming MP4 atom seek latency ($1$\,MB $\to 1$\,GB) and cross-modal GDPR Art.~17 \texttt{blast\_radius} in \texttt{verisieve\_graph.wasm}.}
+\label{tab:scale}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrr|lrrr}
+\toprule
+\textbf{MP4 Size} & \textbf{Seek} & \textbf{Atoms} & \textbf{Graph Scale} & \textbf{Edges} & \textbf{Blast} & \textbf{Mod.} \\
+\midrule
+$1$\,MB & $0.550$\,ms & $2/2$ & $100$ blks & $405$ & $0.019$\,ms & $5/5$ \\
+$10$\,MB & $0.574$\,ms & $2/2$ & $1{,}000$ blks & $4{,}040$ & $0.223$\,ms & $5/5$ \\
+$100$\,MB & $0.438$\,ms & $2/2$ & $5{,}000$ blks & $20{,}200$ & $0.915$\,ms & $5/5$ \\
+$1{,}024$\,MB & $0.493$\,ms & $2/2$ & \multicolumn{4}{l}{64\,MB ZIP-bomb abort: $0.521$\,ms} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figs/fig_e3_multimodal_scale_and_blast.pdf}
+\caption{\textbf{Exp.~5 Systems Scaling.} (A)~Zero-RAM ISOBMFF MP4 atom auditing remains strictly $O(1)$ ($0.44$--$0.57$\,ms) across a $1{,}024\times$ jump in video container size, while \texttt{verisieve\_media.wasm} redacts $280.1$\,s of \texttt{LibriSpeech} speech at $4{,}379\times$ real time and aborts a $64$\,MB ZIP-bomb in $0.521$\,ms. (B)~Cross-modal GDPR Art.~17 \texttt{blast\_radius} queries inside \texttt{verisieve\_graph.wasm} resolve $1{,}385$ linked hits across all $5$ enterprise modalities ($20{,}200$ edges) in $0.915$\,ms.}
+\label{fig:e3}
+\end{figure*}
+
+\section{Related Work}
+\label{sec:related}
+
+Cloud and server-side de-identification toolkits such as Microsoft Presidio \citep{presidio2021} combine regex recognizers with spaCy or Transformer NER pipelines, but assume a Python server runtime rather than a zero-import WebAssembly binary portable to browsers and air-gapped CLI/MCP agents. In neural NER, GLiNER \citep{zaratiana2024gliner} introduced bidirectional encoder-based zero-shot entity extraction, and compact edge variants such as \texttt{gliner-pii-edge-v1.0} \citep{knowledgator2025glineredge} bring sub-$50$\,MB INT8 inference to standard CPUs. Our results show that neither deterministic regex nor compact neural NER dominates alone: combining WASM checksums with edge GLiNER outperforms both by $+17.9$ to $+25.0$\,pp on structured contact/card identifiers while cutting biomedical false positives by $2.54\times$. In multimodal document OCR, recent compact vision-language and OCR stacks such as PaddleOCR~3.0/PP-OCRv5 \citep{cui2025paddleocr} and Granite-Docling-258M \citep{ibm2025granitedocling} offer strong alternatives to legacy Tesseract on stylized slides and dense layouts, representing natural drop-in local OCR engines behind VeriSieve-MM's fail-closed visual pipeline.
+
+\section{Limitations and Operating Boundaries}
+\label{sec:limitations}
+
+To keep system claims strictly falsifiable, we document four explicit boundaries of VeriSieve-MM:
+\begin{enumerate}
+    \item \textbf{Lowercase ASR Person-Name Ceiling:} While \texttt{gliner-pii-edge-v1.0} ($45.8$\,MB INT8) lifts lowercase spoken person-name recall from $0.0\%$ to $58.0\%$ at $19.51$\,ms CPU latency, $42\%$ of uncapitalized spoken names remain missed by a $32$\,M-backbone edge model. Deployments with larger RAM budgets can swap in larger Apache-2.0 GLiNER-PII models (e.g., $307$\,M multi-domain variants) through the same local ONNX adapter.
+    \item \textbf{Fail-Closed Local Media Weights and Transcoding:} Zero-egress guarantees require fail-closed execution when local model weights or binaries are absent. Audio transcription requires local Whisper/Parakeet ONNX weights (\texttt{ASR\_WEIGHTS\_REQUIRED}), video frame decoding requires a local \texttt{ffmpeg} binary (\texttt{FFMPEG\_REQUIRED}) or browser WebCodecs, and Stage~3B neural PII requires local ONNX files (\texttt{NER\_WEIGHTS\_REQUIRED}).
+    \item \textbf{Stylized Video-Frame OCR Accuracy:} In local video keyframe redaction, Tesseract.js accurately locates high-contrast presenter name badges and slide text, but struggles on low-contrast dark-mode UI text, rotated overlays, and dense code editors where ONNX PP-OCRv5 \citep{cui2025paddleocr} or Granite-Docling \citep{ibm2025granitedocling} excel.
+    \item \textbf{Browser Sandbox Engine vs.\ Interactive Media UI:} In the companion RTIO Next.js browser workbench, \texttt{verisieve\_media.wasm} ($0$ host imports), enterprise container ingestion (\texttt{.eml}, \texttt{.msg}, \texttt{.pptx}, \texttt{.xlsx}, \texttt{.har}, \texttt{.vtt}, \texttt{.zip}, \texttt{.wav}, \texttt{.mp4}), hardened DOCX decompression, and Graph-SFT export are fully wired and unit-tested. Interactive browser UI widgets for audio waveform playback/download, video keyframe blur previews, and a WebGPU GLiNER toggle remain planned frontend interface work.
+\end{enumerate}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+VeriSieve-MM demonstrates that full-spectrum enterprise sanitization---spanning email chains, hidden Office leak vectors, DevOps secrets, Unicode evasion, spoken audio waveforms, multi-gigabyte video metadata, and cross-modal GDPR Article~17 erasure---can execute locally inside a $179$\,KB zero-import WebAssembly core paired with a $45.8$\,MB Apache-2.0 INT8 neural PII detector. Across five reproducible public datasets, this hybrid architecture resolves both the recall ceiling and the false-positive overhead of purely regex-based pipelines while maintaining sub-millisecond cryptographic and archival defenses with zero data egress.
+
+\bibliography{verisieve-multimodal-sanitization-benchmark}
+\bibliographystyle{mlsys2025}
+
+\appendix
+\section{Zero-Import WASM Audit and MCP Tool Surface}
+\label{app:mcp}
+
+All five VeriSieve WebAssembly modules are audited at load time to enforce zero host imports (\texttt{imports.length === 0}), guaranteeing that no kernel can invoke network, filesystem, or environment syscalls in either Node.js or browser Web Workers (Table~\ref{tab:wasm-audit}). For local agent workflows, the Model Context Protocol (MCP) server expands from $14$ to $18$ zero-egress tools by adding four Track~E endpoints: \texttt{ingest\_enterprise\_bundle}, \texttt{scan\_enterprise\_secrets}, \texttt{redact\_audio\_call}, and \texttt{audit\_forensic\_leaks}. All subsystems are verified by automated Node.js integration tests ($107/107$ passing), Python training tests ($4/4$ passing), Rust native unit tests ($5/5$ passing), and companion browser unit tests ($9/9$ passing).
+
+\begin{table}[h]
+\caption{Load-time zero-import audit across all five VeriSieve WebAssembly modules.}
+\label{tab:wasm-audit}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrr>{\raggedright\arraybackslash}p{1.45in}}
+\toprule
+\textbf{WASM Binary} & \textbf{Bytes} & \textbf{Imports} & \textbf{Primary Role} \\
+\midrule
+\texttt{verisieve\_clean.wasm} & $14{,}633$ & $0$ & Normalization, dedupe, chunking \\
+\texttt{verisieve\_sql.wasm} & $49{,}642$ & $0$ & Local structured SQL filtering \\
+\texttt{verisieve\_graph.wasm} & $54{,}402$ & $0$ & Dual-CSR graph, PPR, GDPR blast \\
+\texttt{verisieve\_dl.wasm} & $60{,}096$ & $0$ & BitNet, VeRA, 64-d retrieval \\
+\texttt{verisieve\_media.wasm} & $179{,}397$ & $0$ & Archives, secrets, ITN, audio/visual \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.10in
+\end{table}
+
+\end{document}

@@ -18,6 +18,7 @@ export const EDGE_TYPE_TO_ID = {
   RELATES_TO: 6,
   SUPPORTED_BY: 7,
   DERIVED_FROM: 8,
+  SIMILAR_TO: 9,
 };
 
 export const ID_TO_EDGE_TYPE = [
@@ -30,6 +31,7 @@ export const ID_TO_EDGE_TYPE = [
   'RELATES_TO',
   'SUPPORTED_BY',
   'DERIVED_FROM',
+  'SIMILAR_TO',
 ];
 
 function directionCode(dir) {
@@ -215,9 +217,12 @@ export class SaltedPseudonymVault {
     }
     const seq = (this.kindCounters.get(kind) || 0) + 1;
     this.kindCounters.set(kind, seq);
+    const displayToken = kind.startsWith('SECRET_')
+      ? `<SECRET:${kind.slice(7)}_${String(seq).padStart(2, '0')}>`
+      : `<PII:${kind}_${String(seq).padStart(2, '0')}>`;
     const entry = {
       entity_id: entityId,
-      display_token: `<PII:${kind}_${String(seq).padStart(2, '0')}>`,
+      display_token: displayToken,
       pii_kind: kind,
       mention_count: 1,
     };
@@ -385,9 +390,21 @@ export class PortableDocumentGraph {
     let globalLineIdx = 0;
     const passageIdByLineIdx = new Map();
 
+    const splitMdRow = (line) => {
+      let s = String(line || '').trim();
+      if (s.startsWith('|')) s = s.slice(1);
+      if (s.endsWith('|')) s = s.slice(0, -1);
+      return s.split('|').map((c) => c.trim());
+    };
+    const isMdTableSep = (line) => {
+      const cells = splitMdRow(line);
+      return cells.length >= 2 && cells.every((c) => /^:?-{2,}:?$/.test(c));
+    };
+
     for (const doc of documents) {
       const source = String(doc.source || doc.name || 'document.md');
       const docId = `doc:${sha256Short(source)}`;
+      const modality = doc.modality || 'document';
       addNode({
         node_id: docId,
         node_type: 'DOCUMENT',
@@ -396,23 +413,114 @@ export class PortableDocumentGraph {
         text_redacted: source,
         text_contextualized: source,
         gatekeeper_action: 'KEEP_SAFE',
-        props: { source },
+        props: { source, modality, ...(doc.parentSource ? { parent_source: doc.parentSource } : {}) },
       });
+      if (doc.parentSource) {
+        const parentDocId = `doc:${sha256Short(String(doc.parentSource))}`;
+        addNode({
+          node_id: parentDocId,
+          node_type: 'DOCUMENT',
+          doc_id: parentDocId,
+          breadcrumb: String(doc.parentSource),
+          text_redacted: String(doc.parentSource),
+          text_contextualized: String(doc.parentSource),
+          gatekeeper_action: 'KEEP_SAFE',
+          props: { source: String(doc.parentSource) },
+        });
+        addEdge(docId, parentDocId, 'DERIVED_FROM', 1.0, { relation: 'attachment_or_archive_child' });
+      }
 
-      const lines = String(doc.text || '').split(/\r?\n/);
       const sectionStack = [];
+      const sectionByBreadcrumb = new Map();
       let secCounter = 0;
       let accLines = [];
       let prevPasId = null;
 
-      const flushPassage = () => {
-        if (!accLines.length) return;
-        const rawBlock = accLines.join('\n').trim();
-        accLines = [];
-        if (rawBlock.length < 4) return;
+      const ensureSectionPath = (pathTitles, pageNo = null) => {
+        if (!Array.isArray(pathTitles) || pathTitles.length === 0) return null;
+        let parentId = docId;
+        let lastSec = null;
+        const prefix = [];
+        for (let lvl = 0; lvl < pathTitles.length; lvl++) {
+          const { maskedText: safeTitle } = this.vault.maskText(String(pathTitles[lvl] || '').trim(), { isHeading: true });
+          if (!safeTitle) continue;
+          prefix.push(safeTitle);
+          const bc = prefix.join(' > ');
+          let secNode = sectionByBreadcrumb.get(bc);
+          if (!secNode) {
+            const secNodeId = `sec:${docId.slice(4)}:${secCounter++}`;
+            secNode = {
+              node_id: secNodeId,
+              node_type: 'SECTION',
+              doc_id: docId,
+              breadcrumb: bc,
+              text_redacted: safeTitle,
+              text_contextualized: `${source} > ${bc}`,
+              gatekeeper_action: 'KEEP_SAFE',
+              props: { source, level: lvl + 1, pageStart: pageNo, pageEnd: pageNo },
+            };
+            addNode(secNode);
+            addEdge(parentId, secNodeId, 'CONTAINS_SECTION', 1.0, { level: lvl + 1 });
+            sectionByBreadcrumb.set(bc, secNode);
+          } else if (pageNo !== null) {
+            if (secNode.props.pageStart === null || pageNo < secNode.props.pageStart) secNode.props.pageStart = pageNo;
+            if (secNode.props.pageEnd === null || pageNo > secNode.props.pageEnd) secNode.props.pageEnd = pageNo;
+          }
+          parentId = secNode.node_id;
+          lastSec = secNode;
+        }
+        return lastSec;
+      };
 
-        const { maskedText, entityIds } = this.vault.maskText(rawBlock);
-        const curSec = sectionStack[sectionStack.length - 1] || null;
+      const maskTableRowPreservingHeaders = (rawRow) => {
+        const segments = String(rawRow || '').split(/\s*\|\s*/);
+        const maskedSegs = [];
+        const allEntIds = [];
+        for (const seg of segments) {
+          const colonIdx = seg.indexOf(':');
+          if (colonIdx > 0 && colonIdx < 48) {
+            const rawHeader = seg.slice(0, colonIdx).trim();
+            const rawVal = seg.slice(colonIdx + 1).trim();
+            const hRes = this.vault.maskText(rawHeader, { isHeading: true });
+            const vRes = this.vault.maskText(rawVal);
+            maskedSegs.push(`${hRes.maskedText}: ${vRes.maskedText}`);
+            for (const id of [...hRes.entityIds, ...vRes.entityIds]) {
+              if (!allEntIds.includes(id)) allEntIds.push(id);
+            }
+          } else {
+            const res = this.vault.maskText(seg);
+            maskedSegs.push(res.maskedText);
+            for (const id of res.entityIds) {
+              if (!allEntIds.includes(id)) allEntIds.push(id);
+            }
+          }
+        }
+        return { maskedText: maskedSegs.join(' | '), entityIds: allEntIds };
+      };
+
+      const emitBlockNode = ({
+        rawText,
+        nodeType = 'PASSAGE',
+        curSec = null,
+        pageNo = doc.pageNo ?? null,
+        structRole = 'P',
+        tableHeaders = null,
+        gatekeeperAction = 'KEEP_SAFE',
+        preRedactedEntityIds = null,
+        preRedacted = false,
+        blockModality = modality,
+        timeRangeMs = null,
+        frameTimeMs = null,
+        speakerId = null,
+        parentSource = null,
+      }) => {
+        if (!rawText || rawText.length < 4) return;
+        const { maskedText, entityIds: detectedEntityIds } = preRedacted
+          ? { maskedText: rawText, entityIds: [] }
+          : nodeType === 'TABLE_ROW'
+            ? maskTableRowPreservingHeaders(rawText)
+            : this.vault.maskText(rawText);
+        const entityIds = Array.from(new Set([...(preRedactedEntityIds || []), ...detectedEntityIds]));
         const breadcrumb = curSec ? curSec.breadcrumb : '';
         const textCtx = breadcrumb ? `[${breadcrumb}] ${maskedText}` : maskedText;
         const pasId = `pas:${docId.slice(4)}:${globalLineIdx}`;
@@ -420,16 +528,41 @@ export class PortableDocumentGraph {
 
         addNode({
           node_id: pasId,
-          node_type: 'PASSAGE',
+          node_type: nodeType,
           doc_id: docId,
           breadcrumb,
           text_redacted: maskedText,
           text_contextualized: textCtx,
-          gatekeeper_action: 'KEEP_SAFE',
-          props: { source, line_index: lineIndex, page_no: doc.pageNo ?? null },
+          gatekeeper_action: gatekeeperAction,
+          props: {
+            source,
+            modality: blockModality,
+            line_index: lineIndex,
+            page_no: pageNo,
+            struct_role: structRole,
+            ...(timeRangeMs ? { time_range_ms: timeRangeMs } : {}),
+            ...(frameTimeMs !== null && frameTimeMs !== undefined ? { frame_time_ms: frameTimeMs } : {}),
+            ...(speakerId ? { speaker_id: speakerId } : {}),
+            ...(parentSource ? { parent_source: parentSource } : {}),
+            ...(tableHeaders && tableHeaders.length ? { table_headers: tableHeaders } : {}),
+          },
         });
         passageIdByLineIdx.set(lineIndex, pasId);
         addEdge(curSec ? curSec.node_id : docId, pasId, 'CONTAINS_BLOCK', 1.0);
+        if (parentSource && parentSource !== source) {
+          const parentDocId = `doc:${sha256Short(String(parentSource))}`;
+          addNode({
+            node_id: parentDocId,
+            node_type: 'DOCUMENT',
+            doc_id: parentDocId,
+            breadcrumb: String(parentSource),
+            text_redacted: String(parentSource),
+            text_contextualized: String(parentSource),
+            gatekeeper_action: 'KEEP_SAFE',
+            props: { source: String(parentSource) },
+          });
+          addEdge(pasId, parentDocId, 'DERIVED_FROM', 1.0, { relation: 'parent_container' });
+        }
         if (prevPasId) addEdge(prevPasId, pasId, 'NEXT_CHUNK', 0.5);
         prevPasId = pasId;
 
@@ -441,13 +574,63 @@ export class PortableDocumentGraph {
           provenance_id: `prov:${pasId}`,
           node_id: pasId,
           doc_id: docId,
-          page_no: doc.pageNo ?? null,
-          struct_role: 'P',
+          page_no: pageNo,
+          struct_role: structRole,
         });
       };
 
-      for (const rawLine of lines) {
-        const trimmed = rawLine.trim();
+      // Pre-structured blocks path (from Tier-0 structure-extractor or KEEP_SAFE rows)
+      if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+        for (const blk of doc.blocks) {
+          const text = String(blk.text ?? blk.masked_text ?? '').trim();
+          if (text.length < 4) continue;
+          const gatekeeperAction = blk.gatekeeper_action || 'KEEP_SAFE';
+          const pathTitles = Array.isArray(blk.sectionPath) && blk.sectionPath.length > 0
+            ? blk.sectionPath
+            : (blk.breadcrumb ? String(blk.breadcrumb).split(/\s*>\s*/).filter(Boolean) : []);
+          const pageNo = blk.pageStart ?? blk.page_no ?? doc.pageNo ?? null;
+          const curSec = ensureSectionPath(pathTitles, pageNo);
+          const role = blk.structRole || blk.struct_role || 'P';
+          const nodeType = role === 'TABLE_ROW' ? 'TABLE_ROW' : 'PASSAGE';
+          emitBlockNode({
+            rawText: text,
+            nodeType,
+            curSec,
+            pageNo,
+            structRole: role,
+            tableHeaders: blk.tableHeaders || blk.table_headers || null,
+            gatekeeperAction,
+            preRedactedEntityIds: blk.entityIds || blk.entity_ids || null,
+            preRedacted: Boolean(blk.preRedacted),
+            blockModality: blk.modality || modality,
+            timeRangeMs: blk.timeRangeMs || blk.time_range_ms || null,
+            frameTimeMs: blk.frameTimeMs ?? blk.frame_time_ms ?? null,
+            speakerId: blk.speakerId || blk.speaker_id || null,
+            parentSource: blk.parentSource || blk.parent_source || doc.parentSource || null,
+          });
+        }
+        continue;
+      }
+
+      const lines = String(doc.text || '').split(/\r?\n/);
+
+      const flushPassage = () => {
+        if (!accLines.length) return;
+        const rawBlock = accLines.join('\n').trim();
+        accLines = [];
+        if (rawBlock.length < 4) return;
+        const curSec = sectionStack[sectionStack.length - 1] || null;
+        emitBlockNode({
+          rawText: rawBlock,
+          nodeType: 'PASSAGE',
+          curSec,
+          pageNo: doc.pageNo ?? null,
+          structRole: 'P',
+        });
+      };
+
+      for (let li = 0; li < lines.length; li++) {
+        const trimmed = lines[li].trim();
         if (!trimmed) {
           flushPassage();
           continue;
@@ -478,6 +661,39 @@ export class PortableDocumentGraph {
           sectionStack.push({ node_id: secNodeId, title: safeTitle, level, breadcrumb });
           continue;
         }
+
+        // GFM Markdown table support: header + separator + data rows -> TABLE_ROW nodes
+        if (trimmed.includes('|') && li + 1 < lines.length && isMdTableSep(lines[li + 1])) {
+          flushPassage();
+          const headers = splitMdRow(trimmed).map((h, idx) => h || `Column ${idx + 1}`);
+          const curSec = sectionStack[sectionStack.length - 1] || null;
+          li += 2;
+          while (li < lines.length) {
+            const rowLine = lines[li].trim();
+            if (!rowLine || !rowLine.includes('|') || /^#{1,6}\s+/.test(rowLine)) {
+              li--;
+              break;
+            }
+            const cells = splitMdRow(rowLine);
+            const rowText = cells
+              .map((val, idx) => (val ? `${headers[idx] || `Column ${idx + 1}`}: ${val}` : ''))
+              .filter(Boolean)
+              .join(' | ');
+            if (rowText.length >= 4) {
+              emitBlockNode({
+                rawText: rowText,
+                nodeType: 'TABLE_ROW',
+                curSec,
+                pageNo: doc.pageNo ?? null,
+                structRole: 'TABLE_ROW',
+                tableHeaders: headers,
+              });
+            }
+            li++;
+          }
+          continue;
+        }
+
         accLines.push(trimmed);
       }
       flushPassage();
@@ -614,13 +830,21 @@ export class PortableDocumentGraph {
       maxHops: options.maxHops ?? 3,
       edgeTypes: options.edgeTypes,
     });
-    return raw.map((h) => ({
-      nodeId: this.nodes[h.nodeIdx].node_id,
-      nodeType: this.nodes[h.nodeIdx].node_type,
-      minHop: h.minHop,
-      viaEdgeType: h.viaEdgeType,
-      impactScore: h.impactScore,
-    }));
+    return raw.map((h) => {
+      const node = this.nodes[h.nodeIdx];
+      return {
+        nodeId: node.node_id,
+        nodeType: node.node_type,
+        source: node.props?.source || null,
+        modality: node.props?.modality || null,
+        breadcrumb: node.breadcrumb || null,
+        ...(node.props?.time_range_ms ? { timeRangeMs: node.props.time_range_ms } : {}),
+        ...(node.props?.frame_time_ms !== undefined ? { frameTimeMs: node.props.frame_time_ms } : {}),
+        minHop: h.minHop,
+        viaEdgeType: h.viaEdgeType,
+        impactScore: h.impactScore,
+      };
+    });
   }
 
   tracePath(srcId, dstId, options = {}) {
@@ -776,5 +1000,57 @@ export class PortableDocumentGraph {
       }
     }
     return out.sort((a, b) => String(a.source).localeCompare(String(b.source)) || a.lineIndex - b.lineIndex);
+  }
+
+  registerArtifact({ artifactId, kind = 'cag_kv_slot', sourceNodeIds = [], props = {} }) {
+    const artId = `art:${kind}:${artifactId}`;
+    if (!this.byId.has(artId)) {
+      const node = {
+        node_id: artId,
+        node_type: 'ARTIFACT',
+        doc_id: null,
+        breadcrumb: kind,
+        text_redacted: String(artifactId),
+        text_contextualized: `${kind}:${artifactId}`,
+        gatekeeper_action: 'KEEP_SAFE',
+        props: { kind, artifactId, ...props },
+      };
+      this.nodes.push(node);
+      this.idToIdx.set(artId, this.nodes.length - 1);
+      this.byId.set(artId, node);
+    }
+
+    const existingKeys = new Set(this.edges.map((e) => `${e.src_id}|${e.edge_type}|${e.dst_id}`));
+    for (const srcNodeId of sourceNodeIds || []) {
+      if (!this.byId.has(srcNodeId)) continue;
+      const key = `${artId}|DERIVED_FROM|${srcNodeId}`;
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      this.edges.push({ src_id: artId, dst_id: srcNodeId, edge_type: 'DERIVED_FROM', weight: 1.0, props: {} });
+    }
+
+    // Rebuild Dual-CSR in verisieve_graph.wasm so blastRadius immediately traverses ARTIFACT -> DERIVED_FROM -> PASSAGE -> MENTIONS -> ENTITY
+    const srcs = [];
+    const dsts = [];
+    const types = [];
+    const weights = [];
+    for (const e of this.edges) {
+      const s = this.idToIdx.get(e.src_id);
+      const d = this.idToIdx.get(e.dst_id);
+      if (s === undefined || d === undefined) continue;
+      srcs.push(s);
+      dsts.push(d);
+      types.push(EDGE_TYPE_TO_ID[e.edge_type] ?? 0);
+      weights.push(Number.isFinite(e.weight) && e.weight > 0 ? e.weight : 1.0);
+    }
+    this.engine.buildFromEdges(
+      this.nodes.length,
+      Uint32Array.from(srcs),
+      Uint32Array.from(dsts),
+      Uint16Array.from(types),
+      Float32Array.from(weights)
+    );
+
+    return { artifactNodeId: artId, edgeCount: this.edges.length, nodeCount: this.nodes.length };
   }
 }

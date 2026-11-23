@@ -314,7 +314,7 @@ export const PII_PATTERNS = {
   ip_address: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
   date_of_birth: /\b(?:\d{1,2}[\/\s-]\d{1,2}[\/\s-](?:\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/g,
   name_likely: /(?:Patient Name|Name|TO|FROM|SENDER|Doctor|Physician|Author):\s*([A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+)?)|(?:\b[A-Z][a-z]{1,15}\s+[A-Z]\.?\s+[A-Z][a-z]{1,15}\b)|\b([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15})\b/g,
-  address_likely: /(?:\d{1,4}\s+[A-Z][a-zA-Z0-9\s,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)\s+of\s+[A-Z][a-zA-Z\s]+)/gi
+  address_likely: /(?:\d{1,4}[ \t]+[A-Z][a-zA-Z0-9 \t,.-]+(?:St|Street|Ave|Avenue|Blvd|Dr|Drive|Ln|Lane|Rd|Road|Way|Ct|Terrace|Parade|Pl)\b|(?:University|College|Hospital|Clinic)[ \t]+of[ \t]+[A-Z][a-zA-Z \t]+)/gi
 };
 
 export function createDomainPiiConfig({ additionalPatterns = {}, extraExcludedWords = [] } = {}) {

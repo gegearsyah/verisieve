@@ -15,7 +15,9 @@ import {
 } from '../src/wasm-needle-dl.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const APP_DIR = String.raw`C:\Users\GEYE ARDIANSYAH\Downloads\Compliance Research\APP`;
+const APP_DIR =
+  process.env.VERISIEVE_APP_CORPUS_DIR ||
+  path.resolve(ROOT, '..', '..', 'Compliance Research', 'APP');
 const OUT_DIR = path.resolve(
   ROOT,
   '..',
