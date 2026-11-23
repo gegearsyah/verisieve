@@ -202,7 +202,7 @@ def build_fig2():
     x = np.arange(len(groups))
     w = 0.34
     b1 = ax2.bar(x - w / 2, naive_fp, width=w, color=CORAL, label="Naive Title-Case Regex", zorder=3)
-    b2 = ax2.bar(x + w / 2, lex_fp, width=w, color=BLUE, label="VeriSieve 334-Word Lexicon", zorder=3)
+    b2 = ax2.bar(x + w / 2, lex_fp, width=w, color=BLUE, label="Versieve 334-Word Lexicon", zorder=3)
 
     for bar, v in zip(b1, naive_fp):
         ax2.text(

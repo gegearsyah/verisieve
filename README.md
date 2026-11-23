@@ -1,11 +1,11 @@
-# VeriSieve (`matilda-portable`)
+# Versieve (`matilda-portable`)
 
 [![CI](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml/badge.svg)](https://github.com/gegearsyah/verisieve/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Zero-Egress Multimodal Document & Media Sanitization, Conformal Risk-Controlled Gatekeeping, and Dual-CSR Graph Retrieval in Zero-Import Rust→WebAssembly**  
 *Author: Gege Ardiyansyah*
 
-VeriSieve is a local-first curation, de-identification, and retrieval engine shared across the **RTIO Browser Sandbox** ([rtio.io/sandbox](https://www.rtio.io/sandbox)), a Node.js CLI (`bin/verisieve.mjs`), an 18-tool Model Context Protocol (MCP) server (`src/mcp-server.js`), and a single-header C99 scorer (`include/verisieve.h`, `2,129 B`).
+Versieve is a local-first curation, de-identification, and retrieval engine shared across the **RTIO Browser Sandbox** ([rtio.io/sandbox](https://www.rtio.io/sandbox)), a Node.js CLI (`bin/verisieve.mjs`), an 18-tool Model Context Protocol (MCP) server (`src/mcp-server.js`), and a single-header C99 scorer (`include/verisieve.h`, `2,129 B`).
 
 At its core are **five standalone `#![no_std]` Rust→WebAssembly kernels (`365.9 KB` combined)** audited to have **zero host imports (`WebAssembly.Module.imports(mod).length === 0`)**. Because these WASM modules cannot perform network I/O, filesystem access, or system calls—and operate solely on caller-allocated linear memory slices—they enforce an auditable, binary-level zero-egress boundary in both browser tabs and server/CLI processes.
 
@@ -16,7 +16,7 @@ At its core are **five standalone `#![no_std]` Rust→WebAssembly kernels (`365.
 We state the scope of contribution plainly across our codebase and companion benchmark papers:
 
 - **Established algorithmic components:** Learn-Then-Test (LTT) finite-sample conformal risk control, GLiNER zero-shot span extraction, Unicode TR39 confusable folding, salted Bloom-filter record linkage (PPRL), Carlini canary exposure, Personalized PageRank (PPR), and LoRA fine-tuning are established methods.
-- **Systems integration contribution:** Existing privacy stacks typically require Python servers (`Presidio` + `spaCy`), Go/Python CLI subprocesses (`Gitleaks`, `detect-secrets`), or cloud APIs, and handle only a single modality. VeriSieve packages archive/container extraction, Unicode anti-evasion, checksum-verified PII & secret scanning, Spoken Inverse Text Normalization (ITN), sample-accurate WAV audio redaction, video keyframe scene-change & temporal bounding-box pixel redaction, cross-modal entity resolution, Dual-CSR Personalized PageRank retrieval, and sub-millisecond GDPR Art. 17 erasure into **one portable, zero-import Rust→WASM + JS/TS stack** with strict fail-closed invariants (`NER_WEIGHTS_REQUIRED`, `ASR_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`, `ZIP_BOMB_RATIO_EXCEEDED`, `ZIP_SLIP_PATH_TRAVERSAL`).
+- **Systems integration contribution:** Existing privacy stacks typically require Python servers (`Presidio` + `spaCy`), Go/Python CLI subprocesses (`Gitleaks`, `detect-secrets`), or cloud APIs, and handle only a single modality. Versieve packages archive/container extraction, Unicode anti-evasion, checksum-verified PII & secret scanning, Spoken Inverse Text Normalization (ITN), sample-accurate WAV audio redaction, video keyframe scene-change & temporal bounding-box pixel redaction, cross-modal entity resolution, Dual-CSR Personalized PageRank retrieval, and sub-millisecond GDPR Art. 17 erasure into **one portable, zero-import Rust→WASM + JS/TS stack** with strict fail-closed invariants (`NER_WEIGHTS_REQUIRED`, `ASR_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`, `ZIP_BOMB_RATIO_EXCEEDED`, `ZIP_SLIP_PATH_TRAVERSAL`).
 
 ---
 
@@ -26,10 +26,10 @@ All three MLSys-formatted benchmark papers, along with their LaTeX sources, BibT
 
 1. **[Paper 1 — Deterministic Document Extraction, Data Redaction, and Conformal Gatekeeping](paper/verisieve-extraction-redaction-benchmark.pdf)** ([`.tex`](paper/verisieve-extraction-redaction-benchmark.tex))  
    *Evaluates native PDF CMap/kerning extraction, 2D overlapping tiling on 199 ICDAR-2019 FUNSD forms (`30,595` word boxes), deterministic PII disambiguation across `ai4privacy-200k` and `PubMedQA`, finite-sample LTT conformal calibration, and 7-trial interleaved runtime substrates (`C99` vs. `Node+WASM` vs. `Python+NumPy` vs. `PyTorch+DuckDB`).*
-2. **[Paper 2 — VeriSieve-MM: Zero-Import WASM Multimodal Sanitization, Hybrid Neural NER, and Cross-Modal GDPR Erasure](paper/verisieve-multimodal-sanitization-benchmark.pdf)** ([`.tex`](paper/verisieve-multimodal-sanitization-benchmark.tex))  
+2. **[Paper 2 — Versieve-MM: Zero-Import WASM Multimodal Sanitization, Hybrid Neural NER, and Cross-Modal GDPR Erasure](paper/verisieve-multimodal-sanitization-benchmark.pdf)** ([`.tex`](paper/verisieve-multimodal-sanitization-benchmark.tex))  
    *Evaluates `verisieve_media.wasm` + Stage 3B `gliner-pii-edge` against external tools and human-annotated corpora: the Text Anonymization Benchmark (`TAB`, $N=1,268$ ECHR court rulings) vs. Microsoft Presidio (`en_core_web_lg` + custom recognizers), non-circular Ground-Truth LTT across three gate architectures, enterprise secrets vs. `Gitleaks v8.30.1` and Yelp `detect-secrets v1.5.0`, Unicode anti-evasion vs. Python `NFKC`, end-to-end TTS→Whisper (`base.en` / `small.en`) audio waveform redaction, 128-bit salted Bloom+Soundex PPRL across `124,750` candidate pairs, `<1 ms` GDPR Art. 17 erasure, and $O(1)$ multi-GB MP4 container scrubbing.*
 3. **[Paper 3 — Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval](paper/verisieve-local-training-benchmark.pdf)** ([`.tex`](paper/verisieve-local-training-benchmark.tex))  
-   *Evaluates six open-weight models on an 8 GB RTX 4070 Laptop GPU (`Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, `LFM3-1.7B-Base` trained as matched Raw vs. VeriSieve-Safe assistant-only `T2-Chat` LoRA pairs, plus `lfm3:latest`, `llama3.2:3b`, `qwen2.5:7b` Ollama comparators): Carlini $20\times$-canary weight exposure, adversarial context extraction, `1,050` blinded LLM-judge evaluations (`T0+Graph-PPR` vs. `T2-Chat` LoRA on held-out and seen documents), and the VRAM crossover between Native KV-Cached CAG and Dual-CSR Graph-PPR.*
+   *Evaluates six open-weight models on an 8 GB RTX 4070 Laptop GPU (`Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, `LFM3-1.7B-Base` trained as matched Raw vs. Versieve-Safe assistant-only `T2-Chat` LoRA pairs, plus `lfm3:latest`, `llama3.2:3b`, `qwen2.5:7b` Ollama comparators): Carlini $20\times$-canary weight exposure, adversarial context extraction, `1,050` blinded LLM-judge evaluations (`T0+Graph-PPR` vs. `T2-Chat` LoRA on held-out and seen documents), and the VRAM crossover between Native KV-Cached CAG and Dual-CSR Graph-PPR.*
 
 ---
 
@@ -49,7 +49,7 @@ Every kernel is compiled with `wasm32-unknown-unknown` (`panic = "abort"`, LTO e
 
 ### 2. RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) vs. Node.js CLI / MCP Server
 
-VeriSieve runs the **exact same byte-identical WASM binaries** in the browser and in Node.js (enforced by CI parity tests), while adapting heavy media decoding to each runtime's memory boundaries:
+Versieve runs the **exact same byte-identical WASM binaries** in the browser and in Node.js (enforced by CI parity tests), while adapting heavy media decoding to each runtime's memory boundaries:
 
 | Capability | RTIO Browser Sandbox ([rtio.io/sandbox](https://www.rtio.io/sandbox)) | Node.js CLI & 18-Tool MCP Server (`matilda-portable`) |
 |---|---|---|
@@ -88,13 +88,13 @@ Reproduced via `python scripts/run-reviewer-tab-and-ltt.py` and `python scripts/
 
 | Detector Configuration | DIRECT Recall (`548` spans) | `[95% Bootstrap CI]` | All-Maskable Recall (`10,183`) | Precision | F1 | Latency / Doc |
 |---|---:|---|---:|---:|---:|---:|
-| **VeriSieve Stage 3A (WASM Regex + Lexicon)** | `97.99%` (`537`) | `[96.79%, 99.07%]` | `64.08%` | `36.68%` | `46.66%` | **`0.33 ms`** |
+| **Versieve Stage 3A (WASM Regex + Lexicon)** | `97.99%` (`537`) | `[96.79%, 99.07%]` | `64.08%` | `36.68%` | `46.66%` | **`0.33 ms`** |
 | **Microsoft Presidio Default (`en_core_web_lg`)** | `78.83%` (`432`) | `[75.44%, 82.06%]` | `69.98%` | `40.42%` | `51.24%` | `35.09 ms` |
 | **Microsoft Presidio + Custom ECHR Code Regex** | `94.71%` (`519`) | `[92.73%, 96.48%]` | `70.93%` | `33.50%` | `45.51%` | `36.98 ms` |
 | **Vanilla GLiNER (`gliner-pii-edge`, $\tau=0.20$)** | `31.02%` (`170`) | `[27.20%, 34.77%]` | `53.19%` | `35.15%` | `42.33%` | `583.48 ms` |
-| **VeriSieve Hybrid (3A + 3B, $\tau=0.20$ high-recall)** | **`99.45%`** (`545`) | **`[98.73%, 100.0%]`** | **`75.02%`** | `28.93%` | `41.76%` | `583.81 ms` |
-| **VeriSieve Hybrid (3A + 3B, $\tau=0.35$ balanced)** | `98.91%` (`542`) | `[97.97%, 99.64%]` | `72.44%` | `31.71%` | `44.11%` | `583.81 ms` |
-| **VeriSieve Hybrid (3A + 3B, $\tau=0.70$ matched-prec)** | `90.88%` (`498`) | `[88.45%, 93.16%]` | `64.46%` | `36.37%` | **`46.50%`** | `583.81 ms` |
+| **Versieve Hybrid (3A + 3B, $\tau=0.20$ high-recall)** | **`99.45%`** (`545`) | **`[98.73%, 100.0%]`** | **`75.02%`** | `28.93%` | `41.76%` | `583.81 ms` |
+| **Versieve Hybrid (3A + 3B, $\tau=0.35$ balanced)** | `98.91%` (`542`) | `[97.97%, 99.64%]` | `72.44%` | `31.71%` | `44.11%` | `583.81 ms` |
+| **Versieve Hybrid (3A + 3B, $\tau=0.70$ matched-prec)** | `90.88%` (`498`) | `[88.45%, 93.16%]` | `64.46%` | `36.37%` | **`46.50%`** | `583.81 ms` |
 
 *Honest trade-off:* Stage 3A regex already captures `97.99%` of DIRECT identifiers (`36110/97` court codes, dates, contacts) in `0.33 ms/doc`. Adding Stage 3B GLiNER at $\tau=0.20$ recovers the remaining bare person names (`99.45%` DIRECT recall, $p < 0.0001$ vs. Presidio+Code) and lifts QUASI-identifier recall by `+10.9` points (`64.08% -> 75.02%`), at the cost of lower precision (`28.93%`) due to unredacted institutional references (`"the Court"`, `"the Government"`). At matched precision ($\tau=0.70$), Hybrid beats Presidio+Code on both DIRECT recall (`90.88%` vs. `94.71%` at higher precision `36.37%` vs. `33.50%`) and overall F1 (`46.50%` vs. `45.51%`).
 
@@ -112,7 +112,7 @@ Labels are derived **strictly from human TAB annotations** ($Y_i = 1$ iff human 
 
 | Scanner | Precision | Recall | F1 | FP Rate (`130` clean files) | Single-Call Cold (`275` files) | Warm Steady-State (`275` files) |
 |---|---:|---:|---:|---:|---:|---:|
-| **VeriSieve Stage 3A (`verisieve_media.wasm`)** | **`100.00%`** | `64.63%` | **`78.52%`** | **`0.00%` (`0/130`)** | **`10.22 ms`** | **`3.67 ms` (`0.013 ms/file`)** |
+| **Versieve Stage 3A (`verisieve_media.wasm`)** | **`100.00%`** | `64.63%` | **`78.52%`** | **`0.00%` (`0/130`)** | **`10.22 ms`** | **`3.67 ms` (`0.013 ms/file`)** |
 | **Gitleaks `v8.30.1` (Native Go Binary)** | `92.42%` | `54.46%` | `68.54%` | `3.85%` (`5/130`) | `82.10 ms` | `36.71 ms` (`10.0x` slower) |
 | **Yelp `detect-secrets v1.5.0` (Python)** | `61.54%` | **`68.09%`** | `64.65%` | `38.46%` (`50/130`) | `657.84 ms` | `491.32 ms` (`133.9x` slower) |
 
@@ -127,7 +127,7 @@ Labels are derived **strictly from human TAB annotations** ($Y_i = 1$ iff human 
 
 ### Paper 3: Local Open-Weight Model Training vs. Dual-CSR Graph-PPR & Native CAG (8 GB RTX 4070)
 
-Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7B-Base` (matched Raw vs. VeriSieve-Safe assistant-only `T2-Chat` LoRA adapters) plus `lfm3:latest`, `llama3.2:3b`, and `qwen2.5:7b`:
+Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7B-Base` (matched Raw vs. Versieve-Safe assistant-only `T2-Chat` LoRA adapters) plus `lfm3:latest`, `llama3.2:3b`, and `qwen2.5:7b`:
 
 | Model (VRAM) | Carlini $20\times$ Canary Exposure: Raw LoRA $\rightarrow$ **Safe LoRA** | Rank-1 Memorized: Raw $\rightarrow$ **Safe** | Held-Out `50q` Blinded Judge: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** | Held-Out Token F1: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** | Seen-Doc `20q` Judge: `T2-Chat Safe` $\rightarrow$ **`T0+Graph-PPR`** |
 |---|---|---|---|---|---|

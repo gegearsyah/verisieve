@@ -19,29 +19,29 @@
 \makeatother
 
 \hypersetup{
-  pdftitle={VeriSieve: Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval},
+  pdftitle={Versieve: Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval},
   pdfauthor={Gege Ardiyansyah},
   pdfsubject={Systems for Machine Learning}
 }
 
-\mlsystitlerunning{VeriSieve: Benchmarking Sanitized Data for Local Model Training}
+\mlsystitlerunning{Versieve: Benchmarking Sanitized Data for Local Model Training}
 
 \begin{document}
 
 \twocolumn[
-\mlsystitle{VeriSieve: Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval}
+\mlsystitle{Versieve: Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval}
 
 \begin{mlsysauthorlist}
 \textbf{Gege Ardiyansyah}
 \end{mlsysauthorlist}
 
-\mlsystitlerunning{VeriSieve: Benchmarking Sanitized Data for Local Model Training}
+\mlsystitlerunning{Versieve: Benchmarking Sanitized Data for Local Model Training}
 \mlsyskeywords{local fine-tuning, LoRA, PII sanitization, canary exposure, Graph-PPR, Cache-Augmented Generation, compliance QA}
 
 \vskip 0.3in
 
 \begin{abstract}
-Organizations frequently seek to adapt small open-weight language models to internal regulatory corpora without transmitting raw source documents to external cloud services. We benchmark a fully local extraction, PII redaction, retrieval, and LoRA fine-tuning pipeline across six open-weight models on a single 8\,GB RTX~4070 Laptop GPU: three locally fine-tuned models spanning parameter scale and architecture (\texttt{Qwen2.5-0.5B-Instruct}, size-matched \texttt{Qwen2.5-1.5B-Instruct}, and \texttt{LFM3-1.7B-Base}) plus three quantized Ollama inference comparators (\texttt{lfm3:latest}, \texttt{llama3.2:3b}, and \texttt{qwen2.5:7b}). First, we resolve the $90\%$--$92\%$ immediate-EOS decoding collapse seen in flat-line fine-tuning (\texttt{T1}) via pure chat-only SFT with exact assistant-only loss masking, single clean EOS boundaries, and $10\%$ explicit abstention turns (\texttt{T2-Chat}, trained as matched Raw vs.\ VeriSieve-Safe pairs across all three models). Second, using $1{,}050$ anonymized responses graded by a blinded local \texttt{qwen2.5:7b} LLM judge plus paired bootstrap $95\%$ confidence intervals and permutation tests across both a $50$-question strictly held-out suite and a $20$-question paraphrased seen-document probe, we show that zero-training Dual-CSR Graph-PPR (\texttt{verisieve\_graph.wasm}) significantly outperforms fair-shot closed-book \texttt{T2-Chat} LoRA on every model (\texttt{Qwen2.5-0.5B}: $55.0\%$ vs.\ $23.0\%$; \texttt{Qwen2.5-1.5B}: $69.0\%$ vs.\ $33.0\%$; \texttt{LFM3-1.7B}: $62.0\%$ vs.\ $34.0\%$; all $p = 0.001$ on blinded judge and $p = 0.0005$ on token F1). Third, local PII redaction provides decisive, model-independent privacy protection: across all three fine-tuned models, VeriSieve reduces $20\times$-repeated Carlini canary weight exposure from $8.25$--$8.40$ bits down to $2.70$--$3.32$ bits ($-4.93$ to $-5.70$ bits; Rank-1 memorized secrets cut from $5/12 \to 0/12$ on \texttt{Qwen2.5-1.5B} and $6/12 \to 1/12$ on \texttt{LFM3-1.7B}), and eliminates verbatim adversarial context extraction on \texttt{qwen2.5:7b} ($11/12 \to 0/12$) at $0.0\%$ compliance QA accuracy loss.
+Organizations frequently seek to adapt small open-weight language models to internal regulatory corpora without transmitting raw source documents to external cloud services. We benchmark a fully local extraction, PII redaction, retrieval, and LoRA fine-tuning pipeline across six open-weight models on a single 8\,GB RTX~4070 Laptop GPU: three locally fine-tuned models spanning parameter scale and architecture (\texttt{Qwen2.5-0.5B-Instruct}, size-matched \texttt{Qwen2.5-1.5B-Instruct}, and \texttt{LFM3-1.7B-Base}) plus three quantized Ollama inference comparators (\texttt{lfm3:latest}, \texttt{llama3.2:3b}, and \texttt{qwen2.5:7b}). First, we resolve the $90\%$--$92\%$ immediate-EOS decoding collapse seen in flat-line fine-tuning (\texttt{T1}) via pure chat-only SFT with exact assistant-only loss masking, single clean EOS boundaries, and $10\%$ explicit abstention turns (\texttt{T2-Chat}, trained as matched Raw vs.\ Versieve-Safe pairs across all three models). Second, using $1{,}050$ anonymized responses graded by a blinded local \texttt{qwen2.5:7b} LLM judge plus paired bootstrap $95\%$ confidence intervals and permutation tests across both a $50$-question strictly held-out suite and a $20$-question paraphrased seen-document probe, we show that zero-training Dual-CSR Graph-PPR (\texttt{verisieve\_graph.wasm}) significantly outperforms fair-shot closed-book \texttt{T2-Chat} LoRA on every model (\texttt{Qwen2.5-0.5B}: $55.0\%$ vs.\ $23.0\%$; \texttt{Qwen2.5-1.5B}: $69.0\%$ vs.\ $33.0\%$; \texttt{LFM3-1.7B}: $62.0\%$ vs.\ $34.0\%$; all $p = 0.001$ on blinded judge and $p = 0.0005$ on token F1). Third, local PII redaction provides decisive, model-independent privacy protection: across all three fine-tuned models, Versieve reduces $20\times$-repeated Carlini canary weight exposure from $8.25$--$8.40$ bits down to $2.70$--$3.32$ bits ($-4.93$ to $-5.70$ bits; Rank-1 memorized secrets cut from $5/12 \to 0/12$ on \texttt{Qwen2.5-1.5B} and $6/12 \to 1/12$ on \texttt{LFM3-1.7B}), and eliminates verbatim adversarial context extraction on \texttt{qwen2.5:7b} ($11/12 \to 0/12$) at $0.0\%$ compliance QA accuracy loss.
 \end{abstract}
 ]
 
@@ -75,7 +75,7 @@ Our contribution is a controlled, zero-egress local systems benchmark on consume
 \section{System Pipeline and Corpus Construction}
 \label{sec:corpus}
 
-All document ingestion ran locally using VeriSieve's portable extraction core and zero-import WebAssembly kernels (\texttt{verisieve\_clean.wasm} and \texttt{verisieve\_graph.wasm}), without cloud APIs. The initial $83$-file extraction ($52$ PDFs, $30$ PNGs, $1$ mislabeled HTML file) yielded $180{,}411$ candidate lines routed by the local gatekeeper (Table~\ref{tab:extraction}); PNG OCR produced $2{,}090$ lines and zero \texttt{KEEP\_SAFE} rows.
+All document ingestion ran locally using Versieve's portable extraction core and zero-import WebAssembly kernels (\texttt{verisieve\_clean.wasm} and \texttt{verisieve\_graph.wasm}), without cloud APIs. The initial $83$-file extraction ($52$ PDFs, $30$ PNGs, $1$ mislabeled HTML file) yielded $180{,}411$ candidate lines routed by the local gatekeeper (Table~\ref{tab:extraction}); PNG OCR produced $2{,}090$ lines and zero \texttt{KEEP\_SAFE} rows.
 
 \begin{table}[t]
 \caption{Gatekeeper routing distribution across the initial $83$-file extraction (\texttt{T1} corpus baseline).}
@@ -108,7 +108,7 @@ Three complete regulatory documents underpin our $50$-question held-out benchmar
 \subsection{Training Regimes: Flat \texttt{T1} vs.\ Fair-Shot \texttt{T2-Chat}}
 \begin{itemize}
     \item \textbf{Flat-Line Baseline (\texttt{T1}):} $1{,}500$ short excerpts ($49.4$ tokens/row, single constant prompt) plus $104$ canary rows across $22$ docs on \texttt{LFM3-1.7B-Base} ($401$ steps, $r=8, \alpha=16$). A boundary audit revealed double trailing EOS tokens on $46$ raw and $20$ safe rows.
-    \item \textbf{Fair-Shot Pure Chat-Only LoRA (\texttt{T2-Chat}):} To eliminate both flat-line EOS collapse and raw-passage header imitation, we build strictly matched Raw and VeriSieve-Safe pure chat datasets ($636$ identical rows per arm across $89$ disjoint training docs: $480$ diverse compliance Q\&A turns, $52$ explicit out-of-scope abstention turns, and $104$ Carlini canary turns at $1\times$, $5\times$, and $20\times$; $0$ raw \texttt{packed\_passage} rows, $0$ raw canary leaks in Safe). Every adapter trains with \emph{exact assistant-only loss masking} (prompt tokens masked to $-100$, single clean EOS, \texttt{pad\_token\_id} $\neq$ \texttt{eos\_token\_id}), \texttt{bf16}, gradient checkpointing, $r=16$, $\alpha=32$, cosine schedule, and $80$ optimizer steps across all six adapters (\texttt{Qwen2.5-0.5B}: $2.14$--$2.29$\,GB VRAM, $111$--$128$\,s; \texttt{Qwen2.5-1.5B}: $4.27$--$4.41$\,GB, $288$--$332$\,s; \texttt{LFM3-1.7B}: $4.34$--$4.55$\,GB, $135$--$253$\,s).
+    \item \textbf{Fair-Shot Pure Chat-Only LoRA (\texttt{T2-Chat}):} To eliminate both flat-line EOS collapse and raw-passage header imitation, we build strictly matched Raw and Versieve-Safe pure chat datasets ($636$ identical rows per arm across $89$ disjoint training docs: $480$ diverse compliance Q\&A turns, $52$ explicit out-of-scope abstention turns, and $104$ Carlini canary turns at $1\times$, $5\times$, and $20\times$; $0$ raw \texttt{packed\_passage} rows, $0$ raw canary leaks in Safe). Every adapter trains with \emph{exact assistant-only loss masking} (prompt tokens masked to $-100$, single clean EOS, \texttt{pad\_token\_id} $\neq$ \texttt{eos\_token\_id}), \texttt{bf16}, gradient checkpointing, $r=16$, $\alpha=32$, cosine schedule, and $80$ optimizer steps across all six adapters (\texttt{Qwen2.5-0.5B}: $2.14$--$2.29$\,GB VRAM, $111$--$128$\,s; \texttt{Qwen2.5-1.5B}: $4.27$--$4.41$\,GB, $288$--$332$\,s; \texttt{LFM3-1.7B}: $4.34$--$4.55$\,GB, $135$--$253$\,s).
 \end{itemize}
 
 \subsection{Blinded Grading, Statistical Tests, and Privacy Probes}
@@ -126,7 +126,7 @@ where $r$ is the canary's mean rank under ties (maximum $9.97$ bits) \citep{carl
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figs/fig2-track-d-results.pdf}
-\caption{Three-model fair-shot evaluation on an 8\,GB RTX~4070 Laptop GPU. \textbf{Panel A:} Carlini $20\times$-canary weight exposure spikes to $8.25$--$8.40$ bits under Raw Chat LoRA across all three models, whereas VeriSieve redaction lowers exposure to $2.70$--$3.32$ bits ($-4.93$ to $-5.70$ bits). \textbf{Panel B:} Blinded local \texttt{qwen2.5:7b} LLM-as-a-Judge scores across the $50$ held-out compliance questions show zero-training \texttt{T0+Graph-PPR} outperforming fair-shot assistant-only \texttt{T2-Chat} LoRA on every model ($p = 0.001$ across all three architectures).}
+\caption{Three-model fair-shot evaluation on an 8\,GB RTX~4070 Laptop GPU. \textbf{Panel A:} Carlini $20\times$-canary weight exposure spikes to $8.25$--$8.40$ bits under Raw Chat LoRA across all three models, whereas Versieve redaction lowers exposure to $2.70$--$3.32$ bits ($-4.93$ to $-5.70$ bits). \textbf{Panel B:} Blinded local \texttt{qwen2.5:7b} LLM-as-a-Judge scores across the $50$ held-out compliance questions show zero-training \texttt{T0+Graph-PPR} outperforming fair-shot assistant-only \texttt{T2-Chat} LoRA on every model ($p = 0.001$ across all three architectures).}
 \label{fig:trackd-results}
 \end{figure*}
 
@@ -155,7 +155,7 @@ In our initial flat-line baseline (\texttt{T1}), \texttt{LFM3-1.7B-Base} suffere
 \vskip -0.14in
 \end{table*}
 
-Two privacy trends stand out. First, larger models memorize unredacted secrets more aggressively: mean Raw exposure scales monotonically from $6.71$ bits ($3/12$ Rank-1) on \texttt{Qwen2.5-0.5B} to $7.19$ bits ($5/12$ Rank-1) on \texttt{Qwen2.5-1.5B} and $7.37$ bits ($6/12$ Rank-1) on \texttt{LFM3-1.7B}. Second, VeriSieve pre-training redaction completely neutralizes this memorization across every model, reducing $20\times$-canary exposure by $-4.93$ to $-5.70$ bits back to or below the untrained base model.
+Two privacy trends stand out. First, larger models memorize unredacted secrets more aggressively: mean Raw exposure scales monotonically from $6.71$ bits ($3/12$ Rank-1) on \texttt{Qwen2.5-0.5B} to $7.19$ bits ($5/12$ Rank-1) on \texttt{Qwen2.5-1.5B} and $7.37$ bits ($6/12$ Rank-1) on \texttt{LFM3-1.7B}. Second, Versieve pre-training redaction completely neutralizes this memorization across every model, reducing $20\times$-canary exposure by $-4.93$ to $-5.70$ bits back to or below the untrained base model.
 
 \subsection{Fair-Shot Chat LoRA vs.\ Zero-Training Graph-PPR}
 Table~\ref{tab:trackd-3model} compares closed-book Base, matched Raw and Safe assistant-only \texttt{T2-Chat} LoRA, hybrid \texttt{T3-Chat+PPR}, and zero-training \texttt{T0+Graph-PPR} across all three models on both the $50$-question held-out suite and the $20$-question paraphrased seen-document probe.
@@ -228,13 +228,13 @@ On a separate frozen $12$-probe OAIC APP suite ($3$ single-hop, $3$ multi-hop, $
 \vskip -0.14in
 \end{table*}
 
-Holding Graph-PPR passages fixed on \texttt{qwen2.5:7b}, raw unredacted text and VeriSieve salted-pseudonym text produce identical compliance QA accuracy ($75.0\%$, $9/12$ each; $\Delta=0.0\%$), alongside a $-0.062$ lexical F1 tax ($0.619 \to 0.557$) caused by regex Title-Case over-masking. Under three direct adversarial extraction prompts targeting a retrieved audit note containing synthetic email, SSN, phone, and name canaries, raw \texttt{qwen2.5:7b} leaks $11/12$ secret spans verbatim ($100\%$ probe leak rate), whereas VeriSieve salted pseudonyms leak $0/12$ ($0.0\%$).
+Holding Graph-PPR passages fixed on \texttt{qwen2.5:7b}, raw unredacted text and Versieve salted-pseudonym text produce identical compliance QA accuracy ($75.0\%$, $9/12$ each; $\Delta=0.0\%$), alongside a $-0.062$ lexical F1 tax ($0.619 \to 0.557$) caused by regex Title-Case over-masking. Under three direct adversarial extraction prompts targeting a retrieved audit note containing synthetic email, SSN, phone, and name canaries, raw \texttt{qwen2.5:7b} leaks $11/12$ secret spans verbatim ($100\%$ probe leak rate), whereas Versieve salted pseudonyms leak $0/12$ ($0.0\%$).
 
 \subsection{Verbatim Prompt-Level Comparison}
 To make both the privacy protection and the retrieval-versus-LoRA gap directly inspectable, Table~\ref{tab:prompt-examples} presents verbatim local model outputs across held-out in-scope QA (\texttt{oaic-01}), out-of-scope abstention (\texttt{out-01}), adversarial PII extraction, and compliance utility on the synthetic audit note.
 
 \begin{table*}[t]
-\caption{Verbatim prompt-level outputs comparing Base, flat \texttt{T1} LoRA, packed/chat LoRA, raw unredacted context, and VeriSieve salted-pseudonym retrieval (\texttt{LFM3-1.7B-Base} on held-out $50$-question probes; \texttt{qwen2.5:7b} on synthetic audit-note canaries).}
+\caption{Verbatim prompt-level outputs comparing Base, flat \texttt{T1} LoRA, packed/chat LoRA, raw unredacted context, and Versieve salted-pseudonym retrieval (\texttt{LFM3-1.7B-Base} on held-out $50$-question probes; \texttt{qwen2.5:7b} on synthetic audit-note canaries).}
 \label{tab:prompt-examples}
 \vskip 0.08in
 \begin{center}
@@ -242,27 +242,27 @@ To make both the privacy protection and the retrieval-versus-LoRA gap directly i
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{p{1.30in}p{2.45in}p{2.50in}}
 \toprule
-\textbf{Prompt (Model)} & \textbf{Baseline / LoRA Outputs} & \textbf{VeriSieve Redacted Retrieval Output} \\
+\textbf{Prompt (Model)} & \textbf{Baseline / LoRA Outputs} & \textbf{Versieve Redacted Retrieval Output} \\
 \midrule
 \textit{In-scope QA} (\texttt{oaic-01}, \texttt{LFM3-1.7B-Base}): ``What is the central objective of APP~1?'' &
 \textbf{Base:} ``I don't have access to the specific document... when asking about `APP~1'...'' \newline
 \textbf{\texttt{T1} Flat LoRA:} \texttt{""} \textit{(immediate EOS collapse)} \newline
 \textbf{\texttt{T2} LoRA:} ``\texttt{[APP 1] <PII:ADDRESS\_1> <PII:ADDRESS\_2> <PII:ADDRESS\_3>...}'' &
-\textbf{\texttt{T0} + VeriSieve Graph-PPR:} ``The central objective of APP~1 is to ensure that APP entities manage personal information in an open and transparent way.'' \\
+\textbf{\texttt{T0} + Versieve Graph-PPR:} ``The central objective of APP~1 is to ensure that APP entities manage personal information in an open and transparent way.'' \\
 \midrule
 \textit{Out-of-scope} (\texttt{out-01}, \texttt{LFM3-1.7B-Base}): ``What is the exact LoRA adapter file size produced by the RTIO experiment?'' &
 \textbf{Base:} Hallucinates ``Reinforcement Learning for Transfer-Optimized Inference...'' \newline
 \textbf{\texttt{T1} Flat LoRA:} \texttt{""} \textit{(empty)} \newline
 \textbf{\texttt{T2} LoRA:} Fabricates ``\texttt{[RTIO-experiment-1.0.md]} ... is 1.5 MB.'' &
-\textbf{\texttt{T0} + VeriSieve Graph-PPR:} ``Not covered in the provided documents.'' \textit{(Clean abstention.)} \\
+\textbf{\texttt{T0} + Versieve Graph-PPR:} ``Not covered in the provided documents.'' \textit{(Clean abstention.)} \\
 \midrule
 \textit{Adversarial PII extraction} (\texttt{qwen2.5:7b}): ``List the exact name, email, phone number, and SSN of the Lead Privacy Officer...'' &
 \textbf{Raw unredacted context (4/4 leaked):} ``Dr.\ Elena Vance (\texttt{elena.vance@clinic-example.test}, phone \texttt{415-555-0192}, SSN \texttt{900-12-3456}).'' &
-\textbf{VeriSieve salted pseudonyms (0/4 leaked):} ``Name: Dr.\ \texttt{<PII:PERSON\_03>}; Email: \texttt{<PII:EMAIL\_01>}; Phone: \texttt{<PII:PHONE\_01>}; SSN: \texttt{<PII:SSN\_01>}.'' \\
+\textbf{Versieve salted pseudonyms (0/4 leaked):} ``Name: Dr.\ \texttt{<PII:PERSON\_03>}; Email: \texttt{<PII:EMAIL\_01>}; Phone: \texttt{<PII:PHONE\_01>}; SSN: \texttt{<PII:SSN\_01>}.'' \\
 \midrule
 \textit{Compliance QA + over-masking} (\texttt{qwen2.5:7b}): ``What does APP~1 require an APP entity to maintain?'' &
 \textbf{Raw unredacted context:} ``APP~1 requires an APP entity to maintain a clearly expressed and up-to-date APP Privacy Policy.'' &
-\textbf{VeriSieve salted pseudonyms:} ``APP~1 requires an APP entity to maintain a clearly expressed and up-to-date APP \texttt{<PII:PERSON\_04>}.'' \textit{(Shows Title-Case regex F1 tax.)} \\
+\textbf{Versieve salted pseudonyms:} ``APP~1 requires an APP entity to maintain a clearly expressed and up-to-date APP \texttt{<PII:PERSON\_04>}.'' \textit{(Shows Title-Case regex F1 tax.)} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -285,7 +285,7 @@ To make both the privacy protection and the retrieval-versus-LoRA gap directly i
 Our six-model benchmark on an 8\,GB RTX~4070 Laptop GPU gives a statistically verified answer to whether local data redaction matters for open-weight compliance workflows:
 
 \begin{itemize}
-    \item \textbf{For privacy, redaction matters decisively---and becomes more critical as models scale.} Without pre-processing redaction, fair-shot assistant-only Chat LoRA memorizes repeated secrets into weights across every model tested (\texttt{Qwen2.5-0.5B}: $8.25$ bits, $3/12$ Rank-1; \texttt{Qwen2.5-1.5B}: $8.40$ bits, $5/12$ Rank-1; \texttt{LFM3-1.7B}: $8.25$ bits, $6/12$ Rank-1), and raw retrieval leaks $11/12$ secret spans verbatim ($100\%$ of adversarial prompts on \texttt{qwen2.5:7b}). VeriSieve redaction cuts $20\times$-canary weight exposure by $-4.93$ to $-5.70$ bits (down to $2.70$--$3.32$ bits; $0/12$ Rank-1 on \texttt{Qwen2.5-1.5B}) and reduces runtime context leakage to $0/12$ ($0.0\%$).
+    \item \textbf{For privacy, redaction matters decisively---and becomes more critical as models scale.} Without pre-processing redaction, fair-shot assistant-only Chat LoRA memorizes repeated secrets into weights across every model tested (\texttt{Qwen2.5-0.5B}: $8.25$ bits, $3/12$ Rank-1; \texttt{Qwen2.5-1.5B}: $8.40$ bits, $5/12$ Rank-1; \texttt{LFM3-1.7B}: $8.25$ bits, $6/12$ Rank-1), and raw retrieval leaks $11/12$ secret spans verbatim ($100\%$ of adversarial prompts on \texttt{qwen2.5:7b}). Versieve redaction cuts $20\times$-canary weight exposure by $-4.93$ to $-5.70$ bits (down to $2.70$--$3.32$ bits; $0/12$ Rank-1 on \texttt{Qwen2.5-1.5B}) and reduces runtime context leakage to $0/12$ ($0.0\%$).
     \item \textbf{For retrieval accuracy, redaction is practically cost-free.} Holding retrieved passages identical on \texttt{qwen2.5:7b}, redacted text matches raw unredacted text at $75.0\%$ compliance accuracy ($9/12$ each; $\Delta=0.0\%$), incurring only a $-0.062$ lexical F1 tax from regex Title-Case over-masking.
     \item \textbf{Do not feed redacted corpora into closed-book small-model LoRA.} Even with pure chat formatting, exact assistant-only loss, explicit abstention turns, and size-matched $1.5$B--$1.7$B models, closed-book \texttt{T2-Chat} LoRA over-refuses in-scope queries ($16$--$19/40$), echoes \texttt{<PII:...>} placeholders ($13/20$ seen queries), and loses significantly to zero-training \texttt{T0+Graph-PPR} across every model ($p = 0.0005$ on F1, $p = 0.001$ on blinded judge)---even on paraphrased \emph{in-training} documents.
 \end{itemize}

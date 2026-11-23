@@ -1,11 +1,11 @@
 # Security Policy & Zero-Egress Guarantees
 
-VeriSieve is engineered specifically for privacy-critical and sovereign AI environments where untrusted or sensitive unstructured documents (clinical PDFs, financial statements, emails, and scanned archival forms) must be processed **locally at the source with verifiable zero-egress controls**.
+Versieve is engineered specifically for privacy-critical and sovereign AI environments where untrusted or sensitive unstructured documents (clinical PDFs, financial statements, emails, and scanned archival forms) must be processed **locally at the source with verifiable zero-egress controls**.
 
 ## Zero-Egress Architecture Guarantees
 
 1. **Zero External Runtime Dependencies**:
-   - The entire VeriSieve core library, CLI, MCP server, and local UI server are written using standard Node.js runtime primitives with **0 npm dependencies**.
+   - The entire Versieve core library, CLI, MCP server, and local UI server are written using standard Node.js runtime primitives with **0 npm dependencies**.
    - The separate RTIO app still depends on `tesseract.js` `^7.0.0` and `@tesseract.js-data/eng`. This repository does not contain that app, and its CI does not inspect it.
 
 2. **WebAssembly Zero-Network-Import Static Census**:
@@ -47,4 +47,4 @@ npm run test:ci
 
 ## Reporting a Vulnerability
 
-If you discover a security issue or privacy concern within VeriSieve, please report it responsibly by contacting the maintainer directly via GitHub Security Advisories or email at `gegearsyah@gmail.com`. We respond to security inquiries within 48 hours.
+If you discover a security issue or privacy concern within Versieve, please report it responsibly by contacting the maintainer directly via GitHub Security Advisories or email at `gegearsyah@gmail.com`. We respond to security inquiries within 48 hours.
