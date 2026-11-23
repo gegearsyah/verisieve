@@ -240,6 +240,7 @@ def extract_tab_paragraphs_with_detector(docs: list[dict], gliner_spans_per_doc:
                     break
 
             rows.append({
+                "doc_id": d["doc_id"],
                 "text": p_txt,
                 "unsafe": has_pii,
                 "detCount": len(r_in_p),
@@ -248,6 +249,24 @@ def extract_tab_paragraphs_with_detector(docs: list[dict], gliner_spans_per_doc:
                 "residualUnsafe": residual_unsafe,
             })
     return rows
+
+
+def run_wasm_srmp_on_tab_docs(docs: list[dict], spans_per_doc: list[list[dict]], anchor_thr: float, low_thr: float = 0.15) -> list[list[dict]]:
+    with tempfile.TemporaryDirectory() as td:
+        in_p = Path(td) / "srmp_in.json"
+        out_p = Path(td) / "srmp_out.json"
+        payload = {
+            "anchorThr": anchor_thr,
+            "lowThr": low_thr,
+            "docs": [
+                {"doc_id": d["doc_id"], "text": d["text"], "allSpans": sp}
+                for d, sp in zip(docs, spans_per_doc)
+            ],
+        }
+        in_p.write_text(json.dumps(payload), encoding="utf-8")
+        subprocess.run(["node", "scripts/tab-node-helper.mjs", "srmp-tab-couple", str(in_p), str(out_p)], check=True)
+        res = json.loads(out_p.read_text(encoding="utf-8"))
+        return [r["spans"] for r in res]
 
 
 def main() -> None:
@@ -331,21 +350,36 @@ def main() -> None:
     gl_dev_filt = [filter_spans_by_nomask(d["text"], s, dev_nomask_set) for d, s in zip(dev_docs, gl_dev)]
     gl_test_filt = [filter_spans_by_nomask(d["text"], s, dev_nomask_set) for d, s in zip(test_docs, gl_test)]
 
-    # 4. Sweep thresholds for Vanilla GLiNER, Dev-Filtered GLiNER, and Hybrid (Stage3A+Code + Dev-Filtered GLiNER)
-    curves = {"vanillaAll": [], "devFilteredAll": [], "hybridAll": [], "vanillaPerson": [], "devFilteredPerson": []}
+    # 4. Sweep thresholds for Vanilla GLiNER, Dev-Filtered GLiNER, Hybrid, and WASM SR-MP Coupled
+    curves = {
+        "vanillaAll": [],
+        "devFilteredAll": [],
+        "hybridAll": [],
+        "srmpHybridAll": [],
+        "vanillaPerson": [],
+        "devFilteredPerson": [],
+        "srmpPerson": [],
+    }
+    srmp_by_thr: dict[float, list[list[dict]]] = {}
     for thr in [0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]:
         va = [[s for s in sp if s["score"] >= thr] for sp in gl_test]
         df = [[s for s in sp if s["score"] >= thr] for sp in gl_test_filt]
+        srmp_spans = run_wasm_srmp_on_tab_docs(test_docs, gl_test_filt, anchor_thr=thr, low_thr=0.15)
+        srmp_by_thr[thr] = srmp_spans
         hy = [s3 + cc + g for s3, cc, g in zip(stage3a_struct_test, case_code_test, df)]
+        srmp_hy = [s3 + cc + g for s3, cc, g in zip(stage3a_struct_test, case_code_test, srmp_spans)]
         vp = [[s for s in sp if s["score"] >= thr and str(s.get("label", "")).lower() == "person"] for sp in gl_test]
         dp = [[s for s in sp if s["score"] >= thr and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt]
+        sp_per = [[s for s in sp if str(s.get("label", s.get("type", ""))).lower() == "person"] for sp in srmp_spans]
 
         for name, preds, per_only in [
             ("vanillaAll", va, False),
             ("devFilteredAll", df, False),
             ("hybridAll", hy, False),
+            ("srmpHybridAll", srmp_hy, False),
             ("vanillaPerson", vp, True),
             ("devFilteredPerson", dp, True),
+            ("srmpPerson", sp_per, True),
         ]:
             m = score_tab_corpus(test_docs, preds, person_only=per_only)
             m.pop("_perDocF1")
@@ -364,6 +398,7 @@ def main() -> None:
         "vanillaGlinerAtOptThr": [[s for s in sp if s["score"] >= thr_all] for sp in gl_test],
         "devFilteredGlinerAtOptThr": [[s for s in sp if s["score"] >= thr_all] for sp in gl_test_filt],
         "verisieveHybridDevFiltered": [s3 + cc + [s for s in sp if s["score"] >= thr_all] for s3, cc, sp in zip(stage3a_struct_test, case_code_test, gl_test_filt)],
+        "verisieveHybridSrmpWasm": [s3 + cc + g for s3, cc, g in zip(stage3a_struct_test, case_code_test, srmp_by_thr[thr_all])],
         "presidioDefault": pres_def_test,
         "presidioPlusCustomEchrCode": pres_fair_test,
     }
@@ -380,6 +415,7 @@ def main() -> None:
         "paper1Regex": [[s for s in sp if s["type"] in ("NAME_LIKELY", "PERSON")] for sp in paper1_test],
         "vanillaGlinerPerson": [[s for s in sp if s["score"] >= thr_per and str(s.get("label", "")).lower() == "person"] for sp in gl_test],
         "devFilteredGlinerPerson": [[s for s in sp if s["score"] >= thr_per and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt],
+        "srmpWasmGlinerPerson": [[s for s in sp if str(s.get("label", s.get("type", ""))).lower() == "person"] for sp in srmp_by_thr[thr_per]],
         "presidioPerson": [[s for s in sp if s["type"] == "PERSON"] for sp in pres_fair_test],
     }
     per_scores = {}

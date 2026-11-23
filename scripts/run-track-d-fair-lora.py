@@ -166,6 +166,105 @@ def build_assistant_only_features(rows: list[dict], tok, max_len: int = 768) -> 
     return feats
 
 
+PII_TAG_SPLIT_RE = re.compile(r"(<(?:PII|SECRET):[A-Za-z0-9_]+>)")
+
+
+def ptlm_surrogate_for_tag(tag: str) -> str:
+    u = tag.upper()
+    if "PERSON" in u or "NAME" in u:
+        return "the designated individual"
+    if "EMAIL" in u or "PHONE" in u:
+        return "the registered contact"
+    if "ADDRESS" in u or "LOC" in u:
+        return "the specified section"
+    if "SSN" in u or "SECRET" in u or "KEY" in u or "CARD" in u:
+        return "the protected identifier"
+    return "the designated entity"
+
+
+def build_ptlm_assistant_only_features(rows: list[dict], tok, max_len: int = 768) -> tuple[list[dict], dict]:
+    """Pillar 3: Privacy-Token Loss Masking (PT-LM) + Scope-Contrastive Abstention SFT.
+    1. Forward Context Cleaning: replaces synthetic <PII:TYPE_ID> bracket tokens in input_ids
+       with natural grammatical role phrases g(TYPE) so causal self-attention KV states are
+       not distorted by out-of-distribution bracket syntax (while 0 raw PII ever enters input_ids).
+    2. Backward Loss Decoupling: sets labels[t] = -100 on all subwords of g(TYPE), so the
+       adapter receives zero gradient to emit either <PII:...> or the generic surrogate.
+    3. Scope-Balanced Abstention: retains a calibrated 10-turn abstention anchor set and skips
+       repetitive canary boilerplate turns whose targets are 100% redacted placeholders,
+       preventing closed-book in-scope over-refusal.
+    """
+    feats = []
+    eos_id = tok.eos_token_id
+    masked_pii_subwords = 0
+    kept_asst_subwords = 0
+    abst_seen = 0
+
+    for r in rows:
+        if r.get("kind") == "chat_abstention":
+            abst_seen += 1
+            if abst_seen % 6 != 1:
+                continue
+
+        msgs = r["messages"]
+        prompt_msgs = msgs[:-1]
+        asst_text = str(msgs[-1]["content"]).strip()
+        prompt_str = render_chat_prompt(tok, prompt_msgs, add_gen=True)
+        prompt_ids = tok.encode(prompt_str, add_special_tokens=False)
+
+        asst_ids: list[int] = []
+        asst_labels: list[int] = []
+        parts = PII_TAG_SPLIT_RE.split(asst_text)
+        for part in parts:
+            if not part:
+                continue
+            if PII_TAG_SPLIT_RE.fullmatch(part):
+                surrogate = " " + ptlm_surrogate_for_tag(part)
+                p_ids = tok.encode(surrogate, add_special_tokens=False)
+                asst_ids.extend(p_ids)
+                asst_labels.extend([-100] * len(p_ids))
+                masked_pii_subwords += len(p_ids)
+            else:
+                p_ids = tok.encode(part, add_special_tokens=False)
+                if not p_ids:
+                    continue
+                asst_ids.extend(p_ids)
+                asst_labels.extend(p_ids)
+                kept_asst_subwords += len(p_ids)
+
+        if eos_id is not None and (not asst_ids or asst_ids[-1] != eos_id):
+            asst_ids.append(eos_id)
+            asst_labels.append(eos_id)
+        while eos_id is not None and len(asst_ids) >= 2 and asst_ids[-1] == eos_id and asst_ids[-2] == eos_id:
+            asst_ids.pop()
+            asst_labels.pop()
+
+        if len(prompt_ids) + len(asst_ids) > max_len:
+            keep_asst = max(32, max_len - len(prompt_ids))
+            asst_ids = asst_ids[:keep_asst]
+            asst_labels = asst_labels[:keep_asst]
+            if eos_id is not None and asst_ids[-1] != eos_id:
+                asst_ids[-1] = eos_id
+                asst_labels[-1] = eos_id
+            if len(prompt_ids) + len(asst_ids) > max_len:
+                prompt_ids = prompt_ids[-(max_len - len(asst_ids)):]
+
+        # Ensure at least 1 unmasked label token so loss is well-defined
+        if all(lbl == -100 for lbl in asst_labels) and eos_id is not None and asst_ids:
+            asst_labels[-1] = asst_ids[-1]
+
+        input_ids = prompt_ids + asst_ids
+        labels = ([-100] * len(prompt_ids)) + asst_labels
+        feats.append({"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "labels": labels})
+
+    stats = {
+        "ptlm_train_rows": len(feats),
+        "masked_pii_subwords": masked_pii_subwords,
+        "kept_asst_subwords": kept_asst_subwords,
+        "masked_subword_pct": round(100.0 * masked_pii_subwords / max(1, masked_pii_subwords + kept_asst_subwords), 2),
+    }
+    return feats, stats
+
+
 class AssistantOnlyCollator:
     def __init__(self, pad_token_id: int):
         self.pad_token_id = pad_token_id
@@ -205,7 +304,11 @@ def train_adapter(
     configure_tokenizer(tok)
 
     raw_rows = load_jsonl(dataset_path)
-    feats = build_assistant_only_features(raw_rows, tok, max_len=768)
+    ptlm_stats = None
+    if arm_name == "ptlm":
+        feats, ptlm_stats = build_ptlm_assistant_only_features(raw_rows, tok, max_len=768)
+    else:
+        feats = build_assistant_only_features(raw_rows, tok, max_len=768)
     ds = Dataset.from_list(feats)
 
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
@@ -271,6 +374,7 @@ def train_adapter(
         "last_logged_loss": round(float(loss_hist[-1]), 4) if loss_hist else None,
         "peak_vram_gb": peak_gb,
         "elapsed_s": elapsed_s,
+        **(ptlm_stats or {}),
     }
     (out_dir / "train_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"[track-d] Trained {model_spec['key']}/{arm_name} in {elapsed_s}s | loss={meta['last_logged_loss']} | VRAM={peak_gb} GB")
@@ -513,6 +617,20 @@ def call_ollama_judge(question: str, ref: str, ans: str, is_oos: bool, judge_mod
         return 0
 
 
+def unload_ollama_model(judge_model: str) -> None:
+    payload = json.dumps({"model": judge_model, "keep_alive": 0, "messages": []}).encode("utf-8")
+    req = urllib.request.Request(
+        "http://127.0.0.1:11434/api/chat",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            resp.read()
+    except Exception:
+        pass
+
+
 def bootstrap_ci_mean(vals: list[float], n_boot: int = 1000, seed: int = 42) -> tuple[float, float]:
     if not vals:
         return (0.0, 0.0)
@@ -538,6 +656,10 @@ def paired_permutation_pvalue(a: list[float], b: list[float], n_perm: int = 2000
     return round((ge + 1) / (n_perm + 1), 4)
 
 
+def has_pii_tag_echo(text: str) -> bool:
+    return bool(re.search(r"<(?:PII|SECRET):[A-Za-z0-9_]+", str(text or "")))
+
+
 def summarize_eval(rows: list[dict]) -> dict:
     in_rows = [r for r in rows if not r["expected_out_of_scope"]]
     oos_rows = [r for r in rows if r["expected_out_of_scope"]]
@@ -545,9 +667,17 @@ def summarize_eval(rows: list[dict]) -> dict:
     kps = [r["kp_recall"] for r in in_rows]
     judge_in = [r["judge_score"] / 2.0 for r in in_rows if "judge_score" in r]
     judge_all = [r["judge_score"] / 2.0 for r in rows if "judge_score" in r]
+    llama_in = [r["llama_judge_score"] / 2.0 for r in in_rows if "llama_judge_score" in r]
+    llama_all = [r["llama_judge_score"] / 2.0 for r in rows if "llama_judge_score" in r]
+    pii_echo_cnt = sum(1 for r in rows if has_pii_tag_echo(r.get("answer", "")))
+    in_false_refusal_cnt = sum(1 for r in in_rows if r.get("is_abstention", False))
     return {
         "n": len(rows),
         "empty_pct": round(100.0 * sum(1 for r in rows if r["is_empty"]) / max(1, len(rows)), 1),
+        "pii_tag_echo_count": pii_echo_cnt,
+        "pii_tag_echo_pct": round(100.0 * pii_echo_cnt / max(1, len(rows)), 1),
+        "in_scope_false_refusal_count": in_false_refusal_cnt,
+        "in_scope_false_refusal_pct": round(100.0 * in_false_refusal_cnt / max(1, len(in_rows)), 1),
         "in_f1": round(sum(f1s) / max(1, len(f1s)), 4),
         "in_f1_ci95": list(bootstrap_ci_mean(f1s)),
         "kp_recall_pct": round(100.0 * sum(kps) / max(1, len(kps)), 1),
@@ -555,6 +685,8 @@ def summarize_eval(rows: list[dict]) -> dict:
         "judge_in_pct": round(100.0 * sum(judge_in) / max(1, len(judge_in)), 1) if judge_in else None,
         "judge_in_ci95": [round(100.0 * x, 1) for x in bootstrap_ci_mean(judge_in)] if judge_in else None,
         "judge_all_pct": round(100.0 * sum(judge_all) / max(1, len(judge_all)), 1) if judge_all else None,
+        "llama_judge_in_pct": round(100.0 * sum(llama_in) / max(1, len(llama_in)), 1) if llama_in else None,
+        "llama_judge_all_pct": round(100.0 * sum(llama_all) / max(1, len(llama_all)), 1) if llama_all else None,
         "mean_latency_s": round(sum(r["latency_ms"] for r in rows) / max(1, len(rows)) / 1000.0, 2),
     }
 
@@ -568,14 +700,13 @@ def evaluate_model_family(
     canaries: list[dict],
     raw_adapter: Path,
     safe_adapter: Path,
+    ptlm_adapter: Path,
     skip_judge: bool = False,
 ) -> dict:
     out_json = RESULTS_DIR / f"track-d-{model_spec['key']}-full.json"
-    if out_json.exists():
-        print(f"[track-d] Reusing existing eval {out_json}")
-        return json.loads(out_json.read_text(encoding="utf-8"))
+    existing = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else None
 
-    print(f"\n[track-d] === Evaluating {model_spec['label']} (5 conditions x 70 Qs + Carlini canaries) ===")
+    print(f"\n[track-d] === Evaluating {model_spec['label']} (including Pillar 3 PT-LM LoRA + Cross-Family Judge) ===")
     tok = AutoTokenizer.from_pretrained(model_spec["model_id"], trust_remote_code=model_spec["trust_remote_code"])
     configure_tokenizer(tok)
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
@@ -590,70 +721,107 @@ def evaluate_model_family(
         m.eval()
         return m
 
-    heldout_details: dict[str, list[dict]] = {}
-    seen_details: dict[str, list[dict]] = {}
-    canary_results: dict[str, dict] = {}
+    heldout_details: dict[str, list[dict]] = existing["heldout_details"] if existing else {}
+    seen_details: dict[str, list[dict]] = existing["seen_details"] if existing else {}
+    canary_results: dict[str, dict] = existing.get("canary_per_item", {}) if existing else {}
 
     # 1) Base closed-book & T0+Graph-PPR & Base Canary
-    base_model = load_base()
-    t_eval = time.perf_counter()
-    print(f"  [{model_spec['key']}] 1/3 Base closed-book + T0+Graph-PPR + Base Carlini exposure...")
-    heldout_details["BASE_CLOSED_BOOK"] = eval_questions_set(base_model, tok, heldout_50q, None)
-    seen_details["BASE_CLOSED_BOOK"] = eval_questions_set(base_model, tok, seen_20q, None)
-    heldout_details["T0_BASE_PLUS_GRAPH_PPR"] = eval_questions_set(base_model, tok, heldout_50q, heldout_ppr)
-    seen_details["T0_BASE_PLUS_GRAPH_PPR"] = eval_questions_set(base_model, tok, seen_20q, seen_ppr)
-    canary_results["BASE"] = compute_canary_exposure(base_model, tok, canaries, batch_size=64)
-    print(f"  [{model_spec['key']}] 1/3 Done in {time.perf_counter()-t_eval:.1f}s | Base canary={canary_results['BASE']['all_12_bits']} bits")
-    del base_model
-    gc.collect()
-    torch.cuda.empty_cache()
+    if "BASE_CLOSED_BOOK" not in heldout_details or "T0_BASE_PLUS_GRAPH_PPR" not in heldout_details:
+        base_model = load_base()
+        t_eval = time.perf_counter()
+        print(f"  [{model_spec['key']}] 1/4 Base closed-book + T0+Graph-PPR + Base Carlini exposure...")
+        heldout_details["BASE_CLOSED_BOOK"] = eval_questions_set(base_model, tok, heldout_50q, None)
+        seen_details["BASE_CLOSED_BOOK"] = eval_questions_set(base_model, tok, seen_20q, None)
+        heldout_details["T0_BASE_PLUS_GRAPH_PPR"] = eval_questions_set(base_model, tok, heldout_50q, heldout_ppr)
+        seen_details["T0_BASE_PLUS_GRAPH_PPR"] = eval_questions_set(base_model, tok, seen_20q, seen_ppr)
+        canary_results["BASE"] = compute_canary_exposure(base_model, tok, canaries, batch_size=64)
+        print(f"  [{model_spec['key']}] 1/4 Done in {time.perf_counter()-t_eval:.1f}s")
+        del base_model
+        gc.collect()
+        torch.cuda.empty_cache()
 
     # 2) T2-Chat Raw LoRA + Raw Canary
-    base_model = load_base()
-    raw_model = PeftModel.from_pretrained(base_model, str(raw_adapter))
-    raw_model.eval()
-    t_eval = time.perf_counter()
-    print(f"  [{model_spec['key']}] 2/3 T2-Chat RAW LoRA + Raw Carlini exposure...")
-    heldout_details["T2_CHAT_RAW_LORA"] = eval_questions_set(raw_model, tok, heldout_50q, None)
-    seen_details["T2_CHAT_RAW_LORA"] = eval_questions_set(raw_model, tok, seen_20q, None)
-    canary_results["T2_CHAT_RAW_LORA"] = compute_canary_exposure(raw_model, tok, canaries, batch_size=64)
-    print(f"  [{model_spec['key']}] 2/3 Done in {time.perf_counter()-t_eval:.1f}s | Raw canary={canary_results['T2_CHAT_RAW_LORA']['all_12_bits']} bits (20x={canary_results['T2_CHAT_RAW_LORA']['rep_20x_bits']})")
-    del raw_model, base_model
-    gc.collect()
-    torch.cuda.empty_cache()
+    if "T2_CHAT_RAW_LORA" not in heldout_details:
+        base_model = load_base()
+        raw_model = PeftModel.from_pretrained(base_model, str(raw_adapter))
+        raw_model.eval()
+        t_eval = time.perf_counter()
+        print(f"  [{model_spec['key']}] 2/4 T2-Chat RAW LoRA + Raw Carlini exposure...")
+        heldout_details["T2_CHAT_RAW_LORA"] = eval_questions_set(raw_model, tok, heldout_50q, None)
+        seen_details["T2_CHAT_RAW_LORA"] = eval_questions_set(raw_model, tok, seen_20q, None)
+        canary_results["T2_CHAT_RAW_LORA"] = compute_canary_exposure(raw_model, tok, canaries, batch_size=64)
+        print(f"  [{model_spec['key']}] 2/4 Done in {time.perf_counter()-t_eval:.1f}s")
+        del raw_model, base_model
+        gc.collect()
+        torch.cuda.empty_cache()
 
     # 3) T2-Chat Safe LoRA + T3-Chat Safe LoRA + Graph-PPR + Safe Canary
-    base_model = load_base()
-    safe_model = PeftModel.from_pretrained(base_model, str(safe_adapter))
-    safe_model.eval()
-    t_eval = time.perf_counter()
-    print(f"  [{model_spec['key']}] 3/3 T2-Chat SAFE LoRA + T3-Chat+PPR + Safe Carlini exposure...")
-    heldout_details["T2_CHAT_SAFE_LORA"] = eval_questions_set(safe_model, tok, heldout_50q, None)
-    seen_details["T2_CHAT_SAFE_LORA"] = eval_questions_set(safe_model, tok, seen_20q, None)
-    heldout_details["T3_CHAT_SAFE_LORA_PLUS_PPR"] = eval_questions_set(safe_model, tok, heldout_50q, heldout_ppr)
-    seen_details["T3_CHAT_SAFE_LORA_PLUS_PPR"] = eval_questions_set(safe_model, tok, seen_20q, seen_ppr)
-    canary_results["T2_CHAT_SAFE_LORA"] = compute_canary_exposure(safe_model, tok, canaries, batch_size=64)
-    print(f"  [{model_spec['key']}] 3/3 Done in {time.perf_counter()-t_eval:.1f}s | Safe canary={canary_results['T2_CHAT_SAFE_LORA']['all_12_bits']} bits (20x={canary_results['T2_CHAT_SAFE_LORA']['rep_20x_bits']})")
-    del safe_model, base_model
-    gc.collect()
-    torch.cuda.empty_cache()
+    if "T2_CHAT_SAFE_LORA" not in heldout_details:
+        base_model = load_base()
+        safe_model = PeftModel.from_pretrained(base_model, str(safe_adapter))
+        safe_model.eval()
+        t_eval = time.perf_counter()
+        print(f"  [{model_spec['key']}] 3/4 T2-Chat SAFE LoRA + T3-Chat+PPR + Safe Carlini exposure...")
+        heldout_details["T2_CHAT_SAFE_LORA"] = eval_questions_set(safe_model, tok, heldout_50q, None)
+        seen_details["T2_CHAT_SAFE_LORA"] = eval_questions_set(safe_model, tok, seen_20q, None)
+        heldout_details["T3_CHAT_SAFE_LORA_PLUS_PPR"] = eval_questions_set(safe_model, tok, heldout_50q, heldout_ppr)
+        seen_details["T3_CHAT_SAFE_LORA_PLUS_PPR"] = eval_questions_set(safe_model, tok, seen_20q, seen_ppr)
+        canary_results["T2_CHAT_SAFE_LORA"] = compute_canary_exposure(safe_model, tok, canaries, batch_size=64)
+        print(f"  [{model_spec['key']}] 3/4 Done in {time.perf_counter()-t_eval:.1f}s")
+        del safe_model, base_model
+        gc.collect()
+        torch.cuda.empty_cache()
 
-    # 4) Blinded Local LLM-as-a-Judge (shuffled & anonymized across all arms!)
+    # 4) Pillar 3: T2-Chat PT-LM LoRA (Privacy-Token Loss Masking) + PT-LM Carlini Canary Exposure
+    if "T2_CHAT_PTLM_LORA" not in heldout_details or "T2_CHAT_PTLM_LORA" not in canary_results:
+        base_model = load_base()
+        ptlm_model = PeftModel.from_pretrained(base_model, str(ptlm_adapter))
+        ptlm_model.eval()
+        t_eval = time.perf_counter()
+        print(f"  [{model_spec['key']}] 4/4 T2-Chat PT-LM LoRA + PT-LM Carlini exposure...")
+        heldout_details["T2_CHAT_PTLM_LORA"] = eval_questions_set(ptlm_model, tok, heldout_50q, None)
+        seen_details["T2_CHAT_PTLM_LORA"] = eval_questions_set(ptlm_model, tok, seen_20q, None)
+        canary_results["T2_CHAT_PTLM_LORA"] = compute_canary_exposure(ptlm_model, tok, canaries, batch_size=64)
+        print(
+            f"  [{model_spec['key']}] 4/4 Done in {time.perf_counter()-t_eval:.1f}s | "
+            f"PT-LM canary={canary_results['T2_CHAT_PTLM_LORA']['all_12_bits']} bits "
+            f"(20x={canary_results['T2_CHAT_PTLM_LORA']['rep_20x_bits']})"
+        )
+        del ptlm_model, base_model
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    # 5) Blinded Local LLM-as-a-Judge (qwen2.5:7b + cross-family llama3.2:3b on any ungraded items!)
     if not skip_judge:
-        print(f"  [{model_spec['key']}] Running blinded qwen2.5:7b LLM-as-a-Judge across all 5 arms (350 items)...")
-        judge_queue = []
+        ungraded_qwen = []
+        ungraded_llama = []
         for split_name, split_dict in (("heldout", heldout_details), ("seen", seen_details)):
             for arm_name, rows in split_dict.items():
                 for idx, r in enumerate(rows):
-                    judge_queue.append((split_name, arm_name, idx, r))
+                    if "judge_score" not in r:
+                        ungraded_qwen.append((split_name, arm_name, idx, r))
+                    if "llama_judge_score" not in r and arm_name in ("T2_CHAT_SAFE_LORA", "T2_CHAT_PTLM_LORA", "T0_BASE_PLUS_GRAPH_PPR"):
+                        ungraded_llama.append((split_name, arm_name, idx, r))
+
         rng = random.Random(2026)
-        rng.shuffle(judge_queue)
-        for j_i, (_, _, _, r) in enumerate(judge_queue, 1):
-            r["judge_score"] = call_ollama_judge(
-                r["question"], r["reference_answer"], r["answer"], r["expected_out_of_scope"]
-            )
-            if j_i % 70 == 0:
-                print(f"    [{model_spec['key']}] Judged {j_i}/{len(judge_queue)} blinded items...")
+        if ungraded_qwen:
+            print(f"  [{model_spec['key']}] Grading {len(ungraded_qwen)} new items with blinded qwen2.5:7b...")
+            rng.shuffle(ungraded_qwen)
+            for j_i, (_, _, _, r) in enumerate(ungraded_qwen, 1):
+                r["judge_score"] = call_ollama_judge(
+                    r["question"], r["reference_answer"], r["answer"], r["expected_out_of_scope"], judge_model="qwen2.5:7b"
+                )
+            unload_ollama_model("qwen2.5:7b")
+        if ungraded_llama:
+            print(f"  [{model_spec['key']}] Grading {len(ungraded_llama)} items with cross-family blinded llama3.2:3b...")
+            rng.shuffle(ungraded_llama)
+            for j_i, (_, _, _, r) in enumerate(ungraded_llama, 1):
+                r["llama_judge_score"] = call_ollama_judge(
+                    r["question"], r["reference_answer"], r["answer"], r["expected_out_of_scope"], judge_model="llama3.2:3b"
+                )
+                if j_i % 70 == 0:
+                    print(f"    [{model_spec['key']}] Cross-family llama3.2:3b judged {j_i}/{len(ungraded_llama)} items...")
+            unload_ollama_model("llama3.2:3b")
 
     # Summaries + paired significance tests
     heldout_summary = {arm: summarize_eval(rows) for arm, rows in heldout_details.items()}
@@ -666,16 +834,31 @@ def evaluate_model_family(
 
     stats_tests = {
         "heldout_ppr_vs_safe_lora_f1_p": pair_p(heldout_details, "T0_BASE_PLUS_GRAPH_PPR", "T2_CHAT_SAFE_LORA", "f1"),
+        "heldout_ppr_vs_ptlm_lora_f1_p": pair_p(heldout_details, "T0_BASE_PLUS_GRAPH_PPR", "T2_CHAT_PTLM_LORA", "f1"),
+        "heldout_ptlm_vs_safe_lora_f1_p": pair_p(heldout_details, "T2_CHAT_PTLM_LORA", "T2_CHAT_SAFE_LORA", "f1"),
         "heldout_safe_vs_raw_lora_f1_p": pair_p(heldout_details, "T2_CHAT_SAFE_LORA", "T2_CHAT_RAW_LORA", "f1"),
         "seen_safe_lora_vs_base_f1_p": pair_p(seen_details, "T2_CHAT_SAFE_LORA", "BASE_CLOSED_BOOK", "f1"),
+        "seen_ptlm_vs_safe_lora_f1_p": pair_p(seen_details, "T2_CHAT_PTLM_LORA", "T2_CHAT_SAFE_LORA", "f1"),
         "seen_ppr_vs_safe_lora_f1_p": pair_p(seen_details, "T0_BASE_PLUS_GRAPH_PPR", "T2_CHAT_SAFE_LORA", "f1"),
     }
     if not skip_judge:
         stats_tests["heldout_ppr_vs_safe_lora_judge_p"] = pair_p(
             heldout_details, "T0_BASE_PLUS_GRAPH_PPR", "T2_CHAT_SAFE_LORA", "judge_score", in_only=False
         )
+        stats_tests["heldout_ptlm_vs_safe_lora_judge_p"] = pair_p(
+            heldout_details, "T2_CHAT_PTLM_LORA", "T2_CHAT_SAFE_LORA", "judge_score", in_only=False
+        )
+        stats_tests["seen_ptlm_vs_safe_lora_judge_p"] = pair_p(
+            seen_details, "T2_CHAT_PTLM_LORA", "T2_CHAT_SAFE_LORA", "judge_score", in_only=False
+        )
         stats_tests["seen_safe_lora_vs_base_judge_p"] = pair_p(
             seen_details, "T2_CHAT_SAFE_LORA", "BASE_CLOSED_BOOK", "judge_score", in_only=False
+        )
+        stats_tests["heldout_ppr_vs_safe_lora_llama_judge_p"] = pair_p(
+            heldout_details, "T0_BASE_PLUS_GRAPH_PPR", "T2_CHAT_SAFE_LORA", "llama_judge_score", in_only=False
+        )
+        stats_tests["heldout_ptlm_vs_safe_lora_llama_judge_p"] = pair_p(
+            heldout_details, "T2_CHAT_PTLM_LORA", "T2_CHAT_SAFE_LORA", "llama_judge_score", in_only=False
         )
 
     result = {
@@ -701,7 +884,7 @@ def evaluate_model_family(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-steps", type=int, default=80)
-    parser.add_argument("--cooldown-s", type=int, default=15)
+    parser.add_argument("--cooldown-s", type=int, default=8)
     parser.add_argument("--skip-judge", action="store_true")
     parser.add_argument("--models", default="qwen05b,qwen15b,lfm3")
     args = parser.parse_args()
@@ -717,19 +900,21 @@ def main() -> None:
     heldout_ppr = json.loads(HELD_OUT_PPR.read_text(encoding="utf-8"))
     canaries = json.loads(CANARIES_JSON.read_text(encoding="utf-8"))["canaries"]
 
+    unload_ollama_model("qwen2.5:7b")
+    unload_ollama_model("llama3.2:3b")
+
     train_metas = {}
     all_results = {}
 
+    # Phase A: PyTorch GPU Training + Generation + Carlini Canary Exposure across all models (Ollama unloaded)
     for m_idx, spec in enumerate(selected):
         raw_dir = ADAPTERS_DIR / f"{spec['key']}-raw-chat"
         safe_dir = ADAPTERS_DIR / f"{spec['key']}-safe-chat"
+        ptlm_dir = ADAPTERS_DIR / f"{spec['key']}-ptlm-chat"
 
         train_metas[f"{spec['key']}_raw"] = train_adapter(spec, "raw", raw_train, raw_dir, max_steps=args.max_steps)
-        if args.cooldown_s > 0:
-            print(f"[track-d] GPU cooldown {args.cooldown_s}s...")
-            time.sleep(args.cooldown_s)
-
         train_metas[f"{spec['key']}_safe"] = train_adapter(spec, "safe", safe_train, safe_dir, max_steps=args.max_steps)
+        train_metas[f"{spec['key']}_ptlm"] = train_adapter(spec, "ptlm", safe_train, ptlm_dir, max_steps=args.max_steps)
         if args.cooldown_s > 0:
             print(f"[track-d] GPU cooldown {args.cooldown_s}s...")
             time.sleep(args.cooldown_s)
@@ -743,11 +928,31 @@ def main() -> None:
             canaries,
             raw_dir,
             safe_dir,
-            skip_judge=args.skip_judge,
+            ptlm_dir,
+            skip_judge=True,
         )
         if m_idx < len(selected) - 1 and args.cooldown_s > 0:
             print(f"[track-d] GPU cooldown {args.cooldown_s}s before next model...")
             time.sleep(args.cooldown_s)
+
+    # Phase B: Blinded LLM Judge Passes (qwen2.5:7b + cross-family llama3.2:3b) with PyTorch completely unloaded
+    if not args.skip_judge:
+        for spec in selected:
+            raw_dir = ADAPTERS_DIR / f"{spec['key']}-raw-chat"
+            safe_dir = ADAPTERS_DIR / f"{spec['key']}-safe-chat"
+            ptlm_dir = ADAPTERS_DIR / f"{spec['key']}-ptlm-chat"
+            all_results[spec["key"]] = evaluate_model_family(
+                spec,
+                heldout_50q,
+                heldout_ppr,
+                seen_20q,
+                seen_ppr,
+                canaries,
+                raw_dir,
+                safe_dir,
+                ptlm_dir,
+                skip_judge=False,
+            )
 
     summary = {
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -765,6 +970,8 @@ def main() -> None:
     }
     summary_path = RESULTS_DIR / "track-d-master-summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    repo_copy = Path(__file__).resolve().parent.parent / "results" / "track-d-ptlm-ablation.json"
+    repo_copy.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print("\n================ TRACK D MASTER SUMMARY ================")
     print(json.dumps(summary["models"], indent=2))
 

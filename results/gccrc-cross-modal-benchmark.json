@@ -13,7 +13,7 @@
       "precisionPct": 62.5,
       "f1Pct": 44.64,
       "crossModalLinkRatePct": 0,
-      "elapsedMs": 21.98
+      "elapsedMs": 26.7
     },
     "isolatedHybridTau060": {
       "totalBlocks": 240,
@@ -25,7 +25,7 @@
       "precisionPct": 62.5,
       "f1Pct": 44.64,
       "crossModalLinkRatePct": 0,
-      "elapsedMs": 10.26
+      "elapsedMs": 12.62
     },
     "isolatedHybridTau020": {
       "totalBlocks": 240,
@@ -37,7 +37,7 @@
       "precisionPct": 62.89,
       "f1Pct": 72.19,
       "crossModalLinkRatePct": 100,
-      "elapsedMs": 13.91
+      "elapsedMs": 15.95
     },
     "versieveGcCrc": {
       "totalBlocks": 240,
@@ -49,7 +49,7 @@
       "precisionPct": 77.74,
       "f1Pct": 75.18,
       "crossModalLinkRatePct": 83.03,
-      "elapsedMs": 37.78
+      "elapsedMs": 62.95
     }
   }
 }

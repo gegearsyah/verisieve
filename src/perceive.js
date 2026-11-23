@@ -88,11 +88,23 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
   const gamma = options.gamma ?? 0.85;
   const beta = options.beta ?? 0.20;
 
-  // Bounded Salted Reference Anchor Pool (cap = 512 working anchors, analogous to SR-SWA pool)
+  // Bounded Salted Reference Anchor Pool (cap = 512 working anchors in verisieve_media.wasm SR-MP Ring)
   const MAX_ANCHORS = options.maxAnchors ?? 512;
-  const anchorPool = new Map(); // normToken -> { token, rawSample, type, entityId, sig, blockIdx }
+  const anchorPool = new Map(); // normToken -> { token, rawSample, type, entityId, entityUid, sig, blockIdx }
+  const anchorByUid = new Map();
+  let nextUid = 1;
+  mediaEngine.srmpReset();
 
-  const registerAnchorToken = (rawPiece, type, entityId, blockIdx) => {
+  const kindCodeFromType = (t) => {
+    const u = String(t || '').toUpperCase();
+    if (u.includes('PERSON') || u.includes('NAME')) return 1;
+    if (u.includes('CODE') || u.includes('CASE')) return 2;
+    if (u.includes('EMAIL')) return 3;
+    if (u.includes('ORG')) return 4;
+    return 5;
+  };
+
+  const registerAnchorToken = (rawPiece, type, entityId, blockIdx, conf = 0.92) => {
     if (anchorPool.size >= MAX_ANCHORS) return;
     const clean = String(rawPiece || '').replace(/^[^A-Za-z0-9\u00C0-\u024F]+|[^A-Za-z0-9\u00C0-\u024F]+$/g, '');
     if (clean.length < 4) return;
@@ -102,13 +114,23 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
 
     const sig = mediaEngine.pprlSignature(clean, workspaceSalt);
     if (!anchorPool.has(lower)) {
-      anchorPool.set(lower, {
+      const entityUid = nextUid++;
+      const entry = {
         norm: lower,
         rawSample: clean,
         type,
         entityId,
+        entityUid,
         sig,
         blockIdx,
+      };
+      anchorPool.set(lower, entry);
+      anchorByUid.set(entityUid, entry);
+      mediaEngine.srmpSeedAnchor(clean, workspaceSalt, {
+        entityUid,
+        blockIdx,
+        confidence: conf,
+        kindCode: kindCodeFromType(type),
       });
     }
   };
@@ -180,9 +202,20 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
           break;
         }
 
-        const candSig = mediaEngine.pprlSignature(clean, workspaceSalt);
+        const wasmHit = mediaEngine.srmpQueryCandidate(clean, workspaceSalt, {
+          blockIdx: idx,
+          localScore: weak.score ?? 0.25,
+          minDice: pprlDiceThreshold,
+          gamma,
+          beta,
+        });
+        if (wasmHit.matched && anchorByUid.has(wasmHit.entityUid)) {
+          matchedAnchor = anchorByUid.get(wasmHit.entityUid);
+          maxCoupledScore = Math.max(maxCoupledScore, wasmHit.coupledScore);
+          break;
+        }
         for (const anc of anchorList) {
-          const cmp = compareSigs(candSig, anc.sig);
+          const cmp = compareSigs(mediaEngine.pprlSignature(clean, workspaceSalt), anc.sig);
           if (cmp.dice >= pprlDiceThreshold || (cmp.phoneticMatch && cmp.dice >= 0.48)) {
             matchedAnchor = anc;
             const distDecay = 1 / (1 + 0.05 * Math.abs(idx - anc.blockIdx));
@@ -228,16 +261,16 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
       let coupledScore = matchedAnchor ? 0.88 : 0;
 
       if (!matchedAnchor && options.enablePhoneticTokenScan !== false && /^[A-Z\u00C0-\u00DE]/.test(word)) {
-        const candSig = mediaEngine.pprlSignature(word, workspaceSalt);
-        for (const anc of anchorList) {
-          if (Math.abs(word.length - anc.rawSample.length) > 2) continue;
-          const cmp = compareSigs(candSig, anc.sig);
-          if (cmp.dice >= pprlDiceThreshold || (cmp.phoneticMatch && cmp.dice >= 0.48)) {
-            matchedAnchor = anc;
-            const effSim = cmp.phoneticMatch ? Math.max(cmp.dice, 0.82) : cmp.dice;
-            coupledScore = Number((gamma * effSim).toFixed(4));
-            break;
-          }
+        const wasmHit = mediaEngine.srmpQueryCandidate(word, workspaceSalt, {
+          blockIdx: idx,
+          localScore: 0.22,
+          minDice: pprlDiceThreshold,
+          gamma,
+          beta,
+        });
+        if (wasmHit.matched && anchorByUid.has(wasmHit.entityUid)) {
+          matchedAnchor = anchorByUid.get(wasmHit.entityUid);
+          coupledScore = wasmHit.coupledScore;
         }
       }
 
@@ -283,6 +316,112 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
     propagatedSpansCount,
     vault,
   };
+}
+
+/**
+ * Pillar 3: Privacy-Token Loss Masking (`PT-LM`).
+ *
+ * Identifies every `<PII:...>` and `<SECRET:...>` placeholder span in an assistant
+ * response so SFT/LoRA tokenizers can set `labels[t] = -100` on privacy placeholders
+ * (eliminating `<PII:...>` subspace hijacking / tag echoing while keeping zero raw PII
+ * in `input_ids`).
+ */
+export function computePtlmMaskedSpans(text) {
+  const s = String(text || '');
+  const rx = /<(?:PII|SECRET):[A-Z0-9_]+>/g;
+  const spans = [];
+  let maskedChars = 0;
+  let m;
+  while ((m = rx.exec(s)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    spans.push({ start, end, token: m[0] });
+    maskedChars += m[0].length;
+  }
+  const totalChars = Math.max(1, s.length);
+  const unmaskedTokenRatio = Number(Math.max(0, (totalChars - maskedChars) / totalChars).toFixed(4));
+  return {
+    placeholderCount: spans.length,
+    maskedChars,
+    totalChars: s.length,
+    unmaskedTokenRatio,
+    spans,
+  };
+}
+
+/**
+ * Synchronizes perceived audio turns (`timeRangeMs`), video keyframes (`frameTimeMs`),
+ * and presentation slides (`Slide N` + `Speaker Notes`) into a unified Omnimodal Scene
+ * Timeline (`sceneTimeline`), enabling small local models to reason jointly over what was
+ * spoken, shown on screen, and annotated in slides at the same moment.
+ */
+export function buildOmnimodalSceneTimeline(blocks = []) {
+  const scenes = [];
+  const audioTurns = blocks.filter((b) => b.modality === 'audio' && b.timeRangeMs);
+  const videoFrames = blocks.filter((b) => b.modality === 'video_frame' && typeof b.frameTimeMs === 'number');
+  const slideBlocks = blocks.filter((b) => b.modality === 'slide');
+
+  // Group slide blocks by Slide number
+  const slideByNum = new Map();
+  for (const sb of slideBlocks) {
+    const m = String(sb.breadcrumb || '').match(/Slide\s+(\d+)/i);
+    const num = m ? Number(m[1]) : 1;
+    if (!slideByNum.has(num)) slideByNum.set(num, []);
+    slideByNum.get(num).push(sb);
+  }
+  const slideNums = [...slideByNum.keys()].sort((a, b) => a - b);
+
+  if (audioTurns.length > 0 || videoFrames.length > 0) {
+    const anchors = audioTurns.length > 0
+      ? audioTurns.map((a, idx) => ({
+          sceneIndex: idx + 1,
+          startMs: a.timeRangeMs.startMs,
+          endMs: a.timeRangeMs.endMs,
+          audioBlocks: [a],
+        }))
+      : videoFrames.map((v, idx) => ({
+          sceneIndex: idx + 1,
+          startMs: Math.max(0, v.frameTimeMs - 1000),
+          endMs: v.frameTimeMs + 2000,
+          audioBlocks: [],
+        }));
+
+    anchors.forEach((sc, idx) => {
+      const matchedFrames = videoFrames.filter(
+        (vf) => vf.frameTimeMs >= sc.startMs - 1500 && vf.frameTimeMs <= sc.endMs + 1500
+      );
+      const slideNum = slideNums[idx % Math.max(1, slideNums.length)];
+      const matchedSlides = slideNum !== undefined ? (slideByNum.get(slideNum) || []) : [];
+      const entityIds = Array.from(
+        new Set(
+          [...sc.audioBlocks, ...matchedFrames, ...matchedSlides].flatMap((b) =>
+            (b.entities || []).map((e) => e.entityId)
+          )
+        )
+      );
+      scenes.push({
+        sceneId: `scene_${sc.sceneIndex}`,
+        timeRangeMs: { startMs: sc.startMs, endMs: sc.endMs },
+        spokenText: sc.audioBlocks.map((b) => b.maskedText).join(' '),
+        visualKeyframeText: matchedFrames.map((b) => b.maskedText).join(' | '),
+        slideContextText: matchedSlides.map((b) => `[${b.structRole}] ${b.maskedText}`).join(' | '),
+        entityIds,
+      });
+    });
+  } else if (slideNums.length > 0) {
+    slideNums.forEach((num, idx) => {
+      const sbs = slideByNum.get(num) || [];
+      scenes.push({
+        sceneId: `scene_${idx + 1}`,
+        slideNumber: num,
+        spokenText: '',
+        visualKeyframeText: '',
+        slideContextText: sbs.map((b) => `[${b.structRole}] ${b.maskedText}`).join(' | '),
+        entityIds: Array.from(new Set(sbs.flatMap((b) => (b.entities || []).map((e) => e.entityId)))),
+      });
+    });
+  }
+  return scenes;
 }
 
 /**
@@ -390,6 +529,39 @@ export async function perceiveMulti(inputs = [], options = {}) {
       videoArtifacts.push(vidRes);
       for (const b of vidRes.blocks) {
         rawBlocks.push({ ...b, source: name, neuralSpans: item?.neuralSpans });
+      }
+      continue;
+    }
+
+    // Raw Image (PNG / JPEG) forensic metadata scrub + optional visual OCR perception
+    if (/\.(png|jpe?g)$/i.test(lower) && buf) {
+      const mediaEngine = loadMediaWasmSync();
+      try {
+        const scrubbed = mediaEngine.scrubMediaMetadata(buf);
+        if (scrubbed?.meta?.strippedCount > 0) {
+          forensicFindings.push({
+            source: name,
+            vector: 'image_exif_gps_metadata_scrubbed',
+            strippedCount: scrubbed.meta.strippedCount,
+            strippedTags: scrubbed.meta.strippedTags,
+          });
+        }
+      } catch {}
+      if (typeof options.ocrProvider === 'function') {
+        const ocrLines = await options.ocrProvider({ source: name, bytes: buf });
+        for (const [lIdx, line] of (ocrLines || []).entries()) {
+          if (line?.text) {
+            rawBlocks.push({
+              source: name,
+              modality: 'image',
+              structRole: 'IMAGE_OCR',
+              breadcrumb: `${name} > box_${lIdx + 1}`,
+              text: String(line.text),
+              ocrBoxes: line.bbox ? [line.bbox] : undefined,
+              neuralSpans: item?.neuralSpans,
+            });
+          }
+        }
       }
       continue;
     }
@@ -503,6 +675,27 @@ export async function perceiveMulti(inputs = [], options = {}) {
     )
     .join('\n');
 
+  const ptlmSftJsonl = chunks
+    .map((c) => {
+      const ptlm = computePtlmMaskedSpans(c.text);
+      return JSON.stringify({
+        id: c.id,
+        source: c.source,
+        modality: c.modality,
+        ptlm_mask_spans: ptlm.spans,
+        ptlm_placeholder_count: ptlm.placeholderCount,
+        ptlm_unmasked_ratio: ptlm.unmaskedTokenRatio,
+        messages: [
+          { role: 'system', content: 'Answer strictly from the provided sanitized context.' },
+          { role: 'user', content: `Summarize the key record from ${c.source} (${c.role}).` },
+          { role: 'assistant', content: c.text },
+        ],
+      });
+    })
+    .join('\n');
+
+  const sceneTimeline = buildOmnimodalSceneTimeline(gccrc.blocks);
+
   // Index into zero-import Dual-CSR verisieve_graph.wasm for <1ms PPR & GDPR Art. 17 erasure
   const graphIndex = new PortableDocumentGraph({ workspaceSalt });
   const docsForGraph = Array.from(docTagsBySource.keys()).map((src) => ({
@@ -535,6 +728,8 @@ export async function perceiveMulti(inputs = [], options = {}) {
     markdown,
     chunks,
     sftJsonl,
+    ptlmSftJsonl,
+    sceneTimeline,
     blocks: gccrc.blocks,
     anchorPoolSize: gccrc.anchorPoolSize,
     propagatedSpansCount: gccrc.propagatedSpansCount,

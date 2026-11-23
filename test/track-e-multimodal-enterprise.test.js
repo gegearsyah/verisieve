@@ -21,7 +21,18 @@ import {
   filterReadableOcrSlideLines,
 } from '../src/video-redactor.js';
 import { deduplicateChunks } from '../src/ingestor.js';
-import { perceive, perceiveMulti, runGraphCoupledConformalRedaction } from '../src/perceive.js';
+import {
+  perceive,
+  perceiveMulti,
+  runGraphCoupledConformalRedaction,
+  computePtlmMaskedSpans,
+} from '../src/perceive.js';
+import {
+  trainGatekeeper,
+  calibrateGatekeeper,
+  calibrateClusterRobustGatekeeper,
+  calibrateStreamingEProcessGatekeeper,
+} from '../src/gatekeeper.js';
 import { handleJsonRpcRequest, handleJsonRpcRequestAsync } from '../src/mcp-server.js';
 
 // ---------------------------------------------------------------------------
@@ -656,3 +667,127 @@ test('Track E6: Cross-modal Knowledge Graph + GDPR Art. 17 blast_radius + new MC
   assert.ok(perceived.sftJsonl.includes('"role":"assistant"'));
   assert.equal(perceived.receipt.engine, 'versieve-gccrc-v1');
 });
+
+test('Track E7: Zero-import WASM SR-MP 512-slot Salted Reference Sketch Ring, HC-CRC & E-LTT Conformal Calibration, PT-LM Loss Masking, and Omnimodal Scene Timeline', async () => {
+  // 1. WASM SR-MP 512-slot Salted Reference Sketch Ring direct kernel verification
+  const engine = loadMediaWasmSync();
+  assert.equal(typeof engine.srmpReset, 'function', 'verisieve_media.wasm must expose srmpReset');
+  assert.equal(typeof engine.srmpSeedAnchor, 'function', 'verisieve_media.wasm must expose srmpSeedAnchor');
+  assert.equal(typeof engine.srmpQueryCandidate, 'function', 'verisieve_media.wasm must expose srmpQueryCandidate');
+
+  const slotCount0 = engine.srmpReset();
+  assert.equal(slotCount0, 0);
+
+  const seed1 = engine.srmpSeedAnchor('Pentikainen', 'srmp-salt-v1', {
+    entityUid: 7,
+    blockIdx: 0,
+    confidence: 0.94,
+    kindCode: 1,
+  });
+  assert.ok(seed1.slotCount >= 1);
+  assert.equal(seed1.entityUid, 7);
+
+  // Query noisy ASR homophone ("Pentikaynen") and 1-char OCR typo ("Pentikalnen") against the 512-slot WASM ring
+  const hitAsr = engine.srmpQueryCandidate('Pentikaynen', 'srmp-salt-v1', {
+    blockIdx: 3,
+    localScore: 0.24,
+    minDice: 0.65,
+    gamma: 0.85,
+    beta: 0.20,
+  });
+  assert.equal(hitAsr.matched, true, 'WASM SR-MP ring must match phonetic ASR drift Pentikaynen -> Pentikainen');
+  assert.equal(hitAsr.entityUid, 7);
+  assert.ok(hitAsr.coupledScore >= 0.70, `Expected coupledScore >= 0.70, got ${hitAsr.coupledScore}`);
+
+  // Query unrelated domain phrase ("Confidence") -> must NOT false-couple!
+  const missDomain = engine.srmpQueryCandidate('Confidence', 'srmp-salt-v1', {
+    blockIdx: 3,
+    localScore: 0.22,
+    minDice: 0.65,
+    gamma: 0.85,
+    beta: 0.20,
+  });
+  assert.equal(missDomain.matched, false, 'Unrelated domain noun must not couple to SR-MP anchor');
+  assert.ok(missDomain.coupledScore < 0.30);
+
+  // 2. Hierarchical Cluster-Robust Conformal Risk Control (HC-CRC) & Streaming Martingale (E-LTT)
+  const mkFeat = (val, seedOffset) => {
+    const row = new Float32Array(520);
+    row[0] = val;
+    row[512] = val;
+    for (let j = 1; j < 16; j++) row[j] = Math.sin(seedOffset + j) * 0.05;
+    return row;
+  };
+  const trainFeats = [];
+  const trainLabels = [];
+  for (let i = 0; i < 80; i++) {
+    const isSafe = i >= 50 ? 1 : 0;
+    trainFeats.push(mkFeat(isSafe ? 0.85 : -0.85, i));
+    trainLabels.push(isSafe);
+  }
+  const gkBundle = trainGatekeeper(trainFeats, trainLabels, { epochs: 25, lr: 0.2 });
+
+  // Build 45 correlated document clusters (35 unsafe documents with 5 correlated paragraphs each, 10 safe documents)
+  const calibClusters = [];
+  for (let d = 0; d < 45; d++) {
+    const docUnsafe = d < 35;
+    const blocks = [];
+    for (let b = 0; b < 4; b++) {
+      // Correlated blocks inside the same document share the same latent document score shift
+      const latent = docUnsafe ? -0.75 + (d === 0 ? 0.95 : 0.0) : 0.88;
+      blocks.push({
+        featureRow: mkFeat(latent, d * 10 + b),
+        labelSafe: docUnsafe ? 0 : 1,
+      });
+    }
+    calibClusters.push({ clusterId: `doc_${d}`, blocks });
+  }
+
+  const hccrc = calibrateClusterRobustGatekeeper(gkBundle, calibClusters, { alpha: 0.10, delta: 0.05 });
+  assert.equal(hccrc.clusterCalibration.certified, true);
+  assert.ok(hccrc.clusterCalibration.designEffect >= 1.0, 'Intra-cluster correlation design effect must be >= 1.0');
+  assert.ok(hccrc.clusterCalibration.tauKeep >= 0.50);
+
+  const eltt = calibrateStreamingEProcessGatekeeper(gkBundle, calibClusters, { alpha: 0.15, delta: 0.05 });
+  assert.equal(eltt.eProcessCalibration.certified, true);
+  assert.ok(eltt.eProcessCalibration.maxEValue >= 20.0, 'Ville supermartingale wealth must reach >= 1/delta (20.0)');
+
+  // 3. PT-LM (Privacy-Token Loss Masking) Span & Subword Label Masking
+  const sampleAsst = 'According to APP 1, <PII:PERSON_01> must contact <PII:EMAIL_02> within 30 days using <SECRET:AWS_ACCESS_KEY_1>.';
+  const ptlm = computePtlmMaskedSpans(sampleAsst);
+  assert.equal(ptlm.placeholderCount, 3);
+  assert.ok(ptlm.unmaskedTokenRatio > 0.50 && ptlm.unmaskedTokenRatio < 0.90);
+  for (const sp of ptlm.spans) {
+    const slice = sampleAsst.slice(sp.start, sp.end);
+    assert.match(slice, /^<(?:PII|SECRET):[A-Z0-9_]+>$/);
+  }
+
+  // 4. Omnimodal Perceive-Everything: Audio + Video Keyframe + Presentation Slide Timeline Synchronization
+  const omni = await perceiveMulti([
+    {
+      name: 'deck.pptx',
+      bytes: buildZipBuffer([
+        { name: 'ppt/slides/slide1.xml', content: '<p:sld><a:p><a:t>Architecture Lead: Dr. Markus Pentikainen (11882/10)</a:t></a:p></p:sld>' },
+        { name: 'ppt/notesSlides/notesSlide1.xml', content: '<p:notes><a:p><a:t>Speaker note: confirm budget with Pentikainen</a:t></a:p></p:notes>' },
+      ]),
+      neuralSpans: [{ start: 23, end: 41, type: 'PERSON', score: 0.95 }],
+    },
+    {
+      name: 'meeting.vtt',
+      text: 'WEBVTT\n\n00:00:01.000 --> 00:00:06.000\n<v Host>Welcome Markus Pentikaynen to the architecture review.\n',
+    },
+    {
+      name: 'recording.mp4',
+      frames: [
+        { timeMs: 2000, width: 16, height: 16, channels: 3, pixels: new Uint8Array(16 * 16 * 3).fill(20) },
+      ],
+    },
+  ], {
+    ocrProvider: async () => [{ text: 'Slide 1: Pentikalnen Review', bbox: [1, 1, 10, 6] }],
+  });
+
+  assert.ok(Array.isArray(omni.sceneTimeline) && omni.sceneTimeline.length >= 1, 'perceiveMulti must emit synchronized omnimodal sceneTimeline');
+  assert.ok(omni.ptlmSftJsonl.includes('"ptlm_mask_spans"'), 'perceiveMulti must emit PT-LM loss-masked SFT records');
+  assert.doesNotMatch(omni.markdown, /Pentikainen|Pentikaynen|Pentikalnen/, 'Omnimodal SR-MP must link across Slide + Audio ASR + Video OCR');
+});
+

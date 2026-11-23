@@ -7,7 +7,14 @@ import fs from 'node:fs';
 import { scanRecordsForPII, createTokenizer, extractFeatureRow } from '../src/clean-and-tokenize.js';
 import { scanEnterprisePiiAndSecrets } from '../src/secret-scanner.js';
 import { loadMediaWasmSync, pprlDiceSimilarity } from '../src/media-wasm.js';
-import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from '../src/gatekeeper.js';
+import {
+  trainGatekeeper,
+  calibrateGatekeeper,
+  calibrateClusterRobustGatekeeper,
+  calibrateStreamingEProcessGatekeeper,
+  decideGatekeeper,
+  binomCdf,
+} from '../src/gatekeeper.js';
 
 const mode = process.argv[2];
 const inPath = process.argv[3];
@@ -59,12 +66,57 @@ if (mode === 'scan-docs') {
         arr[515] = Math.min(1.0, Number(r.meanConf || 0));
       }
       return {
+        doc_id: r.doc_id || 'doc_unknown',
         features: arr,
         ySafe: r.unsafe ? 0 : 1,
         residualUnsafe: Boolean(r.residualUnsafe),
         nerSafeScore: Math.max(0.0, Math.min(1.0, 1.0 - Number(r.maxConf || 0))),
       };
     });
+
+  const groupItemsByCluster = (items, getProb) => {
+    const byDoc = new Map();
+    for (const it of items) {
+      const cid = it.doc_id || 'doc_0';
+      if (!byDoc.has(cid)) byDoc.set(cid, []);
+      byDoc.get(cid).push({
+        prob: getProb(it),
+        labelSafe: it.ySafe,
+      });
+    }
+    return Array.from(byDoc.entries()).map(([clusterId, blocks]) => ({ clusterId, blocks }));
+  };
+
+  const evaluateThresholdOnTest = (testItems, testProbs, tauKeep, certified, alpha, extra = {}) => {
+    const testUnsafeN = testItems.filter((x) => x.ySafe === 0).length;
+    const testSafeN = testItems.length - testUnsafeN;
+    let keptUnsafe = 0, keptSafe = 0, keptResidualUnsafe = 0;
+    if (certified) {
+      for (let i = 0; i < testItems.length; i++) {
+        if (testProbs[i] >= tauKeep) {
+          if (testItems[i].ySafe === 0) keptUnsafe++;
+          else keptSafe++;
+          if (testItems[i].residualUnsafe) keptResidualUnsafe++;
+        }
+      }
+    }
+    const autoReleased = keptUnsafe + keptSafe;
+    return {
+      alpha,
+      certified,
+      threshold: certified ? tauKeep : null,
+      ...extra,
+      testConditionalFprPct: testUnsafeN > 0 ? Number(((keptUnsafe / testUnsafeN) * 100).toFixed(2)) : 0,
+      testSafeYieldPct: testSafeN > 0 ? Number(((keptSafe / testSafeN) * 100).toFixed(2)) : 0,
+      overallAutoReleasePct: testItems.length > 0 ? Number(((autoReleased / testItems.length) * 100).toFixed(2)) : 0,
+      autoReleasedCount: autoReleased,
+      keptUnsafe,
+      keptSafe,
+      e2eResidualLeakCount: keptResidualUnsafe,
+      e2eResidualLeakOfReleasedPct: autoReleased > 0 ? Number(((keptResidualUnsafe / autoReleased) * 100).toFixed(2)) : 0,
+      e2eResidualLeakOfUnsafePct: testUnsafeN > 0 ? Number(((keptResidualUnsafe / testUnsafeN) * 100).toFixed(2)) : 0,
+    };
+  };
 
   const runLttSweep = (calItems, testItems, getCalProb, getTestProb, alphas) => {
     const calUnsafeN = calItems.filter((x) => x.ySafe === 0).length;
@@ -150,13 +202,40 @@ if (mode === 'scan-docs') {
   // 3. Detector-Informed Hybrid LTT Gate (520-d text + Stage 3A/3B detector features)
   const trDet = buildFeats(payload.train, true);
   const bundleHybrid = trainGatekeeper(trDet.map((x) => x.features), trDet.map((x) => x.ySafe), { epochs: 20, lr: 0.30, l2: 1e-4 });
+  const getHybridProb = (x) => decideGatekeeper(bundleHybrid, x.features).prob;
   const hybridDetSweep = runLttSweep(
     caDet,
     teDet,
-    (x) => decideGatekeeper(bundleHybrid, x.features).prob,
-    (x) => decideGatekeeper(bundleHybrid, x.features).prob,
+    getHybridProb,
+    getHybridProb,
     alphas
   );
+
+  // 4. Pillar 1A: Document-Clustered Conformal Risk Control (HC-CRC) on Detector-Informed Hybrid
+  const calClusters = groupItemsByCluster(caDet, getHybridProb);
+  const teProbsHybrid = teDet.map(getHybridProb);
+  const hcCrcSweep = alphas.map((alpha) => {
+    const res = calibrateClusterRobustGatekeeper({ ...bundleHybrid }, calClusters, { alpha, delta: 0.05 });
+    const cc = res.clusterCalibration;
+    return evaluateThresholdOnTest(teDet, teProbsHybrid, cc.tauKeep, cc.certified, alpha, {
+      calPValue: cc.pValue,
+      intraClusterCorrelation: cc.intraClusterCorrelation,
+      designEffect: cc.designEffect,
+      effectiveSampleSize: cc.effectiveSampleSize,
+      nUnsafeClusters: cc.nUnsafeClusters,
+    });
+  });
+
+  // 5. Pillar 1B: Anytime-Valid Streaming Ville Martingale (E-LTT) on Detector-Informed Hybrid
+  const eLttSweep = alphas.map((alpha) => {
+    const res = calibrateStreamingEProcessGatekeeper({ ...bundleHybrid }, calClusters, { alpha, delta: 0.05 });
+    const ec = res.eProcessCalibration;
+    return evaluateThresholdOnTest(teDet, teProbsHybrid, ec.tauKeep, ec.certified, alpha, {
+      maxEValue: ec.maxEValue,
+      anytimePValue: ec.anytimePValue,
+      stoppingClusterStep: ec.stoppingClusterStep,
+    });
+  });
 
   fs.writeFileSync(
     outPath,
@@ -166,6 +245,7 @@ if (mode === 'scan-docs') {
         calTotal: caDet.length,
         calUnsafe: caDet.filter((x) => x.ySafe === 0).length,
         calSafe: caDet.filter((x) => x.ySafe === 1).length,
+        calClusters: calClusters.length,
         testTotal: teDet.length,
         testUnsafe: teDet.filter((x) => x.ySafe === 0).length,
         testSafe: teDet.filter((x) => x.ySafe === 1).length,
@@ -173,6 +253,8 @@ if (mode === 'scan-docs') {
       textOnly520dLtt: textOnlySweep,
       nerMaxConfBaselineLtt: nerMaxConfSweep,
       detectorInformedHybridLtt: hybridDetSweep,
+      documentClusteredHcCrc: hcCrcSweep,
+      streamingMartingaleELtt: eLttSweep,
     }),
     'utf8'
   );
@@ -242,6 +324,256 @@ if (mode === 'scan-docs') {
       rawRegexSpanCount: rawScan.length,
       hybridSpanCount: itnScan.length,
       detectedTypes: itnScan.map((s) => s.type),
+      redactWindows,
+    });
+  }
+  fs.writeFileSync(outPath, JSON.stringify(out), 'utf8');
+} else if (mode === 'srmp-tab-couple') {
+  // Pillar 2A: Real TAB ECHR Multi-Paragraph Court Ruling SR-MP Coupling via verisieve_media.wasm
+  // payload = { docs: [{ doc_id, text, allSpans: [{start, end, label, score}] }], anchorThr, lowThr }
+  const wasm = loadMediaWasmSync();
+  const anchorThr = payload.anchorThr ?? 0.50;
+  const lowThr = payload.lowThr ?? 0.15;
+  const LEGAL_STOP = new Set([
+    'court', 'government', 'state', 'article', 'convention', 'section', 'chapter',
+    'applicant', 'applicants', 'president', 'judge', 'judges', 'registrar', 'council',
+    'european', 'human', 'rights', 'commission', 'committee', 'ministry', 'department',
+    'national', 'district', 'regional', 'supreme', 'constitutional', 'criminal', 'civil',
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september',
+    'october', 'november', 'december', 'kingdom', 'republic', 'united', 'police', 'hospital',
+  ]);
+
+  const outDocs = payload.docs.map((doc, dIdx) => {
+    wasm.srmpReset();
+    const salt = `tab-srmp-${doc.doc_id || dIdx}`;
+    const text = doc.text || '';
+    const spans = doc.allSpans || [];
+    const highSpans = spans.filter((s) => s.score >= anchorThr);
+    const weakSpans = spans.filter((s) => s.score >= lowThr && s.score < anchorThr);
+
+    let uid = 1;
+    const seededTypes = new Map();
+    for (const hs of highSpans) {
+      const lbl = String(hs.label || hs.type || '').toLowerCase();
+      if (!lbl.includes('person')) continue;
+      const surf = text.slice(hs.start, hs.end).trim();
+      const parts = surf.split(/[\s\-.,/]+/).filter((w) => w.length >= 4 && /^[A-Z\u00C0-\u00DE]/.test(w));
+      for (const part of [surf, ...parts]) {
+        const clean = part.replace(/^[^A-Za-z\u00C0-\u024F]+|[^A-Za-z\u00C0-\u024F]+$/g, '');
+        if (clean.length < 4 || LEGAL_STOP.has(clean.toLowerCase())) continue;
+        const curUid = uid++;
+        seededTypes.set(curUid, hs.label || hs.type || 'person');
+        wasm.srmpSeedAnchor(clean, salt, {
+          entityUid: curUid,
+          blockIdx: Math.floor(hs.start / 250),
+          confidence: hs.score,
+          kindCode: 1,
+        });
+      }
+    }
+
+    const promoted = [...highSpans];
+    let promotedCount = 0;
+
+    // 1. Promote weak GLiNER person candidates if they couple with a seeded WASM SR-MP anchor in this ruling
+    for (const ws of weakSpans) {
+      const wLbl = String(ws.label || ws.type || '').toLowerCase();
+      if (!wLbl.includes('person')) continue;
+      const surf = text.slice(ws.start, ws.end).trim();
+      // Do not promote precedent case citations ("X v. Y") which TAB marks as NO_MASK
+      const afterCtx = text.slice(ws.end, Math.min(text.length, ws.end + 12));
+      const beforeCtx = text.slice(Math.max(0, ws.start - 12), ws.start);
+      if (/^\s+v\.\s/i.test(afterCtx) || /\sv\.\s*$/i.test(beforeCtx)) continue;
+
+      const parts = surf.split(/[\s\-.,/]+/).filter((w) => w.length >= 4);
+      let bestHit = null;
+      for (const part of [surf, ...parts]) {
+        const clean = part.replace(/^[^A-Za-z\u00C0-\u024F]+|[^A-Za-z\u00C0-\u024F]+$/g, '');
+        if (clean.length < 4 || LEGAL_STOP.has(clean.toLowerCase())) continue;
+        const hit = wasm.srmpQueryCandidate(clean, salt, {
+          blockIdx: Math.floor(ws.start / 250),
+          localScore: ws.score,
+          minDice: 0.78,
+          gamma: 0.85,
+          beta: 0.20,
+        });
+        if (hit.matched && hit.coupledScore >= anchorThr) {
+          bestHit = hit;
+          break;
+        }
+      }
+      if (bestHit) {
+        promoted.push({
+          ...ws,
+          label: seededTypes.get(bestHit.entityUid) || ws.label || 'person',
+          score: bestHit.coupledScore,
+          srmpPromoted: true,
+        });
+        promotedCount++;
+      }
+    }
+
+    // 2. Scan unmasked titled/contextualized surname mentions in later paragraphs against the WASM SR-MP ring
+    const tokRe = /\b(?:Mr|Mrs|Ms|Dr|Applicant|Judge)\.\s+([A-Z\u00C0-\u00DE][A-Za-z\u00C0-\u024F'-]{3,24})\b/g;
+    let m;
+    while ((m = tokRe.exec(text)) !== null) {
+      const word = m[1];
+      const s = m.index + m[0].lastIndexOf(word);
+      const e = s + word.length;
+      if (LEGAL_STOP.has(word.toLowerCase())) continue;
+      if (promoted.some((p) => s < p.end && e > p.start)) continue;
+      const hit = wasm.srmpQueryCandidate(word, salt, {
+        blockIdx: Math.floor(s / 250),
+        localScore: 0.30,
+        minDice: 0.80,
+        gamma: 0.88,
+        beta: 0.20,
+      });
+      if (hit.matched && hit.coupledScore >= anchorThr) {
+        promoted.push({
+          start: s,
+          end: e,
+          label: 'person',
+          type: 'PERSON',
+          score: hit.coupledScore,
+          srmpPromoted: true,
+        });
+        promotedCount++;
+      }
+    }
+
+    return {
+      doc_id: doc.doc_id,
+      promotedCount,
+      spans: promoted,
+    };
+  });
+  fs.writeFileSync(outPath, JSON.stringify(outDocs), 'utf8');
+} else if (mode === 'audio-srmp-redact') {
+  // Pillar 2B: End-to-End Audio Spoken ITN + WASM SR-MP Phonetic Anchor Coupling + Spoken Email Neighbor Expansion
+  // payload = [{ id, wavInPath, wavOutPath, words: [{word, startMs, endMs}], neuralSpans: [...], contextAnchors: [...] }]
+  const wasm = loadMediaWasmSync();
+  const AUDIO_STOP = new Set([
+    'hello', 'support', 'team', 'name', 'email', 'please', 'check', 'quarterly', 'invoice',
+    'there', 'this', 'calling', 'regarding', 'account', 'renewal', 'call', 'good', 'morning',
+    'update', 'billing', 'contact', 'winter', 'order', 'thank', 'answering', 'phone', 'number',
+    'need', 'help', 'with', 'shipping', 'status', 'from', 'engineering', 'send', 'security',
+    'audit', 'report', 'before', 'friday', 'reach', 'about', 'clinic', 'appointment', 'receipt',
+    'should', 'compliance', 'verify', 'delivery', 'callback', 'requesting', 'refund', 'hardware',
+    'subscription', 'direct', 'warranty', 'claim', 'forward', 'contract', 'draft', 'board',
+    'meeting', 'mobile', 'confirmation', 'laboratory', 'results', 'afternoon', 'ticket',
+    'onboarding', 'checklist', 'whenever', 'ready', 'line', 'lease', 'register', 'workshop',
+    'shipment', 'tracking', 'budget', 'spreadsheet', 'today', 'assist', 'telephone', 'recovery',
+    'license', 'agreement', 'procurement', 'updated', 'policy', 'manual', 'technical',
+    'assistance', 'following', 'schedule', 'dot', 'com', 'org', 'net',
+  ]);
+  const out = [];
+  for (const item of payload) {
+    wasm.srmpReset();
+    const salt = `audio-srmp-${item.id}`;
+    let uid = 1;
+    for (const anc of item.contextAnchors || []) {
+      for (const part of String(anc).split(/[\s.@\-_]+/)) {
+        if (part.length >= 3 && !AUDIO_STOP.has(part.toLowerCase())) {
+          wasm.srmpSeedAnchor(part, salt, { entityUid: uid++, blockIdx: 0, confidence: 0.95, kindCode: 1 });
+        }
+      }
+    }
+
+    const itn = wasm.normalizeSpokenWords(item.words || []);
+    const itnScan = scanEnterprisePiiAndSecrets(itn.normalizedText, {
+      neuralSpans: item.neuralSpans || [],
+    }).spans;
+
+    // Seed any high-confidence PERSON/EMAIL detected in the call itself into the SR-MP ring
+    for (const sp of itnScan) {
+      const val = itn.normalizedText.slice(sp.start, sp.end);
+      for (const part of val.split(/[\s.@\-_]+/)) {
+        if (part.length >= 4 && !AUDIO_STOP.has(part.toLowerCase())) {
+          wasm.srmpSeedAnchor(part, salt, { entityUid: uid++, blockIdx: 0, confidence: 0.92, kindCode: 1 });
+        }
+      }
+    }
+
+    const redactWindows = [];
+    for (const sp of itnScan) {
+      let minMs = Infinity, maxMs = -1;
+      for (const wm of itn.wordMap || []) {
+        if (wm.normEnd > sp.start && wm.normStart < sp.end) {
+          if (wm.startMs < minMs) minMs = wm.startMs;
+          if (wm.endMs > maxMs) maxMs = wm.endMs;
+        }
+      }
+      if (Number.isFinite(minMs) && maxMs >= minMs) {
+        redactWindows.push({ startMs: minMs, endMs: maxMs, type: sp.type });
+      }
+    }
+
+    // SR-MP Word-Level Phonetic Coupling & Spoken-Email Neighbor Coalescing:
+    // Any word token matching the WASM SR-MP ring (or part of a fused/split spoken email around "at"/"dot") is silenced!
+    const rawWords = item.words || [];
+    for (let wi = 0; wi < rawWords.length; wi++) {
+      const rawW = String(rawWords[wi].word || '').replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
+      if (rawW.length < 3) continue;
+      const lowerW = rawW.toLowerCase();
+      if (AUDIO_STOP.has(lowerW)) continue;
+
+      // Split compound ASR tokens (e.g. "Elena.vansatacme.org") into sub-pieces to test against SR-MP ring
+      const subPieces = [rawW, ...rawW.split(/[._\-@]+/).filter((x) => x.length >= 3)];
+      let matchedSrmp = false;
+      for (const piece of subPieces) {
+        if (AUDIO_STOP.has(piece.toLowerCase())) continue;
+        const hit = wasm.srmpQueryCandidate(piece, salt, {
+          blockIdx: 1,
+          localScore: 0.30,
+          minDice: 0.58,
+          gamma: 0.88,
+          beta: 0.25,
+        });
+        if (hit.matched && hit.coupledScore >= 0.50) {
+          matchedSrmp = true;
+          break;
+        }
+      }
+
+      if (matchedSrmp) {
+        let sMs = rawWords[wi].startMs;
+        let eMs = rawWords[wi].endMs;
+        // If adjacent to spoken email connectors ("dot", "at"), expand window across the spoken email span
+        let r = wi + 1;
+        while (r < rawWords.length) {
+          const nw = String(rawWords[r].word || '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+          if (nw === 'dot' || nw === 'at' || nw === 'com' || nw === 'org' || nw === 'net' || nw === 'io') {
+            eMs = rawWords[r].endMs;
+            r++;
+          } else if (r > wi + 1 && r - 1 < rawWords.length) {
+            const prevW = String(rawWords[r - 1].word || '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+            if (prevW === 'dot' || prevW === 'at') {
+              eMs = rawWords[r].endMs;
+              r++;
+              continue;
+            }
+            break;
+          } else {
+            break;
+          }
+        }
+        redactWindows.push({ startMs: sMs, endMs: eMs, type: 'SRMP_COUPLED_PII' });
+      }
+    }
+
+    const wavBytes = fs.readFileSync(item.wavInPath);
+    const red = wasm.redactWavBuffer(wavBytes, redactWindows, {
+      mode: 'silence',
+      padMs: 65,
+      fadeMs: 5,
+    });
+    fs.writeFileSync(item.wavOutPath, Buffer.from(red.redactedWavBytes));
+    out.push({
+      id: item.id,
+      normalizedText: itn.normalizedText,
+      hybridSpanCount: itnScan.length,
+      srmpWindowCount: redactWindows.length,
       redactWindows,
     });
   }

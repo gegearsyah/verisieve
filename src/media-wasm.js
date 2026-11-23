@@ -138,6 +138,54 @@ export function buildMediaEngineFromInstance(instance) {
       return readMetaJson() || { bloomHex: '0'.repeat(32), phoneticHex: '0'.repeat(16), popcount: 0 };
     },
 
+    srmpReset() {
+      const rc = ex.vs_media_srmp_reset();
+      if (rc < 0) throw new Error(readLastError());
+      return rc;
+    },
+
+    srmpSeedAnchor(text, salt = 'verisieve-srmp', options = {}) {
+      writeIn1(String(text ?? ''));
+      writeIn2(String(salt ?? ''));
+      const entityUid = Math.max(0, Math.round(Number(options.entityUid ?? 1))) >>> 0;
+      const blockIdx = Math.max(0, Math.round(Number(options.blockIdx ?? 0))) >>> 0;
+      const confX1000 = Math.max(0, Math.min(1000, Math.round(Number(options.confidence ?? 0.90) * 1000))) >>> 0;
+      const kindCode = Math.max(0, Math.round(Number(options.kindCode ?? 1))) >>> 0;
+      const rc = ex.vs_media_srmp_seed_anchor(entityUid, blockIdx, confX1000, kindCode);
+      if (rc < 0) throw new Error(readLastError());
+      return readMetaJson() || { slotCount: rc, capacity: 512, entityUid, blockIdx };
+    },
+
+    srmpQueryCandidate(text, salt = 'verisieve-srmp', options = {}) {
+      writeIn1(String(text ?? ''));
+      writeIn2(String(salt ?? ''));
+      const blockIdx = Math.max(0, Math.round(Number(options.blockIdx ?? 0))) >>> 0;
+      const localScoreX1000 = Math.max(0, Math.min(1000, Math.round(Number(options.localScore ?? 0.25) * 1000))) >>> 0;
+      const minDiceX1000 = Math.max(0, Math.min(1000, Math.round(Number(options.minDice ?? 0.75) * 1000))) >>> 0;
+      const gammaX1000 = Math.max(0, Math.min(1000, Math.round(Number(options.gamma ?? 0.85) * 1000))) >>> 0;
+      const betaX1000 = Math.max(0, Math.min(1000, Math.round(Number(options.beta ?? 0.20) * 1000))) >>> 0;
+      const rc = ex.vs_media_srmp_query_candidate(
+        blockIdx,
+        localScoreX1000,
+        minDiceX1000,
+        gammaX1000,
+        betaX1000
+      );
+      if (rc < 0) throw new Error(readLastError());
+      return (
+        readMetaJson() || {
+          matched: false,
+          entityUid: 0,
+          anchorBlockIdx: 0,
+          kindCode: 0,
+          dice: 0,
+          phoneticMatch: false,
+          exactMatch: false,
+          coupledScore: Number((localScoreX1000 / 1000).toFixed(4)),
+        }
+      );
+    },
+
     normalizeSpokenWords(words = []) {
       const tsv = words
         .map((w) => {

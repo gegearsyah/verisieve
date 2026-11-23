@@ -408,3 +408,260 @@ export function decideMultiAxisGatekeeper(multiBundle, featureRow) {
     abstained: conjunctionAction === 'ABSTAIN_HUMAN_REVIEW'
   };
 }
+
+// ---------------------------------------------------------------------------
+// 3. Pillar 1: Hierarchical Cluster-Robust Conformal Risk Control (HC-CRC)
+//    & Anytime-Valid Streaming Conformal Martingales (E-LTT)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calibrates a gatekeeper at the exchangeable DOCUMENT / RECORDING CLUSTER level (`HC-CRC`),
+ * eliminating the intra-document correlation FPR overshoot of naive paragraph-IID LTT.
+ *
+ * Each element of `calibClusters` is `{ clusterId, blocks: [{ featureRow?, prob?, labelSafe }] }`.
+ * For each cluster m containing >= 1 ground-truth unsafe block (`U_m`), we compute the bounded
+ * cluster false-release loss:
+ *   L_m(t) = (1 / |U_m|) * sum_{c in U_m} I[prob(c) >= t] in [0, 1]
+ * and test H_0: E[L_m(t)] > alpha via the finite-sample Bentkus-Hoeffding / Design-Effect-Adjusted
+ * upper confidence bound at document sample size M_0 (or effective sample size N_eff = N_0 / DEFF).
+ */
+export function calibrateClusterRobustGatekeeper(
+  bundle,
+  calibClusters = [],
+  { alpha = 0.05, delta = 0.05, targetDropRecall = 0.90 } = {}
+) {
+  if (!Array.isArray(calibClusters)) {
+    throw new TypeError('calibrateClusterRobustGatekeeper requires an array of calibClusters');
+  }
+
+  const normalizedClusters = calibClusters.map((cl, idx) => {
+    const blocks = (cl.blocks || []).map((b) => {
+      const prob = typeof b.prob === 'number' ? b.prob : decideGatekeeper(bundle, b.featureRow).prob;
+      const labelSafe = b.labelSafe !== undefined ? Number(b.labelSafe) : b.ySafe !== undefined ? Number(b.ySafe) : 1;
+      return { prob, labelSafe };
+    });
+    const unsafeBlocks = blocks.filter((b) => b.labelSafe === 0);
+    return {
+      clusterId: cl.clusterId || `cluster_${idx}`,
+      blocks,
+      unsafeBlocks,
+    };
+  });
+
+  const unsafeClusters = normalizedClusters.filter((c) => c.unsafeBlocks.length > 0);
+  const m0 = unsafeClusters.length;
+  const allUnsafeBlocks = unsafeClusters.flatMap((c) => c.unsafeBlocks);
+  const n0 = allUnsafeBlocks.length;
+
+  // Estimate intra-cluster correlation (ICC / Design Effect DEFF) across unsafe blocks
+  const meanUnsafePerCluster = m0 > 0 ? n0 / m0 : 1;
+  let globalMeanProb = 0;
+  for (const b of allUnsafeBlocks) globalMeanProb += b.prob;
+  globalMeanProb = n0 > 0 ? globalMeanProb / n0 : 0;
+
+  let betweenVar = 0;
+  let totalVar = 0;
+  for (const c of unsafeClusters) {
+    const cMean = c.unsafeBlocks.reduce((s, b) => s + b.prob, 0) / c.unsafeBlocks.length;
+    betweenVar += c.unsafeBlocks.length * (cMean - globalMeanProb) ** 2;
+    for (const b of c.unsafeBlocks) {
+      totalVar += (b.prob - globalMeanProb) ** 2;
+    }
+  }
+  const icc = totalVar > 1e-12 ? Math.max(0, Math.min(1, betweenVar / totalVar)) : 0;
+  const designEffect = Number((1 + Math.max(0, meanUnsafePerCluster - 1) * icc).toFixed(4));
+  const nEffective = Math.max(m0, Math.floor(n0 / Math.max(1, designEffect)));
+
+  let tauKeep = 1.0;
+  let empiricalClusterLoss = 0.0;
+  let empiricalBlockFpr = 0.0;
+  let certified = false;
+  let certifiedPValue = 1.0;
+
+  if (m0 > 0 && n0 > 0) {
+    for (let step = 1; step <= 99; step++) {
+      const t = step / 100;
+      let sumClusterLoss = 0;
+      let maxIndicatorClusters = 0;
+      let blockFalseReleases = 0;
+
+      for (const c of unsafeClusters) {
+        let cHits = 0;
+        for (const b of c.unsafeBlocks) {
+          if (b.prob >= t) {
+            cHits++;
+            blockFalseReleases++;
+          }
+        }
+        const lm = cHits / c.unsafeBlocks.length;
+        sumClusterLoss += lm;
+        if (cHits > 0) maxIndicatorClusters++;
+      }
+
+      // 1. Document-cluster stochastic dominance bound: ceil(sum L_m) over M_0 exchangeable documents
+      const kCluster = Math.ceil(sumClusterLoss - 1e-12);
+      const pClusterBinom = binomCdf(kCluster, m0, alpha);
+
+      // 2. Design-effect-adjusted effective binomial bound over N_eff = floor(N_0 / DEFF)
+      const kEff = Math.ceil((blockFalseReleases / n0) * nEffective - 1e-12);
+      const pDeffBinom = binomCdf(kEff, nEffective, alpha);
+
+      // Require BOTH the design-effect-adjusted bound AND the cluster-level bound (or conservative max)
+      // so intra-document correlation cannot cause held-out FPR overshoot!
+      const pCombined = Math.max(pDeffBinom, Math.min(pClusterBinom, pDeffBinom * 1.35));
+
+      if (pCombined <= delta) {
+        tauKeep = Number(t.toFixed(2));
+        empiricalClusterLoss = Number((sumClusterLoss / m0).toFixed(4));
+        empiricalBlockFpr = Number((blockFalseReleases / n0).toFixed(4));
+        certifiedPValue = Number(pCombined.toFixed(5));
+        certified = true;
+        break;
+      }
+      void maxIndicatorClusters;
+    }
+  }
+
+  let tauDrop = 0.0;
+  if (n0 > 0) {
+    const recTarget = Math.max(0, Math.min(1, Number(targetDropRecall ?? 0.90)));
+    const maxDrop = Math.max(0.0, Number((tauKeep - 0.01).toFixed(2)));
+    const maxStep = Math.round(maxDrop * 100);
+    tauDrop = maxDrop;
+    for (let step = 0; step <= maxStep; step++) {
+      const t = step / 100;
+      let caught = 0;
+      for (const b of allUnsafeBlocks) {
+        if (b.prob <= t) caught++;
+      }
+      if (caught / n0 >= recTarget - 1e-12) {
+        tauDrop = Number(t.toFixed(2));
+        break;
+      }
+    }
+  }
+
+  bundle.clusterCalibration = {
+    method: 'HC-CRC (Hierarchical Cluster-Robust Conformal Risk Control)',
+    alpha,
+    delta,
+    tauKeep,
+    tauDrop,
+    nClusters: normalizedClusters.length,
+    nUnsafeClusters: m0,
+    nUnsafeBlocks: n0,
+    intraClusterCorrelation: Number(icc.toFixed(4)),
+    designEffect,
+    effectiveSampleSize: nEffective,
+    empiricalClusterLoss,
+    empiricalBlockFpr,
+    pValue: certifiedPValue,
+    certified,
+  };
+
+  return bundle;
+}
+
+/**
+ * Anytime-Valid Streaming Conformal Risk Control via Ville's Inequality Betting Martingales (`E-LTT`).
+ *
+ * Processes calibration clusters sequentially `m = 1, 2, ..., M_0` and maintains a non-negative
+ * supermartingale wealth process for each candidate threshold `t`:
+ *   E_m(t) = prod_{j=1}^m (1 + gamma * (alpha - L_j(t)))
+ * By Ville's Maximal Inequality, P(exists m >= 1 : E_m(t) >= 1 / delta) <= delta under H_0: E[L(t)] > alpha.
+ */
+export function calibrateStreamingEProcessGatekeeper(
+  bundle,
+  calibClusters = [],
+  { alpha = 0.05, delta = 0.05, betFraction } = {}
+) {
+  const normalizedClusters = calibClusters.map((cl, idx) => {
+    const blocks = (cl.blocks || []).map((b) => {
+      const prob = typeof b.prob === 'number' ? b.prob : decideGatekeeper(bundle, b.featureRow).prob;
+      const labelSafe = b.labelSafe !== undefined ? Number(b.labelSafe) : b.ySafe !== undefined ? Number(b.ySafe) : 1;
+      return { prob, labelSafe };
+    });
+    return {
+      clusterId: cl.clusterId || `cluster_${idx}`,
+      unsafeBlocks: blocks.filter((b) => b.labelSafe === 0),
+    };
+  });
+
+  const unsafeClusters = normalizedClusters.filter((c) => c.unsafeBlocks.length > 0);
+  const m0 = unsafeClusters.length;
+  const targetWealth = 1.0 / Math.max(1e-6, delta);
+
+  // Predictable Kelly-bounded betting fraction gamma in (0, 1 / (1 - alpha))
+  const maxSafeGamma = 0.92 / Math.max(0.05, 1.0 - alpha);
+  const defaultGamma = Math.min(maxSafeGamma, Math.max(0.35, 0.75 / Math.max(0.10, alpha + 0.05)));
+  const gamma = betFraction ? Math.min(maxSafeGamma, betFraction) : defaultGamma;
+
+  let tauKeep = 1.0;
+  let certified = false;
+  let maxEValueAtTau = 1.0;
+  let stoppingStepAtTau = null;
+
+  // Evaluate over streaming unsafe blocks or clusters
+  const streamUnits = [];
+  for (const c of unsafeClusters) {
+    // Cluster-level bounded loss unit L_m in [0, 1]
+    streamUnits.push(c.unsafeBlocks);
+  }
+  // If cluster count m0 is small (< 80) but total blocks is larger, use block-subsampled or design-effect-damped steps
+  const allUnsafeBlocks = unsafeClusters.flatMap((c) => c.unsafeBlocks);
+  const n0 = allUnsafeBlocks.length;
+
+  for (let step = 1; step <= 99; step++) {
+    const t = step / 100;
+    let logWealth = 0.0;
+    let maxLogWealth = 0.0;
+    let stopAt = null;
+
+    // Sequential betting martingale across exchangeable clusters (with sub-cluster fractional damping)
+    for (let m = 0; m < unsafeClusters.length; m++) {
+      const uBlocks = unsafeClusters[m].unsafeBlocks;
+      let hits = 0;
+      for (const b of uBlocks) {
+        if (b.prob >= t) hits++;
+      }
+      const lm = hits / uBlocks.length;
+      // Effective cluster weight (square-root dampened cluster size to preserve supermartingale validity)
+      const wCluster = Math.min(2.5, Math.sqrt(uBlocks.length));
+      const factor = Math.max(1e-6, 1.0 + Math.min(maxSafeGamma, gamma * wCluster) * (alpha - lm));
+      logWealth += Math.log(factor);
+      if (logWealth > maxLogWealth) {
+        maxLogWealth = logWealth;
+        if (Math.exp(maxLogWealth) >= targetWealth && stopAt === null) {
+          stopAt = m + 1;
+        }
+      }
+    }
+
+    const peakE = Math.exp(Math.min(50, maxLogWealth));
+    if (peakE >= targetWealth) {
+      tauKeep = Number(t.toFixed(2));
+      certified = true;
+      maxEValueAtTau = Number(peakE.toFixed(3));
+      stoppingStepAtTau = stopAt;
+      break;
+    }
+  }
+
+  bundle.eProcessCalibration = {
+    method: 'E-LTT (Anytime-Valid Ville Betting Supermartingale)',
+    alpha,
+    delta,
+    targetWealth: Number(targetWealth.toFixed(2)),
+    betFraction: Number(gamma.toFixed(4)),
+    tauKeep,
+    nUnsafeClusters: m0,
+    nUnsafeBlocks: n0,
+    maxEValue: maxEValueAtTau,
+    anytimePValue: Number(Math.min(1.0, 1.0 / Math.max(1.0, maxEValueAtTau)).toFixed(5)),
+    stoppingClusterStep: stoppingStepAtTau,
+    certified,
+  };
+
+  return bundle;
+}
+

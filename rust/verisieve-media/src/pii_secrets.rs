@@ -1141,7 +1141,17 @@ fn soundex_word(word: &[u8]) -> [u8; 4] {
     out
 }
 
-pub fn compute_pprl_signature(raw_text: &str, salt: &[u8]) -> PprlSignature {
+#[derive(Clone, Copy, Debug, Default)]
+pub struct BinaryPprlSketch {
+    pub bloom_lo: u64,
+    pub bloom_hi: u64,
+    pub phonetic_hash: u64,
+    pub token_hash: u32,
+    pub popcount: u8,
+    pub canon_len: u8,
+}
+
+pub fn compute_pprl_binary(raw_text: &str, salt: &[u8]) -> BinaryPprlSketch {
     let nt = normalize_for_scan(raw_text);
     // Canonicalize ASCII + OCR visual confusables (0->o, 1->l, 5->s, |->l)
     let mut canon = Vec::with_capacity(nt.norm.len());
@@ -1204,10 +1214,242 @@ pub fn compute_pprl_signature(raw_text: &str, salt: &[u8]) -> PprlSignature {
         set_bit((hp & 127) as usize);
     }
     let phon_hash = fnv1a_64_salted(salt, 4, &phon_concat);
+    let tok_hash = (fnv1a_64_salted(salt, 5, &canon) & 0xFFFF_FFFF) as u32;
+    let pop = (bits[0].count_ones() + bits[1].count_ones()).min(128) as u8;
 
+    BinaryPprlSketch {
+        bloom_lo: bits[0],
+        bloom_hi: bits[1],
+        phonetic_hash: phon_hash,
+        token_hash: tok_hash,
+        popcount: pop,
+        canon_len: canon.len().min(255) as u8,
+    }
+}
+
+pub fn compute_pprl_signature(raw_text: &str, salt: &[u8]) -> PprlSignature {
+    let bin = compute_pprl_binary(raw_text, salt);
     PprlSignature {
-        bloom_hex: format!("{:016x}{:016x}", bits[0], bits[1]),
-        phonetic_hex: format!("{:016x}", phon_hash),
-        popcount: bits[0].count_ones() + bits[1].count_ones(),
+        bloom_hex: format!("{:016x}{:016x}", bin.bloom_lo, bin.bloom_hi),
+        phonetic_hex: format!("{:016x}", bin.phonetic_hash),
+        popcount: bin.popcount as u32,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Pillar 2: Zero-Import WASM SR-MP (Sparse-Reference Multimodal Perception)
+// Fixed-Capacity 512-Slot Salted Reference Sketch Ring (512 * 32B = 16 KB)
+// ---------------------------------------------------------------------------
+
+pub const SRMP_RING_CAPACITY: usize = 512;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SrmpAnchorSlot {
+    pub bloom_lo: u64,      // 8B: lower 64 bits of 128-bit salted Bloom sketch
+    pub bloom_hi: u64,      // 8B: upper 64 bits of 128-bit salted Bloom sketch
+    pub phonetic_hash: u64, // 8B: 64-bit salted Soundex equivalence hash
+    pub token_hash: u32,    // 4B: 32-bit salted exact normalized surface hash
+    pub entity_uid: u16,    // 2B: SaltedPseudonymVault entity index
+    pub block_idx: u16,     // 2B: origin block/frame/turn index
+    pub conf_x1000: u16,    // 2B: anchor confidence in [0..1000]
+    pub popcount: u8,       // 1B: cached 128-bit popcount
+    pub canon_len: u8,      // 1B: canonical character length
+    pub kind_code: u8,      // 1B: entity kind code (1=PERSON, 2=CODE, 3=EMAIL, 4=ORG, etc.)
+    pub active: u8,         // 1B: 1 if occupied
+}
+
+pub struct SrmpSketchRing {
+    pub slots: [SrmpAnchorSlot; SRMP_RING_CAPACITY],
+    pub count: usize,
+    pub write_cursor: usize,
+}
+
+impl Default for SrmpSketchRing {
+    fn default() -> Self {
+        Self {
+            slots: [SrmpAnchorSlot::default(); SRMP_RING_CAPACITY],
+            count: 0,
+            write_cursor: 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct SrmpQueryHit {
+    pub matched: bool,
+    pub entity_uid: u16,
+    pub anchor_block_idx: u16,
+    pub kind_code: u8,
+    pub dice_x1000: u16,
+    pub phonetic_match: bool,
+    pub exact_match: bool,
+    pub coupled_score_x1000: u16,
+}
+
+impl SrmpSketchRing {
+    pub fn reset(&mut self) {
+        for s in self.slots.iter_mut() {
+            *s = SrmpAnchorSlot::default();
+        }
+        self.count = 0;
+        self.write_cursor = 0;
+    }
+
+    pub fn seed_anchor(
+        &mut self,
+        raw_text: &str,
+        salt: &[u8],
+        entity_uid: u16,
+        block_idx: u16,
+        conf_x1000: u16,
+        kind_code: u8,
+    ) -> usize {
+        let sk = compute_pprl_binary(raw_text, salt);
+        if sk.canon_len < 3 || sk.popcount == 0 {
+            return self.count;
+        }
+
+        // Deduplicate by exact token_hash: update if higher confidence
+        for i in 0..self.count {
+            if self.slots[i].active == 1 && self.slots[i].token_hash == sk.token_hash {
+                if conf_x1000 > self.slots[i].conf_x1000 {
+                    self.slots[i].conf_x1000 = conf_x1000;
+                    self.slots[i].entity_uid = entity_uid;
+                }
+                return self.count;
+            }
+        }
+
+        let target_idx = if self.count < SRMP_RING_CAPACITY {
+            let idx = self.count;
+            self.count += 1;
+            idx
+        } else {
+            let idx = self.write_cursor % SRMP_RING_CAPACITY;
+            self.write_cursor = self.write_cursor.wrapping_add(1);
+            idx
+        };
+
+        self.slots[target_idx] = SrmpAnchorSlot {
+            bloom_lo: sk.bloom_lo,
+            bloom_hi: sk.bloom_hi,
+            phonetic_hash: sk.phonetic_hash,
+            token_hash: sk.token_hash,
+            entity_uid,
+            block_idx,
+            conf_x1000,
+            popcount: sk.popcount,
+            canon_len: sk.canon_len,
+            kind_code,
+            active: 1,
+        };
+        self.count
+    }
+
+    pub fn query_candidate(
+        &self,
+        raw_text: &str,
+        salt: &[u8],
+        block_idx: u16,
+        local_score_x1000: u16,
+        min_dice_x1000: u16,
+        gamma_x1000: u16,
+        beta_x1000: u16,
+    ) -> SrmpQueryHit {
+        let sk = compute_pprl_binary(raw_text, salt);
+        if sk.canon_len < 3 || sk.popcount == 0 || self.count == 0 {
+            return SrmpQueryHit {
+                matched: false,
+                entity_uid: 0,
+                anchor_block_idx: 0,
+                kind_code: 0,
+                dice_x1000: 0,
+                phonetic_match: false,
+                exact_match: false,
+                coupled_score_x1000: local_score_x1000,
+            };
+        }
+
+        let s_local = (local_score_x1000.min(1000) as f32) / 1000.0;
+        let min_dice = (min_dice_x1000.min(1000) as f32) / 1000.0;
+        let gamma = (gamma_x1000.min(1000) as f32) / 1000.0;
+        let beta = (beta_x1000.min(1000) as f32) / 1000.0;
+
+        let mut best_coupled = s_local;
+        let mut best_dice = 0.0f32;
+        let mut best_slot: Option<&SrmpAnchorSlot> = None;
+        let mut best_phon = false;
+        let mut best_exact = false;
+
+        for i in 0..self.count {
+            let slot = &self.slots[i];
+            if slot.active == 0 {
+                continue;
+            }
+            let exact = slot.token_hash == sk.token_hash && slot.canon_len == sk.canon_len;
+            if !exact && (slot.canon_len as i32 - sk.canon_len as i32).abs() > 2 {
+                continue;
+            }
+
+            let inter = (slot.bloom_lo & sk.bloom_lo).count_ones()
+                + (slot.bloom_hi & sk.bloom_hi).count_ones();
+            let denom = (slot.popcount as u32) + (sk.popcount as u32);
+            let dice = if denom > 0 {
+                (2.0 * (inter as f32)) / (denom as f32)
+            } else {
+                0.0
+            };
+            let phon_match = slot.phonetic_hash == sk.phonetic_hash;
+
+            let qualifies = exact || dice >= min_dice || (phon_match && dice >= 0.48);
+            if !qualifies {
+                continue;
+            }
+
+            let eff_sim = if exact {
+                1.0
+            } else if phon_match {
+                dice.max(0.82)
+            } else {
+                dice
+            };
+            let dist = (block_idx as i32 - slot.block_idx as i32).unsigned_abs() as f32;
+            let dist_decay = 1.0 / (1.0 + 0.05 * dist);
+            let boost = (gamma * eff_sim * (1.0 + beta * dist_decay)).min(0.99);
+            let coupled = 1.0 - (1.0 - s_local) * (1.0 - boost);
+
+            if coupled > best_coupled {
+                best_coupled = coupled;
+                best_dice = if exact { 1.0 } else { dice };
+                best_slot = Some(slot);
+                best_phon = phon_match;
+                best_exact = exact;
+            }
+        }
+
+        if let Some(win) = best_slot {
+            SrmpQueryHit {
+                matched: true,
+                entity_uid: win.entity_uid,
+                anchor_block_idx: win.block_idx,
+                kind_code: win.kind_code,
+                dice_x1000: (best_dice * 1000.0).round() as u16,
+                phonetic_match: best_phon,
+                exact_match: best_exact,
+                coupled_score_x1000: (best_coupled * 1000.0).round().min(1000.0) as u16,
+            }
+        } else {
+            SrmpQueryHit {
+                matched: false,
+                entity_uid: 0,
+                anchor_block_idx: 0,
+                kind_code: 0,
+                dice_x1000: 0,
+                phonetic_match: false,
+                exact_match: false,
+                coupled_score_x1000: local_score_x1000,
+            }
+        }
     }
 }

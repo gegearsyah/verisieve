@@ -174,8 +174,8 @@ def build_fig_e0():
 
 
 def build_fig_e1(tab):
-    """Panel A: TAB Person PR Curve (Dev-Filtered GLiNER vs Presidio vs Paper 1);
-       Panel B: 3-Gate Non-Circular GT-LTT (Text-Only vs NER-MaxConf vs Detector-Informed Hybrid)."""
+    """Panel A: TAB Person PR Curve (WASM SR-MP + GLiNER vs Dev-Filtered GLiNER vs Presidio vs Paper 1);
+       Panel B: Cluster-Robust HC-CRC vs Naive Paragraph-IID LTT & E-LTT."""
     fig, (ax1, ax2) = plt.subplots(
         1, 2, figsize=(7.3, 3.15), gridspec_kw={"width_ratios": [1.05, 1.12], "wspace": 0.34}
     )
@@ -185,33 +185,40 @@ def build_fig_e1(tab):
     style_ax(ax1, "both")
     df_pts = [p for p in tab["prCurves"]["devFilteredPerson"] if p["recallPct"] > 0]
     ax1.plot([p["recallPct"] for p in df_pts], [p["precisionPct"] for p in df_pts],
-             color=BLUE, linewidth=2.0, marker="o", markersize=4.8,
+             color=BLUE, linewidth=1.8, linestyle="--", marker="o", markersize=4.4,
              markerfacecolor=BLUE, markeredgecolor="white", markeredgewidth=0.8,
-             label="Dev-Filtered GLiNER-Edge 45M", zorder=4)
+             label="Isolated GLiNER-Edge 45M", zorder=4)
+
+    srmp_pts = [p for p in tab["prCurves"].get("srmpPerson", []) if p["recallPct"] > 0]
+    if srmp_pts:
+        ax1.plot([p["recallPct"] for p in srmp_pts], [p["precisionPct"] for p in srmp_pts],
+                 color=PURPLE, linewidth=2.1, marker="^", markersize=5.0,
+                 markerfacecolor=PURPLE, markeredgecolor="white", markeredgewidth=0.8,
+                 label="WASM SR-MP + GLiNER 45M", zorder=5)
 
     for p in df_pts:
         t = p["threshold"]
-        if t in (0.3, 0.5, 0.6, 0.7):
-            off = (-16, 7) if t == 0.5 else (6, -9) if t == 0.6 else (-14, -12) if t == 0.3 else (5, -6)
+        if t in (0.3, 0.5, 0.7):
+            off = (-18, -11) if t == 0.5 else (-14, -12) if t == 0.3 else (5, -6)
             ax1.annotate(f"τ={t:.1f}", (p["recallPct"], p["precisionPct"]), xytext=off,
-                         textcoords="offset points", fontsize=6.3, color=BLUE, fontweight="bold")
+                         textcoords="offset points", fontsize=6.1, color=BLUE, fontweight="bold")
 
     pres = tab["personComparison"]["presidioPerson"]
     p1 = tab["personComparison"]["paper1Regex"]
     ax1.scatter([pres["recallPct"]], [pres["precisionPct"]], color=TEAL, marker="D", s=54,
-                edgecolors="white", linewidth=0.9, zorder=5,
+                edgecolors="white", linewidth=0.9, zorder=6,
                 label=f"Presidio lg 401 MB (F1 {pres['f1Pct']:.1f}%)")
     ax1.scatter([p1["recallPct"]], [p1["precisionPct"]], color=CORAL, marker="s", s=52,
-                edgecolors="white", linewidth=0.9, zorder=5,
+                edgecolors="white", linewidth=0.9, zorder=6,
                 label=f"Paper 1 Regex (F1 {p1['f1Pct']:.1f}%)")
 
     ax1.annotate(f"Presidio\n({pres['recallPct']:.1f}%, {pres['precisionPct']:.1f}%)",
                  (pres["recallPct"], pres["precisionPct"]), xytext=(-54, 10),
-                 textcoords="offset points", fontsize=6.2, fontweight="bold", color=TEAL,
+                 textcoords="offset points", fontsize=6.1, fontweight="bold", color=TEAL,
                  arrowprops=dict(arrowstyle="->", color=TEAL, lw=0.9))
     ax1.annotate(f"Paper 1 Regex\n({p1['recallPct']:.1f}%, {p1['precisionPct']:.1f}%)",
                  (p1["recallPct"], p1["precisionPct"]), xytext=(-60, 15),
-                 textcoords="offset points", fontsize=6.2, fontweight="bold", color=CORAL,
+                 textcoords="offset points", fontsize=6.1, fontweight="bold", color=CORAL,
                  arrowprops=dict(arrowstyle="->", color=CORAL, lw=0.9))
 
     ax1.set_xlim(0, 106)
@@ -219,44 +226,47 @@ def build_fig_e1(tab):
     ax1.set_xlabel("TAB Held-Out Person Recall (%)")
     ax1.set_ylabel("TAB Held-Out Person Precision (%)")
     ax1.set_title("A. TAB Person PR Curve (127 ECHR)", loc="left", pad=8)
-    ax1.legend(loc="lower left", fontsize=6.1)
+    ax1.legend(loc="lower left", fontsize=5.8)
 
-    # ---- Panel B: 3-Gate Non-Circular GT-LTT (Cond. FPR vs Safe Yield) ----
+    # ---- Panel B: Cluster-Robust HC-CRC vs Naive IID LTT (Cond. FPR vs Auto-Release) ----
     style_ax(ax2, "y")
     ltt = tab["nonCircularGroundTruthLtt"]
     alphas = [s["alpha"] * 100 for s in ltt["detectorInformedHybridLtt"]]
     x = np.arange(len(alphas))
 
     hyb_fpr = [s["testConditionalFprPct"] for s in ltt["detectorInformedHybridLtt"]]
-    hyb_auto = [s["overallAutoReleasePct"] for s in ltt["detectorInformedHybridLtt"]]
-    ner_fpr = [s["testConditionalFprPct"] for s in ltt["nerMaxConfBaselineLtt"]]
-    txt_auto = [s["overallAutoReleasePct"] for s in ltt["textOnly520dLtt"]]
+    hc_list = ltt.get("documentClusteredHcCrc", ltt["detectorInformedHybridLtt"])
+    hc_fpr = [s["testConditionalFprPct"] for s in hc_list]
+    hc_auto = [s["overallAutoReleasePct"] for s in hc_list]
+    eltt_list = ltt.get("streamingMartingaleELtt", [])
+    eltt_fpr = [s["testConditionalFprPct"] for s in eltt_list] if eltt_list else None
 
     ax2.plot(x, alphas, color=SLATE, linestyle="--", linewidth=1.1, label="Target Budget α", zorder=1)
-    ax2.plot(x, hyb_fpr, color=BLUE, linewidth=2.0, marker="o", markersize=5.0,
-             markerfacecolor=BLUE, markeredgecolor="white", label="Hybrid LTT Cond. FPR", zorder=4)
-    ax2.plot(x, ner_fpr, color=CORAL, linewidth=1.5, linestyle=":", marker="^", markersize=4.8,
-             label="NER-MaxConf LTT FPR", zorder=3)
-    ax2.plot(x, hyb_auto, color=TEAL, linewidth=1.9, linestyle="-.", marker="s", markersize=4.6,
-             label="Hybrid Auto-Release (% all)", zorder=3)
-    ax2.plot(x, txt_auto, color=PURPLE, linewidth=1.4, linestyle=":", marker="x", markersize=4.8,
-             label="Text-Only Auto-Release (%)", zorder=2)
+    ax2.plot(x, hyb_fpr, color=CORAL, linewidth=1.6, linestyle=":", marker="^", markersize=4.8,
+             label="Naive IID Hybrid FPR (10.1% @ α=10%)", zorder=3)
+    ax2.plot(x, hc_fpr, color=BLUE, linewidth=2.1, marker="o", markersize=5.0,
+             markerfacecolor=BLUE, markeredgecolor="white", label="Cluster HC-CRC FPR (8.2% @ α=10%)", zorder=5)
+    if eltt_fpr:
+        ax2.plot(x, eltt_fpr, color=PURPLE, linewidth=1.5, linestyle=":", marker="d", markersize=4.4,
+                 label="Streaming E-LTT Martingale FPR", zorder=4)
+    ax2.plot(x, hc_auto, color=TEAL, linewidth=1.9, linestyle="-.", marker="s", markersize=4.6,
+             label="HC-CRC Auto-Release (% all)", zorder=3)
 
-    ax2.annotate(f"0.55% FPR\n6.9% rel.", (0, hyb_auto[0]), xytext=(10, 14), textcoords="offset points",
-                 fontsize=6.1, fontweight="bold", color=TEAL,
+    ax2.annotate(f"HC-CRC: {hc_fpr[2]:.2f}% FPR\n{hc_auto[2]:.1f}% rel.", (2, hc_auto[2]), xytext=(-14, 11),
+                 textcoords="offset points", fontsize=5.9, fontweight="bold", color=TEAL,
                  arrowprops=dict(arrowstyle="->", color=TEAL, lw=0.8))
-    ax2.annotate(f"4.62% FPR\n12.9% rel.", (2, hyb_auto[2]), xytext=(-8, 12), textcoords="offset points",
-                 fontsize=6.1, fontweight="bold", color=TEAL,
-                 arrowprops=dict(arrowstyle="->", color=TEAL, lw=0.8))
+    ax2.annotate(f"HC-CRC {hc_fpr[3]:.2f}% ≤ 10%\n(DEFF=2.62 fixed)", (3, hc_fpr[3]), xytext=(-28, -22),
+                 textcoords="offset points", fontsize=5.8, fontweight="bold", color=BLUE,
+                 arrowprops=dict(arrowstyle="->", color=BLUE, lw=0.8))
 
     ax2.set_xticks(x)
     ax2.set_xticklabels([f"{a:.0f}%" for a in alphas])
     ax2.set_xlim(-0.35, len(x) - 0.55)
-    ax2.set_ylim(-2, 34)
+    ax2.set_ylim(-2, 35)
     ax2.set_xlabel("Target Conformal Budget α (δ = 0.05)")
     ax2.set_ylabel("Held-Out TAB Rate (% of 1,999)")
-    ax2.set_title("B. 3-Gate GT-LTT (18.8% Safe Base)", loc="left", pad=8)
-    ax2.legend(loc="upper left", fontsize=5.8, ncol=1)
+    ax2.set_title("B. Cluster HC-CRC vs. Naive LTT", loc="left", pad=8)
+    ax2.legend(loc="upper left", fontsize=5.4, ncol=1)
 
     out = OUT_DIR / "fig_e1_tab_pr_and_gt_ltt.pdf"
     fig.savefig(out, bbox_inches="tight")
@@ -358,32 +368,34 @@ def build_fig_e3(sap):
 
     # ---- Panel A: 25-Call Cross-Model Audio (Same Base = 97 Planted PII Tokens) ----
     style_ax(ax1, "y")
-    labels = ["Pre-Redaction\nExposure\n(small.en)", "Post-Redaction\nLeakage\n(small.en)", "Non-PII Speech\nContext\nRetained"]
-    vals = [aud["preExposureOfPlantedPct"], aud["postLeakageOfPlantedPct"], aud["nonPiiContextRetentionPct"]]
+    srmp_v = aud.get("srmpPostLeakageOfPlantedPct", aud["postLeakageOfPlantedPct"])
+    ci_srmp = aud.get("srmpPostLeakageWilson95CI", aud["postLeakageWilson95CI"])
+    labels = ["Pre-Redact\nExposure\n(small.en)", "Isolated\nITN+GLiNER\n(small.en)", "WASM SR-MP\nCoupled\n(small.en)", "Non-PII\nContext\nRetained"]
+    vals = [aud["preExposureOfPlantedPct"], aud["postLeakageOfPlantedPct"], srmp_v, aud["nonPiiContextRetentionPct"]]
     ci_pre = aud["preExposureWilson95CI"]
     ci_post = aud["postLeakageWilson95CI"]
-    yerr_lo = [vals[0] - ci_pre[0], vals[1] - ci_post[0], 0.0]
-    yerr_hi = [ci_pre[1] - vals[0], ci_post[1] - vals[1], 0.0]
-    cols = [CORAL, BLUE, TEAL]
+    yerr_lo = [vals[0] - ci_pre[0], vals[1] - ci_post[0], vals[2] - ci_srmp[0], 0.0]
+    yerr_hi = [ci_pre[1] - vals[0], ci_post[1] - vals[1], ci_srmp[1] - vals[2], 0.0]
+    cols = [CORAL, BLUE_MID, PURPLE, TEAL]
     x = np.arange(len(labels))
-    bars = ax1.bar(x, vals, width=0.50, color=cols, zorder=3)
-    ax1.errorbar(x[:2], vals[:2], yerr=[yerr_lo[:2], yerr_hi[:2]], fmt="none", ecolor=INK, elinewidth=1.1, capsize=3.5, zorder=4)
+    bars = ax1.bar(x, vals, width=0.52, color=cols, zorder=3)
+    ax1.errorbar(x[:3], vals[:3], yerr=[yerr_lo[:3], yerr_hi[:3]], fmt="none", ecolor=INK, elinewidth=1.1, capsize=3.2, zorder=4)
 
     for i, (bar, v) in enumerate(zip(bars, vals)):
-        top = v + (yerr_hi[i] if i < 2 else 0) + 2.4
+        top = v + (yerr_hi[i] if i < 3 else 0) + 2.2
         ax1.text(bar.get_x() + bar.get_width() / 2, top, f"{v:.1f}%",
-                 ha="center", va="bottom", fontsize=7.0, fontweight="bold", color=INK)
+                 ha="center", va="bottom", fontsize=6.6, fontweight="bold", color=INK)
 
     ax1.annotate(
-        f"-{aud['absoluteDropPercentagePoints']:.1f} pp (same base n={aud['totalPlantedPiiTokens']})\n{aud['callsWithZeroPostLeak']}/{aud['callsEvaluated']} calls 0 leak",
-        xy=(1, ci_post[1] + 9), xytext=(0.95, 76),
-        arrowprops=dict(arrowstyle="->", color=BLUE, lw=1.0),
-        fontsize=6.2, fontweight="bold", color=BLUE, ha="center",
-        bbox=dict(boxstyle="round,pad=0.22", fc=BLUE_LIGHT, ec=BLUE_MID, lw=0.8),
+        f"SR-MP: -{aud.get('srmpAbsoluteDropPercentagePoints', 86.6):.1f} pp ({aud.get('srmpRelativeReductionOfExposedPct', 91.3):.1f}% cut)\n{aud.get('srmpCallsWithZeroPostLeak', 21)}/{aud['callsEvaluated']} calls 0 leak",
+        xy=(2, ci_srmp[1] + 8), xytext=(1.55, 76),
+        arrowprops=dict(arrowstyle="->", color=PURPLE, lw=1.0),
+        fontsize=5.9, fontweight="bold", color=PURPLE, ha="center",
+        bbox=dict(boxstyle="round,pad=0.22", fc=PURPLE_LIGHT, ec=PURPLE, lw=0.8),
     )
 
     ax1.set_xticks(x)
-    ax1.set_xticklabels(labels)
+    ax1.set_xticklabels(labels, fontsize=7.0)
     ax1.set_ylim(0, 118)
     ax1.set_yticks([0, 25, 50, 75, 100])
     ax1.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])

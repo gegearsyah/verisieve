@@ -33,6 +33,7 @@ struct WasmState {
     tar_cache: Vec<u8>,
     tar_entries: Vec<zip_tar::TarEntryMeta>,
     msg_attachments: Vec<cfbf::MsgAttachment>,
+    srmp_ring: pii_secrets::SrmpSketchRing,
 }
 
 thread_local! {
@@ -346,6 +347,89 @@ pub extern "C" fn vs_media_pprl_signature() -> i32 {
         );
         st.meta_json = json.into_bytes();
         sig.popcount as i32
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn vs_media_srmp_reset() -> i32 {
+    STATE.with(|cell| {
+        let mut st = cell.borrow_mut();
+        st.last_error.clear();
+        st.srmp_ring.reset();
+        0
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn vs_media_srmp_seed_anchor(
+    entity_uid: u32,
+    block_idx: u32,
+    conf_x1000: u32,
+    kind_code: u32,
+) -> i32 {
+    STATE.with(|cell| {
+        let mut st = cell.borrow_mut();
+        st.last_error.clear();
+        let text = String::from_utf8_lossy(&st.in_buf).into_owned();
+        let salt = st.in_buf2.clone();
+        let cnt = st.srmp_ring.seed_anchor(
+            &text,
+            &salt,
+            (entity_uid & 0xFFFF) as u16,
+            (block_idx & 0xFFFF) as u16,
+            (conf_x1000.min(1000)) as u16,
+            (kind_code & 0xFF) as u8,
+        );
+        let json = format!(
+            "{{\"slotCount\":{},\"capacity\":{},\"entityUid\":{},\"blockIdx\":{}}}",
+            cnt,
+            pii_secrets::SRMP_RING_CAPACITY,
+            entity_uid & 0xFFFF,
+            block_idx & 0xFFFF
+        );
+        st.meta_json = json.into_bytes();
+        cnt as i32
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn vs_media_srmp_query_candidate(
+    block_idx: u32,
+    local_score_x1000: u32,
+    min_dice_x1000: u32,
+    gamma_x1000: u32,
+    beta_x1000: u32,
+) -> i32 {
+    STATE.with(|cell| {
+        let mut st = cell.borrow_mut();
+        st.last_error.clear();
+        let text = String::from_utf8_lossy(&st.in_buf).into_owned();
+        let hit = st.srmp_ring.query_candidate(
+            &text,
+            &st.in_buf2,
+            (block_idx & 0xFFFF) as u16,
+            local_score_x1000.min(1000) as u16,
+            min_dice_x1000.min(1000) as u16,
+            gamma_x1000.min(1000) as u16,
+            beta_x1000.min(1000) as u16,
+        );
+        let json = format!(
+            "{{\"matched\":{},\"entityUid\":{},\"anchorBlockIdx\":{},\"kindCode\":{},\"dice\":{:.4},\"phoneticMatch\":{},\"exactMatch\":{},\"coupledScore\":{:.4}}}",
+            hit.matched,
+            hit.entity_uid,
+            hit.anchor_block_idx,
+            hit.kind_code,
+            (hit.dice_x1000 as f32) / 1000.0,
+            hit.phonetic_match,
+            hit.exact_match,
+            (hit.coupled_score_x1000 as f32) / 1000.0
+        );
+        st.meta_json = json.into_bytes();
+        if hit.matched {
+            hit.coupled_score_x1000 as i32
+        } else {
+            0
+        }
     })
 }
 
@@ -862,5 +946,22 @@ mod tests {
         assert_eq!(boxes.len(), 1);
         assert_eq!(boxes[0].x1, 20);
         assert_eq!(boxes[0].x2, 60);
+    }
+
+    #[test]
+    fn test_srmp_salted_reference_sketch_ring() {
+        let mut ring = pii_secrets::SrmpSketchRing::default();
+        let salt = b"srmp-unit-salt";
+        let cnt = ring.seed_anchor("Pentikainen", salt, 42, 0, 920, 1);
+        assert_eq!(cnt, 1);
+
+        let hit_asr = ring.query_candidate("Pentikaynen", salt, 4, 240, 650, 850, 200);
+        assert!(hit_asr.matched);
+        assert_eq!(hit_asr.entity_uid, 42);
+        assert!(hit_asr.coupled_score_x1000 >= 700);
+
+        let miss = ring.query_candidate("Confidence", salt, 4, 220, 650, 850, 200);
+        assert!(!miss.matched);
+        assert_eq!(miss.coupled_score_x1000, 220);
     }
 }

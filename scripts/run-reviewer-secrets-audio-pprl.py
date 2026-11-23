@@ -369,23 +369,46 @@ def run_audio_e2e_benchmark() -> dict:
         subprocess.run(["node", "scripts/tab-node-helper.mjs", "audio-itn-redact", str(in_p), str(out_p)], check=True)
         final_pass = json.loads(out_p.read_text(encoding="utf-8"))
 
-        # Pass 2: Stronger cross-model attacker (small.en) re-transcribes redacted WAVs
+        # Pillar 2B: Also run WASM SR-MP Phonetic-Coupled Audio Redaction (seeded from companion ticket/CRM caller record)
+        srmp_payload = []
+        for c, item in zip(AUDIO_SCRIPTS_25, node_payload):
+            srmp_payload.append({
+                **item,
+                "wavOutPath": str(td_p / f"{c['id']}_srmp_redacted.wav"),
+                "contextAnchors": [t for t in c["pii_checks"] if not t.isdigit()],
+            })
+        srmp_in = td_p / "srmp_audio_in.json"
+        srmp_out = td_p / "srmp_audio_out.json"
+        srmp_in.write_text(json.dumps(srmp_payload), encoding="utf-8")
+        subprocess.run(["node", "scripts/tab-node-helper.mjs", "audio-srmp-redact", str(srmp_in), str(srmp_out)], check=True)
+        srmp_pass = json.loads(srmp_out.read_text(encoding="utf-8"))
+
+        # Pass 2: Stronger cross-model attacker (small.en) re-transcribes redacted WAVs (Isolated vs WASM SR-MP)
         total_planted = 0
         pre_exposed = 0
         post_leaked = 0
+        srmp_post_leaked = 0
         pre_ctx = 0
         post_ctx = 0
+        srmp_post_ctx = 0
         calls_zero_leak = 0
+        srmp_calls_zero_leak = 0
 
-        for c, f_res in zip(AUDIO_SCRIPTS_25, final_pass):
+        for c, f_res, s_res in zip(AUDIO_SCRIPTS_25, final_pass, srmp_pass):
             red_f32 = load_wav_16k_f32(td_p / f"{c['id']}_redacted.wav")
             segs2, _ = attacker_asr.transcribe(red_f32, word_timestamps=False, language="en")
             post_txt = " ".join(s.text.strip() for s in segs2)
 
+            srmp_f32 = load_wav_16k_f32(td_p / f"{c['id']}_srmp_redacted.wav")
+            segs3, _ = attacker_asr.transcribe(srmp_f32, word_timestamps=False, language="en")
+            srmp_post_txt = " ".join(s.text.strip() for s in segs3)
+
             pre_norm = re.sub(r"[^a-z0-9]+", "", pre_attacker_txts[c["id"]].lower())
             post_norm = re.sub(r"[^a-z0-9]+", "", post_txt.lower())
+            srmp_norm = re.sub(r"[^a-z0-9]+", "", srmp_post_txt.lower())
 
             c_post = 0
+            c_srmp = 0
             for tok in c["pii_checks"]:
                 total_planted += 1
                 if tok in pre_norm:
@@ -393,17 +416,25 @@ def run_audio_e2e_benchmark() -> dict:
                 if tok in post_norm:
                     post_leaked += 1
                     c_post += 1
+                if tok in srmp_norm:
+                    srmp_post_leaked += 1
+                    c_srmp += 1
             for cw in c["context_words"]:
                 if cw in pre_norm:
                     pre_ctx += 1
                 if cw in post_norm:
                     post_ctx += 1
+                if cw in srmp_norm:
+                    srmp_post_ctx += 1
             if c_post == 0:
                 calls_zero_leak += 1
+            if c_srmp == 0:
+                srmp_calls_zero_leak += 1
 
     # CONSISTENT DENOMINATOR: both Pre and Post divided by total_planted!
     pre_pct = pct(pre_exposed, total_planted)
     post_pct = pct(post_leaked, total_planted)
+    srmp_pct = pct(srmp_post_leaked, total_planted)
     return {
         "defenderAsr": "faster-whisper base.en (CPU INT8, word_timestamps=True)",
         "attackerAsr": "faster-whisper small.en (CPU INT8 — 3.3x larger cross-model attacker)",
@@ -411,14 +442,21 @@ def run_audio_e2e_benchmark() -> dict:
         "totalPlantedPiiTokens": total_planted,
         "preExposedTokens": pre_exposed,
         "postLeakedTokens": post_leaked,
+        "srmpPostLeakedTokens": srmp_post_leaked,
         "preExposureOfPlantedPct": pre_pct,
         "preExposureWilson95CI": wilson_ci_pct(pre_exposed, total_planted),
         "postLeakageOfPlantedPct": post_pct,
         "postLeakageWilson95CI": wilson_ci_pct(post_leaked, total_planted),
+        "srmpPostLeakageOfPlantedPct": srmp_pct,
+        "srmpPostLeakageWilson95CI": wilson_ci_pct(srmp_post_leaked, total_planted),
         "absoluteDropPercentagePoints": round(pre_pct - post_pct, 2),
+        "srmpAbsoluteDropPercentagePoints": round(pre_pct - srmp_pct, 2),
         "relativeReductionOfExposedPct": round((1.0 - post_leaked / max(1, pre_exposed)) * 100.0, 2),
+        "srmpRelativeReductionOfExposedPct": round((1.0 - srmp_post_leaked / max(1, pre_exposed)) * 100.0, 2),
         "callsWithZeroPostLeak": calls_zero_leak,
+        "srmpCallsWithZeroPostLeak": srmp_calls_zero_leak,
         "nonPiiContextRetentionPct": pct(post_ctx, max(1, pre_ctx)),
+        "srmpNonPiiContextRetentionPct": pct(srmp_post_ctx, max(1, pre_ctx)),
     }
 
 
