@@ -331,6 +331,24 @@ pub extern "C" fn vs_media_scan_pii_secrets() -> i32 {
     })
 }
 
+#[no_mangle]
+pub extern "C" fn vs_media_pprl_signature() -> i32 {
+    STATE.with(|cell| {
+        let mut st = cell.borrow_mut();
+        st.last_error.clear();
+        let text = String::from_utf8_lossy(&st.in_buf);
+        let sig = pii_secrets::compute_pprl_signature(&text, &st.in_buf2);
+        let json = format!(
+            "{{\"bloomHex\":{},\"phoneticHex\":{},\"popcount\":{}}}",
+            json_escape(&sig.bloom_hex),
+            json_escape(&sig.phonetic_hex),
+            sig.popcount
+        );
+        st.meta_json = json.into_bytes();
+        sig.popcount as i32
+    })
+}
+
 // ---------------------------------------------------------------------------
 // 4. Deterministic Spoken ITN (Input: TSV lines "word\tstartMs\tendMs")
 // ---------------------------------------------------------------------------

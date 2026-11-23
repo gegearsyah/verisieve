@@ -130,6 +130,14 @@ export function buildMediaEngineFromInstance(instance) {
       return readMetaJson() || { evasionCharsStripped: 0, homoglyphsFolded: 0, spans: [] };
     },
 
+    pprlSignature(text, salt = 'verisieve-pprl') {
+      writeIn1(String(text ?? ''));
+      writeIn2(String(salt ?? ''));
+      const rc = ex.vs_media_pprl_signature();
+      if (rc < 0) throw new Error(readLastError());
+      return readMetaJson() || { bloomHex: '0'.repeat(32), phoneticHex: '0'.repeat(16), popcount: 0 };
+    },
+
     normalizeSpokenWords(words = []) {
       const tsv = words
         .map((w) => {
@@ -255,6 +263,23 @@ export function loadMediaWasmSync(wasmPath = DEFAULT_MEDIA_WASM_PATH) {
     cachedEngine = engine;
   }
   return engine;
+}
+
+export function pprlDiceSimilarity(bloomHexA, bloomHexB) {
+  const a = String(bloomHexA || '');
+  const b = String(bloomHexB || '');
+  if (a.length !== 32 || b.length !== 32) return 0;
+  let inter = 0, popA = 0, popB = 0;
+  for (let i = 0; i < 32; i += 8) {
+    const wa = parseInt(a.slice(i, i + 8), 16) >>> 0;
+    const wb = parseInt(b.slice(i, i + 8), 16) >>> 0;
+    let ab = (wa & wb) >>> 0;
+    let xa = wa, xb = wb;
+    while (ab) { inter += ab & 1; ab >>>= 1; }
+    while (xa) { popA += xa & 1; xa >>>= 1; }
+    while (xb) { popB += xb & 1; xb >>>= 1; }
+  }
+  return popA + popB > 0 ? (2 * inter) / (popA + popB) : 0;
 }
 
 export async function loadMediaWasm(wasmPath = DEFAULT_MEDIA_WASM_PATH) {

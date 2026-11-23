@@ -1072,3 +1072,142 @@ pub fn scan_text_pii_and_secrets(input: &str) -> ScanReport {
         homoglyphs_folded: nt.homoglyphs_folded,
     }
 }
+
+// ---------------------------------------------------------------------------
+// Zero-Import Privacy-Preserving Record Linkage (PPRL):
+// 128-bit Salted 2-Gram Bloom Filter + Soundex Phonetic Signature
+// Enables noisy cross-modal GDPR Art. 17 erasure across OCR/ASR typos.
+// ---------------------------------------------------------------------------
+
+pub struct PprlSignature {
+    pub bloom_hex: String,
+    pub phonetic_hex: String,
+    pub popcount: u32,
+}
+
+fn fnv1a_64_salted(salt: &[u8], domain: u8, data: &[u8]) -> u64 {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for &b in salt {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    h ^= domain as u64;
+    h = h.wrapping_mul(0x100000001b3);
+    for &b in data {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    h
+}
+
+fn soundex_word(word: &[u8]) -> [u8; 4] {
+    let mut out = [b'0'; 4];
+    let mut iter = word.iter().copied().filter(|c| c.is_ascii_alphabetic());
+    let Some(first) = iter.next() else {
+        return out;
+    };
+    let map_code = |c: u8| -> u8 {
+        match c.to_ascii_lowercase() {
+            b'b' | b'f' | b'p' | b'v' => b'1',
+            b'c' | b'g' | b'j' | b'k' | b'q' | b's' | b'x' | b'z' => b'2',
+            b'd' | b't' => b'3',
+            b'l' => b'4',
+            b'm' | b'n' => b'5',
+            b'r' => b'6',
+            _ => 0,
+        }
+    };
+    // Fold initial C/K/Q -> K, Ph -> F style equivalence for ASR homophones (Katherine/Catherine)
+    let first_l = first.to_ascii_lowercase();
+    out[0] = match first_l {
+        b'c' | b'q' => b'k',
+        b'j' => b'g',
+        b'z' => b's',
+        other => other,
+    };
+    let mut prev = map_code(first_l);
+    let mut idx = 1usize;
+    for c in iter {
+        let code = map_code(c);
+        if code != 0 && code != prev {
+            out[idx] = code;
+            idx += 1;
+            if idx == 4 {
+                break;
+            }
+        }
+        prev = code;
+    }
+    out
+}
+
+pub fn compute_pprl_signature(raw_text: &str, salt: &[u8]) -> PprlSignature {
+    let nt = normalize_for_scan(raw_text);
+    // Canonicalize ASCII + OCR visual confusables (0->o, 1->l, 5->s, |->l)
+    let mut canon = Vec::with_capacity(nt.norm.len());
+    let mut prev_space = true;
+    for &b in &nt.norm {
+        let mapped = match b {
+            b'0' => b'o',
+            b'1' | b'|' => b'l',
+            b'5' => b's',
+            b'A'..=b'Z' => b + 32,
+            b'a'..=b'z' | b'2'..=b'9' => b,
+            _ => b' ',
+        };
+        if mapped == b' ' {
+            if !prev_space {
+                canon.push(b' ');
+                prev_space = true;
+            }
+        } else {
+            canon.push(mapped);
+            prev_space = false;
+        }
+    }
+    while canon.last() == Some(&b' ') {
+        canon.pop();
+    }
+
+    // Build 128-bit salted Bloom filter over padded 2-grams (k=2 hashes per 2-gram)
+    let mut bits: [u64; 2] = [0, 0];
+    let mut set_bit = |pos: usize| {
+        let p = pos & 127;
+        bits[p >> 6] |= 1u64 << (p & 63);
+    };
+
+    let mut padded = Vec::with_capacity(canon.len() + 2);
+    padded.push(b'_');
+    padded.extend_from_slice(&canon);
+    padded.push(b'_');
+    if padded.len() >= 2 {
+        for w in padded.windows(2) {
+            let h1 = fnv1a_64_salted(salt, 1, w);
+            let h2 = fnv1a_64_salted(salt, 2, w);
+            set_bit((h1 & 127) as usize);
+            set_bit((h2 & 127) as usize);
+        }
+    }
+
+    // Build sorted Soundex phonetic signature across words (handles ASR phonetic drift + order)
+    let mut phon_codes: Vec<[u8; 4]> = canon
+        .split(|&c| c == b' ')
+        .filter(|w| w.len() >= 2)
+        .map(soundex_word)
+        .collect();
+    phon_codes.sort();
+    let mut phon_concat = Vec::with_capacity(phon_codes.len() * 4);
+    for code in &phon_codes {
+        phon_concat.extend_from_slice(code);
+        // Also fold phonetic codes lightly into the Bloom filter so sound-alike pairs get a similarity boost
+        let hp = fnv1a_64_salted(salt, 3, code);
+        set_bit((hp & 127) as usize);
+    }
+    let phon_hash = fnv1a_64_salted(salt, 4, &phon_concat);
+
+    PprlSignature {
+        bloom_hex: format!("{:016x}{:016x}", bits[0], bits[1]),
+        phonetic_hex: format!("{:016x}", phon_hash),
+        popcount: bits[0].count_ones() + bits[1].count_ones(),
+    }
+}
