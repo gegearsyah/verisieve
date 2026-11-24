@@ -214,3 +214,26 @@ test('Amnesiac 5: version invalidation — drifted engine version fails loudly i
 
   await assert.rejects(() => buildAmnesiacCorpus('not-a-valid-input'), /buildAmnesiacCorpus/, 'invalid input shape must fail loudly at the seam');
 });
+
+test('Amnesiac 6: repeated derived-format blocks disambiguate instead of aborting; erasure receipts state the regenerated entity count', async () => {
+  // Derived-format blocks (eml/pptx/vtt parses) carry no byte range, so benign repeated
+  // content — a quoted line, two same-titled slides — collides on the content-digest id.
+  // The corpus must keep them as two distinct samples (red under the old throw-on-collision).
+  const repeatedBlock = {
+    source: 'deck/slides.xml',
+    originalText: 'Q4 review presented by Priya Sharma.',
+    maskedText: 'Q4 review presented by <PII:PERSON_1>.',
+    structRole: 'PROSE',
+    gateAction: 'KEEP_SAFE_REDACTED',
+    coupledRiskScore: 0.1,
+    entities: [{ entityId: 'ent:person:repeat01', type: 'PERSON', token: '<PII:PERSON_1>' }],
+  };
+  const state = await buildAmnesiacCorpus({ blocks: [structuredClone(repeatedBlock), structuredClone(repeatedBlock)] });
+  assert.equal(state.samples.length, 2, 'two identical derived-format blocks stay two samples');
+  assert.equal(new Set(state.samples.map((s) => s.id)).size, 2, 'disambiguated ids remain unique and deterministic');
+  assert.equal(state.receipt.entityCount, 1);
+
+  const erased = eraseEntity(state, 'ent:person:repeat01');
+  assert.equal(erased.receipt.entityCount, 0, 'the regenerated receipt must state the post-erasure entity count, not the pre-erasure one');
+  assert.equal(erased.diffReceipt.diffVerified, true);
+});

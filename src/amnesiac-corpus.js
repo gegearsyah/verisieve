@@ -115,7 +115,15 @@ function collectSourceBytes(inputs) {
       name = item.name || item.source || 'input.txt';
       if (typeof item.text === 'string') text = item.text;
     }
-    if (text !== null && !map.has(name)) map.set(name, Buffer.from(text, 'utf8'));
+    if (text !== null) {
+      // Duplicate-named text inputs get disambiguated keys so a later colliding input can
+      // never borrow the first input's bytes as provenance (blocks from the colliding input
+      // simply resolve no byte range).
+      let key = name;
+      let n = 2;
+      while (map.has(key)) key = `${name}#${n++}`;
+      map.set(key, Buffer.from(text, 'utf8'));
+    }
   }
   return map;
 }
@@ -199,6 +207,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
   );
 
   const samples = [];
+  const idSeen = new Set();
   const entityMeta = new Map();
 
   for (const blk of rawBlocks) {
@@ -234,10 +243,18 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
 
     const { detectedCount, detectedClasses } = countDetected(blk.entities || []);
     const { missedCount, missedClasses } = countMisses(content);
-    const id = sha256Hex(`${source}\u0000${sourceRange ? sourceRange.join(':') : 'x'}\u0000${sha256Hex(originalText)}`);
-    if (samples.some((s) => s.id === id)) {
-      throw new Error(`buildAmnesiacCorpus: duplicate sample id ${id} — failing loudly instead of emitting an ambiguous corpus`);
+    const baseId = sha256Hex(`${source}\u0000${sourceRange ? sourceRange.join(':') : 'x'}\u0000${sha256Hex(originalText)}`);
+    let id = baseId;
+    if (idSeen.has(id)) {
+      if (sourceRange) {
+        throw new Error(`buildAmnesiacCorpus: duplicate sample id ${id} at byte range ${sourceRange.join(':')} — the same source span was emitted twice; failing loudly instead of emitting an ambiguous corpus`);
+      }
+      // Derived-format blocks carry no byte range, so benign repeated content (a quoted
+      // email line, two same-titled slides) legitimately collides — disambiguate deterministically.
+      let dup = 2;
+      while (idSeen.has(id)) id = sha256Hex(`${baseId}\u0000occ:${dup++}`);
     }
+    idSeen.add(id);
     samples.push({
       id,
       source,
@@ -348,7 +365,7 @@ export function eraseEntity(state, entityId) {
   const regeneratedEntityIndex = state.entityIndex.filter((e) => e.entityId !== entityId);
   const jsonl = serialize(regeneratedSamples);
   const certificates = computeCertificates(regeneratedSamples);
-  const receipt = { ...state.receipt, corpusSha256: sha256Hex(jsonl) };
+  const receipt = { ...state.receipt, corpusSha256: sha256Hex(jsonl), entityCount: regeneratedEntityIndex.length };
   const diffReceipt = {
     erasedEntityId: String(entityId),
     erasedClass: entry.class,
