@@ -521,3 +521,32 @@ noise summary's N1 count is 35 name mentions at the spec's 6%-per-token rate (th
 low by design; the histogram in the baseline artifact carries the per-noise-type miss load).
 K5's floor is now a committed artifact (`results/noisy-estate-baseline.json`); K4's
 open-world variant builds on this estate next.
+
+**2026-11-24 (Stage 4 verdict — the PT-LM epoch/lr sweep, executed and landed):** The GPU
+sweep the founder waited on finished 18/18 and the verdict is clean on the headline:
+**canary non-leakage is recipe-robust.** Across all 18 adapters (3 models × {80, 160, 240}
+steps × {2e-4, 1e-4} lr, identical T2-Chat PT-LM data), trained canary exposure spans
+2.62–4.49 bits and NO trained adapter exceeds its own model's untrained base (3.84 /
+4.17 / 4.52 bits); the grid's origin (80 steps, 2e-4) reproduces the committed single-point
+PT-LM held-out receipts exactly (16.2 / 36.2 / 25.0 judge), so the committed result is
+the origin, not a selection. Secondary findings, reported as measured: OOS abstention is
+learned, not default (0.0% at 80 steps everywhere; 10.0–80.0% at 160–240 steps, peak
+Qwen2.5-1.5B 240/2e-4 at 80.0%, with zero canary cost); held-out utility stays modest
+(strict judge 11.2–45.0%, best lfm3 160/1e-4 at 45.0%), consistent with Graph-PPR's lead.
+**Dual-judge disagreement recorded, not smoothed:** the cross-family llama3.2:3b judge is
+systematically more generous (41.2–53.8%) than the strict qwen2.5:7b judge, with row-level
+agreement on the partial-credit threshold spanning only 31.4–62.9%; the paper reports both
+side by side and the sweep artifact records the DeepSeek-swarm deviation (no API key on
+the machine; votes backfill on re-run). **Execution incidents and fixes:** the first run
+died of CUDA OOM at combo 11/18 (float32 full-vocab log-softmax at canary batch 64 on the
+8 GB card, after 10 combos of allocator fragmentation); the fix was one line — canary
+batch 64 → 16 at the sweep call site only (scores are per-candidate, batch size is pure
+memory, zero number changes; the 4 committed main-arm call sites untouched) — and the
+script's own checkpoint/resume preserved all 10 finished combos, so the relaunch cost was
+8 combos, not 18. **Verification:** Paper 3 gained sec:ptlm-sweep (18-row table + three
+findings), one abstract sentence, one discussion clause; compiled clean (9 pages, no
+undefined refs); check-paper-numbers extended with 117 sweep needles (every table cell,
+the ranges, value-vs-value baseline-reproduction and leak guards) — **911 checks, 0
+failures**. No em-dashes in the new text; en-dash compounds avoided per the founder
+ruling (numeric `--` ranges kept, matching this paper's committed convention). Zero WASM
+bytes; no engine changes.

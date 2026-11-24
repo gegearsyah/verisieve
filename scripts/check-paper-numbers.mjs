@@ -300,6 +300,46 @@ ok('trainer:ga', 'gradient_accumulation_steps=4', TRAINER);
 ok('trainer:maxlen', '= 768', TRAINER);
 ok('trainer:lrInTex', '2\\mathrm{e}{-4}', L);
 ok('trainer:maxlenInTex', '$768$', L);
+// PT-LM recipe-robustness sweep (Paper 3 sec:ptlm-sweep; results/track-d-ptlm-sweep.json)
+const SWP = j('track-d-ptlm-sweep.json');
+const SW = Object.values(SWP.combos);
+if (SW.length !== 18) { fails++; console.error(`FAIL [sweep:count] expected 18 combos, got ${SW.length}`); }
+checks++;
+// grid origin reproduces the committed single-point PT-LM held-out receipts (value-vs-value)
+for (const [tag, mk] of [['qwen05b-baseline', 'qwen05b'], ['qwen15b-baseline', 'qwen15b'], ['lfm3-baseline', 'lfm3']]) {
+  checks++;
+  if (SWP.combos[tag].summaries.heldout_50q.judge_in_pct !== MODELS[mk].heldout_50q_summary.T2_CHAT_PTLM_LORA.judge_in_pct) {
+    fails++; console.error(`FAIL [sweep:repro.${tag}] sweep baseline judge != committed PT-LM receipt`);
+  }
+}
+// canary non-leakage: every trained combo at or below its model's untrained base
+for (const c of SW) {
+  checks++;
+  if (c.canary_exposure.all_12_bits > TD.models[c.key].canary_exposure.BASE.all_12_bits) {
+    fails++; console.error(`FAIL [sweep:leak.${c.key}] trained canary ${c.canary_exposure.all_12_bits} exceeds base ${TD.models[c.key].canary_exposure.BASE.all_12_bits}`);
+  }
+}
+ok('sweep:canaryTrainedRange', `${f2(Math.min(...SW.map(c => c.canary_exposure.all_12_bits)))}$--$${f2(Math.max(...SW.map(c => c.canary_exposure.all_12_bits)))}`, L);
+ok('sweep:strictJudgeRange', `${P(f1(Math.min(...SW.map(c => c.summaries.heldout_50q.judge_in_pct))))}$--$${P(f1(Math.max(...SW.map(c => c.summaries.heldout_50q.judge_in_pct))))}`, L);
+ok('sweep:llamaJudgeRange', `${P(f1(Math.min(...SW.map(c => c.summaries.heldout_50q.llama_judge_in_pct))))}$--$${P(f1(Math.max(...SW.map(c => c.summaries.heldout_50q.llama_judge_in_pct))))}`, L);
+const nonzeroOos = SW.map(c => c.summaries.heldout_50q.oos_abstention_pct).filter(v => v > 0);
+ok('sweep:oosRange', `${P(f1(Math.min(...nonzeroOos)))}$--$${P(f1(Math.max(...nonzeroOos)))}`, L);
+// dual-judge row-level agreement on the partial-credit threshold (score >= 1 of 0-2)
+const agreePct = SW.map(c => {
+  let a = 0, n = 0;
+  for (const rows of Object.values(c.rows)) for (const r of rows) { n++; if ((r.judge_score >= 1) === (r.llama_judge_score >= 1)) a++; }
+  return 100 * a / n;
+});
+ok('sweep:agreeRange', `${f1(Math.min(...agreePct))}\\%$--$${f1(Math.max(...agreePct))}\\%`, L);
+// every table cell in tab:ptlm-sweep traces to the sweep artifact
+for (const [tag, c] of Object.entries(SWP.combos)) {
+  const h = c.summaries.heldout_50q, s = c.summaries.seen_20q;
+  ok(`sweep:${tag}.heldJudge`, P(f1(h.judge_in_pct)), L);
+  ok(`sweep:${tag}.llamaJudge`, P(f1(h.llama_judge_in_pct)), L);
+  ok(`sweep:${tag}.oos`, P(f1(h.oos_abstention_pct)), L);
+  ok(`sweep:${tag}.seenJudge`, P(f1(s.judge_in_pct)), L);
+  ok(`sweep:${tag}.canary`, f2(c.canary_exposure.all_12_bits), L);
+}
 // 20x canary exposure ranges and per-model drops quoted in both papers
 const rawRep = Object.values(MODELS).map(m => m.canary_exposure.T2_CHAT_RAW_LORA.rep_20x_bits);
 ok('canary:rawRange', `${f2(Math.min(...rawRep))}$--$${f2(Math.max(...rawRep))}`, L);
