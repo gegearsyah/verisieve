@@ -186,7 +186,7 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - [ ] TAB SR-MP reported with paired test, dumb coreference baseline, isolated τ=0.70 row from real data; losing rows not omitted.
 - [ ] Paper 3 graded by DeepSeek agent swarm + local-judge agreement column; PT-LM epoch/lr sweep reported; hyperparameters and OOS column in the paper.
 - [ ] Novelty thesis adopted (gate closed) and the C-P3L prior-art question resolved.
-- [ ] Amnesiac Corpus spec published to the issue tracker with `ready-for-agent`.
+- [x] Amnesiac Corpus spec published to the issue tracker with `ready-for-agent` — [`gegearsyah/verisieve#25`](https://github.com/gegearsyah/verisieve/issues/25) (2026-11-24).
 - [ ] Amnesiac Corpus core built at one new seam: deterministic entity-indexed corpus, provable erasure (byte-diff = erased spans exactly), per-sample certificates, version-pinned determinism receipts.
 - [ ] Amnesiac ablation run: 1/5/20% entity deletion vs SISA and approximate LoRA unlearning — byte-diff, retrain wall-clock, canary exposure at chance, certificate pass rate.
 - [ ] Vector diagram/chart extraction, SQL JOIN, dHash triage, prosody kernel shipped behind green TDD + unchanged import discipline (`audit-wasm` allVerified).
@@ -198,3 +198,5 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 ## 8. Run Record
 
 *What actually happened (appended by the executing session — commit shas and DEVIATIONS recorded as they happened, not smoothed).*
+
+**2026-11-24 (handoff-authoring session):** Stage 5a executed ahead of the remediation stages — the Amnesiac Corpus implementation spec was published as [`gegearsyah/verisieve#25`](https://github.com/gegearsyah/verisieve/issues/25) with the `ready-for-agent` label. Spec seam design founder-confirmed before publication: one new seam (buildAmnesiacCorpus / eraseEntity), external-behavior-only tests, existing seams reused, Rust port earned by Stage 10 ablation not assumed. The handoff stages remain the execution order; the spec is the agent-facing restatement of Stage 5 + Stage 10's ablation.
