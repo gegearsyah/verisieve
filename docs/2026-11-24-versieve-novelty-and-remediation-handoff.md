@@ -1,7 +1,15 @@
-# Versieve Novelty & Remediation Handoff: Fix the Phase I Record, Adopt Our Own Mechanism, Then Build Phase II on It
+# Versieve Company-Brain Handoff: Fix the Phase I Record, Then Build the Client-Side Company Brain
 
 - **Date:** 2026-11-24
-- **One-line goal:** From the *verified-but-biased* state (`fix/spec-15-remediation` @ `9472c26`, 108/108 CI green, 5 zero-import WASM kernels, 369,646 B total) to a **credible paper record reconciled to raw data** plus an **adopted novelty thesis** ("Leakage-Certified Scene Perception", founder-gated) that Phase II's perception pillars serve — instead of "we did this because the paper says so".
+- **One-line goal:** From the *verified-but-biased* state (`fix/spec-15-remediation` @ `9472c26` + handoff commit `ac5a8cb`, 108/108 CI green, 5 zero-import WASM kernels, 369,646 B total) to a **credible paper record reconciled to raw data**, then the first end-to-end slice of the **Company Brain product**: omnimodal capture → cross-source connection graph → zero-leakage certification → training-ready export — 100% client-side.
+
+**Founder product definition (2026-11-24, binding — every stage must serve one of these four or be cut):**
+1. **Perfect capture:** all necessary data from every medium a company owns — SQL, CSV, video meetings, notes, proposals, email, decks, PDFs, archives.
+2. **Know the connections:** what data links to what, across sources and departments (IT's data ↔ Business's data are often the same data wearing different clothes) — the company's knowledge as one queryable graph.
+3. **Everything client-side:** zero cloud, zero egress, works on the company's own machines.
+4. **Two deliverables:** (a) a full **visualization of the company's data connections**, and (b) literal **training-ready artifacts** (JSONL et al.) a company can train their model on **without any leakage** — their entire brain, certified leak-free.
+
+*Positioning note:* the "Leakage-Certified Scene Perception" research bet (see research notes) is not the product — it is the **certificate layer** that makes deliverable 4's "without any leakage" provable instead of marketing. The market framing above is the thesis; the science serves it.
 
 **Inputs this handoff was written from (all checked in):**
 - [docs/research-notes/2026-11-24-argon-parity-feasibility-audit.md](2026-11-24-argon-parity-feasibility-audit.md) — codebase reality check; every reviewer claim tested against raw JSONs
@@ -27,7 +35,7 @@
 4. **Every paper number traces to a checked-in raw artifact**, enforced by a CI check (built in Stage 1). Citations are pinned via arxiv.org directly, never via search snippets (the research agents caught the search tooling fabricating 8+ arXiv IDs this session).
 5. **Zero host imports** (`imports.length === 0`), **zero hardcoded user paths**, clean-room naming — non-negotiable.
 6. **Cloud egress discipline:** the only permitted external service is the DeepSeek judge agent (`deepseek-v4.1-flash`, judging-only), receiving only sanitized PII-free eval outputs; canaries/decoys never leave the machine.
-7. **Novelty-first:** no new capability is added "because the paper says so" — every Phase II stage must serve the adopted thesis or be cut (founder, 2026-11-24).
+7. **Product-first, novelty-backed:** no new capability is added "because the paper says so" — every Phase II stage must serve one of the four founder product pillars (capture / connections / client-side / training-ready export) or the adopted thesis, or it is cut (founder, 2026-11-24).
 
 ---
 
@@ -93,8 +101,8 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - Abort: if the OpenRouter agent errors, fall back to local judges for the run and record the deviation — do not block the epoch sweep.
 - Commit: `feat(paper3): DeepSeek agent-swarm judge + PT-LM epoch/lr sweep`.
 
-**Stage 5 — GATE: adopt the novelty thesis**
-- **Founder gate — ask, never assume.** Adopt **"Leakage-Certified Scene Perception"** (every scene-graph element carries a finite-sample non-leakage certificate computed by the same O(1) sketch that persists entity identity, in a <500 KB zero-egress kernel) as the thesis all Phase II work serves, with **SREM** as the mechanism chapter? Before asking, the lead runs the one unresolved prior-art check (the C-P3L "conformal PII sanitization" question) so the gate is decided on complete information.
+**Stage 5 — GATE: adopt the Company-Brain thesis (product-first, certificate-backed)**
+- **Founder gate — ask, never assume.** Adopt the product thesis: **Versieve = the client-side Company Brain** — (1) perfect omnimodal capture, (2) cross-source/cross-department connection graph, (3) zero egress, (4) connection visualization + training-ready JSONL with zero leakage. The scientific mechanism claim underneath deliverable 4 is **"Leakage-Certified Scene Perception"** (every scene-graph element carries a finite-sample non-leakage certificate computed by the same O(1) sketch that persists entity identity, in a <500 KB zero-egress kernel), with **SREM** as its mechanism chapter. Before asking, the lead runs the one unresolved prior-art check (the C-P3L "conformal PII sanitization" question) so the gate is decided on complete information.
 - No commit; this decision rewrites Stage 6–10 framing.
 
 **Stage 6 — Vector-side perception (pure JS; zero WASM bytes)**
@@ -118,10 +126,11 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - Verify: `cargo test`; a synthetic 2-speaker fixture with known turn boundaries → purity ≥ target set by the founder; `audit-wasm` size check (24 KB headroom is shared with Stage 8 — if exceeded, GATE the size ceiling).
 - Commit: `feat(media-wasm): F0/prosody + speaker clustering-lite on PCM`.
 
-**Stage 10 — Argon-Perceive-Bench v1 + thesis integration + paper updates**
+**Stage 10 — Argon-Perceive-Bench v1 + the Company-Brain slice + paper updates**
 - What: 6 workspaces with **GT-by-construction** (no "Argon oracle" at runtime; Argon is the inspiration and one static reference column only, if the founder wants it); **Workspace 4 is keyframes + WAV + VTT — no mp4-decode claim** (video decode stays fail-closed external); anti-circularity CI assertion on every workspace (no GT token may reach any seed argument — the codebase has already demonstrated this failure mode once); frame the benchmark around the adopted thesis: coverage/leakage certificates per scene-graph element, byte-budget frontier (50/215/500 KB), ablations vs Presidio / PerceptFence-style rules / plain Bloom / unbounded dictionary.
+- **Company-Brain slice (the product demo this all exists for):** Workspace 6 extended into the founder's four-pillar story — ingest a mock company's mixed estate (SQL dump, CSVs, meeting WAV+transcript, notes, proposal decks, email), then demonstrate: (P1) capture across all of them; (P2) **cross-department linking** — SR-MP ring + graph PPR/louvain surface that IT's and Business's "similar" data are the same entities/records, emitted as the connection graph; (P3) zero-egress receipt for the whole run; (P4) two exports off `perceiveMulti()`'s existing graph-index/SFT-JSONL plumbing: a **connection-graph visualization artifact** (serialized graph + rendered figure, dataviz skill first) and **training-ready JSONL with per-span leakage certificates**.
 - Verify: `node scripts/eval-argon-parity-benchmark.mjs` → `results/argon-parity-benchmark.json`; `npm run test:ci`; `check-paper-numbers.mjs` green; papers + README updated; figures follow the dataviz skill.
-- Commit: `feat(bench): Argon-Perceive-Bench v1 (GT-by-construction, anti-circularity)` then `docs(papers): Phase II results`.
+- Commit: `feat(bench): Argon-Perceive-Bench v1 + company-brain slice (GT-by-construction, anti-circularity)` then `docs(papers): Phase II results`.
 - GATE: pushing to `main` — founder decides.
 
 ---
@@ -156,7 +165,7 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 | Naming: "Versieve" prose / `verisieve` identifiers | SETTLED 2026-11-24 |
 | Cloud DeepSeek agent-swarm judging of sanitized outputs | SETTLED 2026-11-24 (yes — judging only) |
 | Real JOIN in the Rust SQL kernel (option B) | SETTLED 2026-11-24 (B) |
-| Adopt "Leakage-Certified Scene Perception" as thesis | **OPEN — Stage 5** |
+| Adopt the Company-Brain thesis (product-first; "Leakage-Certified Scene Perception" as the certificate layer) | **OPEN — Stage 5** |
 | Size-ceiling renegotiation (media 215 KB / total <400 KB) | **OPEN — triggers on Stage 8/9 overflow** |
 | Push to `main` | **OPEN — end of Stage 10** |
 
@@ -169,6 +178,7 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - [ ] Novelty thesis adopted (gate closed) and the C-P3L prior-art question resolved.
 - [ ] Vector diagram/chart extraction, SQL JOIN, dHash triage, prosody kernel shipped behind green TDD + unchanged import discipline (`audit-wasm` allVerified).
 - [ ] Argon-Perceive-Bench v1 runs end-to-end GT-by-construction with anti-circularity CI; no mp4-decode claim.
+- [ ] Company-Brain slice demonstrated: mixed-estate ingestion → cross-department link discovery (IT ↔ Business) → connection-graph visualization → training-ready JSONL with leakage certificates, zero egress.
 - [ ] Every new number in papers traces to a results JSON; word-ban grep clean.
 - [ ] `npm run test:ci` green (≥108 tests), all commits explicit-path, run record below filled.
 
