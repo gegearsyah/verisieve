@@ -205,6 +205,16 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
   coverage K: % of manifest facts spanning ≥2 documents recoverable from perception output alone,
   at the shipped byte budget (387,267 B), zero egress, byte receipts. Score from perception output
   + existing sample fields only — no further schema change in this stage.
+- Noisy-estate spec (2026-11-24, lead-authored, binding for the fixture build):
+  `docs/2026-11-24-noisy-estate-benchmark-spec.md`. World-first generation (truth = frozen world
+  model, documents = seeded noisy projections), spec-authored noise N1–N8 (typos/OCR, nickname
+  table, initials, case/format, shared inboxes, 20 same-name collision pairs, stale records,
+  cross-doc disagreement), ~115 text documents, Q1/Q2/Q3 eval strata (24/24/12), person-level
+  pairwise + B-cubed scoring with false-merge/false-split and miss attribution by noise type,
+  anti-circularity rules (no engine imports in the generator, no post-hoc truth adjustment,
+  no tuning), and a binding trivial-baseline acceptance gate: exact-match must score pairwise
+  recall <90% and commit at least one false merge on collisions, else the estate is not a
+  benchmark. Feeds K4's open-world variant, K5's scorer, and K3's stratified eval.
 - Verify: `results/crossdoc-identity-merge.json`, `results/knowledge-perception-coverage.json`;
   anti-circularity assertions; needles; `npm run test:ci`.
 - Commit: `feat(bench): identity-merge failure taxonomy + knowledge-perception coverage K`.
@@ -466,3 +476,20 @@ treated as a design-thesis title with the open comparison scoped in the abstract
 founder gate if they want it. Committed: `4ef233f` (paper remediation + bib + needle),
 `72665ed` (open-estate dataset hunt note, also this date; AMI/ICSI licenses re-verified by the
 lead on the source pages).
+
+**2026-11-24 (K4/K5 prep, lead-authored while the GPU queue drains):** The founder said "lets
+wait for our current verdict, if u have some homework to do, do so". Homework executed: the
+noisy-estate benchmark spec (`docs/2026-11-24-noisy-estate-benchmark-spec.md`), lead-authored,
+which turns the external critique's benchmark demands (independent authorship, noise, B-cubed
+scoring, failure-side reporting) into binding fixture-build rules. Design highlights: world-first
+truth (the manifest is a frozen world model, documents are seeded noisy projections, truth is
+never adjusted to match them); noise N1–N8 authored in the spec before implementation and not
+derived from engine code (no engine imports in the generator, asserted); 20 same-name collision
+pairs as the designed false-merge stress case; shared inboxes and stale records as the
+false-split stress cases; Q1/Q2/Q3 question strata (single-doc / cross-doc / disambiguation)
+authored by the manifest layer only; person-level pairwise + B-cubed scoring with miss
+attribution by noise type; and a binding acceptance gate that the benchmark must be able to
+fail: an exact-match baseline must score <90% pairwise recall and commit at least one false
+merge, or the estate is regenerated with the failure documented. Audio/decks honestly out of
+scope for v1 (identity overlay on real speech is not honest, per the dataset hunt). Fixture
+build handed to a subagent against the spec; lead verification and wiring on completion.
