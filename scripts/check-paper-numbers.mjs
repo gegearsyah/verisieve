@@ -70,22 +70,34 @@ ok('secrets:totalKB', f1(R3.totalBytes1x / 1000), M); // "78.1 KB"
 ok('secrets:vsYelp', f1(R3.verisieve_media_wasm.steadyStateMBps / R3.yelp_detect_secrets.steadyStateMBps), M);
 ok('secrets:vsGitleaksCold', f1(R3.gitleaks_v8_30_1.cold1xWallMs / R3.verisieve_media_wasm.cold1xWallMs), M);
 
-/* ---------------- Paper 3: Exp.4 audio (expR4) ---------------- */
+/* ---------------- Paper 3: Exp.4 audio (expR4, Stage 2 honest self-seeded re-run) ---------------- */
 const R4 = SECRETS.expR4_endToEndWhisperAudio;
+const PRE = R4.preExposure;
+const CONDS = R4.conditions;
 ok('audio:calls', String(R4.callsEvaluated), M);
 ok('audio:tokens', String(R4.totalPlantedPiiTokens), M);
-ok('audio:pre', P(f2(R4.preExposureOfPlantedPct)), M);
-ok('audio:preCI', `[${f1(R4.preExposureWilson95CI[0])}\\%, ${f1(R4.preExposureWilson95CI[1])}\\%]`, M);
-ok('audio:post', P(f2(R4.postLeakageOfPlantedPct)), M);
-ok('audio:postCI', `[${f1(R4.postLeakageWilson95CI[0])}\\%, ${f1(R4.postLeakageWilson95CI[1])}\\%]`, M);
-ok('audio:srmp', P(f2(R4.srmpPostLeakageOfPlantedPct)), M);
-ok('audio:srmpCI', `[${f2(R4.srmpPostLeakageWilson95CI[0])}\\%, ${f2(R4.srmpPostLeakageWilson95CI[1])}\\%]`, M);
-ok('audio:dropPP', f2(R4.srmpAbsoluteDropPercentagePoints), M);
-ok('audio:relative', P(f2(R4.srmpRelativeReductionOfExposedPct)), M);
-ok('audio:zeroLeak', `${R4.srmpCallsWithZeroPostLeak}/${R4.callsEvaluated}`, M);
-ok('audio:isolatedZeroLeak', `${R4.callsWithZeroPostLeak}/${R4.callsEvaluated}`, M);
-ok('audio:retention', P(f1(R4.srmpNonPiiContextRetentionPct)), M);
-ok('audio:residualRatio', f1(R4.postLeakageOfPlantedPct / R4.srmpPostLeakageOfPlantedPct), M);
+ok('audio:pre', P(f2(PRE.exposureOfPlantedPct)), M);
+ok('audio:preCI', `[${f1(PRE.wilson95CI[0])}\\%, ${f1(PRE.wilson95CI[1])}\\%]`, M);
+ok('audio:post', P(f2(CONDS.isolated.leakageOfPlantedPct)), M);
+ok('audio:postCI', `[${f1(CONDS.isolated.wilson95CI[0])}\\%, ${f1(CONDS.isolated.wilson95CI[1])}\\%]`, M);
+ok('audio:srmp', P(f2(CONDS.srmpSelfSeeded.leakageOfPlantedPct)), M);
+ok('audio:srmpCI', `[${f2(CONDS.srmpSelfSeeded.wilson95CI[0])}\\%, ${f2(CONDS.srmpSelfSeeded.wilson95CI[1])}\\%]`, M);
+ok('audio:dropPP', f2(CONDS.srmpSelfSeeded.absoluteDropPercentagePoints), M);
+ok('audio:relative', P(f2(CONDS.srmpSelfSeeded.relativeReductionOfExposedPct)), M);
+ok('audio:zeroLeak', `${CONDS.srmpSelfSeeded.callsWithZeroLeak}/${R4.callsEvaluated}`, M);
+ok('audio:isolatedZeroLeak', `${CONDS.isolated.callsWithZeroLeak}/${R4.callsEvaluated}`, M);
+ok('audio:retention', P(f1(CONDS.srmpSelfSeeded.nonPiiContextRetentionPct)), M);
+ok('audio:residualRatio', f1(CONDS.isolated.leakageOfPlantedPct / CONDS.srmpSelfSeeded.leakageOfPlantedPct), M);
+ok('audio:fuzzy', P(f2(CONDS.fuzzyBaseline.leakageOfPlantedPct)), M);
+ok('audio:fuzzyCI', `[${f2(CONDS.fuzzyBaseline.wilson95CI[0])}\\%, ${f2(CONDS.fuzzyBaseline.wilson95CI[1])}\\%]`, M);
+ok('audio:fuzzyZeroLeak', `${CONDS.fuzzyBaseline.callsWithZeroLeak}/${R4.callsEvaluated}`, M);
+ok('audio:wrong', P(f2(CONDS.srmpWrongRecord.leakageOfPlantedPct)), M);
+ok('audio:wrongCI', `[${f1(CONDS.srmpWrongRecord.wilson95CI[0])}\\%, ${f1(CONDS.srmpWrongRecord.wilson95CI[1])}\\%]`, M);
+ok('audio:partial', P(f2(CONDS.srmpPartialAnchors.leakageOfPlantedPct)), M);
+ok('audio:partialCI', `[${f1(CONDS.srmpPartialAnchors.wilson95CI[0])}\\%, ${f1(CONDS.srmpPartialAnchors.wilson95CI[1])}\\%]`, M);
+ok('audio:absentFrac', `${CONDS.srmpSelfSeeded.absentFromAnchorsTokens}/${R4.totalPlantedPiiTokens}`, M);
+ok('audio:absentLeaked', String(CONDS.srmpSelfSeeded.absentLeakedTokens), M);
+ok('audio:avgAnchors', f2(CONDS.srmpSelfSeeded.avgAnchorsPerCall), M);
 
 /* ---------------- Paper 3: Exp.5 PPRL (expR5) ---------------- */
 const R5 = SECRETS.expR5_pprlRealityCheck;
@@ -153,6 +165,12 @@ ok('tab:directSpans', String(A.stage3aWasmOnly.directTotal), M);
 ok('tab:directPersonSpans', String(TAB.prCurves.srmpPerson[5].directTotal), M);
 ok('tab:presidioP', f4(TAB.allMaskableSignificance.hybridDevFilteredVsPresidioFairP), M); // p=0.0002
 ok('tab:personPresidioP', f4(TAB.personSignificance.devFilteredGlinerVsPresidioP), M);
+// Stage 3: paired per-document permutation tests (SR-MP vs dev-filtered and vs dumb propagation)
+ok('tab:srmpVsDevFilteredP', f4(TAB.personSignificance.srmpVsDevFilteredP), M); // p=0.0448
+ok('tab:srmpVsDumbP', f4(TAB.personSignificance.srmpVsDumbPropagationP), M);
+ok('tab:srmpVsDevFilteredTau070P', f4(TAB.personSignificance.srmpVsDevFilteredTau070P), M);
+ok('tab:srmpVsDumbTau070P', f4(TAB.personSignificance.srmpVsDumbPropagationTau070P), M);
+ok('pr:dumb70.f1', P(f2(TAB.prCurves.dumbPerson[5].f1Pct)), M); // lessons prose: dumb tau=0.70 F1
 
 /* ---------------- Paper 3: tab:gt-ltt (non-circular ground truth) ---------------- */
 // tex shows only these (regime, alpha) rows; parenthetical is the leak COUNT

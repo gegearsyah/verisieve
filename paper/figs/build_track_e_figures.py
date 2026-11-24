@@ -32,6 +32,9 @@ SUB = "#4B5563"
 GRID = "#E5E7EB"
 PURPLE = "#6D28D9"
 PURPLE_LIGHT = "#EDE9FE"
+# Recessive baseline gray (dumb same-doc propagation reference curve); identity is
+# carried by the dotted linestyle + open marker + legend, not by hue.
+GRAY = "#6B7280"
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans",
@@ -196,12 +199,20 @@ def build_fig_e1(tab):
                  markerfacecolor=PURPLE, markeredgecolor="white", markeredgewidth=0.8,
                  label="WASM SR-MP + GLiNER 45M", zorder=5)
 
+    dumb_pts = [p for p in tab["prCurves"].get("dumbPerson", []) if p["recallPct"] > 0]
+    if dumb_pts:
+        ax1.plot([p["recallPct"] for p in dumb_pts], [p["precisionPct"] for p in dumb_pts],
+                 color=GRAY, linewidth=1.4, linestyle=":", marker="v", markersize=3.8,
+                 markerfacecolor="white", markeredgecolor=GRAY, markeredgewidth=0.9,
+                 label="Dumb same-doc name propagation", zorder=3)
+
     for p in df_pts:
         t = p["threshold"]
         if t in (0.3, 0.5, 0.7):
-            off = (-18, -11) if t == 0.5 else (-14, -12) if t == 0.3 else (5, -6)
+            off = (-18, -11) if t == 0.5 else (-14, -12) if t == 0.3 else (6, 5)
             ax1.annotate(f"τ={t:.1f}", (p["recallPct"], p["precisionPct"]), xytext=off,
-                         textcoords="offset points", fontsize=6.1, color=BLUE, fontweight="bold")
+                         textcoords="offset points", fontsize=6.1, color=BLUE, fontweight="bold", zorder=8,
+                         bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))
 
     pres = tab["personComparison"]["presidioPerson"]
     p1 = tab["personComparison"]["paper1Regex"]
@@ -253,10 +264,12 @@ def build_fig_e1(tab):
              label="HC-CRC Auto-Release (% all)", zorder=3)
 
     ax2.annotate(f"HC-CRC: {hc_fpr[2]:.2f}% FPR\n{hc_auto[2]:.1f}% rel.", (2, hc_auto[2]), xytext=(-14, 11),
-                 textcoords="offset points", fontsize=5.9, fontweight="bold", color=TEAL,
+                 textcoords="offset points", fontsize=5.9, fontweight="bold", color=TEAL, zorder=8,
+                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85),
                  arrowprops=dict(arrowstyle="->", color=TEAL, lw=0.8))
     ax2.annotate(f"HC-CRC {hc_fpr[3]:.2f}% ≤ 10%\n(DEFF=2.62 fixed)", (3, hc_fpr[3]), xytext=(-28, -22),
-                 textcoords="offset points", fontsize=5.8, fontweight="bold", color=BLUE,
+                 textcoords="offset points", fontsize=5.8, fontweight="bold", color=BLUE, zorder=8,
+                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85),
                  arrowprops=dict(arrowstyle="->", color=BLUE, lw=0.8))
 
     ax2.set_xticks(x)
@@ -367,35 +380,50 @@ def build_fig_e3(sap):
     fig.patch.set_facecolor("white")
 
     # ---- Panel A: 25-Call Cross-Model Audio (Same Base = 97 Planted PII Tokens) ----
+    # Stage 2 honest re-run: all conditions self-seeded (no answer-key anchors);
+    # hue encodes method family (pre / isolated / fuzzy baseline / SR-MP), the tick
+    # label carries the condition, so SR-MP variants share one hue by design.
     style_ax(ax1, "y")
-    srmp_v = aud.get("srmpPostLeakageOfPlantedPct", aud["postLeakageOfPlantedPct"])
-    ci_srmp = aud.get("srmpPostLeakageWilson95CI", aud["postLeakageWilson95CI"])
-    labels = ["Pre-Redact\nExposure\n(small.en)", "Isolated\nITN+GLiNER\n(small.en)", "WASM SR-MP\nCoupled\n(small.en)", "Non-PII\nContext\nRetained"]
-    vals = [aud["preExposureOfPlantedPct"], aud["postLeakageOfPlantedPct"], srmp_v, aud["nonPiiContextRetentionPct"]]
-    ci_pre = aud["preExposureWilson95CI"]
-    ci_post = aud["postLeakageWilson95CI"]
-    yerr_lo = [vals[0] - ci_pre[0], vals[1] - ci_post[0], vals[2] - ci_srmp[0], 0.0]
-    yerr_hi = [ci_pre[1] - vals[0], ci_post[1] - vals[1], ci_srmp[1] - vals[2], 0.0]
-    cols = [CORAL, BLUE_MID, PURPLE, TEAL]
+    pre = aud["preExposure"]
+    conds = aud["conditions"]
+    rows = [
+        ("Pre-Redact", pre["exposureOfPlantedPct"], pre["wilson95CI"], CORAL),
+        ("Isolated", conds["isolated"]["leakageOfPlantedPct"], conds["isolated"]["wilson95CI"], BLUE_MID),
+        ("Fuzzy JW", conds["fuzzyBaseline"]["leakageOfPlantedPct"], conds["fuzzyBaseline"]["wilson95CI"], GRAY),
+        ("SR-MP self", conds["srmpSelfSeeded"]["leakageOfPlantedPct"], conds["srmpSelfSeeded"]["wilson95CI"], PURPLE),
+        ("SR-MP wrong", conds["srmpWrongRecord"]["leakageOfPlantedPct"], conds["srmpWrongRecord"]["wilson95CI"], PURPLE),
+        ("SR-MP partial", conds["srmpPartialAnchors"]["leakageOfPlantedPct"], conds["srmpPartialAnchors"]["wilson95CI"], PURPLE),
+    ]
+    labels = [r[0] for r in rows]
+    vals = [r[1] for r in rows]
+    yerr_lo = [vals[i] - rows[i][2][0] for i in range(len(rows))]
+    yerr_hi = [rows[i][2][1] - vals[i] for i in range(len(rows))]
+    cols = [r[3] for r in rows]
     x = np.arange(len(labels))
-    bars = ax1.bar(x, vals, width=0.52, color=cols, zorder=3)
-    ax1.errorbar(x[:3], vals[:3], yerr=[yerr_lo[:3], yerr_hi[:3]], fmt="none", ecolor=INK, elinewidth=1.1, capsize=3.2, zorder=4)
+    bars = ax1.bar(x, vals, width=0.62, color=cols, zorder=3)
+    ax1.errorbar(x, vals, yerr=[yerr_lo, yerr_hi], fmt="none", ecolor=INK, elinewidth=1.1, capsize=3.2, zorder=4)
 
     for i, (bar, v) in enumerate(zip(bars, vals)):
-        top = v + (yerr_hi[i] if i < 3 else 0) + 2.2
+        top = v + yerr_hi[i] + 2.2
         ax1.text(bar.get_x() + bar.get_width() / 2, top, f"{v:.1f}%",
-                 ha="center", va="bottom", fontsize=6.6, fontweight="bold", color=INK)
+                 ha="center", va="bottom", fontsize=6.2, fontweight="bold", color=INK)
 
+    ss = conds["srmpSelfSeeded"]
+    fz = conds["fuzzyBaseline"]
     ax1.annotate(
-        f"SR-MP: -{aud.get('srmpAbsoluteDropPercentagePoints', 86.6):.1f} pp ({aud.get('srmpRelativeReductionOfExposedPct', 91.3):.1f}% cut)\n{aud.get('srmpCallsWithZeroPostLeak', 21)}/{aud['callsEvaluated']} calls 0 leak",
-        xy=(2, ci_srmp[1] + 8), xytext=(1.55, 76),
+        f"SR-MP self-seeded: -{ss['absoluteDropPercentagePoints']:.1f} pp, "
+        f"{ss['relativeReductionOfExposedPct']:.1f}% cut,\n"
+        f"{ss['callsWithZeroLeak']}/{aud['callsEvaluated']} calls 0 leak\n"
+        f"Fuzzy JW same anchors: {fz['leakageOfPlantedPct']:.2f}% —\n"
+        f"ring buys anchor privacy, not accuracy",
+        xy=(3, ss["wilson95CI"][1] + 3), xytext=(2.75, 64),
         arrowprops=dict(arrowstyle="->", color=PURPLE, lw=1.0),
-        fontsize=5.9, fontweight="bold", color=PURPLE, ha="center",
-        bbox=dict(boxstyle="round,pad=0.22", fc=PURPLE_LIGHT, ec=PURPLE, lw=0.8),
+        fontsize=5.2, fontweight="bold", color=PURPLE, ha="center",
+        bbox=dict(boxstyle="round,pad=0.3", fc=PURPLE_LIGHT, ec=PURPLE, lw=0.8),
     )
 
     ax1.set_xticks(x)
-    ax1.set_xticklabels(labels, fontsize=7.0)
+    ax1.set_xticklabels(labels, fontsize=6.2, rotation=28, ha="right")
     ax1.set_ylim(0, 118)
     ax1.set_yticks([0, 25, 50, 75, 100])
     ax1.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
@@ -427,7 +455,7 @@ def build_fig_e3(sap):
              bbox=dict(boxstyle="round,pad=0.25", fc=BLUE_LIGHT, ec=BLUE_MID, lw=0.8))
 
     ax2.set_xticks(xb)
-    ax2.set_xticklabels([m[0] for m in methods])
+    ax2.set_xticklabels([m[0] for m in methods], fontsize=6.2)
     ax2.set_ylim(0, 130)
     ax2.set_yticks([0, 25, 50, 75, 100])
     ax2.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
