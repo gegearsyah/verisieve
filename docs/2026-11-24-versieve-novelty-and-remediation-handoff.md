@@ -406,3 +406,15 @@ repository bytes. Estate construction remains a separately gated work order; fet
 layer is the named next step. Deviations recorded: one SPARQL 504 (retried, succeeded); the employer
 cross-product row-limit trap (worked around by dropping label lookups from the same query); the
 TextExtracts 20-title cap (batched by 20).
+
+**2026-11-24 (gate 3 follow-up, full-text layer fetched; document tier measured):** the named
+next step after the feasibility fetch ran outside the repository: full plain-text Wikipedia
+articles for all 200 persons (200 of 200 nonempty, zero failures; median 2,964 characters
+against the 407 intro median; 165 of 200 at or above the 1,000-character document-scale
+threshold, 82.5%). Honest limits recorded: the stub tail (35 below threshold, 101 of 200
+under 3,000), one namesake redirect (Martin Dougiamas resolves to the Moodle software article;
+no per-article namesake check has run), and the CC BY-SA 4.0 share-alike attachment on the text
+layer. Files sha-pinned in the external manifest; zero repository bytes. Details and pins in the
+hunt note's Section 9.5. Executed by a haiku subagent; lead-verified (stats independently
+recomputed from `wikipedia-fulltext.json`, shas matched, spot checks on the shortest article
+and the redirect entry). Estate construction remains gated.

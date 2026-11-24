@@ -331,3 +331,28 @@ Fetch files (external to the repository): `wikidata-people.sparql.json`,
 `wikidata-feasibility-manifest.json`, which carries the fetch date, the exact query text, the
 license statements with their Section 8 sources, per-file SHA-256, the entity counts above and the
 two failed attempts.
+
+### 9.5 Full-text layer fetch (2026-11-24)
+
+The thin-synopsis limit recorded in 9.3 is now measured against full article text. All 200
+persons' full plain-text English Wikipedia articles were fetched (MediaWiki API
+`prop=extracts&explaintext`, one request per person, since full extracts ignore `exlimit`;
+descriptive User-Agent; 150 ms throttle). Results, 200 of 200 nonempty, zero failures: median
+2,964 characters (against the intro median of 407), mean 5,958.1, max 80,012, total 1,194,019
+plain-text bytes. At the recorded document-scale threshold of 1,000 characters, 165 of 200
+persons (82.5%) qualify; 35 stay below it, 6 of them under 500. Half the cast (101 of 200) is
+still under 3,000 characters. One redirect was followed: Martin Dougiamas resolves to the Moodle
+software article, which is a company article rather than a biography; it stays in the
+distribution and is the recorded namesake risk: no per-article content check has verified that
+each long article is about the person rather than a namesake. The license attachment is the second
+limit: English Wikipedia text is CC BY-SA 4.0, attribution and share-alike, and that obligation
+attaches to any estate that combines this layer with the CC0 structured facts. Files (external,
+sha256 pinned in the manifest): `wikipedia-fulltext.json` (1,245,350 B, sha256
+`2e0db41558194bf128cdbebe687a1d21b0f8c2373dc1ed5c63028030e948d53e`), `fulltext-stats.json`
+(2,713 B, sha256 `9411255968b1b4d602aa8bf52113385fc74f3f7254fbd61505e8fe129469092d`), and the
+updated `wikidata-feasibility-manifest.json` (10,912 B, sha256
+`94f73df37ffdac96cae7efbdd2af40d7b6139370d226e67fda80217090bb4c65`), which gained only additive
+keys (`fullTextFetch`, `fullText`, `fullTextDeviations`). Zero repository bytes. Verdict: the
+document tier is proven at 82.5% of the cast at the 1,000-character threshold; the stub tail, the
+namesake risk, and the share-alike attachment are the three honest limits, and estate construction
+remains a separately gated work order.
