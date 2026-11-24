@@ -384,3 +384,36 @@ offsets fails loudly by design (K0 deviation (a) carried into K1 — the build s
 refuses to guess); (b) JSON-escaping caveat carried over from K0 (loud failure direction);
 (c) composed entity-index entries keep per-block `occurrences` and re-point `sampleIds` at
 composed samples. Zero WASM bytes; `audit-wasm` unchanged.
+
+**2026-11-24 (Stage K2 — identity-contrastive pair compiler, executed same session):**
+`compileIdentityContrastivePairs(state, options)` shipped in
+`src/identity-contrastive-pairs.js`, over the readable per-block seam only (vaulted and composed
+states are loud `TypeError`s; the vaulted pair variant is a later stage). **pairs-v1 policies
+(canonicalized, versioned):** positives = every cross-source block pair of one entity as a
+two-message SFT sample (labeled records in; readable canonical id + canonical name out);
+negatives = same-class different-entity near-misses (normalized Levenshtein ≥ 0.8 over
+lowercased canonical anchors), assistant target names both ids (the model must split them);
+**far negatives declined by default** (anti-triviality — the surface-similarity shortcut guard),
+with the declined count still recorded in `hardnessBins` for the later hardness sweep
+(`options.includeFarNegatives` is the knob); entity-disjoint holdout reserved BEFORE any pair is
+emitted (every k-th entity in canonical id order, k = ceil(1/fraction), first entity included —
+16/76 on the estate at the 0.2 default), holdout mentions retained as context in other pairs for
+unseen-entity binding in K3; determinism: pair ids = sha256(`pair\0` + block ids + entity id(s)),
+JSONL fixed-ordered by pair id, no timestamps. Runner
+`scripts/run-identity-contrastive-pairs.mjs` → `results/identity-contrastive-pairs.json` +
+`.jsonl`. **Estate receipts:** 323 pairs = 245 positives (233 cross-modal) + 78 near negatives;
+hardness bins {homonym 0, near 131, far 286}; source = the committed company-brain-slice corpus
+(24 samples / 76 entities). Executed by a sonnet subagent (TDD red→green: K2 1–6);
+**lead-verified**: full diff review, K2 6/6 + Amnesiac 12/12, runner regeneration reproduces the
+receipts exactly, full `test:ci` green with the test lead-wired into `test:ci`, 793 paper-number
+checks 0 failures with zero check-script edits. **Lead fixes on top of the subagent's output:**
+the smoke test ended with `fs.rmSync` on both artifacts — it would delete the committed receipts
+on every CI run once wired in; it now restores the pre-test bytes byte-for-byte (and removes the
+files only if they were absent). **Deviations recorded (implementer choices, lead-reviewed):**
+(a) pair-id digest uses `\0` separators instead of bare concatenation; (b) holdout = indices
+0, k, 2k… (first entity held out); (c) negative blocks = first canonical block per entity, pair
+skipped when the chosen blocks coincide with no alternate; (d) a defensive extra guard rejects
+composed-corpus states (the spec only mandated vaulted); (e) cross-modal = differing source file
+extensions. Zero WASM bytes. Same-session adjacent commit: Paper 4 updated with the composition
+section (built/receipted/unmeasured framing, four-arm K3 design, EAE/KEPLER/Multi-News/EmbGen
+related work, zero new numbers — `95c7895`).
