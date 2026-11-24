@@ -1,0 +1,39 @@
+{
+  "kind": "identity-contrastive-pairs",
+  "stage": "K2",
+  "receipt": {
+    "policy": "pairs-v1",
+    "pairCount": 323,
+    "positiveCount": 245,
+    "negativeCount": 78,
+    "crossModalPositiveCount": 233,
+    "hardnessBins": {
+      "homonym": 0,
+      "near": 131,
+      "far": 286
+    },
+    "holdoutEntityIds": [
+      "ent:address:3 contract",
+      "ent:date_of_birth:2026-11-13",
+      "ent:date_of_birth:2026-11-18",
+      "ent:email:daniel.petrov@northfield-ltd.example",
+      "ent:email:ines.duarte@northfield-ltd.example",
+      "ent:email:nadia.farouk@northfield-ltd.example",
+      "ent:email:tomas.vidal@northfield-ltd.example",
+      "ent:person:Daniel Petrov",
+      "ent:person:Hana Ito",
+      "ent:person:Lena Weber",
+      "ent:person:Ondrej Novak",
+      "ent:person:Victor Adeyemi",
+      "ent:phone:+44 20 7946 0906",
+      "ent:phone:+44 20 7946 0918",
+      "ent:phone:+44 20 7946 0930",
+      "ent:phone:+44 20 7946 0945"
+    ],
+    "holdoutFraction": 0.2,
+    "sourceEntityCount": 76,
+    "sourceSampleCount": 24,
+    "corpusSha256": "a55bb32322ab96aea225cc95fe760a5fb1afc4cf238000f573cdf346838065b3",
+    "pairJsonlSha256": "ee616fcd5526d43dfc7cf6a7d66a8cc8f5ea9e0ef7bedcabe380537f8c62cf11"
+  }
+}
