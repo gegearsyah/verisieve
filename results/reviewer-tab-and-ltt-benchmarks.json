@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-24T01:49:54Z",
+  "generatedAt": "2026-11-24T02:57:39Z",
   "dataset": "NorskRegnesentral/text-anonymization-benchmark (TAB ECHR)",
   "devNomaskFilterTermsLearned": 231,
   "optThresholds": {
@@ -838,24 +838,24 @@
     "dumbPerson": [
       {
         "threshold": 0.2,
-        "precisionPct": 15.18,
+        "precisionPct": 15.0,
         "recallPct": 97.91,
-        "f1Pct": 26.28,
+        "f1Pct": 26.01,
         "directRecallPct": 99.56,
         "tp": 938,
-        "fp": 5243,
+        "fp": 5317,
         "fn": 20,
         "directTp": 225,
         "directTotal": 226
       },
       {
         "threshold": 0.3,
-        "precisionPct": 26.58,
+        "precisionPct": 26.53,
         "recallPct": 97.49,
-        "f1Pct": 41.77,
+        "f1Pct": 41.72,
         "directRecallPct": 99.56,
         "tp": 934,
-        "fp": 2580,
+        "fp": 2586,
         "fn": 24,
         "directTp": 225,
         "directTotal": 226

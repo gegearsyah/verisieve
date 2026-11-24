@@ -121,7 +121,9 @@ function main() {
   const purityInputsJson = {};
   for (const [c, bucket] of purityInputs) {
     purityInputsJson[`cluster ${c}`] = bucket;
-    majority += Math.max(...Object.values(bucket));
+    // majority over GT speakers only — null-GT segments (VAD gaps) must not inflate purity
+    const gtCounts = Object.entries(bucket).filter(([g]) => g !== 'null').map(([, v]) => v);
+    majority += gtCounts.length ? Math.max(...gtCounts) : 0;
   }
   const purity = majority / perSegment.filter((s) => s.gt).length;
 

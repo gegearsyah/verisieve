@@ -286,7 +286,7 @@ def dumb_name_propagation_baseline(docs: list[dict], person_spans_per_doc: list[
             for m in re.finditer(re.escape(nm), text):
                 if m.start() <= first_start:
                     continue
-                if any(cs <= m.start() < ce for cs, ce in covered):
+                if any(m.start() < ce and m.end() > cs for cs, ce in covered):
                     continue
                 pred.append({"start": m.start(), "end": m.end(), "type": "PERSON", "score": 1.0, "source": "dumbPropagation"})
                 covered.append((m.start(), m.end()))
