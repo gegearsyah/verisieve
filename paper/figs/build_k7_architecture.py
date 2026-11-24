@@ -1,11 +1,16 @@
-"""Generate the Paper 4 architecture diagram (vector PDF + staging GIF for the README)."""
+"""Generate the Paper 4 architecture diagram (vector PDF + staging GIF for the README).
+
+Two layouts live here:
+  - draw_diagram(): the original 5-column storyboard. Feeds only the README GIF
+    frames (build_gif); must stay byte-stable so the GIF regenerates identically.
+  - draw_compact(): the small one-column pipeline figure for the paper PDF/PNG.
+"""
 from pathlib import Path
 import shutil
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
-from numpy import linspace
 
 OUT_DIR = Path(__file__).resolve().parent
 DOCS_DIR = OUT_DIR.parent.parent / "docs"
@@ -180,53 +185,122 @@ def draw_diagram(stage, erasure=None):
     return fig
 
 
+# ---------------------------------------------------------------------------
+# Compact one-column layout (paper PDF/PNG only)
+# ---------------------------------------------------------------------------
+# Data coords: 100 x 50 units on a 3.28 x 1.64 in canvas -> 1 unit = 2.36 pt,
+# so the ~236 pt natural width renders ~1:1 at the paper's \columnwidth (227 pt).
+CLIM_X, CLIM_Y = 100.0, 50.0
+CMARGIN, CGAP = 1.0, 3.2
+CW = (CLIM_X - 2 * CMARGIN - 3 * CGAP) / 4  # 22.1 units ~ 52 pt per box
+CBX = [CMARGIN + i * (CW + CGAP) for i in range(4)]
+CTOP_Y, CTOP_H = 25.0, 17.0
+CCHIP_Y, CCHIP_H = 5.0, 10.0
+CTOP = [
+    ("Estate\ndocuments", [], SLATE_BG, SLATE_BORDER, INK, 1.0),
+    ("Perception", ["5 WASM kernels,", "zero egress"], BLUE_BG, BLUE_BORDER, BLUE, 1.0),
+    ("Vaulted\nentity graph", ["salted", "entity ids"], TEAL_BG, TEAL, TEAL, 1.7),
+    ("Deterministic\ncorpus", ["entity-indexed", "rows"], CORAL_BG, CORAL_BORDER, CORAL, 1.0),
+]
+CCHIPS = ["SFT corpora", "Graph-PPR", "CAG caches", "eraseEntity"]
+CCHIP_PAL = [
+    (SLATE_BG, SLATE_BORDER, INK),
+    (BLUE_BG, BLUE_BORDER, BLUE),
+    (BLUE_BG, BLUE_BORDER, BLUE),
+    (RED_BG, RED_BORDER, RED),
+]
+
+
+def draw_mini_box(ax, x, y, w, h, title, subs, fc, ec, tc, lw=1.0, tsize=6.3, ssize=5.3):
+    ax.add_patch(FancyBboxPatch(
+        (x, y), w, h,
+        boxstyle="round,pad=0.0,rounding_size=1.8",
+        facecolor=fc, edgecolor=ec, linewidth=lw, zorder=3,
+    ))
+    if subs:
+        ax.text(x + w / 2, y + h - 1.6, title, ha="center", va="top",
+                fontsize=tsize, fontweight="bold", color=tc, linespacing=1.25, zorder=4)
+        ax.text(x + w / 2, y + 1.7, "\n".join(subs), ha="center", va="bottom",
+                fontsize=ssize, color=SUB, linespacing=1.35, zorder=4)
+    else:
+        ax.text(x + w / 2, y + h / 2, title, ha="center", va="center",
+                fontsize=tsize, fontweight="bold", color=tc, linespacing=1.25, zorder=4)
+
+
+def draw_arrow_c(ax, x1, y1, x2, y2, color=SLATE, lw=1.0, scale=5.0):
+    ax.add_patch(FancyArrowPatch(
+        (x1, y1), (x2, y2),
+        arrowstyle="-|>", mutation_scale=scale,
+        color=color, linewidth=lw, zorder=2,
+    ))
+
+
+def draw_compact():
+    fig, ax = plt.subplots(figsize=(3.28, 1.64))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    ax.set_xlim(0, CLIM_X)
+    ax.set_ylim(0, CLIM_Y)
+    ax.axis("off")
+    ax.text(CLIM_X / 2, 47.6, "One graph, every consumer",
+            ha="center", va="center", fontsize=7.0, fontweight="bold", color=INK, zorder=6)
+    mid = CTOP_Y + CTOP_H / 2
+    for i, c in enumerate([SLATE, BLUE, TEAL]):
+        draw_arrow_c(ax, CBX[i] + CW, mid, CBX[i + 1], mid, color=c)
+    for i, (title, subs, fc, ec, tc, lw) in enumerate(CTOP):
+        draw_mini_box(ax, CBX[i], CTOP_Y, CW, CTOP_H, title, subs, fc, ec, tc, lw=lw)
+    gxc = CBX[3] + CW / 2
+    for i, name in enumerate(CCHIPS):
+        fc, ec, tc = CCHIP_PAL[i]
+        color = RED if name == "eraseEntity" else CORAL
+        draw_arrow_c(ax, gxc, CTOP_Y, CBX[i] + CW / 2, CCHIP_Y + CCHIP_H, color=color)
+        draw_mini_box(ax, CBX[i], CCHIP_Y, CW, CCHIP_H, name, [], fc, ec, tc,
+                      lw=1.2 if name == "eraseEntity" else 0.9, tsize=5.8)
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.995, bottom=0.005)
+    return fig
+
+
 def self_check():
-    """Machine-verify title fit and bypass-arrow clearance in data coords."""
-    # 1) Perception box title fits inside the drawn borders with margin.
-    fig = draw_diagram(2)
+    """Machine-verify the compact layout: every box text fits its box interior."""
+    fig = draw_compact()
     ax = fig.axes[0]
     fig.canvas.draw()
     rend = fig.canvas.get_renderer()
-    title = [t for t in ax.texts if t.get_text().startswith("Perception")][0]
-    tb = title.get_window_extent(rend)
-    px, py, pw, _ = BOXES["perc"]
-    left = ax.transData.transform((px + PAD, 0))[0]
-    right = ax.transData.transform((px + pw - PAD, 0))[0]
-    margin = min(tb.x0 - left, right - tb.x1)
+    inv = ax.transData.inverted()
+
+    def data_bb(t):
+        bb = t.get_window_extent(rend)
+        (x0, y0), (x1, y1) = inv.transform((bb.x0, bb.y0)), inv.transform((bb.x1, bb.y1))
+        return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
+
+    rects = ([(CBX[i], CTOP_Y, CW, CTOP_H) for i in range(4)]
+             + [(CBX[i], CCHIP_Y, CW, CCHIP_H) for i in range(4)])
+    hosts = 0
+    titles = 0
+    for t in ax.texts:
+        x0, y0, x1, y1 = data_bb(t)
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        host = [r for r in rects if r[0] < cx < r[0] + r[2] and r[1] < cy < r[1] + r[3]]
+        if not host:
+            titles += 1
+            assert x0 > 0.5 and x1 < CLIM_X - 0.5, f"title overflow: {t.get_text()!r}"
+            assert y0 > CTOP_Y + CTOP_H, "title collides with top row"
+            continue
+        rx, ry, rw, rh = host[0]
+        assert x0 > rx + 0.5 and x1 < rx + rw - 0.5, \
+            (f"text wider than box: {t.get_text()[:24]!r} "
+             f"{x0:.1f}..{x1:.1f} vs interior {rx + 0.5:.1f}..{rx + rw - 0.5:.1f}")
+        assert y0 > ry + 0.3 and y1 < ry + rh - 0.3, \
+            f"text taller than box: {t.get_text()[:24]!r} {y0:.1f}..{y1:.1f} vs {ry:.1f}..{ry + rh:.1f}"
+        hosts += 1
+    assert titles == 1, f"expected 1 figure title, found {titles}"
+    assert hosts == 11, f"expected 11 texts hosted in boxes, found {hosts}"
     plt.close(fig)
-    assert margin > 4.0, f"perception title overflow: margin {margin:.1f}px"
-    # 2) Bypass arrow starts on the graph box's bottom border, clears the seams
-    #    box entirely (stays below its bottom border - clearance), and enters
-    #    eraseEntity at its left edge. FancyArrowPatch.get_path() is in mutation
-    #    coords, so sample the arc3 curve directly (control = mid + rad*(-dy, dx)).
-    fig = draw_diagram(5, erasure="final")
-    ax = fig.axes[0]
-    fig.canvas.draw()
-    gx, gy, gw, _ = BOXES["graph"]
-    sx, sy, sw, _ = BOXES["seams"]
-    arrs = [p for p in ax.patches
-            if isinstance(p, FancyArrowPatch)
-            and abs(p._posA_posB[0][0] - (gx + 0.46)) < 1e-9
-            and abs(p._posA_posB[0][1] - (gy - PAD)) < 1e-9]
-    assert len(arrs) == 1, "bypass arrow not found"
-    (x1, y1), (x2, y2) = arrs[0]._posA_posB
-    assert abs(y1 - (gy - PAD)) < 1e-9, f"start not on border: {y1}"
-    rad = arrs[0].get_connectionstyle().rad
-    t = linspace(0.0, 1.0, 200)
-    cx = (x1 + x2) / 2 + rad * -(y2 - y1)
-    cy = (y1 + y2) / 2 - rad * (x2 - x1)
-    xs = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * cx + t ** 2 * x2
-    ys = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * cy + t ** 2 * y2
-    seg = ys[(xs > sx - PAD) & (xs < sx + sw + PAD)]
-    assert len(seg) and seg.max() < sy - PAD - 0.05, \
-        f"bypass crosses seams box: max y {seg.max():.2f} vs bottom {sy - PAD:.2f}"
-    assert x2 == CONS_X - PAD and abs(y2 - 0.70) < 1e-9, "bypass does not enter eraseEntity left edge"
-    plt.close(fig)
-    print(f"self-check ok: title margin {margin:.1f}px, bypass clear (max y {seg.max():.2f} < {sy - PAD:.2f})")
+    print(f"self-check ok: {hosts} box texts fit interiors, title clears edges")
 
 
 def build_pdf_and_preview():
-    fig = draw_diagram(5, erasure="final")
+    fig = draw_compact()
     fig.savefig(OUT_DIR / "fig_k7_architecture.pdf")
     fig.savefig(OUT_DIR / "_preview_fig_k7_architecture.png", dpi=200)
     plt.close(fig)

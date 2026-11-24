@@ -90,7 +90,7 @@ The pipeline runs entirely on-device. Perception is a stack of five zero-import 
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figs/fig_k7_architecture.pdf}
+\includegraphics[width=\columnwidth]{figs/fig_k7_architecture.pdf}
 \caption{The architecture. Five zero-import WASM kernels perceive the estate's documents with zero egress; every detected value is vaulted behind a salted placeholder and derives a stable entity identifier, so the corpus and its entity index form one resolved graph with per-sample provenance and conformal certificates. The same graph grounds every downstream consumer: the training corpora (per-block, composed, identity-pair; vaulted or readable views), question-time Graph-PPR retrieval, the CAG caches (fixed set-cover prefill and the per-question identity-keyed hybrid, both prefilling the model's key-value cache), and \texttt{eraseEntity}, which regenerates the corpus minus one entity because the graph names exactly the samples and spans an entity owns.}
 \label{fig:architecture}
 \end{figure}
