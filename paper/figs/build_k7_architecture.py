@@ -1,16 +1,19 @@
-"""Generate the Paper 4 architecture diagram (vector PDF + staging GIF for the README).
+"""Generate the Paper 4 architecture diagram (vector PDF + README GIF).
 
-Two layouts live here:
-  - draw_diagram(): the original 5-column storyboard. Feeds only the README GIF
-    frames (build_gif); must stay byte-stable so the GIF regenerates identically.
+Two outputs live here:
+  - draw_scene() + build_gif(): the hand-drawn README animation (ambient
+    dash-march loop, no pop-in). Seeded, reproducible.
   - draw_compact(): the small one-column pipeline figure for the paper PDF/PNG.
+    Byte-stable across runs; do not perturb.
 """
 from pathlib import Path
+import math
+import random
 import shutil
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Polygon, Circle, Ellipse
 
 OUT_DIR = Path(__file__).resolve().parent
 DOCS_DIR = OUT_DIR.parent.parent / "docs"
@@ -40,149 +43,274 @@ plt.rcParams.update({
 })
 
 
-def draw_box(ax, x, y, w, h, title, lines, fc, ec, title_color, title_size=7.2, body_size=6.2, lw=1.1):
-    patch = FancyBboxPatch(
-        (x, y), w, h,
-        boxstyle="round,pad=0.04,rounding_size=0.14",
-        facecolor=fc, edgecolor=ec, linewidth=lw, zorder=3,
-    )
-    ax.add_patch(patch)
-    ax.text(
-        x + w / 2, y + h - 0.14, title,
-        ha="center", va="top", fontsize=title_size, fontweight="bold",
-        color=title_color, zorder=4,
-    )
-    # Subtle divider under title
-    ax.plot([x + 0.14, x + w - 0.14], [y + h - 0.42, y + h - 0.42], color=ec, linewidth=0.6, alpha=0.7, zorder=4)
-    body = "\n".join(lines)
-    ax.text(
-        x + w / 2, y + (h - 0.44) / 2 + 0.01, body,
-        ha="center", va="center", fontsize=body_size, color=SUB,
-        linespacing=1.35, zorder=4,
-    )
+# ---------------------------------------------------------------------------
+# README animation: hand-drawn scene, ambient dash-march loop (GIF only)
+# ---------------------------------------------------------------------------
+BG = "#f3f6fc"        # canvas
+FILL = "#f0f2f6"      # default node fill
+INK_G = "#32363e"       # charcoal ink
+SIDE = "#c7d8ef"      # sidebar / resolved-graph fill
+YELLOW = "#feec98"    # step badges + vaulted-values accent
+PINK = "#efc0d9"      # eraseEntity fill
+PINK_EDGE = "#e05a6b" # eraseEntity stroke
+GREEN = "#b2f3bb"     # SFT corpora highlight
+RED_X = "#e05a6b"     # cross-out icon
+
+GIF_W, GIF_H = 1160, 796
+GIF_FONT = "Comic Sans MS"  # hand-drawn register; falls back if absent
+DASH = (8, 8)               # dash/gap in px
+DASH_PERIOD = 16
+
+_rng = random.Random(0)
 
 
-def draw_arrow(ax, x1, y1, x2, y2, color="#475569", lw=1.3, rad=0.0, ls="-"):
-    arr = FancyArrowPatch(
-        (x1, y1), (x2, y2),
-        arrowstyle="-|>", mutation_scale=10,
-        color=color, linewidth=lw, linestyle=ls,
-        connectionstyle=f"arc3,rad={rad}", zorder=5,
-    )
-    ax.add_patch(arr)
+def _rough(pts, step=11.0, amp=1.1, close=False, skip_ends=False):
+    """Subdivide + perturb a polyline into a hand-drawn stroke (module RNG)."""
+    out = []
+    n_seg = len(pts) - 1 + (1 if close else 0)
+    for i in range(n_seg):
+        a, b = pts[i], pts[(i + 1) % len(pts)] if close else pts[i + 1]
+        d = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(d // step))
+        for k in range(n):
+            t = k / n
+            out.append((a[0] + (b[0] - a[0]) * t + _rng.uniform(-amp, amp),
+                        a[1] + (b[1] - a[1]) * t + _rng.uniform(-amp, amp)))
+    if close:
+        out.append(out[0])
+    else:
+        out.append((pts[-1][0] + _rng.uniform(-amp, amp),
+                    pts[-1][1] + _rng.uniform(-amp, amp)))
+    return out
 
 
-# Layout coordinates (data units, 1.55 units == 1 inch at figsize 10x4.2):
-#   col1 documents x 0.22 w 2.20 | col2 perception x 2.78 w 2.80
-#   (widened so the two-line title fits inside the borders with margin)
-#   col3 graph x 5.94 w 2.70 (emphasized) | col4 seams x 9.00 w 2.34
-#   col5 consumers x 12.18 w 3.10, four boxes h 1.10 spaced 1.40 (y 4.65 / 3.25 / 1.85 / 0.45)
-#   erasure bypass arrow starts exactly on the graph box's visual bottom border
-#   (rounding pad shifts the drawn border down by 0.04) and sags through the
-#   bottom band below the corpus-seams column into eraseEntity's left edge.
-X_LIM, Y_LIM = 15.5, 6.5
-Y0, H = 1.05, 4.70
-PAD = 0.04  # FancyBboxPatch boxstyle pad: visual border sits PAD outside the (x, y, w, h) rect
-BOXES = {
-    "docs": (0.22, Y0, 2.20, H),
-    "perc": (2.78, Y0, 2.80, H),
-    "graph": (5.94, 0.95, 2.70, 4.90),
-    "seams": (9.00, Y0, 2.34, H),
-}
-CONS_X, CONS_W, CONS_H, CONS_STEP = 12.18, 3.10, 1.10, 1.40
-CONS = [
-    ("SFT training", ["LoRA adapter", "(sealed retrain recipe)"]),
-    ("Graph-PPR retrieval", ["top-6 contexts to", "base model (RAG)"]),
-    ("CAG caches", ["prefill KV cache: fixed set-cover", "per-question identity-keyed"]),
-    ("eraseEntity", ["regenerate minus one entity,", "byte-diff receipt"]),
-]
-CONS_PAL = [
-    (SLATE_BG, SLATE_BORDER, INK),
-    (BLUE_BG, BLUE_BORDER, BLUE),
-    (BLUE_BG, BLUE_BORDER, BLUE),
-    (RED_BG, RED_BORDER, RED),
-]
+def _stroke(ax, pts, lw=2.0, color=INK_G, close=False, dashes=None, dash_off=0, skip_ends=False):
+    xs, ys = zip(*_rough(pts, close=close, skip_ends=skip_ends))
+    ls = (dash_off, dashes) if dashes else "-"
+    ax.plot(xs, ys, color=color, lw=lw, linestyle=ls, solid_capstyle="round",
+            solid_joinstyle="round", zorder=4)
 
 
-def draw_diagram(stage, erasure=None):
-    """stage 1..5 = columns revealed so far; erasure None|'highlight'|'final'."""
-    fig, ax = plt.subplots(figsize=(10, 4.2))
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
-    ax.set_xlim(0, X_LIM)
-    ax.set_ylim(0, Y_LIM)
+def _shape(ax, pts, fc, lw=2.0, color=INK_G):
+    ax.add_patch(Polygon(pts, closed=True, facecolor=fc, edgecolor="none", zorder=3))
+    _stroke(ax, pts, lw=lw, color=color, close=True)
+
+
+def _rrect_pts(x, y, w, h, r):
+    return [
+        (x + r, y + h), (x + w - r, y + h), (x + w, y + h - r), (x + w, y + r),
+        (x + w - r, y), (x + r, y), (x, y + r), (x, y + h - r),
+    ]
+
+
+def _circle_pts(cx, cy, r, n=14):
+    return [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n))
+            for k in range(n)]
+
+
+def _arc_pts(cx, cy, r, a0, a1, n=10):
+    return [(cx + r * math.cos(math.radians(a0 + (a1 - a0) * k / n)),
+             cy + r * math.sin(math.radians(a0 + (a1 - a0) * k / n))) for k in range(n + 1)]
+
+
+def _txt(ax, x, y, s, size, bold=False, color=INK_G, va="center", ha="center", ls=1.2, z=6):
+    ax.text(x, y, s, fontsize=size, fontweight="bold" if bold else "normal",
+            color=color, ha=ha, va=va, linespacing=ls, fontname=GIF_FONT, zorder=z)
+
+
+def _badge(ax, x, y, n):
+    ax.add_patch(Circle((x, y), 10.5, facecolor=YELLOW, edgecolor=INK_G, lw=1.4, zorder=7))
+    _txt(ax, x, y - 0.8, str(n), 8.6, bold=True, z=8)
+
+
+def _arrow_head(ax, tip, direction, size=10.0, width=7.5):
+    dx, dy = direction
+    L = math.hypot(dx, dy)
+    dx, dy = dx / L, dy / L
+    bx, by = tip[0] - dx * size, tip[1] - dy * size
+    px, py = -dy * width / 2, dx * width / 2
+    ax.add_patch(Polygon([tip, (bx + px, by + py), (bx - px, by - py)],
+                         closed=True, facecolor=INK_G, edgecolor="none", zorder=5))
+
+
+def _dashed(ax, pts, dash_off, lw=1.9, z=2.5):
+    # dash march moves toward pts[0], so callers order pts destination-first
+    xs, ys = zip(*_rough(pts, amp=0.5, skip_ends=True))
+    ax.plot(xs, ys, color=INK_G, lw=lw, linestyle=(dash_off, DASH),
+            solid_capstyle="butt", zorder=z)
+
+
+# --- icons (flat vector, from primitives; (cx, cy) = icon centre) -----------
+def _icon_envelope(ax, cx, cy):
+    _shape(ax, [(cx - 17, cy - 12), (cx + 17, cy - 12), (cx + 17, cy + 12), (cx - 17, cy + 12)], BG)
+    _stroke(ax, [(cx - 15, cy + 10), (cx, cy - 2), (cx + 15, cy + 10)], lw=1.6)
+
+
+def _icon_shield(ax, cx, cy):
+    _shape(ax, [(cx - 14, cy + 11), (cx + 14, cy + 11), (cx + 14, cy - 4),
+                (cx, cy - 13), (cx - 14, cy - 4)], BG, lw=2.2)
+    _stroke(ax, [(cx - 6, cy + 2), (cx - 1.5, cy - 3.5), (cx + 7, cy - 11)], lw=2.0)
+
+
+def _icon_lock(ax, cx, cy):
+    _shape(ax, _rrect_pts(cx - 13, cy - 13, 26, 20, 3), BG, lw=2.0)
+    _stroke(ax, _arc_pts(cx, cy + 7, 8, 0, 180), lw=2.0)
+    _stroke(ax, _circle_pts(cx, cy - 3, 2.8, n=10), lw=1.6)
+    _stroke(ax, [(cx, cy - 0.5), (cx, cy + 4.5)], lw=1.6, skip_ends=True)
+
+
+def _icon_graph(ax, cx, cy):
+    a, b, c = (cx - 12, cy - 8), (cx + 11, cy - 11), (cx - 1, cy + 10)
+    _stroke(ax, [a, b], lw=1.6, skip_ends=True)
+    _stroke(ax, [b, c], lw=1.6, skip_ends=True)
+    _stroke(ax, [a, c], lw=1.6, skip_ends=True)
+    for p in (a, b, c):
+        ax.add_patch(Circle(p, 4.6, facecolor=BG, edgecolor=INK_G, lw=1.7, zorder=4))
+
+
+def _icon_db(ax, cx, cy):
+    _stroke(ax, [(cx - 15, cy - 9), (cx - 15, cy + 11)], lw=2.0, skip_ends=True)
+    _stroke(ax, [(cx + 15, cy - 9), (cx + 15, cy + 11)], lw=2.0, skip_ends=True)
+    _stroke(ax, _arc_pts(cx, cy + 11, 15, 0, 180, n=12), lw=2.0)
+    _stroke(ax, _arc_pts(cx, cy + 11, 15, 180, 360, n=12), lw=2.0)
+    _stroke(ax, _arc_pts(cx, cy + 2, 15, 180, 360, n=12), lw=1.2)
+    _stroke(ax, _arc_pts(cx, cy - 9, 15, 180, 360, n=12), lw=2.0)
+
+
+def _icon_gradcap(ax, cx, cy):
+    _shape(ax, [(cx, cy + 12), (cx + 20, cy + 4), (cx, cy - 4), (cx - 20, cy + 4)], BG, lw=1.8)
+    _stroke(ax, [(cx - 11, cy + 1), (cx - 11, cy - 8), (cx + 11, cy - 8), (cx + 11, cy + 1)], lw=1.8)
+    _stroke(ax, [(cx + 19, cy + 4), (cx + 19, cy - 7)], lw=1.6, skip_ends=True)
+    ax.add_patch(Circle((cx + 19, cy - 9), 1.8, facecolor=INK_G, edgecolor="none", zorder=4))
+
+
+def _icon_magnifier(ax, cx, cy):
+    _stroke(ax, _circle_pts(cx - 2.5, cy + 2.5, 10), lw=2.2, close=True)
+    _stroke(ax, [(cx + 5, cy - 5), (cx + 16, cy - 16)], lw=3.2, skip_ends=True)
+
+
+def _icon_plates(ax, cx, cy):
+    for y in (9, 0, -9):
+        _stroke(ax, _rrect_pts(cx - 16, cy + y - 4.5, 32, 9, 3.5), lw=1.8, close=True)
+
+
+def _icon_cross(ax, cx, cy):
+    _stroke(ax, [(cx - 12, cy - 12), (cx + 12, cy + 12)], lw=3.2, color=RED_X)
+    _stroke(ax, [(cx - 12, cy + 12), (cx + 12, cy - 12)], lw=3.2, color=RED_X)
+
+
+def _node(ax, x, y_top, w, icon_fn, title, sub, fc=FILL, ec=INK_G, edge_lw=2.0):
+    """Box hugging its content; y_top is the top edge in canvas coords (y grows down).
+
+    Returns (mpl_top, canvas_top, canvas_bottom, h)."""
+    tpad, ip, tgap, sgap, bpad = 16, 36, 9, 9, 16
+    h = tpad + ip + tgap + 18.5 * len(title) + (sgap + 15.5 * len(sub) if sub else 0) + bpad
+    y = GIF_H - y_top - h  # mpl y-up bottom
+    ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                boxstyle="round,pad=0,rounding_size=9",
+                                facecolor=fc, edgecolor="none", zorder=2))
+    _stroke(ax, _rrect_pts(x, y, w, h, 9), lw=edge_lw, color=ec, close=True)
+    icon_fn(ax, x + w / 2, GIF_H - (y_top + tpad + ip / 2))
+    _txt(ax, x + w / 2, y + h - tpad - ip - tgap, "\n".join(title), 10.8, bold=True, va="top", ls=1.22)
+    if sub:
+        _txt(ax, x + w / 2, y + bpad, "\n".join(sub), 8.8, va="bottom", ls=1.3, color=INK_G)
+    return y + h, y_top, y_top + h, h
+
+
+def draw_scene(seed, dash_off):
+    """Complete diagram in every frame: ambient dash march + sealed per-frame
+    wobble (seed f wraps each 10-frame cycle, so the loop is seamless)."""
+    global _rng
+    _rng = random.Random(seed)
+    fig, ax = plt.subplots(figsize=(GIF_W / 100, GIF_H / 100), dpi=100)
+    fig.patch.set_facecolor(BG)
+    ax.set_xlim(0, GIF_W)
+    ax.set_ylim(0, GIF_H)
+    ax.set_position([0, 0, 1, 1])
     ax.axis("off")
-    ax.text(
-        X_LIM / 2, 6.28,
-        "Estate Documents → One Resolved Entity Graph → Every Consumer",
-        ha="center", va="center", fontsize=7.2, fontweight="bold", color=INK, zorder=6,
-    )
 
-    if stage >= 1:
-        x, y, w, h = BOXES["docs"]
-        draw_box(ax, x, y, w, h, "Estate documents", [
-            "SQL dumps", "CSV rosters", "Email (.eml)", "Transcripts (VTT)",
-            "Audio (PCM16)", "Decks (.pptx)",
-        ], fc=SLATE_BG, ec=SLATE_BORDER, title_color=INK, body_size=6.0)
-    if stage >= 2:
-        x1, _, w1, _ = BOXES["docs"]
-        x2, _, _, _ = BOXES["perc"]
-        draw_arrow(ax, x1 + w1 + PAD, 3.40, x2 - PAD, 3.40, color=SLATE)
-        x, y, w, h = BOXES["perc"]
-        draw_box(ax, x, y, w, h, "Perception:\n5 zero-import WASM kernels", [
-            "clean / SQL / graph / DL / media",
-            "zero host imports",
-            "0 B egress (traps armed)",
-            "detect + mask + conformal gate",
-        ], fc=BLUE_BG, ec=BLUE_BORDER, title_color=BLUE, body_size=6.0)
-    if stage >= 3:
-        x2, _, w2, _ = BOXES["perc"]
-        x3, _, _, _ = BOXES["graph"]
-        draw_arrow(ax, x2 + w2 + PAD, 3.40, x3 - PAD, 3.40, color=BLUE)
-        x, y, w, h = BOXES["graph"]
-        draw_box(ax, x, y, w, h, "Vaulted entity graph", [
-            "salted placeholders (vault)",
-            "stable HMAC entity ids",
-            "per-sample provenance",
-            "byte ranges",
-            "per-sample certificates",
-            "entity index: entity <-> samples",
-        ], fc=TEAL_BG, ec=TEAL, title_color=TEAL, title_size=7.4, body_size=6.0, lw=1.6)
-    if stage >= 4:
-        x3, _, w3, _ = BOXES["graph"]
-        x4, _, _, _ = BOXES["seams"]
-        draw_arrow(ax, x3 + w3 + PAD, 3.40, x4 - PAD, 3.40, color=TEAL)
-        x, y, w, h = BOXES["seams"]
-        draw_box(ax, x, y, w, h, "Corpus seams\n(deterministic)", [
-            "per-block JSONL",
-            "composed per-entity records",
-            "identity-contrastive pairs",
-            "views: vaulted | readable",
-        ], fc=CORAL_BG, ec=CORAL_BORDER, title_color=CORAL, body_size=5.8)
-    if stage >= 5:
-        seams_x, _, seams_w, _ = BOXES["seams"]
-        for i, (title, lines) in enumerate(CONS):
-            y = 4.65 - i * CONS_STEP
-            yc = y + CONS_H / 2
-            draw_arrow(ax, seams_x + seams_w + PAD, yc, CONS_X - PAD, yc, color=CORAL)
-            fc, ec, tc = CONS_PAL[i]
-            draw_box(ax, CONS_X, y, CONS_W, CONS_H, title, lines,
-                     fc=fc, ec=ec, title_color=tc, title_size=6.4, body_size=5.6, lw=1.1)
-    if erasure is not None:
-        color = RED if erasure == "highlight" else TEAL
-        lw = 1.7 if erasure == "highlight" else 1.2
-        gx, gy, gw, _ = BOXES["graph"]
-        # Start exactly on the drawn bottom border (visual edge = y - PAD), sag below
-        # the seams box. arc3 control point: cy = y_mid - rad*dx, so positive rad sags DOWN.
-        draw_arrow(ax, gx + 0.46, gy - PAD, CONS_X - PAD, 0.70, color=color, lw=lw, rad=0.07)
-        ax.text(
-            9.30, 0.22, "names the spans to remove",
-            fontsize=5.8, color=color, ha="center", va="center", style="italic",
-            bbox=dict(boxstyle="round,pad=0.14", fc="white", ec="none", alpha=0.92), zorder=6,
-        )
+    # Left sidebar banner
+    ax.add_patch(FancyBboxPatch((14, 14), 198, GIF_H - 28,
+                                boxstyle="round,pad=0,rounding_size=16",
+                                facecolor=SIDE, edgecolor="none", zorder=2))
+    _txt(ax, 14 + 99, GIF_H - 122, "Versieve", 24.0, bold=True)
+    _txt(ax, 14 + 99, GIF_H - 165, "one graph,\nevery consumer", 11.5, ls=1.35)
 
-    fig.subplots_adjust(left=0.005, right=0.995, top=0.995, bottom=0.005)
+    # Main pipeline, left to right
+    NODE_W, GAP, X0, Y_TOP = 146, 44, 238, 96
+    xs = [X0 + i * (NODE_W + GAP) for i in range(5)]
+    centers = [x + NODE_W / 2 for x in xs]
+    main = [
+        (_icon_envelope, ["Estate", "documents"], ["email, SQL,", "transcripts,", "slides"]),
+        (_icon_shield, ["Perception", "5 WASM kernels"], ["zero network", "egress, trapped"]),
+        (_icon_lock, ["Vaulted", "values"], ["salted,", "placeholders,", "HMAC ids"]),
+        (_icon_graph, ["Resolved", "entity graph"], ["per-sample", "entity lists"]),
+        (_icon_db, ["Deterministic", "corpus"], ["byte-range", "provenance"]),
+    ]
+    fills = [FILL, FILL, YELLOW, SIDE, FILL]
+    boxes = [_node(ax, xs[i], Y_TOP, NODE_W, icon, t, s, fc=fills[i])
+             for i, (icon, t, s) in enumerate(main)]
+
+    # Dashed connectors with step badges 1..4 (destination-first for the march)
+    mid_y = GIF_H - Y_TOP - 105
+    for i, n in enumerate([1, 2, 3, 4]):
+        _dashed(ax, [(xs[i + 1] - 11, mid_y), (xs[i] + NODE_W + 5, mid_y)], dash_off)
+        _arrow_head(ax, (xs[i + 1] - 5, mid_y), (1, 0))
+        _badge(ax, (xs[i] + NODE_W + xs[i + 1]) / 2, mid_y + 18, n)
+
+    # Consumer fan: source drop, leftward bus, four drops (badges 5..8)
+    BUS_Y, CONS_Y = GIF_H - 424, GIF_H - 560  # canvas rows 424 and 560, mirrored to mpl
+    # Source drop is extended past node 5's bottom border (that tail hides under
+    # the box fill, which draws at higher zorder); the per-frame extension e
+    # aligns the dash pattern's origin to the border so the visible first dash
+    # is always flush instead of shimmering with the march phase.
+    border_y = GIF_H - boxes[4][2]            # mpl y of node 5's bottom edge
+    base_len = border_y - (BUS_Y - 5)         # visible path length, bus end -> border
+    e = -((base_len + dash_off) % DASH_PERIOD) % DASH_PERIOD
+    _dashed(ax, [(centers[4], BUS_Y - 5), (centers[4], border_y + 3 + e)],
+            dash_off, z=1.5)
+    cons_x = [244 + round(j * (NODE_W + 105)) for j in range(4)]
+    _dashed(ax, [(cons_x[0] + NODE_W / 2, BUS_Y), (centers[4], BUS_Y)], dash_off)
+    cons = [
+        (_icon_gradcap, ["SFT corpora"], [], GREEN, INK_G, 5),
+        (_icon_magnifier, ["Graph-PPR", "retrieval"], [], FILL, INK_G, 6),
+        (_icon_plates, ["CAG caches"], [], FILL, INK_G, 7),
+        (_icon_cross, ["eraseEntity"], ["byte-verified", "removal"], PINK, PINK_EDGE, 8),
+    ]
+    for j, (icon, title, sub, fc, ec, n) in enumerate(cons):
+        tc_x = cons_x[j] + NODE_W / 2
+        _dashed(ax, [(tc_x, GIF_H - 560 - 8), (tc_x, BUS_Y)], dash_off)
+        _arrow_head(ax, (tc_x, GIF_H - 560 - 3), (0, -1))
+        _badge(ax, tc_x + 17, (BUS_Y + GIF_H - 560) / 2, n)
+        _node(ax, cons_x[j], 560, NODE_W, icon, title, sub, fc=fc, ec=ec)
     return fig
+
+
+def build_gif():
+    from PIL import Image
+
+    frames = 10          # 10 x 30 ms = 300 ms cycle; dash period 16 px closes exactly
+    dur = 30             # Pillow quantises GIF delays to centiseconds
+    frames_dir = OUT_DIR / "_gif_frames"
+    frames_dir.mkdir(exist_ok=True)
+    paths = []
+    for f in range(frames):
+        fig = draw_scene(20251104 + f, DASH_PERIOD * f / frames)
+        p = frames_dir / f"frame_{f}.png"
+        fig.savefig(p, dpi=100)
+        plt.close(fig)
+        paths.append(p)
+    ims = [Image.open(p).convert("RGB") for p in paths]
+    pal = ims[0].quantize(colors=64)
+    qims = [im.quantize(palette=pal, dither=Image.NONE) for im in ims]
+    qims[0].save(
+        DOCS_DIR / "verisieve-architecture.gif",
+        save_all=True, append_images=qims[1:], duration=[dur] * frames,
+        loop=0, optimize=True, disposal=2,
+    )
+    shutil.rmtree(frames_dir)
+    print(f"Wrote docs/verisieve-architecture.gif "
+          f"({(DOCS_DIR / 'verisieve-architecture.gif').stat().st_size} B)")
 
 
 # ---------------------------------------------------------------------------
@@ -305,29 +433,6 @@ def build_pdf_and_preview():
     fig.savefig(OUT_DIR / "_preview_fig_k7_architecture.png", dpi=200)
     plt.close(fig)
     print("Wrote fig_k7_architecture.pdf + _preview_fig_k7_architecture.png")
-
-
-def build_gif():
-    from PIL import Image
-
-    stages = [(1, None), (2, None), (3, None), (4, None), (5, None), (5, "highlight"), (5, "final")]
-    durations = [900] * 6 + [1800]
-    frames_dir = OUT_DIR / "_gif_frames"
-    frames_dir.mkdir(exist_ok=True)
-    paths = []
-    for i, (stage, erasure) in enumerate(stages):
-        fig = draw_diagram(stage, erasure=erasure)
-        p = frames_dir / f"frame_{i}.png"
-        fig.savefig(p, dpi=100)
-        plt.close(fig)
-        paths.append(p)
-    ims = [Image.open(p).convert("P", palette=Image.ADAPTIVE) for p in paths]
-    ims[0].save(
-        DOCS_DIR / "verisieve-architecture.gif",
-        save_all=True, append_images=ims[1:], duration=durations, loop=0, optimize=True, disposal=2,
-    )
-    shutil.rmtree(frames_dir)
-    print(f"Wrote docs/verisieve-architecture.gif ({(DOCS_DIR / 'verisieve-architecture.gif').stat().st_size} B)")
 
 
 if __name__ == "__main__":
