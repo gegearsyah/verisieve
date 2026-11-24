@@ -609,6 +609,39 @@ export class PortableDocumentGraph {
             parentSource: blk.parentSource || blk.parent_source || doc.parentSource || null,
           });
         }
+        // Diagram connector edges (Stage 6): endpoint labels become PASSAGE nodes joined
+        // by RELATES_TO in the verisieve_graph.wasm Dual-CSR
+        const diagramNodes = new Map();
+        const ensureDiagramNode = (label) => {
+          const raw = String(label ?? '').trim();
+          if (!raw) return null;
+          const { maskedText } = this.vault.maskText(raw);
+          if (!maskedText) return null;
+          let nid = diagramNodes.get(maskedText);
+          if (nid) return nid;
+          const lineIndex = globalLineIdx++;
+          nid = `pas:${docId.slice(4)}:${lineIndex}`;
+          addNode({
+            node_id: nid,
+            node_type: 'PASSAGE',
+            doc_id: docId,
+            breadcrumb: 'Diagram',
+            text_redacted: maskedText,
+            text_contextualized: maskedText,
+            gatekeeper_action: 'KEEP_SAFE',
+            props: { source, modality, line_index: lineIndex, page_no: null, struct_role: 'DIAGRAM_NODE' },
+          });
+          passageIdByLineIdx.set(lineIndex, nid);
+          addEdge(docId, nid, 'CONTAINS_BLOCK', 1.0);
+          diagramNodes.set(maskedText, nid);
+          return nid;
+        };
+        for (const de of doc.diagramEdges || []) {
+          const fromId = ensureDiagramNode(de.sourceText ?? de.source);
+          const toId = ensureDiagramNode(de.targetText ?? de.target);
+          if (!fromId || !toId) continue;
+          addEdge(fromId, toId, 'RELATES_TO', 1.0, { relation: 'diagram_connector' });
+        }
         continue;
       }
 

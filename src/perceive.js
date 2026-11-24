@@ -479,6 +479,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
   const forensicFindings = [];
   const audioArtifacts = [];
   const videoArtifacts = [];
+  const diagramEdgesBySource = new Map();
 
   for (const item of inputs) {
     let name = 'inline.txt';
@@ -601,6 +602,9 @@ export async function perceiveMulti(inputs = [], options = {}) {
     // Enterprise formats (.eml, .msg, .pptx, .xlsx, .vtt, .srt, .har, .ipynb, .ics, .json, .txt)
     const rawInput = buf || Buffer.from(String(text || ''), 'utf8');
     const parsed = parseEnterpriseBuffer(name, rawInput, { vault, workspaceSalt });
+    if (Array.isArray(parsed.diagramEdges) && parsed.diagramEdges.length > 0) {
+      diagramEdgesBySource.set(name, parsed.diagramEdges);
+    }
     if (Array.isArray(parsed.forensicFindings)) {
       forensicFindings.push(...parsed.forensicFindings.map((f) => ({ source: name, ...f })));
     }
@@ -710,6 +714,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
         entityIds: Array.from(new Set((b.entities || []).map((e) => e.entityId))),
         preRedacted: true,
       })),
+    diagramEdges: diagramEdgesBySource.get(src) || [],
   }));
   graphIndex.indexDocuments(docsForGraph);
 

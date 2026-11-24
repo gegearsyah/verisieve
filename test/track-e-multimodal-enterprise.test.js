@@ -791,3 +791,143 @@ test('Track E7: Zero-import WASM SR-MP 512-slot Salted Reference Sketch Ring, HC
   assert.doesNotMatch(omni.markdown, /Pentikainen|Pentikaynen|Pentikalnen/, 'Omnimodal SR-MP must link across Slide + Audio ASR + Video OCR');
 });
 
+
+// ---------------------------------------------------------------------------
+// Stage 6: Vector-side perception (PPTX connectors/charts, PDF ruling-line
+// tables, graph wiring) — pure JS, zero new WASM bytes.
+// ---------------------------------------------------------------------------
+import { parsePptxBuffer } from '../src/enterprise-parsers.js';
+import { extractPdfDetailed } from '../src/pdf-parser.js';
+
+function buildPdf(objects) {
+  let out = Buffer.from('%PDF-1.5\n', 'latin1');
+  const offsets = [0];
+  for (let idx = 0; idx < objects.length; idx += 1) {
+    offsets.push(out.length);
+    const body = Buffer.isBuffer(objects[idx]) ? objects[idx] : Buffer.from(objects[idx], 'latin1');
+    out = Buffer.concat([out, Buffer.from(`${idx + 1} 0 obj\n`, 'latin1'), body, Buffer.from('\nendobj\n', 'latin1')]);
+  }
+  const xrefOff = out.length;
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let i = 1; i <= objects.length; i += 1) {
+    xref += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+  }
+  xref += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOff}\n%%EOF\n`;
+  return Buffer.concat([out, Buffer.from(xref, 'latin1')]);
+}
+
+const stage6SlideXml = [
+  '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">',
+  '<p:cSld><p:spTree>',
+  '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Billing"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>',
+  '<p:spPr><a:prstGeom prst="rect"/></p:spPr>',
+  '<p:txBody><a:p><a:r><a:t>Billing System</a:t></a:r></a:p></p:txBody></p:sp>',
+  '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Ledger"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>',
+  '<p:spPr><a:prstGeom prst="rect"/></p:spPr>',
+  '<p:txBody><a:p><a:r><a:t>Ledger DB</a:t></a:r></a:p></p:txBody></p:sp>',
+  '<p:cxnSp><p:nvCxnSpPr><p:cNvPr id="4" name="Connector 1"/>',
+  '<p:cNvCxnSpPr><a:stCxn id="2" idx="3"/><a:endCxn id="3" idx="0"/></p:cNvCxnSpPr><p:nvPr/></p:nvCxnSpPr>',
+  '<p:spPr><a:prstGeom prst="straightConnector1"/></p:spPr>',
+  '<p:ln><a:tailEnd type="triangle"/></p:ln></p:cxnSp>',
+  '</p:spTree></p:cSld></p:sld>',
+].join('');
+
+const stage6ChartXml = [
+  '<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">',
+  '<c:chart><c:plotArea><c:barChart><c:ser>',
+  '<c:idx val="0"/><c:order val="0"/>',
+  '<c:tx><c:strRef><c:f>Sheet1!$B$1</c:f><c:strCache><c:ptCount val="1"/>',
+  '<c:pt idx="0"><c:v>Revenue</c:v></c:pt></c:strCache></c:strRef></c:tx>',
+  '<c:cat><c:strRef><c:f>Sheet1!$A$2:$A$3</c:f><c:strCache><c:ptCount val="2"/>',
+  '<c:pt idx="0"><c:v>Q1</c:v></c:pt><c:pt idx="1"><c:v>Q2</c:v></c:pt>',
+  '</c:strCache></c:strRef></c:cat>',
+  '<c:val><c:numRef><c:f>Sheet1!$B$2:$B$3</c:f><c:numCache><c:formatCode>General</c:formatCode>',
+  '<c:ptCount val="2"/><c:pt idx="0"><c:v>10</c:v></c:pt><c:pt idx="1"><c:v>21.5</c:v></c:pt>',
+  '</c:numCache></c:numRef></c:val>',
+  '</c:ser></c:barChart></c:plotArea></c:chart></c:chartSpace>',
+].join('');
+
+test('Stage 6: parsePptxBuffer extracts DrawingML connector arrows (diagramEdges) and chart series (chartSeries)', () => {
+  const pptxBuf = buildZipBuffer([
+    { name: '[Content_Types].xml', content: '<Types/>' },
+    { name: 'ppt/slides/slide1.xml', content: stage6SlideXml },
+    { name: 'ppt/charts/chart1.xml', content: stage6ChartXml },
+  ]);
+
+  const parsed = parsePptxBuffer('decks/arch.pptx', pptxBuf);
+  assert.ok(Array.isArray(parsed.diagramEdges), 'parsePptxBuffer must emit diagramEdges');
+  assert.equal(parsed.diagramEdges.length, 1);
+  const edge = parsed.diagramEdges[0];
+  assert.equal(edge.slide, 1);
+  assert.equal(edge.sourceShapeId, '2');
+  assert.equal(edge.sourceText, 'Billing System');
+  assert.equal(edge.targetShapeId, '3');
+  assert.equal(edge.targetText, 'Ledger DB');
+  assert.equal(edge.connector, 'straightConnector1');
+  assert.equal(edge.arrow, true);
+
+  assert.ok(Array.isArray(parsed.chartSeries), 'parsePptxBuffer must emit chartSeries');
+  assert.equal(parsed.chartSeries.length, 1);
+  const ser = parsed.chartSeries[0];
+  assert.equal(ser.chart, 'ppt/charts/chart1.xml');
+  assert.equal(ser.name, 'Revenue');
+  assert.deepEqual(ser.categories, ['Q1', 'Q2']);
+  assert.deepEqual(ser.values, [10, 21.5]);
+});
+
+test('Stage 6: extractPdfDetailed parses m/l/re/S/f vector paths into ruling-line table rows', () => {
+  const content = [
+    'BT /F2 11 Tf 1 0 0 1 72 650 Tm (Month) Tj ET',
+    'BT /F2 11 Tf 1 0 0 1 220 650 Tm (Amount) Tj ET',
+    'BT /F2 11 Tf 1 0 0 1 72 630 Tm (Jan) Tj ET',
+    'BT /F2 11 Tf 1 0 0 1 220 630 Tm (100) Tj ET',
+    'BT /F2 11 Tf 1 0 0 1 72 610 Tm (Feb) Tj ET',
+    'BT /F2 11 Tf 1 0 0 1 220 610 Tm (300) Tj ET',
+    '2 w 0 RG',
+    '60 660 m 300 660 l S',
+    '60 640 m 300 640 l S',
+    '60 620 m 300 620 l S',
+    '60 599.5 240 1 re f',
+    '60 620 m 60 660 l S',
+    '210 620 m 210 660 l S',
+    '300 620 m 300 660 l S',
+  ].join('\n');
+  const contentComp = zlib.deflateSync(Buffer.from(content, 'latin1'));
+  const pdf = buildPdf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /Resources << /Font << /F2 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    Buffer.concat([
+      Buffer.from(`<< /Length ${contentComp.length} /Filter /FlateDecode >>\nstream\n`, 'latin1'),
+      contentComp,
+      Buffer.from('\nendstream', 'latin1'),
+    ]),
+  ]);
+
+  const diag = extractPdfDetailed(pdf);
+  assert.equal(diag.diagnosticReason, 'BORN_DIGITAL_TEXT_EXTRACTED');
+  assert.ok(Array.isArray(diag.vectorTables), 'extractPdfDetailed must emit vectorTables');
+  assert.equal(diag.vectorTables.length, 1);
+  const table = diag.vectorTables[0];
+  assert.equal(table.pageIndex, 0);
+  assert.equal(table.columnCount, 2);
+  assert.deepEqual(table.rows, [['Month', 'Amount'], ['Jan', '100'], ['Feb', '300']]);
+});
+
+test('Stage 6: PPTX diagram connectors are wired into verisieve_graph.wasm as RELATES_TO edges', async () => {
+  const pptxBuf = buildZipBuffer([
+    { name: '[Content_Types].xml', content: '<Types/>' },
+    { name: 'ppt/slides/slide1.xml', content: stage6SlideXml },
+  ]);
+
+  const res = await perceiveMulti([{ name: 'decks/arch.pptx', bytes: pptxBuf }]);
+  const relEdges = res.graph.edges.filter((e) => e.edge_type === 'RELATES_TO');
+  assert.ok(relEdges.length >= 1, 'graph must contain RELATES_TO diagram connector edges');
+  const edge = relEdges[0];
+  const srcIdx = res.graph.idToIdx.get(edge.src_id);
+  const dstIdx = res.graph.idToIdx.get(edge.dst_id);
+  assert.ok(srcIdx !== undefined && dstIdx !== undefined, 'both diagram endpoints must be registered graph nodes');
+  const path = res.graph.engine.shortestPath(srcIdx, dstIdx, { direction: 'both' });
+  assert.equal(path.length, 2, 'connector edge must exist in the wasm Dual-CSR, not only in the JS edge list');
+});

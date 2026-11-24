@@ -661,6 +661,8 @@ export function extractPptxStructured(source, buf, options = {}) {
   const { xmlMap, binaryChildren } = readZipXmlMap(buf, options);
   const blocks = [];
   const forensicFindings = [];
+  const diagramEdges = [];
+  const chartSeries = [];
 
   const docProps = extractDocPropsFindings(source, xmlMap, 'slide', options.parentSource);
   blocks.push(...docProps.blocks);
@@ -740,6 +742,34 @@ export function extractPptxStructured(source, buf, options = {}) {
       });
       if (b) blocks.push(b);
     }
+
+    // DrawingML connectors: capture connector arrows between shape ids + the shapes' labels (Stage 6)
+    const shapeTextById = new Map();
+    const spRx = /<p:sp\b[\s\S]*?<\/p:sp>/gi;
+    let spm;
+    while ((spm = spRx.exec(xml)) !== null) {
+      const id = spm[0].match(/<p:cNvPr\b[^>]*\bid=["'](\d+)["']/i)?.[1] || null;
+      if (id === null || shapeTextById.has(id)) continue;
+      const t = extractXmlTextRuns(spm[0], /<a:t\b[^>]*>([\s\S]*?)<\/a:t>/gi);
+      if (t) shapeTextById.set(id, t);
+    }
+    const cxnRx = /<p:cxnSp\b[\s\S]*?<\/p:cxnSp>/gi;
+    let cxnm;
+    while ((cxnm = cxnRx.exec(xml)) !== null) {
+      const blk = cxnm[0];
+      const srcId = blk.match(/<a:stCxn\b[^>]*\bid=["'](\d+)["']/i)?.[1] || null;
+      const dstId = blk.match(/<a:endCxn\b[^>]*\bid=["'](\d+)["']/i)?.[1] || null;
+      diagramEdges.push({
+        slide: Number(slideNum) || 1,
+        name: blk.match(/<p:cNvPr\b[^>]*\bname=["']([^"']*)["']/i)?.[1] || '',
+        connector: blk.match(/<a:prstGeom\b[^>]*\bprst=["']([^"']+)["']/i)?.[1] || 'line',
+        arrow: /<(?:a:tailEnd|a:headEnd)\b[^>]*\btype=["'](?!none)[^"']+["']/i.test(blk),
+        sourceShapeId: srcId,
+        sourceText: (srcId && shapeTextById.get(srcId)) || null,
+        targetShapeId: dstId,
+        targetText: (dstId && shapeTextById.get(dstId)) || null,
+      });
+    }
   }
 
   // 2. Presenter Speaker Notes (CRITICAL hidden leak vector!)
@@ -793,6 +823,28 @@ export function extractPptxStructured(source, buf, options = {}) {
         if (b) blocks.push(b);
       }
     } else if (/^ppt\/(charts\/chart|diagrams\/data)\d+\.xml$/i.test(partName)) {
+      // Chart part series: per <c:ser> capture name + categories + values (Stage 6)
+      if (/^ppt\/charts\/chart\d+\.xml$/i.test(partName)) {
+        const serRx = /<c:ser\b[\s\S]*?<\/c:ser>/gi;
+        let sm;
+        while ((sm = serRx.exec(xml)) !== null) {
+          const serXml = sm[0];
+          const name = extractXmlTextRuns(serXml.match(/<c:tx\b[\s\S]*?<\/c:tx>/i)?.[0] || '', /<c:v\b[^>]*>([\s\S]*?)<\/c:v>/gi);
+          const collect = (tag) => {
+            const block = serXml.match(new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}>`, 'i'))?.[0] || '';
+            const out = [];
+            const rx = /<c:v\b[^>]*>([\s\S]*?)<\/c:v>/gi;
+            let vm;
+            while ((vm = rx.exec(block)) !== null) out.push(decodeXmlEntities(vm[1]).trim());
+            return out;
+          };
+          const categories = collect('c:cat');
+          const values = collect('c:val').map((v) => Number.parseFloat(v)).filter((n) => Number.isFinite(n));
+          if (name || categories.length > 0 || values.length > 0) {
+            chartSeries.push({ chart: partName, name, categories, values });
+          }
+        }
+      }
       const t = extractXmlTextRuns(xml, /<(?:a:t|c:v)\b[^>]*>([\s\S]*?)<\/(?:a:t|c:v)>/gi);
       if (t) {
         const kind = partName.includes('charts') ? 'Chart' : 'SmartArt';
@@ -815,7 +867,14 @@ export function extractPptxStructured(source, buf, options = {}) {
     blocks,
     attachments: binaryChildren.map((c) => ({ ...c, parentSource: source })),
     forensicFindings,
+    diagramEdges,
+    chartSeries,
   };
+}
+
+// Perception-level entry point for vector-side PPTX extraction (diagramEdges + chartSeries) (Stage 6)
+export function parsePptxBuffer(source, buf, options = {}) {
+  return extractPptxStructured(source, buf, options);
 }
 
 function colRefToIndex(colStr) {

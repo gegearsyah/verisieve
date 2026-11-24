@@ -604,6 +604,11 @@ function matMul(m1, m2) {
   ];
 }
 
+// Transform user-space point (x, y) through matrix m (PDF [a b c d e f] convention)
+function transformPoint(m, x, y) {
+  return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+}
+
 function decodeLiteralBytes(rawInner) {
   const out = [];
   for (let i = 0; i < rawInner.length; i += 1) {
@@ -791,6 +796,10 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
   let inText = false;
   let seq = 0;
   const runs = [];
+  const vectorPaths = [];
+  let pathSegs = [];
+  let pathRects = [];
+  let curPt = null;
 
   const getActiveFont = () => fontTable.get(fontKey) || null;
   const emitRun = (text) => {
@@ -906,12 +915,35 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
         emitRun(assembled);
       }
       stack.length = 0;
+    } else if (op === 'm' || op === 'l') {
+      if (stack.length >= 2) {
+        const [px, py] = transformPoint(ctm, Number(stack[stack.length - 2].value) || 0, Number(stack[stack.length - 1].value) || 0);
+        if (op === 'l' && curPt) pathSegs.push({ x1: curPt[0], y1: curPt[1], x2: px, y2: py });
+        curPt = [px, py];
+      }
+      stack.length = 0;
+    } else if (op === 're') {
+      if (stack.length >= 4) {
+        const [x, y, w, h] = stack.slice(-4).map((t) => Number(t.value) || 0);
+        const [px1, py1] = transformPoint(ctm, x, y);
+        const [px2, py2] = transformPoint(ctm, x + w, y + h);
+        pathRects.push({ x: Math.min(px1, px2), y: Math.min(py1, py2), w: Math.abs(px2 - px1), h: Math.abs(py2 - py1) });
+      }
+      stack.length = 0;
+    } else if (op === 'S' || op === 's' || op === 'f' || op === 'f*' || op === 'n') {
+      if (op !== 'n' && (pathSegs.length > 0 || pathRects.length > 0)) {
+        vectorPaths.push({ pageIndex, op: op[0], segments: pathSegs, rects: pathRects });
+      }
+      pathSegs = [];
+      pathRects = [];
+      curPt = null;
+      stack.length = 0;
     } else {
       stack.length = 0;
     }
   }
 
-  return runs;
+  return { runs, vectorPaths };
 }
 
 function reconstructRunsIntoLines(runs) {
@@ -969,6 +1001,127 @@ function reconstructRunsIntoLines(runs) {
   return lineRecords;
 }
 
+/**
+ * Derives ruling-line tables from stroked/filled vector paths (m/l/re/S/f) plus
+ * positioned text runs: overlapping stacked horizontal rules form row bands and
+ * vertical rules split columns, so born-digital PDF tables become cell arrays.
+ */
+function deriveVectorTables(vectorPaths, runs) {
+  if (vectorPaths.length === 0) return [];
+  const hRules = [];
+  const vRules = [];
+  for (const p of vectorPaths) {
+    for (const s of p.segments) {
+      if (Math.abs(s.y1 - s.y2) <= 2 && Math.abs(s.x2 - s.x1) >= 8) {
+        hRules.push({ pageIndex: p.pageIndex, y: (s.y1 + s.y2) / 2, x1: Math.min(s.x1, s.x2), x2: Math.max(s.x1, s.x2) });
+      } else if (Math.abs(s.x1 - s.x2) <= 2 && Math.abs(s.y2 - s.y1) >= 8) {
+        vRules.push({ pageIndex: p.pageIndex, x: (s.x1 + s.x2) / 2, y1: Math.min(s.y1, s.y2), y2: Math.max(s.y1, s.y2) });
+      }
+    }
+    for (const r of p.rects) {
+      if (r.h <= 2.5 && r.w >= 8) {
+        hRules.push({ pageIndex: p.pageIndex, y: r.y + r.h / 2, x1: r.x, x2: r.x + r.w });
+      } else if (r.w <= 2.5 && r.h >= 8) {
+        vRules.push({ pageIndex: p.pageIndex, x: r.x + r.w / 2, y1: r.y, y2: r.y + r.h });
+      }
+    }
+  }
+
+  const runsByPage = new Map();
+  for (const r of runs) {
+    let list = runsByPage.get(r.pageIndex);
+    if (!list) {
+      list = [];
+      runsByPage.set(r.pageIndex, list);
+    }
+    list.push(r);
+  }
+
+  const tables = [];
+  const hByPage = new Map();
+  const vByPage = new Map();
+  for (const r of hRules) {
+    let list = hByPage.get(r.pageIndex);
+    if (!list) hByPage.set(r.pageIndex, (list = []));
+    list.push(r);
+  }
+  for (const r of vRules) {
+    let list = vByPage.get(r.pageIndex);
+    if (!list) vByPage.set(r.pageIndex, (list = []));
+    list.push(r);
+  }
+
+  for (const [pageIndex, rules] of hByPage) {
+    rules.sort((a, b) => b.y - a.y);
+    // Cluster consecutive stacked rules that overlap horizontally (shared x-span)
+    const clusters = [];
+    for (const r of rules) {
+      const c = clusters[clusters.length - 1];
+      if (c && r.y < c.rules[c.rules.length - 1].y) {
+        const overlap = Math.min(c.x2, r.x2) - Math.max(c.x1, r.x1);
+        if (c.rules[c.rules.length - 1].y - r.y <= 200 && overlap >= 0.5 * Math.min(c.x2 - c.x1, r.x2 - r.x1)) {
+          c.x1 = Math.max(c.x1, r.x1);
+          c.x2 = Math.min(c.x2, r.x2);
+          c.rules.push(r);
+          continue;
+        }
+      }
+      clusters.push({ x1: r.x1, x2: r.x2, rules: [r] });
+    }
+
+    for (const c of clusters) {
+      if (c.rules.length < 3) continue; // < 2 row bands is not a table
+      const pageRunList = runsByPage.get(pageIndex) || [];
+      const dividers = vByPage
+        .get(pageIndex)
+        ?.filter((v) => v.x > c.x1 + 1 && v.x < c.x2 - 1)
+        .map((v) => v.x)
+        .sort((a, b) => a - b) || [];
+      const colCount = dividers.length + 1;
+      const colRuns = Array.from({ length: colCount }, () => []);
+      const rows = [];
+      for (let i = 0; i < c.rules.length - 1; i += 1) {
+        const top = c.rules[i].y;
+        const bottom = c.rules[i + 1].y;
+        const bandRuns = pageRunList.filter(
+          (r) => r.x >= c.x1 && r.x <= c.x2 && r.y >= bottom - 2 && r.y <= top + 2
+        );
+        if (bandRuns.length === 0) continue;
+        const cells = Array.from({ length: colCount }, () => []);
+        for (const r of bandRuns) {
+          let col = 0;
+          for (const d of dividers) {
+            if (r.x >= d) col += 1;
+          }
+          if (col >= colCount) col = colCount - 1;
+          cells[col].push(r);
+        }
+        const row = cells.map((cellRuns) =>
+          cellRuns
+            .sort((a, b) => a.x - b.x)
+            .map((r) => r.text)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+        );
+        if (row.some((cell) => cell)) rows.push(row);
+      }
+      if (rows.length > 0) {
+        tables.push({
+          pageIndex,
+          xMin: c.x1,
+          xMax: c.x2,
+          top: c.rules[0].y,
+          bottom: c.rules[c.rules.length - 1].y,
+          columnCount: colCount,
+          rows,
+        });
+      }
+    }
+  }
+  return tables;
+}
+
 export function extractPdfDetailed(pdfBuffer, options = {}) {
   const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
   const { objects, latin } = parseTopLevelPdfObjects(buf);
@@ -999,6 +1152,7 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       lineRecords: [],
       streams: [],
       images: [],
+      vectorTables: [],
     };
   }
 
@@ -1013,6 +1167,7 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
 
   const pageStreams = [];
   const allRuns = [];
+  const vectorPathsAcc = [];
   let pageCount = pages.length;
 
   pages.forEach(({ pageObj, resourcesText }, pageIndex) => {
@@ -1056,7 +1211,9 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       if (options.includeStreams) {
         pageStreams.push(joined.toString('latin1'));
       }
-      allRuns.push(...interpretContentStream(joined, fontTable, pageIndex));
+      const { runs, vectorPaths } = interpretContentStream(joined, fontTable, pageIndex);
+      allRuns.push(...runs);
+      vectorPathsAcc.push(...vectorPaths);
     }
   });
 
@@ -1081,13 +1238,16 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
         if (options.includeStreams) {
           pageStreams.push(dec.decoded.toString('latin1'));
         }
-        allRuns.push(...interpretContentStream(dec.decoded, globalFontTable, idx++));
+        const { runs, vectorPaths } = interpretContentStream(dec.decoded, globalFontTable, idx++);
+        allRuns.push(...runs);
+        vectorPathsAcc.push(...vectorPaths);
       }
     }
     if (allRuns.length > 0 && pageCount === 0) pageCount = 1;
   }
 
   const lineRecords = reconstructRunsIntoLines(allRuns);
+  const vectorTables = deriveVectorTables(vectorPathsAcc, allRuns);
   const lines = lineRecords.map((r) => r.text);
   // Decode embedded image XObjects lazily ONLY when the PDF has no text layer (scanned PDF) or explicitly requested
   const images = (lines.length === 0 || options.alwaysDecodeImages)
@@ -1112,5 +1272,6 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
     lineRecords,
     streams: pageStreams,
     images,
+    vectorTables,
   };
 }
