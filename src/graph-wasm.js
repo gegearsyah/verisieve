@@ -642,6 +642,12 @@ export class PortableDocumentGraph {
           if (!fromId || !toId) continue;
           addEdge(fromId, toId, 'RELATES_TO', 1.0, { relation: 'diagram_connector' });
         }
+        // Chart series (Stage 6): series labels become PASSAGE nodes related to the source deck
+        for (const cs of doc.chartSeries || []) {
+          const csId = ensureDiagramNode(cs.name || cs.chart);
+          if (!csId) continue;
+          addEdge(csId, docId, 'RELATES_TO', 1.0, { relation: 'chart_series' });
+        }
         continue;
       }
 

@@ -480,6 +480,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
   const audioArtifacts = [];
   const videoArtifacts = [];
   const diagramEdgesBySource = new Map();
+  const chartSeriesBySource = new Map();
 
   for (const item of inputs) {
     let name = 'inline.txt';
@@ -605,6 +606,9 @@ export async function perceiveMulti(inputs = [], options = {}) {
     if (Array.isArray(parsed.diagramEdges) && parsed.diagramEdges.length > 0) {
       diagramEdgesBySource.set(name, parsed.diagramEdges);
     }
+    if (Array.isArray(parsed.chartSeries) && parsed.chartSeries.length > 0) {
+      chartSeriesBySource.set(name, parsed.chartSeries);
+    }
     if (Array.isArray(parsed.forensicFindings)) {
       forensicFindings.push(...parsed.forensicFindings.map((f) => ({ source: name, ...f })));
     }
@@ -715,6 +719,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
         preRedacted: true,
       })),
     diagramEdges: diagramEdgesBySource.get(src) || [],
+    chartSeries: chartSeriesBySource.get(src) || [],
   }));
   graphIndex.indexDocuments(docsForGraph);
 

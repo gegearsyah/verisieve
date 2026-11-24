@@ -931,3 +931,57 @@ test('Stage 6: PPTX diagram connectors are wired into verisieve_graph.wasm as RE
   const path = res.graph.engine.shortestPath(srcIdx, dstIdx, { direction: 'both' });
   assert.equal(path.length, 2, 'connector edge must exist in the wasm Dual-CSR, not only in the JS edge list');
 });
+
+test('Stage 6: PPTX chart series are wired into the graph as PASSAGE nodes related to the deck', async () => {
+  const pptxBuf = buildZipBuffer([
+    { name: '[Content_Types].xml', content: '<Types/>' },
+    { name: 'ppt/slides/slide1.xml', content: stage6SlideXml },
+    { name: 'ppt/charts/chart1.xml', content: stage6ChartXml },
+  ]);
+
+  const res = await perceiveMulti([{ name: 'decks/finance.pptx', bytes: pptxBuf }]);
+  const chartEdges = res.graph.edges.filter(
+    (e) => e.edge_type === 'RELATES_TO' && e.props?.relation === 'chart_series'
+  );
+  assert.ok(chartEdges.length >= 1, 'graph must contain RELATES_TO chart-series edges');
+  for (const e of chartEdges) {
+    const seriesNode = res.graph.byId.get(e.src_id);
+    const deckNode = res.graph.byId.get(e.dst_id);
+    assert.ok(seriesNode, 'chart-series RELATES_TO source must be a registered node');
+    assert.equal(seriesNode.node_type, 'PASSAGE', 'series label must become a PASSAGE node');
+    assert.equal(deckNode.node_type, 'DOCUMENT', 'series must relate to the source deck node');
+  }
+  assert.ok(
+    chartEdges.some((e) => String(res.graph.byId.get(e.src_id).text_redacted).includes('Revenue')),
+    'series name text must become the node text'
+  );
+  const edge = chartEdges[0];
+  const srcIdx = res.graph.idToIdx.get(edge.src_id);
+  const dstIdx = res.graph.idToIdx.get(edge.dst_id);
+  assert.ok(srcIdx !== undefined && dstIdx !== undefined, 'both series and deck must be registered graph nodes');
+  const path = res.graph.engine.shortestPath(srcIdx, dstIdx, { direction: 'both' });
+  assert.equal(path.length, 2, 'chart-series edge must exist in the wasm Dual-CSR, not only in the JS edge list');
+});
+
+test('Stage 6: a PPTX deck without charts adds no chart-series nodes or edges to the graph', async () => {
+  const pptxBuf = buildZipBuffer([
+    { name: '[Content_Types].xml', content: '<Types/>' },
+    { name: 'ppt/slides/slide1.xml', content: stage6SlideXml },
+  ]);
+
+  const res = await perceiveMulti([{ name: 'decks/nocharts.pptx', bytes: pptxBuf }]);
+  assert.equal(
+    res.graph.edges.filter((e) => e.props?.relation === 'chart_series').length,
+    0,
+    'no-chart deck must produce no chart-series edges'
+  );
+  assert.equal(
+    [...res.graph.byId.values()].filter((n) => String(n.text_redacted).includes('Revenue')).length,
+    0,
+    'no-chart deck must produce no chart-series nodes'
+  );
+  assert.ok(
+    res.graph.edges.some((e) => e.edge_type === 'RELATES_TO' && e.props?.relation === 'diagram_connector'),
+    'no-chart deck must keep the existing diagram-connector wiring'
+  );
+});
