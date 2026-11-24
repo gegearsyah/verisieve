@@ -715,6 +715,11 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k6:layerO.floor', `pairwise recall $${f2(OL.pairwise.recall * 100)}\\%$, precision $${f2(OL.pairwise.precision * 100)}\\%$, and $${comma(OL.falseMerges.count)}$ false merges`, CG);
   ok('k6:layerO.collisions', `on the ${f0(OL.scoring.collisionPairs)} designed collision pairs`, CG);
   ok('k6:layerR.ungated', `recall $${f0(RL.pairwise.recall * 100)}\\%$ at precision $${f2(RL.pairwise.precision * 100)}\\%$`, CG);
+  // Layer R collapse numbers quoted in prose (S17 remediation): mentions, string groups, false merges
+  ok('k6:layerR.collapse', `$${comma(RL.scoring.mentions)}$ mentions into $${comma(RL.scoring.stringGroups)}$ string groups`, CG);
+  ok('k6:layerR.falseMerges', `$${comma(RL.falseMerges.count)}$ false merges, none on designed collision pairs`, CG);
+  checks++;
+  if (RL.falseMerges.onCollisionPairs !== 0) { fails++; console.error(`FAIL [k6:layerR.collision] expected 0 false merges on collision pairs, got ${RL.falseMerges.onCollisionPairs}`); }
   const EN = OE.enron.scores;
   ok('k6:enron.floor', `pairwise recall $${f2(EN.pairwise.recall * 100)}\\%$ and precision $${f2(EN.pairwise.precision * 100)}\\%$`, CG);
   ok('k6:enron.merges', `with $${comma(EN.falseMerges.count)}$ false merges of which $${comma(EN.falseMerges.onCollisionPairs)}$ fall on designed collision pairs`, CG);
