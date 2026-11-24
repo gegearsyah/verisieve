@@ -468,14 +468,58 @@ if (mode === 'scan-docs') {
     'assistance', 'following', 'schedule', 'dot', 'com', 'org', 'net',
   ]);
   const out = [];
+  // Plain-text Jaro-Winkler similarity for the fuzzy-match baseline condition.
+  const jaroWinkler = (a, b) => {
+    const s1 = String(a).toLowerCase();
+    const s2 = String(b).toLowerCase();
+    if (s1 === s2) return 1;
+    const len1 = s1.length;
+    const len2 = s2.length;
+    const range = Math.max(0, Math.floor(Math.max(len1, len2) / 2) - 1);
+    const m1 = new Array(len1).fill(false);
+    const m2 = new Array(len2).fill(false);
+    let matches = 0;
+    for (let i = 0; i < len1; i++) {
+      const lo = Math.max(0, i - range);
+      const hi = Math.min(i + range + 1, len2);
+      for (let j = lo; j < hi; j++) {
+        if (!m2[j] && s1[i] === s2[j]) { m1[i] = true; m2[j] = true; matches++; break; }
+      }
+    }
+    if (matches === 0) return 0;
+    let t = 0;
+    let k = 0;
+    for (let i = 0; i < len1; i++) {
+      if (!m1[i]) continue;
+      while (!m2[k]) k++;
+      if (s1[i] !== s2[k]) t++;
+      k++;
+    }
+    const m = matches;
+    const jaro = (m / len1 + m / len2 + (m - t / 2) / m) / 3;
+    let prefix = 0;
+    while (prefix < 4 && prefix < len1 && prefix < len2 && s1[prefix] === s2[prefix]) prefix++;
+    return jaro + prefix * 0.1 * (1 - jaro);
+  };
+
   for (const item of payload) {
     wasm.srmpReset();
     const salt = `audio-srmp-${item.id}`;
     let uid = 1;
+    // Anchor provenance receipt: every string actually seeded into the ring (or handed
+    // to the fuzzy baseline) is recorded so downstream conditions never touch the
+    // scoring key — anchors are engine-detections only (Stage 2 anti-circularity).
+    const seededAnchors = [];
+    const seedPart = (part, confidence) => {
+      seededAnchors.push(part);
+      if (item.matcher !== 'fuzzy') {
+        wasm.srmpSeedAnchor(part, salt, { entityUid: uid++, blockIdx: 0, confidence, kindCode: 1 });
+      }
+    };
     for (const anc of item.contextAnchors || []) {
       for (const part of String(anc).split(/[\s.@\-_]+/)) {
         if (part.length >= 3 && !AUDIO_STOP.has(part.toLowerCase())) {
-          wasm.srmpSeedAnchor(part, salt, { entityUid: uid++, blockIdx: 0, confidence: 0.95, kindCode: 1 });
+          seedPart(part, 0.95);
         }
       }
     }
@@ -485,12 +529,16 @@ if (mode === 'scan-docs') {
       neuralSpans: item.neuralSpans || [],
     }).spans;
 
-    // Seed any high-confidence PERSON/EMAIL detected in the call itself into the SR-MP ring
-    for (const sp of itnScan) {
-      const val = itn.normalizedText.slice(sp.start, sp.end);
-      for (const part of val.split(/[\s.@\-_]+/)) {
-        if (part.length >= 4 && !AUDIO_STOP.has(part.toLowerCase())) {
-          wasm.srmpSeedAnchor(part, salt, { entityUid: uid++, blockIdx: 0, confidence: 0.92, kindCode: 1 });
+    // Self-seeding path: any high-confidence PERSON/EMAIL detected in the call itself
+    // becomes an SR-MP anchor. This is the ONLY seeding source in the honest benchmark
+    // run; item.selfSeed === false disables it for the wrong/partial-record conditions.
+    if (item.selfSeed !== false) {
+      for (const sp of itnScan) {
+        const val = itn.normalizedText.slice(sp.start, sp.end);
+        for (const part of val.split(/[\s.@\-_]+/)) {
+          if (part.length >= 4 && !AUDIO_STOP.has(part.toLowerCase())) {
+            seedPart(part, 0.92);
+          }
         }
       }
     }
@@ -521,18 +569,29 @@ if (mode === 'scan-docs') {
       // Split compound ASR tokens (e.g. "Elena.vansatacme.org") into sub-pieces to test against SR-MP ring
       const subPieces = [rawW, ...rawW.split(/[._\-@]+/).filter((x) => x.length >= 3)];
       let matchedSrmp = false;
-      for (const piece of subPieces) {
-        if (AUDIO_STOP.has(piece.toLowerCase())) continue;
-        const hit = wasm.srmpQueryCandidate(piece, salt, {
-          blockIdx: 1,
-          localScore: 0.30,
-          minDice: 0.58,
-          gamma: 0.88,
-          beta: 0.25,
-        });
-        if (hit.matched && hit.coupledScore >= 0.50) {
-          matchedSrmp = true;
-          break;
+      if (item.matcher === 'fuzzy') {
+        // Plain fuzzy-match baseline: same anchor list, no sketch ring — JW >= 0.85
+        for (const piece of subPieces) {
+          if (AUDIO_STOP.has(piece.toLowerCase())) continue;
+          for (const anc of seededAnchors) {
+            if (jaroWinkler(anc, piece) >= 0.85) { matchedSrmp = true; break; }
+          }
+          if (matchedSrmp) break;
+        }
+      } else {
+        for (const piece of subPieces) {
+          if (AUDIO_STOP.has(piece.toLowerCase())) continue;
+          const hit = wasm.srmpQueryCandidate(piece, salt, {
+            blockIdx: 1,
+            localScore: 0.30,
+            minDice: 0.58,
+            gamma: 0.88,
+            beta: 0.25,
+          });
+          if (hit.matched && hit.coupledScore >= 0.50) {
+            matchedSrmp = true;
+            break;
+          }
         }
       }
 
@@ -575,6 +634,8 @@ if (mode === 'scan-docs') {
       hybridSpanCount: itnScan.length,
       srmpWindowCount: redactWindows.length,
       redactWindows,
+      matcher: item.matcher || 'srmp',
+      seededAnchors,
     });
   }
   fs.writeFileSync(outPath, JSON.stringify(out), 'utf8');

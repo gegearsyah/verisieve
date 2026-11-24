@@ -22,6 +22,7 @@ import json
 import math
 import re
 import subprocess
+import sys
 import tempfile
 import time
 import unicodedata
@@ -369,94 +370,158 @@ def run_audio_e2e_benchmark() -> dict:
         subprocess.run(["node", "scripts/tab-node-helper.mjs", "audio-itn-redact", str(in_p), str(out_p)], check=True)
         final_pass = json.loads(out_p.read_text(encoding="utf-8"))
 
-        # Pillar 2B: Also run WASM SR-MP Phonetic-Coupled Audio Redaction (seeded from companion ticket/CRM caller record)
+        # Pass 2: Stronger cross-model attacker (small.en) re-transcribes redacted WAVs.
+        # Stage 2 honest re-run: the SR-MP ring is seeded ONLY from engine-observable
+        # detections (self-seeding inside tab-node-helper.mjs). The scoring key
+        # (pii_checks) never reaches contextAnchors or any seed argument.
+        total_planted = sum(len(c["pii_checks"]) for c in AUDIO_SCRIPTS_25)
+        pre_norms = {}
+        pre_exposed = 0
+        pre_ctx = 0
+        for c in AUDIO_SCRIPTS_25:
+            pre_norms[c["id"]] = re.sub(r"[^a-z0-9]+", "", pre_attacker_txts[c["id"]].lower())
+            for tok in c["pii_checks"]:
+                if tok in pre_norms[c["id"]]:
+                    pre_exposed += 1
+            for cw in c["context_words"]:
+                if cw in pre_norms[c["id"]]:
+                    pre_ctx += 1
+
+        def run_condition(payload: list[dict]) -> list[dict]:
+            c_in = td_p / "audio_cond_in.json"
+            c_out = td_p / "audio_cond_out.json"
+            c_in.write_text(json.dumps(payload), encoding="utf-8")
+            subprocess.run(["node", "scripts/tab-node-helper.mjs", "audio-srmp-redact", str(c_in), str(c_out)], check=True)
+            return json.loads(c_out.read_text(encoding="utf-8"))
+
+        def score_condition(wav_suffix: str) -> tuple[dict, dict]:
+            leaked = 0
+            zero_leak_calls = 0
+            ctx = 0
+            per_call_norms = {}
+            for c in AUDIO_SCRIPTS_25:
+                red_f32 = load_wav_16k_f32(td_p / f"{c['id']}_{wav_suffix}.wav")
+                segs, _ = attacker_asr.transcribe(red_f32, word_timestamps=False, language="en")
+                norm = re.sub(r"[^a-z0-9]+", "", " ".join(s.text.strip() for s in segs).lower())
+                per_call_norms[c["id"]] = norm
+                c_leak = 0
+                for tok in c["pii_checks"]:
+                    if tok in norm:
+                        leaked += 1
+                        c_leak += 1
+                for cw in c["context_words"]:
+                    if cw in norm:
+                        ctx += 1
+                if c_leak == 0:
+                    zero_leak_calls += 1
+            m = {
+                "leakedTokens": leaked,
+                "leakageOfPlantedPct": pct(leaked, total_planted),
+                "wilson95CI": wilson_ci_pct(leaked, total_planted),
+                "absoluteDropPercentagePoints": round(pct(pre_exposed, total_planted) - pct(leaked, total_planted), 2),
+                "relativeReductionOfExposedPct": round((1.0 - leaked / max(1, pre_exposed)) * 100.0, 2),
+                "callsWithZeroLeak": zero_leak_calls,
+                "nonPiiContextRetentionPct": pct(ctx, max(1, pre_ctx)),
+            }
+            return m, per_call_norms
+
+        # (a) Isolated ITN+GLiNER redaction (no anchor coupling) — written by the pass above.
+        isolated_metrics, _ = score_condition("redacted")
+
+        # (b) SR-MP self-seeded: contextAnchors empty; the helper seeds the ring ONLY
+        # from its own detections in the call (the honest product path).
         srmp_payload = []
         for c, item in zip(AUDIO_SCRIPTS_25, node_payload):
             srmp_payload.append({
                 **item,
                 "wavOutPath": str(td_p / f"{c['id']}_srmp_redacted.wav"),
-                "contextAnchors": [t for t in c["pii_checks"] if not t.isdigit()],
+                "contextAnchors": [],
             })
-        srmp_in = td_p / "srmp_audio_in.json"
-        srmp_out = td_p / "srmp_audio_out.json"
-        srmp_in.write_text(json.dumps(srmp_payload), encoding="utf-8")
-        subprocess.run(["node", "scripts/tab-node-helper.mjs", "audio-srmp-redact", str(srmp_in), str(srmp_out)], check=True)
-        srmp_pass = json.loads(srmp_out.read_text(encoding="utf-8"))
+        # ANTI-CIRCULARITY GUARD: the scoring key must never reach the seed arguments.
+        for entry in srmp_payload:
+            assert entry["contextAnchors"] == [], "Stage 2: SR-MP must stay self-seeded (answer key excluded)"
+        srmp_pass = run_condition(srmp_payload)
+        srmp_metrics, srmp_norms = score_condition("srmp_redacted")
 
-        # Pass 2: Stronger cross-model attacker (small.en) re-transcribes redacted WAVs (Isolated vs WASM SR-MP)
-        total_planted = 0
-        pre_exposed = 0
-        post_leaked = 0
-        srmp_post_leaked = 0
-        pre_ctx = 0
-        post_ctx = 0
-        srmp_post_ctx = 0
-        calls_zero_leak = 0
-        srmp_calls_zero_leak = 0
-
-        for c, f_res, s_res in zip(AUDIO_SCRIPTS_25, final_pass, srmp_pass):
-            red_f32 = load_wav_16k_f32(td_p / f"{c['id']}_redacted.wav")
-            segs2, _ = attacker_asr.transcribe(red_f32, word_timestamps=False, language="en")
-            post_txt = " ".join(s.text.strip() for s in segs2)
-
-            srmp_f32 = load_wav_16k_f32(td_p / f"{c['id']}_srmp_redacted.wav")
-            segs3, _ = attacker_asr.transcribe(srmp_f32, word_timestamps=False, language="en")
-            srmp_post_txt = " ".join(s.text.strip() for s in segs3)
-
-            pre_norm = re.sub(r"[^a-z0-9]+", "", pre_attacker_txts[c["id"]].lower())
-            post_norm = re.sub(r"[^a-z0-9]+", "", post_txt.lower())
-            srmp_norm = re.sub(r"[^a-z0-9]+", "", srmp_post_txt.lower())
-
-            c_post = 0
-            c_srmp = 0
+        # Absent-from-anchors analysis: planted tokens no anchor ever covered —
+        # the recall ceiling of anchor-based coupling, reported whatever it is.
+        absent_total = 0
+        absent_leaked = 0
+        for c, s_res in zip(AUDIO_SCRIPTS_25, srmp_pass):
+            anchors_blob = " ".join(str(a).lower() for a in s_res["seededAnchors"])
             for tok in c["pii_checks"]:
-                total_planted += 1
-                if tok in pre_norm:
-                    pre_exposed += 1
-                if tok in post_norm:
-                    post_leaked += 1
-                    c_post += 1
-                if tok in srmp_norm:
-                    srmp_post_leaked += 1
-                    c_srmp += 1
-            for cw in c["context_words"]:
-                if cw in pre_norm:
-                    pre_ctx += 1
-                if cw in post_norm:
-                    post_ctx += 1
-                if cw in srmp_norm:
-                    srmp_post_ctx += 1
-            if c_post == 0:
-                calls_zero_leak += 1
-            if c_srmp == 0:
-                srmp_calls_zero_leak += 1
+                if tok not in anchors_blob:
+                    absent_total += 1
+                    if tok in srmp_norms[c["id"]]:
+                        absent_leaked += 1
+        srmp_metrics["absentFromAnchorsTokens"] = absent_total
+        srmp_metrics["absentLeakedTokens"] = absent_leaked
+        srmp_metrics["avgAnchorsPerCall"] = round(
+            sum(len(s["seededAnchors"]) for s in srmp_pass) / len(srmp_pass), 2)
 
-    # CONSISTENT DENOMINATOR: both Pre and Post divided by total_planted!
+        # (c) Plain fuzzy-match baseline: SAME self-seeded anchor list, no sketch ring.
+        fuzzy_payload = []
+        for c, item in zip(AUDIO_SCRIPTS_25, node_payload):
+            fuzzy_payload.append({
+                **item,
+                "wavOutPath": str(td_p / f"{c['id']}_fuzzy_redacted.wav"),
+                "contextAnchors": [],
+                "matcher": "fuzzy",
+            })
+        run_condition(fuzzy_payload)
+        fuzzy_metrics, _ = score_condition("fuzzy_redacted")
+
+        # (d) Wrong-record anchors: ring seeded ONLY from the NEXT call's
+        # detection-derived anchors (realistic wrong-ticket CRM lookup).
+        # (e) Partial anchors: ring seeded ONLY from the FIRST anchor of the
+        # same call's detections (partial CRM record, e.g. first name only).
+        valid_anchors = {str(a) for s in srmp_pass for a in s["seededAnchors"]}
+        wrong_payload = []
+        partial_payload = []
+        for i, (c, item) in enumerate(zip(AUDIO_SCRIPTS_25, node_payload)):
+            wrong_anc = list(srmp_pass[(i + 1) % len(srmp_pass)]["seededAnchors"])
+            partial_anc = list(srmp_pass[i]["seededAnchors"][:1])
+            # Provenance guard: every passed anchor traces to a helper-produced detection.
+            for a in wrong_anc + partial_anc:
+                assert str(a) in valid_anchors, "Stage 2: anchors must come from engine detections only"
+            wrong_payload.append({
+                **item,
+                "wavOutPath": str(td_p / f"{c['id']}_wrongrecord_redacted.wav"),
+                "contextAnchors": wrong_anc,
+                "selfSeed": False,
+            })
+            partial_payload.append({
+                **item,
+                "wavOutPath": str(td_p / f"{c['id']}_partial_redacted.wav"),
+                "contextAnchors": partial_anc,
+                "selfSeed": False,
+            })
+        run_condition(wrong_payload)
+        wrong_metrics, _ = score_condition("wrongrecord_redacted")
+        run_condition(partial_payload)
+        partial_metrics, _ = score_condition("partial_redacted")
+
     pre_pct = pct(pre_exposed, total_planted)
-    post_pct = pct(post_leaked, total_planted)
-    srmp_pct = pct(srmp_post_leaked, total_planted)
     return {
+        "srmpSeeding": "self-seeded from engine detections only (Stage 2 honest re-run; the scoring key never reaches the ring)",
+        "fuzzyBaseline": "plain-text Jaro-Winkler >= 0.85 on the same self-seeded anchor list (no sketch ring)",
         "defenderAsr": "faster-whisper base.en (CPU INT8, word_timestamps=True)",
         "attackerAsr": "faster-whisper small.en (CPU INT8 — 3.3x larger cross-model attacker)",
         "callsEvaluated": len(AUDIO_SCRIPTS_25),
         "totalPlantedPiiTokens": total_planted,
-        "preExposedTokens": pre_exposed,
-        "postLeakedTokens": post_leaked,
-        "srmpPostLeakedTokens": srmp_post_leaked,
-        "preExposureOfPlantedPct": pre_pct,
-        "preExposureWilson95CI": wilson_ci_pct(pre_exposed, total_planted),
-        "postLeakageOfPlantedPct": post_pct,
-        "postLeakageWilson95CI": wilson_ci_pct(post_leaked, total_planted),
-        "srmpPostLeakageOfPlantedPct": srmp_pct,
-        "srmpPostLeakageWilson95CI": wilson_ci_pct(srmp_post_leaked, total_planted),
-        "absoluteDropPercentagePoints": round(pre_pct - post_pct, 2),
-        "srmpAbsoluteDropPercentagePoints": round(pre_pct - srmp_pct, 2),
-        "relativeReductionOfExposedPct": round((1.0 - post_leaked / max(1, pre_exposed)) * 100.0, 2),
-        "srmpRelativeReductionOfExposedPct": round((1.0 - srmp_post_leaked / max(1, pre_exposed)) * 100.0, 2),
-        "callsWithZeroPostLeak": calls_zero_leak,
-        "srmpCallsWithZeroPostLeak": srmp_calls_zero_leak,
-        "nonPiiContextRetentionPct": pct(post_ctx, max(1, pre_ctx)),
-        "srmpNonPiiContextRetentionPct": pct(srmp_post_ctx, max(1, pre_ctx)),
+        "preExposure": {
+            "exposedTokens": pre_exposed,
+            "exposureOfPlantedPct": pre_pct,
+            "wilson95CI": wilson_ci_pct(pre_exposed, total_planted),
+            "nonPiiContextTokens": pre_ctx,
+        },
+        "conditions": {
+            "isolated": isolated_metrics,
+            "srmpSelfSeeded": srmp_metrics,
+            "fuzzyBaseline": fuzzy_metrics,
+            "srmpWrongRecord": wrong_metrics,
+            "srmpPartialAnchors": partial_metrics,
+        },
     }
 
 
@@ -645,13 +710,29 @@ def run_unicode_nfkc_baseline() -> dict:
 
 
 def main() -> None:
-    report = {
-        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "expR3_externalSecrets": run_external_secrets_benchmark(),
-        "expR4_endToEndWhisperAudio": run_audio_e2e_benchmark(),
-        "expR5_pprlRealityCheck": run_pprl_reality_check(),
-        "expR6_unicodeNfkcBaseline": run_unicode_nfkc_baseline(),
-    }
+    # --only-audio: Stage 2 honest re-run of expR4 only. expR3/R5/R6 code paths are
+    # unchanged, so their sections are preserved from the original run instead of
+    # being re-measured (avoids noise-driven churn in settled paper numbers).
+    only_audio = "--only-audio" in sys.argv
+    if only_audio:
+        prev = json.loads(OUT_PATH.read_text(encoding="utf-8")) if OUT_PATH.exists() else {}
+        superseded = prev.pop("expR4_supersededRuns", [])
+        if "expR4_endToEndWhisperAudio" in prev:
+            superseded.append(prev.pop("expR4_endToEndWhisperAudio"))
+        report = {
+            **prev,
+            "expR4ReRunAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "expR4_supersededRuns": superseded,
+            "expR4_endToEndWhisperAudio": run_audio_e2e_benchmark(),
+        }
+    else:
+        report = {
+            "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "expR3_externalSecrets": run_external_secrets_benchmark(),
+            "expR4_endToEndWhisperAudio": run_audio_e2e_benchmark(),
+            "expR5_pprlRealityCheck": run_pprl_reality_check(),
+            "expR6_unicodeNfkcBaseline": run_unicode_nfkc_baseline(),
+        }
     OUT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print("\n=== REVIEWER-HARDENING v2 (R3, R4, R5, R6) COMPLETE ===")
     print(json.dumps(report, indent=2))
