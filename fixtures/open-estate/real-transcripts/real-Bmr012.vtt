@@ -1,0 +1,2939 @@
+WEBVTT
+NOTE
+real layer - meeting transcript Bmr012 (ICSI); corpus speaker labels as distributed; QMSum repackaging (MIT) of AMI/ICSI (CC BY 4.0)
+no overlay, no relabeling; truth = corpus annotations
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Test .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Let 's see , I should be Two .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Up high
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> As close to your mouth as you can get it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> La
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> high as you can get .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Is this channel one ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah , on your upper lip .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Channel one one one .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Gee , OK . Yes . OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK , so for for For people wearing the wireless mikes , like like this one , I find the easiest way to wear it is sorta this this sorta like that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> This is chan channel channel one one two three
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Channel five , channel five .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . Mm - hmm . What do you do ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's actually a lot more comfortable then if you try to put it over your temples ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Test , test test .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> you do it higher ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Adam 's just trying to generate good uh data for the recognizer there .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah , I think we 're supposed to that 's right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And then also , for for all of them , if your boom is adjustable , the boom should be towards the corner of your mouth ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Test test .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> By the way , there was a bug . Yeah , i it wasn't using the proper
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Oh it was .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and about a uh a thumb to a thumb and a half distance away from your mouth ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> basically it wasn't adapting anything .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so about like I 'm wearing it now .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Oh that 's interesting . So why didn't you get the same results and the unadapted ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so so Jane , you could actually do even a little closer to your mouth ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> It 's not always possible .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Hmm ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Why didn't you get the same results and the unadapted ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I could can this be adjuste like this ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Oh , because when it estimates the transformer pro produces like a single matrix or something .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Is that @ @ ? OK , thank you .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Adam , I 'm not
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> O Oh oh I see .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> uh , looks kinda low on channel five
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> I see , I see .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> no ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Channel five , s speak again .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Maybe not .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Hello .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Basically there were no counts
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , that 's alright .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Hello ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I mean , we could we could up the gain slightly if you wanted to .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> It 's OK ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Is this OK ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> I see what you mean .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Who 's channel B ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> but Uh , channel B is probably Liz .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Uh oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Uh channel B I am channel B .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> You wanna close this ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Channel eight , eight .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> or
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No I
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Thank you .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> No , channel B .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Hello , hello .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah , yeah , you 're channel B .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So can you talk a bit ? I thought it might be too
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> OK , yeah , channel B , one two three four five .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , it 's alright . So , the gain isn't real good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> We 're recording ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK , so we are recording .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Ah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um everyone should have at least two forms possibly three in front of you depending on who you are .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um we we 're doing a new speaker form and you only have to spea fill out the speaker form once but everyone does need to do it . And so that 's the name , sex , email , et cetera .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> We we had a lot of discussion about the variety of English and so on so if you don't know what to put just leave it blank . Um I I designed the form and I don't know what to put for my own region ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> California .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I think
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> California .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> California .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Um may I make one suggestion ? Instead of age put date of uh year of birth
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Sure .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> because age will change , but The year of birth changes , you know , stays the same , usually .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> A actually , wait a minute ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Birth year ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Although on
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> shouldn't it be the other way around ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Not for me .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> course on the other on the other hand you could you view it as the age at the time of the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> On the other side ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well the thing is , if ten years from now you look at this form knowing that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yes , but what we care about is the age at at the recording date rather than the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> O yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> But there 's no other date on the form .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> W we don't care how they old they really are .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well well I don't know .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yes . Unless we wanna send them a card .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well I guess it depends on how long the corpus is gonna be collected for .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Anyway .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah , that 's true .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I still don't see the problem .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Either way yeah I think I think age is alright
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and then um there will be attached to this a point or two these forms uh so that you 'll be able to extract the date off that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so , anyway . And so then you also have a digits form which needs to be filled out every time , the speaker form only once , the digit form every time even if you don't read the digits you have to fill out the digits form so that we know that you were at the meeting . OK ? And then also if you haven't filled one out already you do have to fill out a consent form . And that should just be one person whose name I don't know . OK ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Do you want this Adam ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Uh sure . Thank you .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So uh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK so should we do agenda items ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh oh that 's a good idea . I shouldn't run the meeting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Uh well I have I wanna talk about new microphones and wireless stuff .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And I 'm sure Liz and Andreas wanna talk about recognition results . Anything else ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I guess what time do we have to leave ? Three thirty ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Why don't you go first then .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah , good idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Um Well , I I sent out an email s couple hours ago so um with Andreas ' help um Andreas put together a sort of no frills recognizer which is uh gender - dependent but like no adaptation , no cross - word models , no trigrams a bigram recognizer and that 's trained on Switchboard which is telephone conversations . Um and thanks to Don 's help wh who Don took the first meeting that Jane had transcribed and um you know separated used the individual channels we segmented it in into the segments that Jane had used and uh Don sampled that so so eight K um and then we ran up to I guess the first twenty minutes , up to synch time of one two zero zero so is that that 's twenty minutes or so ? Um yeah because I guess there 's some ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Or so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and Don can talk to Jane about this , there 's some bug in the actual synch time file that ah uh I 'm we 're not sure where it came from but stuff after that was a little messier . Anyway so it 's twenty minutes and I actually
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I was that did that did that recording have the glitch in the middle ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I 'm puzzled by that . I oh oh , I see .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> There 's there 's a
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh there was a glitch somewhere .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah , so that actually um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Was it twenty minutes in ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> if it was twenty minutes in then I don't know
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I forgot about that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I thought
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well it was interesting ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Well , I mean , they
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> suddenly the the overall error rate when we first ran it was like eighty percent
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I don't remember when it is .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> but I was able to can transcribe
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> but i looking at the first sentences looked much better than that and then suddenly it turned very bad and then we noticed that the reference was always one off with the it was actually recognized
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Wel
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh no .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , that might be that might be that might be my fault .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Wow .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh so that was just a parsing mismatch .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I 'm not
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No actually it was yeah i it was a complicated bug because they were sometimes one off and then sometimes totally random so um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> yeah , I was pretty certain that it worked up until that time ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh . That 's not good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so that 's what we have
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Alright .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but that that will be completely gone if this synch time problem
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> The the glitch
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> So so we have everything recognized but we scored only the first uh whatever , up to that time to
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> And the only glitch
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So you guys know .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> S sorry I haven't seen the email ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Th - the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> The the well wait
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> what was the score ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So here 's the actual copy of the email
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> we should say something about the glitch . He he can say something about the glitch .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um oh OK
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Cuz it 's it 's it 's h it 's it 's very small
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so does this glitch occur at other
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> There there there 's an acoustic glitch that occurs where um the channels get slightly asynchronized
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> very small . Yep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so the that that problem has gone away in the original driver believe it or not when the SSH key gen ran the driver paused for a fraction of a second
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and so the channels get a little asynchronous and so if you listen to it in the middle there 's a little part where it starts doing doing click sounds .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And is it only once that that happens ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> But yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> it right once in the middle .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> There 's the previous page has some more information about sort of what was wrong
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so so un unsurprisingly Adam is the golden voice ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um But that shouldn't affect anything
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK so that 's actually
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> S and it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> you see this here ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> It y it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> yeah yeah " bah "
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK no
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Oh , and
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> What happens is it actually affects the script that Don
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Huh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean if we know about it then I guess it could always be checked for it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well the acoustic one shouldn't do anything .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but they
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , I don't know exactly what affected it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I agree . I agree .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I I have
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> but I 'll I 'll talk to you about it ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> But I I do remember
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I 'll show you the point .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah . It it had no effect on my transcription ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> you know , I mean I I had no trouble hearing it and and having time bins
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I do remember seeing once the transcriber produce an incorrect XML file where one of the synch numbers was incorrect .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> but there was a Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well , the the synch time the synch numbers have more significant digits than they should ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> That 's what happened .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Where where they weren't monotonic .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> There was yeah , I mean
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> right ? There 's things that are l in smaller increments than a frame .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh , interesting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And so then , I mean you look at that and it 's got you know more than three significant digits in a synch time then that can't be right
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh OK so that 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so anyway it 's it 's just
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> yeah sounds like a bug .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> that 's why we only have twenty minutes but there 's a significant amount of
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Non - zero ? Um there are like more cuz there 's a lot of zeros I tacked on just because of the way the script ran ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> The other one I saw was that it yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I mean but there were there was a point .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah that was fine . That that was OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> The other one I saw was non non - monotonic synch times
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and that definitely indicra indicates a bug .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Uh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well that would really be a problem , yeah . So anyway these are just the ones that are the prebug for one meeting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um and what 's which
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So that 's very encouraging .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> this is really encouraging cuz this is free recognition ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Cool .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> there 's no I mean the language model for Switchboard is totally different so you can see some like this Trent Lott which
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Trent Lott .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um I mean these are sort of funny ones ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> It 'll get those though .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> there 's a lot of perfect ones and good ones and all the references , I mean you can read them and when we get more results you can look through and see
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I and as I said I would like to look at the lattices
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but um it 's pretty good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> because it sounded like even the ones it got wrong it sort of got it right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well so I guess we can generate
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Sounds likes ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> There are a fair number of errors that are , you know where got the plural S wrong or the inflection on the verb wrong .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , and who cares ? And and there were lots of of course the " uh uh " - s , " in on " - s " of uh " - s .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm , so if
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> there 's No those are actually
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> a lot of the errors I think are out of vocabulary ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so is it like PZM is three words , it 's PZM ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean there 's nothing There 's no language model for PZM or
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right . Ri - ri right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Did you say there 's no language for PZM ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No language model , I mean those
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Do you mean so every time someone says PZM it 's an error ? Maybe we shouldn't say PZM in these meetings .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well well there 's all kinds of other stuff like Jimlet and I mean um anyway there
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , that 's right , Jimlet .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Well , we don't even know what that means ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so but this is really encouraging because
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so I
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , that 's right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so , I mean the bottom line is even though it 's not a huge amount of data um it should be uh reasonable to actually run recognition and be like within the scope of of r reasonable s you know Switchboard this is like h about how well we do on Switchboard - two data with the Switchboard - one trained mostly trained recognizer
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and Switchboard - two is got sort of a different population of speakers and a different topic
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Excellent .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and they 're talking about things in the news that happened after Switchboard - one so there was @ @ so that 's great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . Yeah so we 're in better shape than we were say when we did had the ninety - three workshop
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and we were all getting like seventy percent error on Switchboard .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Oh yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> you know
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean this is really ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and thanks to Andreas who , I mean this is a
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well especially for the very first run , I mean you
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Oh it 's the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> eh um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> the first run I ran of Switchboard I got a hundred twenty percent word error but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So and what al also this means is that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Not Switchboard ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean there 's a bunch of things in this note to various people
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> uh Broadcast News .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> especially I guess um with Jane that that would help for since we have this new data now uh in order to go from the transcripts more easily to um just the words that the recognizer would use for scoring . I had to deal with some of it by hand but I think a lot of it can be automated s by
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Oh one thing I guess I didn't get so you know the language model was straight from from bigram from Switchboard the acoustic models were also from Switchboard or or
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So they didn't have anything from this acoustic data in yet ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> That 's amazing .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , so that 's great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And actually we actually um used Switchboard telephone bandwidth models
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> That 's amazing .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well that 's those are the only we ones there are ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> which I guess
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> I was just gonna say ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so that 's the on that 's the only acoustic training data that we have a lot of
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I mean
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and I guess Ramana , so a guy at SRI said that um there 's not a huge amount of difference going from
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> it 's it 's not like we probably lose a huge amount but we won't know because we don't have any full band models for s conversational speech .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> It 's probably not as bad as going f using full band models on telephone band speech
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Oh yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right , so it 's so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> but for Broadcast News when we we played around between the two there wasn't a huge loss .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right , it was not a big deal .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I should I should say that the language model is not just Switchboard
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so I wou so that 's good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Although combining em worked well .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> it 's also I mean there 's uh actually more data is from Broadcast News but with a little less weight
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> uh because
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh - huh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Like Trent Lott must have been from
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> mm - hmm , right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I guess Switchboard was before
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Um By the way just for fun we also ran ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> uh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Good point .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I mean our complete system starts by doing ge a gender detection
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> so just for the heck of it I ran that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And it said a hundred percent male ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> um and it might be reassuring for everybody to know that it got all the genders right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> The j
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh it did ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh that 's I 'm glad .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It got all two genders ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah but you know Jane and Adam have you kn about equal performance
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah . Yes .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and uh and that 's interesting cuz I think the their language models are quite different so and I I 'm pretty sure from listening to Eric that , you know given the words he was saying and given his pronunciation that the reason that he 's so much worse is the lapel .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> That makes a lot of sense ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So it 's nice now if we can just sort of eliminate the lapel one when when we get new microphones
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> yeah . Very possible .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah I I I would bet on that too
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> that would be worth it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> cuz he certainly in that when as a as a burp user he was he was a pretty uh strong one .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um Yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Sheep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> he he he sounded to me just from he sounded like a ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> what 's it a sheep or a goat ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Sheep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> A sheep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Sheep ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Baah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . Sheep is good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> right . Sounded good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right so um so I guess the good news is that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and and again this is without a lot of the sort of bells and whistles that we c can do with the SRI system and we 'll have more data and we can also start to maybe adapt the language models once we have enough meetings . So this is only twenty minutes of one meeting with no no tailoring at all .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I mean clearly there are um with just a small amount of uh actual meeting transcriptions uh thrown into the language model you can probably do quite a bit better because the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah . The voca the vocabulary especially
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Or just dictionary .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Not that much the vocabulary actually
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah , so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I think um well we have to see but it 's uh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah . It 's pretty good um so then
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Have to add PZM and so on
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And I have to try it on the far field mike
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> PZM
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and then there 's things like for the transcription I got when someone has a digit in the transcript I don't know if they said , you know one one or eleven and I don't know if they said Tcl or TCL . there 's things like that where , you know the um we 'll probably have to ask the transcribers to indicate some of those kinds of things but in general it was really good and I 'm hoping and this is this is good news because that means the force alignments should be good and if the force alignments , I mean it 's good news anyway but if the force alignments are good we can get all kinds of information . For example about , you know prosodic information and speaker overlaps and so forth directly from the aligned times . Um so that 'll be something that actually in order to assess the forced alignment um we need s some linguists or some people to look at it and say are these boundaries in about the right place . Because it 's just gonna give us time marks
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> But you know
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well we 've done that for one meeting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so . For forced alignment .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Uh oh oh f not for words
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Ye - right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I 'm sorry just for overlaps is we did it for not not for words .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right . So this would be like if you take the words um you know and force align them on all the individual close talk uh close talking mikes then how good are these sort of in reality
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and then I was thinking it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So we might want to take twenty minutes and do a closer word level transcription . Maybe actually mark the word boundaries .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Oh or i have someone look at the alignments uh maybe a linguist who can say um you know roughly if these are OK and how far away they are .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Um but I think it 's gotta be pretty good because otherwise the word recognition would be really b crummy .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right , right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> It wouldn't necessarily be the other way around , if the wor word recognition was crummy the alignment might be OK but if the word recognition is this good the alignment should be pretty good . So that 's about it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I r
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> I wonder if this is a good thing or a bad thing though , I mean if we 're pr
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> That we 're starting so well ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> yeah if we 're producing a database that everybody 's gonna do well on
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Oh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Don't worry about it w d that 's that 's the close talking mikes . Try it on the P Z Ms and and
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah , which I would which well n n n n
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> So the real value of the database is these ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD H> Yeah , yeah , yeah , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , abso well no but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I mean there 's still just the w the percentages and , I mean they 're not a as we 've talked about before there 's probably overlaps
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> This i yeah . This is not that good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> there 's probably overlaps in in uh in fair number in Switchboard as well so but but there 's other phenomena , it 's a meeting , it 's a different thing and there 's lots of stuff to learn with the close talking mikes but uh yeah certainly I 'd like to see as soon as we could , I mean maybe get some of the glitches out of the way but soon as we could how well it does with say with the P Z Ms or maybe even one of the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and uh see if it 's , you know is it a hundred twenty percent or maybe it 's not maybe if with some adaptation you get this down to fifty percent or forty - five percent or something and and then if for the PZM it 's seventy or something like that that 's actually something we could sort of work with a little bit
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No I think it 's really , I mean this way we least have a baseline we know that for instance the transcripts are very good so once you can get to the words that the recognizer which is a total subset of the things you need to understand the the text um yeah they 're pretty good so and and it 's converting automatically from the XML to the chopping up the wave forms and so forth it 's not the case that the end of one utterance is in the next segment and things like that which we had more problems with in Switchboard so that 's good . And um let 's see there was one more thing I wanted to to mention I can't remember um Sorry can't remember . anyway it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Congratulations is really great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> well it was , I mean I really didn't do this myself
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , it 's really good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so Andreas set up this recognizer and by the way the recognizer all the files I 'm moving to SRI and running everything there so I brought back just these result files and people can look at them um so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> We we talked about setting up the SRI recognizer here . That 's you know if if there are more machines um uh here plus people can could run their own uh you know variants of of of the recognition runs um certainly doable . Um .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah and well certainly if the recognition as opposed to training , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Seems reasonable .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I need t Hmm . I need to ask one question .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Which is um so this issue of the uh legalistic aspects of the pre - sent you know pre - adapted Yeah , well , so what I mean is um the uh the data that you take into SRI , first first question , you 're maintaining it in in a place that wouldn't be publicly readable that that kind of stuff , right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> U um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> From the outside world or
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> By uh people uh who are not associated with this project .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's human subjects issues , I told you about that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Um oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Exactly .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well OK we have n no names . Although I sh um
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> That that 's not the issue ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> de audio data itself ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> it 's just the audio data itself , until people have a chance to edit it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Mm - hmm , exactly .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Uh so well I can I can protect my directories through there .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right now they 're not they 're in the speech group directories which so I will
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I didn't know that actually .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah so we just have to go through this process of having people approve the transcriptions ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> say it 's OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah , we had to get them to approve em and then i cuz cuz the other question I was gonna ask is if we 're having um you know it 's but this this meeting that you have , no problem cuz I I well I mean I I speak for myself
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's us .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> but but I think that we didn't do anything that but well anyway so uh I wouldn't be too concerned about it with respect to that although we should clear it with Eric and Dan of course but these results are based on data which haven't had the uh haven't had the chance to be reviewed by the subjects
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That 's true .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> and I don't know how that stands , I mean if you if you get fantastic results and it 's involving data which which later end up being lessened by , you know certain elisions , then I don't know but I wanted to raise that issue ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Well we ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> that 's all .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I mean once we get all this streamlined it may be sh it hopefully it will be fairly quick but we get the transcriptions , people approve them and so on it 's just that we 're
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Alright we need to work at a system for doing that approval so that we can send people the transcripts
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and get back any bleeps that they want
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah actually the bleeps are also an issue I thought .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> It 's gonna be a rare thing that there 's a bleep for the most part .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> U uh actually I had a question about the downsampling , um I don't know who , I mean how this was done but is is there are there any um issues with downsampling
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Don did this .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> because I know that the recognizer um that we use h can do it sort of on the fly um so we wouldn't have to have it eh you know do it uh explicitly beforehand . And is there any um i are there other d sev uh is there more than one way to do the downsampling where one might be better than another ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> There are lots of w there are lots of ways to do the downsampling um different filters to put on ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> OK . Right . OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> like anti - aliasing stuff .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> So so the th
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I don't think we even know which one I assume you 're using syncat to do it ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> No , I 'm using uh SN SND uh are resample .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Or sound resample ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Re - re ref
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Resample .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah and Dan 's archaic acronyms .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> RSMP . Yeah , I don't really .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Missing all the vowels .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I just yeah I found it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Some of the vowels ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Not all of them .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> almost all the vowels , that 's the hard part .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> So so the other thing we should try is to just take the original wave forms ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And a few of the consonants .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I mean segment them but not downsample them .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah we could we could try that and and compare
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> And and feed them to feed them to the SRI recognizer and see if if the SRI front - end does something .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , that 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I suspect that 's sort of premature optimization , but Sure .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> We can try it . I I only downsampled them first cuz I was
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I mean that 's just one line that 's one line of code to comment at
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> yeah
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Right and and it doesn't is no more work for um you know for us .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well they 're just bigger to transfer , that 's why I s downsampled them before but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Well but they 're only twice as big so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well I mean that was if it 's the same then we can downsample here
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> I mean it 's it 's just a
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but if it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Although those eighty meg files take a while to copy into my directories
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> so , but no , I mean it 's not i it wouldn't be a problem if you 're interested in it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> We could try that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah I mean it would be uh you know it would probably take uh about um you know
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> it would
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> minus the transfer time it would it would take uh you know ten minutes to try and and and
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's about a fifty minute drive , right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> And and if for some reason we see that it works better then we might investigate why
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well it takes more disk space too so I was just
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> and , you know , what Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Mmm . In the front - end we could do that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So you just train just different filters
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , I
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and so you 're just wondering whether the filter is
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , I can imagine it would be
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Right . Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> So we could try that with this particular twenty minutes of speech and sort of see if there 's any differences .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> I mean I guess there 's some
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> You know a at some point someone might have optimized whatever filtering is done for the actual recognition um performance .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> So in other words right ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It just seems to me that , you know small changes to the language model and the vocabulary will so swamp that that it may be premature to worry about that . I mean so one is a half a percent better than the other I don't think that gives you any information .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well it 's just as easy to to give you the sixteen K individual ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> it was just more disk space you know for storing them
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Are you are you using uh uh mel cepstrum or PLP over there ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mel cepstrum .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So probably doesn't matter .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well we could try .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> There 's there 's your answer .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> But but it wouldn't hurt to try ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Could easily try
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> That 's what I would assume but you never know ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> you know .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Sure . No the reason I say this
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Just Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> PLP uses uh auto - regressive filtering and uh modeling and so it can be sensitive to the kind of filtering that you 're doing
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> but uh uh mel cepstrum uh might not b you wouldn't expect to be so much but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well we can try it if you generate like the same set of files just up to that point where we stopped anyway and just sti stick them somewhere
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , it 's it 's really not a problem .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Actually , no .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and I 'll rerun it with
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Don't stop . Don't stop at that part because we 're actually using the entire conversation to estimate the speaker parameters ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Keep going . Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> so shouldn't use you should s you know , get
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah , I mean I 'll I have to do is eh e the reference file would stay the same ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> it 's just the individual segments would be approximately twice as long
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right . Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> and I could just replace them with the bigger ones in the directory ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean I corrected all
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> that 's not a problem .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean I hand - edited the whole the whole meeting so that can be run it 's just Once we get the the bug out .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> One one question which is I I had the impression from this from this meeting that w that I transcribed that um that there was already automatic downsampling occurring ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah . Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> is that I thought that in order to
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> so it was so it 's like there 's already down
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> There 's one level that 's already happening right here .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> This is being recorded at forty - eight kilohertz . Which is more that anybody needs
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And it gets downsampled to sixteen .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And that 's actually said in your meeting ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> that 's how I know that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> That 's exactly , and that 's how I know it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I I It 's like are we downsampling to sixteen ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> It 's a digital audio orientation for the board
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> it 's in the monitor so it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Thank God it 's not more than that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And I have no idea what filter it 's using ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Is eight kilohertz is is eighty kilohertz generally accepted as like standard for voice ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> For telephone stuff .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Telephone .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Telephone .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah that 's what I was gonna say , I mean like
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So it 's it 's it 's just that they were operating from Switchboard which was a completely telephone database
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> so Oh , I see , so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and so that was a standard for that sixteen s
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So sixteen seems to be pretty typical for with this sort of thing .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Sixteen is more common for for uh broadband stuff that isn't
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> That isn't music .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> that isn't music and isn't telephone ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And I guess if you 're comparing like uh if you wanna run recognition on the PZM stuff you would want you don't want to downsample the wh that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Why is that ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I don't know .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> right ? Well I don I mean if it 's any better
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No actually I would think that you would you would get better you 'd get better high frequencies in the local mike .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> All the way around I 'd think .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh but who knows ? I mean we do we we we we we wanna find all this stuff out ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah well we could try it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> we don't know .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> We 're gonna have plenty of low frequency on the P Z Ms with the fans .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> OK . Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh yeah . Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Oh yeah there was just one more thing I wanted to say which is totally unrelated to the recognition except that um well well it 's sort of related but um good news also uh I got well Chuck Fillmore agreed to record meetings but he had too many people in his meetings and that 's too bad cuz they 're very animated and but uh Jerry also agreed so uh we 're starting on on
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> They 're less animated .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well but he has fewer he he won't have more than eight and it 's a meeting on even deeper understanding , EDU , so that sounds interesting . As a compliment to our front - end meeting
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Dot EDU ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and um so that 's gonna start Monday and one of the things that I was realizing is um it would be really great if anyone has any ideas on some kind of time synchronous way that people in the meeting can make a comment to the person whose gonna transcribe it or or put a push a button or something when they wanna make a note about " oh boy you should probably erase those last few " or uh " wait I want this not to be recorded now " or uh something like that s
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Weren't we gonna do something with a pad at one point ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> The cross pads ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , we could do it with the cross pads .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Cuz I was thinking you know if if the person who sets up the meeting isn't there and it 's a group that we don't know um and this came up talking to to Jerry also that you know is there any way for them to indicate to make sure that the qu request that they have that they make explicitly get addressed somehow
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so I don't know if anyone has ideas or you could even write down " oh it 's about three twenty five and "
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Well what I was just suggesting is is we have these this cross pad just for this purpose
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , and use that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and just use that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Not a bad idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and if we sink it in
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That would be great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> The other thing is eh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That be great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I don't know if you know this or if it 's a question for the mail to Dan but is this thing of two eight channel boards a maximum for this setup or could we go to a third board ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I don't know . I don't know . I 'll send mail to Dan and ask . I I think that it 's the maximum we can do without a lot of effort because it 's one board with two digital channels .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Oh it is one board .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> E eight each . So it it takes two fibers in to the one board . And so w I think if we wanna do that more than that we 'd have to have two boards , and then you have the synchronization issue .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> But that 's a question because that would if it was possible cuz it is i you know already we have a a a group of people in this room that cannot all be miked
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and it 's not just cuz we haven't been to the store , right it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> What is the limit on each of those f fiber channels , is it the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Eight .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> It just it 's eight channels come in , does it have do with the sampling rate ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's eight . I have no idea . But each each fiber channel has eight eight channels and there are two ch two fibers that go in to the card .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> It might be a hard limitation ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I mean one thing is it the whole thing as I said is is all structured in terms of forty - eight kilohertz sampling so that pushes requirements up a bit
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> I was just wondering if if that could change .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I mean then we 'd also have to get another ADD and another mixer and all that sort of stuff .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> If we could drop that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So I I 'll send a mail to Dan and ask him .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK on the uh are we done with that ? So the oth topic is uh getting more mikes and different mikes , so I got a quote um We can fit we have room for one more wireless and the wireless , this unit here is three fifty three hundred fifty dollars , it I didn't realize but we also have to get a tuner the receiver the other end , that 's uh four thirty um and then also
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> For for each ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Wow .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean the tuner is four thirty for each .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yep .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Wow .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And we just need one more so so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah at least w we got the good ones .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah . So that 's you know something like seven hundred eighty bucks for one more of these .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um and then also um It turns out that the connector that this thing uses is proprietary of Sony
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> believe it or not and Sony only sells this headset .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So if we wanna use a different set headset the solution that the guy suggested and they apparently lots of people have done is Sony will sell you the jack with just wires coming out the end and then you can buy a headset that has pigtail and solder it yourself . And that 's the other solution and so the jacks are forty bucks apiece and the he recommended um a crown CM three eleven AE headset for two hundred bucks apiece .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> There isn't this some sort of thing that plugs in , you actually have to go and do the soldering yourself ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Becau - the reason is the only only thing you can get that will plug into this is this mike or just the connector .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No I understand . The reason I ask is these sort of handmade uh wiring jobs fall apart in use so the other thing is to see if we can uh get them to do a custom job and put it together for this .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh I 'm sure they would , they would just charge us ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Well , and they 'd probably want quantity too ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Well
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> they 'd
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> no they 'll just charge us more , so it 's this
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Mmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So so my question is should we go ahead and get na nine identical head - mounted crown mikes ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Not before having one come here and have some people try it out .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Because there 's no point in doing that if it 's not gonna be any better .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So why don't we get one of these with the crown with a different headset ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And and see if that works .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> And see if it 's preferable and if it is then we 'll get more .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Comfort .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Cuz I mean I think the microphones are OK it 's just the the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right , it 's just they 're not comfortable to wear .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Could make our own handbands and
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um , and he said they don't have any of these in stock but they have them in LA and so it will take about a week to get here .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah well it 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Um so OK to just go order ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> We 're in this for the long term , yeah . Just order it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> It 's a lot of money for a handband .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> and who is the contact if I wanna do an invoice
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> cuz I think that 's how we did it before .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh we 'll do this off - line , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> It 's a long time to get from LA .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK . And then nine channels is the maximum we can do , so .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh y right cuz so one is for the daisy chain so that 's fifteen instead of sixteen
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Without getting more stuff .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and there 's six on the table so that 's nine .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Can I ask a really dumb question ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Is is there any way we can have you know like a a wireless microphone that you pass around to the people who you know the extra people for the times they wanna talk that
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Probably .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> That 's a good idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> That 's not a dumb question , it 's a good idea ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well I mean
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Like uh like you know Jerry Springer thing ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I 'm just not sure how we would handle that in the
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> That 's like the Conch .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Like at conferences
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> you know r
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> well but there might be a way to say that there are gonna be these different people
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> See , look .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> um and I don't know identifying somehow ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> so nail the chairs down .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , somehow .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> You know I was just thinking of Jerry Springer .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's not a bad idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No that no no
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> 
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> that 's a very if we can't get another board and even if we can I have a feeling they 'll be some work .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> The Springer mike .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I mean for the few times that you might wanna have that .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Let 's figure that we have eight which are set up and then there 's a ninth which is passed around to
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> A hand - held , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> that 's a good idea
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Infinite expansion .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Right . Kind of rules out overlap but but uh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Well or also for you know if people are not
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well we could just hand around the lapel .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh no no that 's
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Rather than get a
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> No not the lapel .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> do you want a handset ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Well I mean is the is the hand - held really any better ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Liz hates the lapel .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yes .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I don't know
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> but I d I know the lapel is really suboptimal .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No it no it depends on the hand - held
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Is awful ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> but hand many hand - helds are built wi with sort of uh anti - shock sort of things so that it it is less uh susceptible to hand noises . If you hold the lapel mike i you just get all k sorts of junk .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right . I mean the ones they really pass around must be sort of OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> So I wonder if they have one that will hook up .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . They have What ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I wonder if they have one that will hook up to this or whether again we 'll have to wire it ourselves .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Well , you wouldn't want it to hook there you 'd just want it to hook into the receiver in the other room , right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No that 's uh you need a transmitter .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> What ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Is th isn't that built into the mike ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Oh I see . Get a get a different radio , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah just these ones that they pass around with no you know wireless
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . But you need a ra but it has to correspond to the receiver .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Have a little antenna coming out the bottom .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> It 's gonna be much easier to get one of these and just plug in a mike , isn't it ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> But then the mike has to h
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Do you have to hand it around and if you have two pieces of
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> No no
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> 
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so right , so this is a good point , so yeah you have these these mikes with a little antenna on the end right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK . And do you think you would be able to use the same receiver ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> I don't know . You 'll have to check with them ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK I 'll I 'll ask .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> yeah . But that 's that 's a great idea
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> It 's just a frequency .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and then just sort of have that as the and then you can have groups of twenty people or whatever and and uh
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah because there 's only I mean as Andreas pointed out actually I think in the large the larger the group the less interaction the less people are talking um over each other
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Pretty soon .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Mmm , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> it just there might be a lot of people that speak once or twice and
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD A> Um Gotta go .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Off you go , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK so I guess people who have to leave can leave and do we have anything else to discuss or should we just do digits ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> I I thought of some extra a couple of extra things I 'd like to mention .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> One of them is to give you a status in terms of the transcriptions so far . So um as of last night um I 'd assigned twelve hours and they 'd finished nine
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> uh Yep ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> and my goal was to have eleven done by the end of the month , I think that by tomorrow we 'll have ten .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Uh it 's great
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Pretty close ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> So they 're still working .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> that 's good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I j and this I got this email from Jane at like two in the morning or something
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Wow .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> that 's good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> so it 's really great
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> It 's working out , thanks .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> It 's really great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Thanks . And then um also an idea for another meeting , which would be to have the transcribers talk about the data It 's sort of a a little bit a little bit
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That 's a great idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Super idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yep , that 'd be very interesting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That 's a great idea cuz I 'd like to g have it recorded so that we can remember all the little things ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I 'd love to hear what they have to say .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> that 's a great idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> So if we got them to talk about this meeting , it would be a meta meta meeting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah . Yeah , exa exactly I guess nested several layers ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Now you have eight transcribers and there 's ten of us
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> but
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> so how do we do this , is the only thing .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Or just have them talk amongst themselves .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Have them have their own meeting .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> And have
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Well that 's what I 'm thinking ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Oh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> yeah . Have them talk about the data and they and they 've made observations to me
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> that would be great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> like they say uh you know this meeting that we think has so much overlap , in fact it does but there are other groups of similar size that have very little , you know it 's part of it 's it 's the norm of the group and all that and they have various observations that would be fun , I think .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> That 's a great idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Yeah , I 'd like to hear what they s say .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Be great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So maybe we could they could have a meeting more or less without us that to do this and we should record it
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> and then maybe one or two of them could come to one of these meetings and and could you know could tell us about it .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Give us a status .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh good . OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> It 's they will get to transcribe their own meeting but they also get paid for having a break
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> That would be weird .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> What what yeah that 's right .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> and I think that 's a good idea ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah exactly , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> get them involved .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> Um that 's a great idea .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Super .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD C> I 'm really sorry I have to g no I have to go as well .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> And then I wanted to also um say something about the Fiscus uh uh John John Fiscus visit tomorrow . And Which is to say that w it 'll be from nine to one that I 'm going to uh uh offer the organization allow him to uh adjust it if he wishes but to be basically in three parts , the acoustic part coming first which would be basically the room engineering aspects um other things and he 'll be also presenting what NIST is doing and and uh then uh number two would be sort of a the the transcription process so this would be a focus on like presegmentation and the modifications to the the multitrans interface which allows more refined encoding of the beginnings and ends of the overlapping segments which uh Dave Gelbart 's been doing and then um uh and of course the presegmentation Thilo 's been doing and then um the third part would and again he has some stuff that 's i relevant with respect to NIST and then the third one would be focus on transcription standards so at NIST he 's interested in this establishment of a global encoding standard I guess I would say and I want it , you know k yeah see what they 're doing and also present what what we 've chosen as ours and and discuss that kind of thing . And so but he 's only here until until one and actually we 're thinking of noon being uh lunch time so basically hoping that we can get as much of this done as possible before noon . S
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> And everybody who wants to attend is welcome . So
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Oh , where you 're gonna meet ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> yeah . Here mostly but I 've also reserved the BARCO room um eh to figure out how that works in terms of like maybe having a live demonstration .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK but the nine o ' cl nine o ' clock will be i be in here . Yeah , OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah . Mm - hmm .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> I assume we 're not gonna try to record it ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Oh I think that would be hard , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah , I think just adds
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Alright .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Um good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Thank you though , uh - huh .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So maybe do digits and recess ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Unless there 's anything else ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah . Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Do digital ones ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Uh OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Uh should y we make him wear Andreas ' mike or would that just be too confusing ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah . No I don't think it 's confusing . Well , it doesn't confuse me .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> When we do this in the key in the key in the key it has to indicate that channel change ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Does it mess up the forms ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> right ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Uh yeah I just don't know how we would do that , so . I mean other than free free form .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Well i have a time mark .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> The on switch is here on the on the top there .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And just clip it to your collar .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> That 's fine .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> OK , my name is uh Espen Eriksen . I 'm a Norwegian . Um uh this is my second semester at Berkeley . Currently I 'm taking uh my first graduate level courses in DSP and um when I come back to Norway I 'm gonna continue with the more of a research project work kind of work . So this semester I 'm starting up with a with a small project through uh Dave Gelbart which I 'm taking a course with I got in touch with him and he told me about this project . So with the help of uh Dan Ellis I 'm gonna do small project associated to this . What I 'm gonna try to do is uh use use ech echo cancellation to uh to handle the periods where you have overlapping talk . To try to do something about that . So currently I 'm um I 'm just reading up on echo cancellation , s looking into the theory behind that and then uh hopefully I get some results . So it it 's a it 's a project goes over the course of one semester .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Great .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> So I 'm just here today to introduce myself . Tell about I 'll be I 'll be working on this .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And are you staying at Berkeley or is are you just here a semester ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> This is my second semester and last .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Ah second and last ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> So I leave
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> He 's in the he 's in the cour two two five D course .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> Yeah , I 'm in Morgan 's course ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> So , yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Good .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v PhD D> Welcome .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Postdoc G> Then you then you go back to Norway , that 's OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad F> We were just talking about something like this yesterday or yeah yesterday with Liz . About doing some of the echo cancellation stuff or possibly the spectroanalysis over the overlaps , so . Cool .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad J> Yeah .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> OK ,
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> Digits ?
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Professor B> let 's do digits . OK .
+
+00:NaN:NaN.NaN --> 00:NaN:NaN.NaN
+<v Grad E> And stop .
+

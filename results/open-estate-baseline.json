@@ -1,0 +1,170 @@
+{
+  "kind": "open-estate-exact-match-baseline",
+  "version": "open-estate-v1",
+  "seed": 20261124,
+  "estateSha256": "bc896589244e4fe8c2077579a33fbbd82b454dbac1caad6a7c1171d1d10ee172",
+  "normalization": "lowercase + strip punctuation (non letter/number chars become spaces) + collapse whitespace; nothing else",
+  "clustering": "transitive closure over identically normalized mention surfaces; per layer, never mixed; each mention is keyed by its single manifest surface",
+  "note": "Layered external-validity estate. The gate binds on layer O (overlay identity, truth by construction) exactly as on the noisy estate: exact-match pairwise recall < 0.90 AND >= 1 false merge on the designed collision pairs. Layer R (real identity, truth = corpus speaker labels) is reported as-is, never gated, and every metric is computed per layer so no number mixes real and overlay identity. Audio carries no overlay and is scored by no pipeline in this item.",
+  "layers": {
+    "layerR": {
+      "note": "Real identity layer; truth = corpus speaker labels (QMSum role handles, as distributed). The exact-match baseline collapses nothing by design here, so a high score is the honest, empty-achievement result; it is baseline for calibration only and never presented as an engine-adjacent win.",
+      "scoring": {
+        "people": 62,
+        "documents": 12,
+        "mentions": 7449,
+        "stringGroups": 21
+      },
+      "pairwise": {
+        "precision": 0.22788538155188137,
+        "recall": 1,
+        "f1": 0.37118347522610784,
+        "truthPositivePairs": 601449,
+        "predictedPositivePairs": 2639261,
+        "truePositivePairs": 601449
+      },
+      "bCubed": {
+        "precision": 0.37912143345025623,
+        "recall": 1,
+        "f1": 0.5498013797113985
+      },
+      "falseMerges": {
+        "count": 2037812,
+        "rate": 0.7721146184481186,
+        "onCollisionPairs": 0
+      },
+      "falseSplits": {
+        "count": 0,
+        "rate": 0,
+        "noiseHistogram": {
+          "N1": 0,
+          "N2": 0,
+          "N3": 0,
+          "N4": 0,
+          "N5": 0,
+          "N6": 0,
+          "N7": 0,
+          "N8": 0,
+          "none": 0
+        },
+        "combinationHistogram": {}
+      },
+      "gate": {
+        "applicable": false,
+        "reason": "the gate binds on layer O only (spec Section 5: no metric mixes layers; layer O truth by construction)"
+      }
+    },
+    "layerO": {
+      "note": "Overlay identity layer; truth by construction. Same scoring machinery, same normalization, same gate as the noisy estate.",
+      "scoring": {
+        "people": 60,
+        "collisionPairs": 12,
+        "documents": 31,
+        "facts": 48,
+        "mentions": 932,
+        "stringGroups": 235
+      },
+      "pairwise": {
+        "precision": 0.7609756097560976,
+        "recall": 0.614636599882639,
+        "f1": 0.6800222593210907,
+        "truthPositivePairs": 11929,
+        "predictedPositivePairs": 9635,
+        "truePositivePairs": 7332
+      },
+      "bCubed": {
+        "precision": 0.8999727501873419,
+        "recall": 0.5213234846694026,
+        "f1": 0.6602099108247622
+      },
+      "falseMerges": {
+        "count": 2303,
+        "rate": 0.23902439024390243,
+        "onCollisionPairs": 2303
+      },
+      "falseSplits": {
+        "count": 4597,
+        "rate": 0.38536340011736103,
+        "noiseHistogram": {
+          "N1": 60,
+          "N2": 1101,
+          "N3": 643,
+          "N4": 2180,
+          "N5": 364,
+          "N6": 794,
+          "N7": 175,
+          "N8": 344,
+          "none": 601
+        },
+        "combinationHistogram": {
+          "N4": 1161,
+          "none": 601,
+          "N7": 67,
+          "N3": 369,
+          "N7+N4": 14,
+          "N7+N3": 79,
+          "N4+N3": 53,
+          "N2": 722,
+          "N2+N7": 2,
+          "N2+N3": 2,
+          "N4+N7": 13,
+          "N4+N1": 6,
+          "N1": 30,
+          "N2+N6": 9,
+          "N2+N4": 14,
+          "N6": 111,
+          "N6+N4": 158,
+          "N4+N6+N5": 168,
+          "N1+N3": 19,
+          "N2+N3+N5": 1,
+          "N3+N5": 10,
+          "N3+N4": 36,
+          "N5": 56,
+          "N5+N4": 12,
+          "N4+N8": 61,
+          "N8": 180,
+          "N8+N4": 69,
+          "N4+N6": 77,
+          "N4+N6+N2": 90,
+          "N4+N2": 147,
+          "N6+N5": 25,
+          "N3+N2": 36,
+          "N6+N4+N5": 82,
+          "N5+N3": 4,
+          "N2+N6+N4": 5,
+          "N2+N6+N4+N5": 6,
+          "N8+N3": 32,
+          "N4+N8+N3": 2,
+          "N6+N2": 60,
+          "N2+N4+N6": 3,
+          "N2+N1+N4": 2,
+          "N2+N1": 2,
+          "N1+N4": 1
+        }
+      },
+      "noiseSummary": {
+        "N1": 5,
+        "N2": 116,
+        "N3": 56,
+        "N4": 106,
+        "N5": 8,
+        "N6": 148,
+        "N7": 11,
+        "N8": 6
+      },
+      "gate": {
+        "recallBelow90": true,
+        "atLeastOneFalseMerge": true,
+        "pass": true
+      }
+    }
+  },
+  "gate": {
+    "recallBelow90": true,
+    "atLeastOneFalseMerge": true,
+    "pass": true
+  },
+  "enron": {
+    "omitted": "OPEN_ESTATE_ENRON_SLICE was not set; the conditional Enron slice is scored only when generated on this machine; committed artifacts record aggregate scores only"
+  }
+}

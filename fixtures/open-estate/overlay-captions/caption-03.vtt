@@ -1,0 +1,138 @@
+WEBVTT
+NOTE
+overlay layer - caption render of meeting transcript ES2004d; real content, identity substituted; the audio link does not survive
+2025-10-18
+
+00:00:02.000 --> 00:00:08.000
+<v Tom Drachmann> Uh yeah , if it was going like I d well tha that could be something for next time , maybe . You can have a remote that tells you exactly where it is . Um the standard , there's be a standard transmission with the T_V_ using using all the standard chips that we've talked about .
+
+00:00:09.000 --> 00:00:15.000
+<v Marcus Thorne> Infrared .
+
+00:00:16.000 --> 00:00:22.000
+<v Tom Drachmann> Um it would it would have obviously 'cause it's split over two two different layers , it would need two separate P_C_B_s , so it would be joined at the hinge through some sort of cabling . And uh because , obviously , all T_V_s use this , the same infrared medium , we'd just be using using the same thing to transmit the data . And the infrared um sender would be on the on one of the bot the bottom layer , just at the front of the we haven't I don't think we actually put it on .
+
+00:00:23.000 --> 00:00:29.000
+<v Marcus Thorne> Like here .
+
+00:00:30.000 --> 00:00:36.000
+<v Tom Drachmann> Yeah , yeah , something like that .
+
+00:00:37.000 --> 00:00:43.000
+<v Marcus Thorne> Infrared could be here also . Yeah , here .
+
+00:00:44.000 --> 00:00:50.000
+<v Marcus Thorne> Okay . Actually , no , it would be it would have to be on the on the front .
+
+00:00:51.000 --> 00:00:57.000
+<v Tom Drachmann> Yeah , on the front on the front side of that , yeah .
+
+00:00:58.000 --> 00:01:04.000
+<v Marcus Thorne> . So when it's even if it's open here , the signals would go .
+
+00:01:05.000 --> 00:01:11.000
+<v Marcus Thorne> Oh right , yeah , okay , yeah , I've got you . It's still pointing ,
+
+00:01:12.000 --> 00:01:18.000
+<v Tom Drachmann> So when you've actually got it open , it would be facing the T_V_ .
+
+00:01:19.000 --> 00:01:25.000
+<v Marcus Thorne> yes .
+
+00:01:26.000 --> 00:01:32.000
+<v Marcus Thorne> Yeah .
+
+00:01:33.000 --> 00:01:39.000
+<v Marcus Thorne> Yeah , that would make sense .
+
+00:01:40.000 --> 00:01:46.000
+<v Tom Drachmann> And then finally um on to the interface . The top screen , as we said , is would be an inset um black and white L_C_D_ s touch screen
+
+00:01:47.000 --> 00:01:53.000
+<v Marcus Thorne> This one right here .
+
+00:01:54.000 --> 00:02:00.000
+<v Tom Drachmann> which yeah would uh have all of all of the the available functions for for the remote on it , uh whereas the bot the bottom screen would just contain the standard buttons , like the vo volume up and down , channel up and down , power on and off , and uh things to that effect .
+
+00:02:01.000 --> 00:02:07.000
+<v Marcus Thorne> .
+
+00:02:08.000 --> 00:02:14.000
+<v Marcus Thorne> Okay .
+
+00:02:15.000 --> 00:02:21.000
+<v Tom Drachmann> And now we've we also decided on the inside , we could possibly either have um some some kind of sort of bezzled uh logo on it , or something inset , or maybe an engraving of the logo on the top .
+
+00:02:22.000 --> 00:02:28.000
+<v Marcus Thorne> Which is
+
+00:02:29.000 --> 00:02:35.000
+<v Marcus Thorne> But not interfering with the outside kind of look of the product
+
+00:02:36.000 --> 00:02:42.000
+<v Tom Drachmann> No d not not actually . No , not uh interfering with l the whole look of the the product when it's uh on the thing .
+
+00:02:43.000 --> 00:02:49.000
+<v Marcus Thorne> No .
+
+00:02:50.000 --> 00:02:56.000
+<v Marcus Thorne> once it's
+
+00:02:57.000 --> 00:03:03.000
+<v Marcus Thorne> Look up to it .
+
+00:03:04.000 --> 00:03:10.000
+<v Marcus Thorne> Okay .
+
+00:03:11.000 --> 00:03:17.000
+<v Tom Drachmann> And finally that's how we put the fashion back into electronics ,
+
+00:03:18.000 --> 00:03:24.000
+<v Marcus Thorne> Thank you very much .
+
+00:03:25.000 --> 00:03:31.000
+<v Tom Drachmann> as that is that's the company logo .
+
+00:03:32.000 --> 00:03:38.000
+<v Marcus Thorne> Yay .
+
+00:03:39.000 --> 00:03:45.000
+<v Marcus Thorne> Wrapping it all up , okay .
+
+00:03:46.000 --> 00:03:52.000
+<v Ines Ellerby> Well done .
+
+00:03:53.000 --> 00:03:59.000
+<v Marcus Thorne> Um I've now got evaluation criteria .
+
+00:04:00.000 --> 00:04:06.000
+<v Ines Ellerby> Certainly .
+
+00:04:07.000 --> 00:04:13.000
+<v Marcus Thorne> So this is the one . Sorry .
+
+00:04:14.000 --> 00:04:20.000
+<v Marcus Thorne> It's to be presented .
+
+00:04:21.000 --> 00:04:27.000
+<v Tom Drachmann> There you go . .
+
+00:04:28.000 --> 00:04:34.000
+<v Ines Ellerby> Logged in ? Thank you . Oops .
+
+00:04:35.000 --> 00:04:41.000
+<v Marcus Thorne> Okay .
+
+NOTE follow-up section
+ ELLERBY, PETRA works in Engineering. 
+
+- carried over from the meeting record: "Um findings , okay , we're very limited by what our current manufacturers can offer , um and my question to all of you is , should we look to other manufacturies or should we just make do with what we have available ?"
+
+- carried over from the meeting record: "Hmm . Do you think people that are people that buy a remote , are they always gonna wanna use the voice recognition or is it just something that they do sometimes ."
+
+- carried over from the meeting record: "I would definitely go for that rather than like your average plain old remote like that ,"
+
+ Nadia Ellerby served as Engineer.  Nadia Ellerby joined in August 2025. 
+
+ Ondrej Ellerby served as Engineer. 
+
