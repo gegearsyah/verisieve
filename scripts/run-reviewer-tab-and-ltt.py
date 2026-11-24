@@ -269,6 +269,31 @@ def run_wasm_srmp_on_tab_docs(docs: list[dict], spans_per_doc: list[list[dict]],
         return [r["spans"] for r in res]
 
 
+def dumb_name_propagation_baseline(docs: list[dict], person_spans_per_doc: list[list[dict]]) -> list[list[dict]]:
+    """Dumb coreference baseline: propagate every detected PERSON name to its later
+    mentions in the same document by exact string match. No sketch ring, no phonetics."""
+    out = []
+    for d, sp in zip(docs, person_spans_per_doc):
+        text = d["text"]
+        pred = [dict(s) for s in sp]
+        covered = [(s["start"], s["end"]) for s in pred]
+        names = {}
+        for s in sp:
+            nm = text[s["start"]:s["end"]]
+            if nm and (names.get(nm) is None or s["start"] < names[nm]):
+                names[nm] = s["start"]
+        for nm, first_start in sorted(names.items(), key=lambda kv: kv[1]):
+            for m in re.finditer(re.escape(nm), text):
+                if m.start() <= first_start:
+                    continue
+                if any(cs <= m.start() < ce for cs, ce in covered):
+                    continue
+                pred.append({"start": m.start(), "end": m.end(), "type": "PERSON", "score": 1.0, "source": "dumbPropagation"})
+                covered.append((m.start(), m.end()))
+        out.append(pred)
+    return out
+
+
 def main() -> None:
     print("Loading TAB ECHR dev & test splits...")
     dev_docs = load_tab_docs(DEV_PATH)
@@ -359,6 +384,7 @@ def main() -> None:
         "vanillaPerson": [],
         "devFilteredPerson": [],
         "srmpPerson": [],
+        "dumbPerson": [],
     }
     srmp_by_thr: dict[float, list[list[dict]]] = {}
     for thr in [0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]:
@@ -371,6 +397,8 @@ def main() -> None:
         vp = [[s for s in sp if s["score"] >= thr and str(s.get("label", "")).lower() == "person"] for sp in gl_test]
         dp = [[s for s in sp if s["score"] >= thr and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt]
         sp_per = [[s for s in sp if str(s.get("label", s.get("type", ""))).lower() == "person"] for sp in srmp_spans]
+        # Dumb coreference baseline on the SAME seed detections as SR-MP (dev-filtered at thr)
+        du_per = dumb_name_propagation_baseline(test_docs, dp)
 
         for name, preds, per_only in [
             ("vanillaAll", va, False),
@@ -380,6 +408,7 @@ def main() -> None:
             ("vanillaPerson", vp, True),
             ("devFilteredPerson", dp, True),
             ("srmpPerson", sp_per, True),
+            ("dumbPerson", du_per, True),
         ]:
             m = score_tab_corpus(test_docs, preds, person_only=per_only)
             m.pop("_perDocF1")
@@ -416,6 +445,10 @@ def main() -> None:
         "vanillaGlinerPerson": [[s for s in sp if s["score"] >= thr_per and str(s.get("label", "")).lower() == "person"] for sp in gl_test],
         "devFilteredGlinerPerson": [[s for s in sp if s["score"] >= thr_per and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt],
         "srmpWasmGlinerPerson": [[s for s in sp if str(s.get("label", s.get("type", ""))).lower() == "person"] for sp in srmp_by_thr[thr_per]],
+        "dumbPropagationPerson": dumb_name_propagation_baseline(
+            test_docs,
+            [[s for s in sp if s["score"] >= thr_per and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt],
+        ),
         "presidioPerson": [[s for s in sp if s["type"] == "PERSON"] for sp in pres_fair_test],
     }
     per_scores = {}
@@ -425,6 +458,12 @@ def main() -> None:
         per_doc_f1[k] = sc.pop("_perDocF1")
         sc["f1Bootstrap95CI"] = bootstrap_ci_f1(test_docs, preds, True)
         per_scores[k] = sc
+
+    # Reviewer-demanded same-doc matched-pair tests: SR-MP vs dev-filtered GLiNER and
+    # vs the dumb propagation baseline, at the optimal Person threshold AND at tau=0.70.
+    srmp70_doc_f1 = score_tab_corpus(test_docs, [[s for s in sp if str(s.get("label", s.get("type", ""))).lower() == "person"] for sp in srmp_by_thr[0.70]], True)["_perDocF1"]
+    df70_doc_f1 = score_tab_corpus(test_docs, [[s for s in sp if s["score"] >= 0.70 and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt], True)["_perDocF1"]
+    dumb70_doc_f1 = score_tab_corpus(test_docs, dumb_name_propagation_baseline(test_docs, [[s for s in sp if s["score"] >= 0.70 and str(s.get("label", "")).lower() == "person"] for sp in gl_test_filt]), True)["_perDocF1"]
 
     # 5. Three Non-Circular Ground-Truth LTT Gates on TAB (echr_dev -> held-out echr_test, 1,999 paragraphs)
     print("Running 3 Non-Circular Ground-Truth LTT Gates (Text-Only vs NER-MaxConf vs Detector-Informed Hybrid)...")
@@ -461,6 +500,10 @@ def main() -> None:
         "personSignificance": {
             "devFilteredGlinerVsPresidioP": paired_permutation_pvalue(per_doc_f1["devFilteredGlinerPerson"], per_doc_f1["presidioPerson"]),
             "devFilteredVsVanillaGlinerP": paired_permutation_pvalue(per_doc_f1["devFilteredGlinerPerson"], per_doc_f1["vanillaGlinerPerson"]),
+            "srmpVsDevFilteredP": paired_permutation_pvalue(per_doc_f1["srmpWasmGlinerPerson"], per_doc_f1["devFilteredGlinerPerson"]),
+            "srmpVsDumbPropagationP": paired_permutation_pvalue(per_doc_f1["srmpWasmGlinerPerson"], per_doc_f1["dumbPropagationPerson"]),
+            "srmpVsDevFilteredTau070P": paired_permutation_pvalue(srmp70_doc_f1, df70_doc_f1),
+            "srmpVsDumbPropagationTau070P": paired_permutation_pvalue(srmp70_doc_f1, dumb70_doc_f1),
         },
         "prCurves": curves,
         "nonCircularGroundTruthLtt": gt_ltt,
