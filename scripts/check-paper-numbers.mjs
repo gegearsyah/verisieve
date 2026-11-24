@@ -478,8 +478,84 @@ ok('needle:maskedR5', P(f1(ND.verisieve_masked.recallAt5Pct)), E);
 ok('needle:maskedR1', P(f1(ND.verisieve_masked.recallAt1Pct)), E);
 ok('needle:regexR5', P(f1(ND.naive_regex_corrupted.recallAt5Pct)), E);
 
+/* ---------------- Paper 4 (graph-grounded corpus): artifacts ---------------- */
+const ABL = j('amnesiac-corpus-ablation.json');
+const CBS = j('company-brain-slice.json');
+const APB = j('argon-parity-benchmark.json');
+const CG = tex('verisieve-graph-grounded-enterprise-corpus.tex');
+{
+  const wasmTotal = ['verisieve_clean', 'verisieve_sql', 'verisieve_graph', 'verisieve_dl', 'verisieve_media']
+    .reduce((n, m) => n + statSync(new URL(`vendor/wasm/${m}.wasm`, ROOT)).size, 0);
+  ok('corpus:wasm.total', `$${comma(wasmTotal)}$\\,B`, CG);
+  ok('corpus:egress', '$0$\\,B', CG);
+  checks++;
+  if (CBS.p3.receipt.networkSurfacesArmed.length !== 9) { fails++; console.error('FAIL [corpus:surfaces] expected 9 armed network surfaces'); }
+  ok('corpus:surfaces.prose', 'nine network entry points', CG);
+
+  const E = ABL.estate;
+  ok('corpus:estate.files', `${f0(E.fileCount)}-file`, CG);
+  ok('corpus:estate.departments', `${f0(E.departments.length)}-department`, CG);
+  ok('corpus:estate.modalities', `across ${f0(E.modalities.length)} modalities`, CG);
+  ok('corpus:estate.gtEntities', `${f0(E.groundTruthEntityCount)} ground-truth entities`, CG);
+  ok('corpus:estate.corpusEntities', `${f0(E.corpusIndexedEntityCount)} corpus entities`, CG);
+  ok('corpus:estate.indexed', `the ${f0(E.corpusIndexedEntityCount)} indexed entities`, CG);
+  ok('corpus:cert.pass', P(f4(ABL.certificates.passRate * 100)), CG);
+  ok('corpus:cert.lower', P(f4(ABL.certificates.certifiedPassRateLowerBound * 100)), CG);
+  ok('corpus:cert.passing', `${f0(Math.round(ABL.certificates.passRate * ABL.corpus.sampleCount))} of ${f0(ABL.corpus.sampleCount)} samples`, CG);
+  const cls = ABL.certificates.classes;
+  ok('corpus:class.PERSON', `PERSON $${f0(cls.PERSON.detectedCount)}$`, CG);
+  ok('corpus:class.EMAIL', `EMAIL $${f0(cls.EMAIL.detectedCount)}$`, CG);
+  ok('corpus:class.PHONE', `PHONE $${f0(cls.PHONE.detectedCount)}$`, CG);
+  ok('corpus:class.DOB', `DATE\\_OF\\_BIRTH $${f0(cls.DATE_OF_BIRTH.detectedCount)}$`, CG);
+  ok('corpus:class.ADDRESS', `ADDRESS $${f0(cls.ADDRESS.detectedCount)}$`, CG);
+  for (const [k, c] of Object.entries(cls)) {
+    checks++;
+    if (c.missedCount !== 0) { fails++; console.error(`FAIL [corpus:class.${k}.missed] expected 0 misses, got ${c.missedCount}`); }
+  }
+  ok('corpus:class.GITHUB_PAT.prose', 'GITHUB\\_PAT', CG);
+
+  const lm = CBS.p2.linkMetric;
+  ok('corpus:link.gt', `${f0(lm.gtLinks)} (entity, department-pair)`, CG);
+  ok('corpus:link.recovered', `recovers all ${f0(lm.recoveredLinks)}`, CG);
+  ok('corpus:link.precision', `F1 at $${f0(lm.precision * 100)}\\%$`, CG);
+  checks++;
+  if (lm.falsePositives !== 0) { fails++; console.error('FAIL [corpus:link.fp] expected 0 false positives'); }
+  ok('corpus:link.fp.prose', 'zero false positives', CG);
+  const er = CBS.p2.entityResolution;
+  ok('corpus:link.persons', `all ${f0(er.gtPersonCount)} ground-truth people`, CG);
+  checks++;
+  if (er.gtEntitiesObserved !== er.gtPersonCount) { fails++; console.error('FAIL [corpus:link.personsObserved] gtEntitiesObserved != gtPersonCount'); }
+  const cg = CBS.p4.connectionGraph;
+  ok('corpus:graph.nodes', `${f0(cg.nodeCount)} nodes and ${f0(cg.edgeCount)} edges`, CG);
+
+  for (const [frac, pct] of [['0.01', '1\\%'], ['0.05', '5\\%'], ['0.2', '20\\%']]) {
+    const fr = ABL.fractions[frac];
+    ok(`corpus:erase.${pct}.entities`, `${pct} & ${f0(fr.selectedEntityCount)} &`, CG);
+    ok(`corpus:erase.${pct}.spans`, `${f0(fr.byteDiff.removedSpanBytes)}\\,B`, CG);
+    ok(`corpus:erase.${pct}.delta`, `$-${f0(-fr.byteDiff.measuredDeltaBytes)}$\\,B`, CG);
+    checks++;
+    if (!fr.byteDiff.exact) { fails++; console.error(`FAIL [corpus:erase.${pct}.exact] byte-diff not exact`); }
+  }
+
+  const W = APB.workspaces;
+  const w1 = W.W1.metrics;
+  ok('corpus:argon.w1', `${f0(w1.diagramEdgeF1Pct.baseline)} / ${f0(w1.chartSeriesMatchPct.baseline)} & ${f0(w1.diagramEdgeF1Pct.versieve)} / ${f0(w1.chartSeriesMatchPct.versieve)}`, CG);
+  const w2 = W.W2.metrics;
+  ok('corpus:argon.w2.relerr', f4(w2.chartMeanRelErrPct.versieve), CG);
+  ok('corpus:argon.w2.within2', `${f0(w2.chartRelErrWithin2pct.baseline)} & ${f0(w2.chartRelErrWithin2pct.versieve)}`, CG);
+  const w3 = W.W3.metrics;
+  ok('corpus:argon.w3.purity', `${f2(w3.speakerPurityPct.baseline)} & ${f0(w3.speakerPurityPct.versieve)}`, CG);
+  ok('corpus:argon.w3.intent', `${f2(w3.prosodicIntentAccuracyPct.baseline)} & ${f0(w3.prosodicIntentAccuracyPct.versieve)}`, CG);
+  const w4 = W.W4.metrics;
+  ok('corpus:argon.w4', `${f0(w4.deicticGroundingRecallPct.baseline)} & ${f0(w4.deicticGroundingRecallPct.versieve)}`, CG);
+  const w5 = W.W5.metrics;
+  ok('corpus:argon.w5', `${f0(w5.sqlExactMatchPct.baseline)} & ${f0(w5.sqlExactMatchPct.versieve)}`, CG);
+  const w6 = W.W6.metrics;
+  ok('corpus:argon.w6', `${f0(w6.crossModalEntityLinkPct.baseline)} / ${f0(w6.multiHopQaParityPct.baseline)} & ${f0(w6.crossModalEntityLinkPct.versieve)} / ${f0(w6.multiHopQaParityPct.versieve)}`, CG);
+}
+
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */
-for (const [name, body] of [['M', M], ['L', L], ['E', E]]) {
+for (const [name, body] of [['M', M], ['L', L], ['E', E], ['CG', CG]]) {
   for (const [label, re] of [
     ['mathematically grounded', /mathematically\s+grounded/i],
     ['eliminates/eliminating', /eliminat/i],

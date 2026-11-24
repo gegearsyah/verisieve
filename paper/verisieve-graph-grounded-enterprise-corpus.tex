@@ -1,0 +1,188 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\setlength{\emergencystretch}{2em}
+
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+\usepackage[accepted]{mlsys2025}
+
+\makeatletter
+\renewcommand{\mlsys@appearing}{Copyright 2026 by the author.}
+\renewcommand{\Notice@String}{\mlsys@appearing}
+\makeatother
+
+\hypersetup{
+  pdftitle={Standalone Knowledge, Not Stitched Chunks: A Zero-Egress, Graph-Grounded, Erasable Training Corpus from Enterprise Documents},
+  pdfauthor={Gege Ardiyansyah},
+  pdfsubject={Systems for Machine Learning}
+}
+
+\mlsystitlerunning{Standalone Knowledge, Not Stitched Chunks}
+
+\begin{document}
+
+\twocolumn[
+\mlsystitle{Standalone Knowledge, Not Stitched Chunks: A Zero-Egress, Graph-Grounded, Erasable Training Corpus from Enterprise Documents}
+
+\begin{mlsysauthorlist}
+\textbf{Gege Ardiyansyah}
+\end{mlsysauthorlist}
+
+\mlsystitlerunning{Standalone Knowledge, Not Stitched Chunks}
+\mlsyskeywords{WebAssembly, zero-egress perception, entity resolution, knowledge-graph grounding, training-data curation, conformal certificates, GDPR Article 17}
+
+\vskip 0.3in
+
+\begin{abstract}
+Enterprises sit on scattered, heterogeneous documents --- SQL dumps, spreadsheets, email, meeting transcripts and audio, decks, notes --- and the standard path from those documents to fine-tuning data is positional chunking: slice each file into windows, concatenate, train. The resulting samples are \emph{place-stitched fragments}: text at a position, with no record of which real-world entities it describes, which other documents describe the same entities, or where its bytes came from. This paper presents the construction and measurement of a different artifact: a \textbf{graph-grounded training corpus} in which every sample carries its own standalone knowledge --- masked content, the vault-salted entity identifiers it mentions, their classes, its provenance byte-ranges, and a per-sample gatekeeper certificate --- produced by a zero-host-import, zero-egress perception stack of five WebAssembly kernels totaling $387{,}267$\,B. On a deterministic 12-file, 4-department synthetic estate, the pipeline indexes 24 ground-truth entities into 76 corpus entities across 8 modalities; all 54 ground-truth cross-department links are recovered (precision, recall, and F1 at $100\%$); the per-sample certificate pass rate is $95.8333\%$ (certified Clopper--Pearson lower bound $81.7108\%$ at stated $95\%$); and deletion requests over 1\%, 5\%, and 20\% of entities regenerate a corpus whose byte-diff is exactly the erased spans. The corpus is erasable by construction: because samples are entity-indexed rather than positionally stitched, erasing an entity regenerates the corpus deterministically, and a sealed LoRA retrain recipe completes the erasure path for the adapter trained on it. We publish the honest boundaries of these receipts: the fixtures are synthetic and ground-truth-by-construction; redaction is not differential privacy; and the downstream comparison of training on graph-grounded versus flat-chunked samples --- the motivating hypothesis of this artifact --- is not yet measured and is stated as open work, not claimed.
+\end{abstract}
+]
+
+\section{Introduction}
+\label{sec:intro}
+
+The dominant pipeline from enterprise documents to language-model training data is \emph{place and stitch}: chunk each document by position, optionally overlap the windows, concatenate the chunks, and train. The chunk inherits its meaning from where it sits; stripped of that position, it is a fragment. Two records about the same person --- a vendor row in a SQL dump and a signature block in an email thread --- land in unrelated samples with no shared identity. The model is then asked to learn facts from text whose entities are anonymous to the pipeline that produced it.
+
+This paper describes the construction of the artifact we want instead: a corpus whose samples are \emph{standalone knowledge}. A sample stands on its own because it carries, alongside its (masked) text: the vault-salted identifiers of every entity it mentions; the classes of those entities; its byte-range provenance into the source document; and a per-sample certificate from a conformal gate attesting, at a stated confidence, that the sample carries no residual detectable PII. Records about the same real-world person --- across departments, across modalities --- share an identifier, so the corpus has a graph, not just a sequence.
+
+Three properties are load-bearing for this artifact, and each is a measured receipt rather than an adjective:
+
+\begin{enumerate}
+  \item \textbf{Extracted without error, on-device.} The perception stack is five WebAssembly kernels totaling $387{,}267$\,B with zero host imports, running with $0$\,B of network egress; the whole corpus build is instrumented with trap-armed network surfaces that would throw on any external call.
+  \item \textbf{Grounded in its own graph.} Samples are entity-indexed, and cross-department, cross-modal mentions of the same entity link to one identifier; the linking is measured against manifest ground truth, not assumed.
+  \item \textbf{Erasable.} Because the corpus is a deterministic function of (inputs, view, engine version), deleting an entity regenerates the corpus with a byte-diff of exactly that entity's spans --- the property we call the Amnesiac Corpus --- and a sealed, seeded LoRA retrain recipe completes the erasure path from corpus to adapter.
+\end{enumerate}
+
+The erasure property is what the entity indexing buys; the entity indexing is what the standalone knowledge buys. Neither is the pitch on its own --- the artifact exists so that training data can carry its own context, and the erasure machinery is the price of operating such a corpus on real enterprise data.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Positional chunking and its alternatives.}
+Fixed-window chunking remains the default for document-to-training-data pipelines. GraphGen~\cite{chen2025graphgen} extracts a knowledge graph from source text and generates synthetic QA pairs from it, prioritizing long-tail knowledge; our adjacency and our difference are both structural: GraphGen generates \emph{new synthetic} training samples from a graph, whereas we ground \emph{the actual samples} in the entity graph they mention --- no text is generated, and the corpus remains a deterministic function of the input documents. That determinism is what makes the erasure property possible at all.
+
+\paragraph{Machine unlearning.}
+SISA~\cite{bourtoule2020machine} limits a data point's influence by sharding the training set so that deletion requires retraining only the affected shard; approximate unlearning methods, benchmarked by TOFU~\cite{maini2024tofu}, modify weights without retraining but without receipts. Our mechanism is complementary and stricter in one axis: the corpus regeneration is exact and byte-verified, and the adapter path is a full deterministic retrain over the regenerated corpus (the sealed LoRA recipe~\cite{hu_lora}) rather than an approximate update. We do not claim approximate unlearning is unnecessary --- we claim that a corpus which cannot be regenerated exactly cannot support any erasure receipt, approximate or otherwise.
+
+\paragraph{Redaction is not a privacy guarantee.}
+CLIOPATRA~\cite{annamalai2026cliopatra} shows layered redaction stacks failing under prompt injection, and LeakageBench~\cite{kumar2026leakagebench} shows that better localization does not make redacted documents release-safe. Carlini et al.~\cite{carlini_secret_sharer} and Lukas et al.~\cite{lukas_pii_leakage} establish that fine-tuned models memorize verbatim identifiers. We take these as constraints on what may be claimed: the gatekeeper certificate bounds residual \emph{detectable} PII at a stated confidence; it is not differential privacy, and the erasure claim for the adapter is completed only by the retrain, not by the masking.
+
+\section{From Documents to Standalone Knowledge}
+\label{sec:pipeline}
+
+The pipeline runs entirely on-device. Perception is a stack of five zero-import WASM kernels (clean, SQL, graph, DL, media) exposed through a \texttt{perceiveMulti()} seam: SQL dumps, CSVs, plain text, email (\texttt{.eml}), meeting transcripts and captions (WebVTT), PCM16 audio (with prosody and speaker clustering on already-decoded PCM), and stored-ZIP decks (\texttt{.pptx}). Every detected value is vaulted behind a salted placeholder and assigned a stable entity identifier; detection, masking, and the conformal gate run inside the same sandbox, and the build emits a zero-egress receipt: $0$\,B egress, zero external calls, all nine network entry points replaced with throwing traps for the duration of the run.
+
+Three properties of the corpus follow from the seam design:
+
+\begin{itemize}
+  \item \textbf{Determinism.} The corpus is a pure function of (inputs, view, engine version): no timestamps, no unseeded randomness, fixed key order, content-digest sample IDs and ordering. A receipt pins the corpus SHA-256 and the engine-version hash, so kernel or source drift invalidates rather than silently corrupts.
+  \item \textbf{Entity indexing.} Every sample records the entity identifiers it mentions; the entity index records every sample an entity touches. A ground-truth person --- name, email, phone --- is three values and therefore three vault identifiers; the corpus indexes each value, and cross-modal spoken-form variants resolve onto the same salted identifiers.
+  \item \textbf{Certificates.} Each sample is re-scanned after masking; any residual scanner hit that is not a vault placeholder counts against the sample. The per-sample certificate is the conformal gate's decision with a certified binomial recall bound (Clopper--Pearson, fixed-sequence Learn-Then-Test over the shipped binomial CDF kernel).
+\end{itemize}
+
+\section{The Sample Schema}
+\label{sec:schema}
+
+A training sample in the exported JSONL is:
+
+\begin{itemize}
+  \item \texttt{id} --- SHA-256 content digest over source, byte-range (or a derived-format marker), and text; byte-range collisions fail loudly as engine bugs, and benign repeated derived-format content (a quoted line, two same-titled slides) disambiguates deterministically.
+  \item \texttt{source}, \texttt{sourceRange} --- provenance: the input name and, on plain-byte surfaces (txt/csv/sql), exact byte ranges into the source. Derived formats (eml/pptx/vtt/wav) reflow text, so those blocks carry no byte range --- recorded, not smoothed.
+  \item \texttt{entities} --- the vault-salted entity identifiers the sample mentions; this is the graph grounding: the model trains on \emph{which} entity a record describes, not just on masked text.
+  \item \texttt{messages} --- the SFT turn structure (system prompt, user task, masked assistant content), with placeholder masking so the retrain recipe can mask loss on vault spans.
+\end{itemize}
+
+Per-sample certificates ride in the run artifact keyed by the same content-digest ID (adding fields to the JSONL lines would change the frozen corpus SHA-256 receipts, so the seam bytes are reused untouched).
+
+\section{Measured Receipts}
+\label{sec:measurements}
+
+All numbers in this section are computed from checked-in artifacts by a CI check; none are hand-tuned. The test estate is deterministic (recorded seed), 12 files across 4 departments (IT, business, shared, meetings) and 8 modalities, with 24 ground-truth entities --- 16 people, 4 organizational IDs, 4 project codenames --- each appearing in at least two departments and two modalities. Ground truth lives only in the generator manifest; the engine never receives it.
+
+\paragraph{Extraction fidelity.}
+Table~\ref{tab:argon} reports the perception benchmark over six ground-truth-by-construction workspaces. These are \emph{construction-validation} numbers: the fixtures are synthetic, and the honest reading is that the engine recovers what its own fixture corpus encodes --- chart series, diagram topology, speaker turns, deictic bindings, and SQL aggregations --- where a flat-text baseline recovers none of it. The scope note is binding: uniform high columns validate the construction, not generalization.
+
+\begin{table}[t]
+\centering
+\caption{Perception benchmark (six synthetic workspaces, oracle = ground truth by construction). Flat-text baseline cannot express chart inversion, diagram topology, SQL, diarization, or deictic binding; its conventional values are documented beside each metric in the artifact. Workspace 4's representation is keyframes + WAV + VTT --- no video-decode claim.}
+\label{tab:argon}
+\scriptsize
+\begin{tabular}{llrr}
+\toprule
+Workspace & Metric & Baseline & Versieve \\
+\midrule
+W1 deck (.pptx) & diagram-edge F1 (\%) / chart-series match (\%) & 0 / 0 & 100 / 100 \\
+W2 raster (.png) & chart mean RelErr (\%) & 100 (none recovered) & 0.0187 \\
+ & points within 2\% RelErr (\%) & 0 & 100 \\
+ & diagram-edge F1 (\%) & 0 & 100 \\
+W3 audio (.wav) & speaker purity (\%) & 55.56 & 100 \\
+ & prosodic-intent accuracy (\%) & 44.44 & 100 \\
+W4 keyframes+WAV+VTT & deictic grounding recall (\%) & 0 & 100 \\
+W5 tables (.xlsx/.pdf) & SQL exact-match (\%) & 0 & 100 \\
+W6 bundle & cross-modal link (\%) / multi-hop QA (\%) & 0 / 0 & 100 / 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Detection and certificates.}
+Over the estate, the scanner detects with zero misses: PERSON $153$, EMAIL $57$, PHONE $28$, DATE\_OF\_BIRTH $20$, ADDRESS $3$, and one injected GITHUB\_PAT, which quarantines its sample by design. Organizational IDs and project codenames have no engine detector class --- they are estate ground truth only, and no coverage is claimed for them. The per-sample certificate pass rate is $95.8333\%$ (23 of 24 samples), with a certified lower bound of $81.7108\%$ at stated $95\%$.
+
+\paragraph{Cross-department linking.}
+The manifest's ground truth defines 54 (entity, department-pair) cross-department links; the pipeline recovers all 54 with zero false positives --- precision, recall, and F1 at $100\%$ at that unit --- and all 16 ground-truth people resolve to the same vault identifiers on the IT and business sides. The emitted connection graph has 92 nodes and 208 edges over the masked corpus, SHA-pinned in the artifact. This is the standalone-knowledge property measured: records in different departments, in different modalities, about the same person, carry the same identity into training.
+
+\paragraph{Erasure.}
+Deletion requests over 1\%, 5\%, and 20\% of the 76 indexed entities select disjoint slices by a seeded shuffle; each request regenerates the corpus, and the byte-diff against the original is verified to be exactly the erased entities' spans --- token bytes in content plus the entity-ID entries in the per-sample lists. All three fractions verify exact, with unchanged samples byte-identical (Table~\ref{tab:erasure}).
+
+\begin{table}[t]
+\centering
+\caption{Amnesiac Corpus ablation (CPU side; the 24-sample, 76-entity corpus). ``Measured delta'' includes token spans plus entity-id list entries --- the full erased footprint per the diff receipts. GPU-dependent measurements are pending and appear in no table until measured.}
+\label{tab:erasure}
+\scriptsize
+\begin{tabular}{lrrr}
+\toprule
+Deletion fraction & Entities erased & Span bytes removed & Measured delta \\
+\midrule
+1\% & 1 & 24\,B & $-51$\,B \\
+5\% & 4 & 71\,B & $-217$\,B \\
+20\% & 15 & 999\,B & $-2406$\,B \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Erasure Property}
+\label{sec:erasure}
+
+Under GDPR Article~17~\cite{gdpr_art17}, erasure of personal data must extend to models trained on it; a corpus that is deleted but a model that is not is not erasure. The Amnesiac Corpus bundles both halves:
+
+\begin{itemize}
+  \item \textbf{Corpus half (measured above).} \texttt{eraseEntity} regenerates the corpus minus one entity with a diff receipt: changed samples, removed span count and bytes, corpus SHA-256 before and after, and a failure that throws --- loudly --- whenever the byte-diff exceeds the erased entity's spans. Receipts are version-pinned: an engine-version drift invalidates regeneration instead of silently producing different bytes.
+  \item \textbf{Adapter half (pending GPU backfill).} The export ships a sealed, seeded LoRA retrain recipe (rank 16, $\alpha$ 32, fixed steps and learning rate, placeholder-masked loss on vault spans); erasure completes by retraining the adapter over the regenerated corpus. The three GPU-dependent measurements --- retrain wall-clock versus full retrain from scratch, a head-to-head against SISA on the same estate, and Carlini canary exposure~\cite{carlini_secret_sharer} pre- versus post-retrain against the chance rate~--- are structured in the artifact as \texttt{pending-gpu} and appear in this paper as measured numbers only when they are measured. No placeholder values are shown.
+\end{itemize}
+
+\section{What This Paper Does Not Claim}
+\label{sec:claims}
+
+\begin{enumerate}
+  \item \textbf{No differential privacy, no anonymity.} The gatekeeper certificate bounds residual detectable PII at a stated confidence; CLIOPATRA- and LeakageBench-class results are precisely why redaction is not promoted to a privacy guarantee here.
+  \item \textbf{No generalization claim.} The perception and linking numbers are construction-validation on synthetic, ground-truth-by-construction fixtures. They prove the pipeline does what it is constructed to do on data whose truth is known; they do not predict open-world accuracy.
+  \item \textbf{No downstream training-improvement claim (yet).} The motivating hypothesis --- that training on graph-grounded, standalone-knowledge samples beats training on positionally stitched chunks --- is exactly the comparison this paper does not yet contain. It requires a controlled head-to-head: the same estate, the same budget, two adapters (flat-chunked corpus versus graph-grounded corpus), compared on blinded rubric judging and canary exposure. That experiment is open work; until it is run, the graph grounding is a property with receipts, not a training benefit with receipts.
+  \item \textbf{No approximate-unlearning replacement claim.} The retrain path is the honest completion of erasure; whether approximate methods suffice for a given tolerance is a policy decision the receipts inform but do not make.
+\end{enumerate}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The artifact this paper reports takes a stand on what training data should be: not windows of positions, but records that know which entities they describe, where their bytes came from, that they are clean at a stated confidence, and that they can be removed exactly when the person they describe asks. Every load-bearing number is a receipt from a checked-in artifact, the boundaries are stated where the evidence ends, and the motivating comparison --- standalone knowledge versus stitched chunks, measured in the adapter --- is named as the next experiment rather than smuggled into the prose.
+
+\bibliographystyle{mlsys2025}
+\bibliography{verisieve-graph-grounded-enterprise-corpus}
+
+\end{document}
