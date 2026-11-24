@@ -1,0 +1,411 @@
+{
+  "kind": "composed-corpus-failure-modes",
+  "version": "composed-failure-modes-v1",
+  "seed": 20261124,
+  "estate": {
+    "fixtureDir": "fixtures/noisy-estate",
+    "manifest": "fixtures/noisy-estate-manifest.json",
+    "manifestVersion": "noisy-estate-v1",
+    "manifestSeed": 20261124,
+    "estateSha256": "d1f20abc455a6ba3c5e3b3fe53ab82370e11908676b6d3eefe1286b36daae605",
+    "estateSha256Recipe": "sha256 over the document paths in sorted (POSIX separator) order; per file update(path + NUL), update(file bytes), update(one NUL byte)",
+    "people": 250,
+    "designedCollisionPairs": 20,
+    "eligibleNonCollisionPersons": 210
+  },
+  "engine": {
+    "seam": "buildAmnesiacCorpus (src/amnesiac-corpus.js) over perception blocks; merges are induced by rewriting occurrence entityIds at the entity-index layer before the seam",
+    "identity": "readable",
+    "views": [
+      "per-block",
+      "composed"
+    ],
+    "compositionPolicy": "composed-v1",
+    "hubCapBlocks": 8,
+    "engineVersion": "versieve-amnesiac-corpus-v1",
+    "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+    "honestCorpusSha256": {
+      "perBlock": "8cced8f3a05252c897d7b1da0b6d1c1a5c738652e05e2f07176b3f8d7b91c1bd",
+      "composed": "9290b008972643c60bc4e85b77b8fd1e8518e818f0cd21464bf9854d7acf033a"
+    }
+  },
+  "truth": {
+    "source": "fixtures/noisy-estate-manifest.json (the estate answer key; the engine never receives it)",
+    "attribution": "positional: each raw entity occurrence is matched to the manifest mention at the same document span (blocks located in document text by a first-match-at-or-after-cursor scan); the person set of an entity is the union of its matched mention persons",
+    "cleanEntityRule": "an entity is world-mappable when positional attribution resolves it to exactly one person AND every person mentioning its surface string anywhere in the estate is that same person; inherently person-ambiguous surfaces never induce a merge and never enter a contamination count",
+    "contaminationDefinitions": {
+      "inducedMixedRecord": "a training record (per-block sample or composed sample) in which one falsely-merged identity carries occurrences of >= 2 distinct manifest persons, counting only occurrences of world-mappable entities; inherent pre-merge ambiguity (a shared-surface entity spanning an unmerged collision pair) is excluded",
+      "contaminatedOccurrence": "an occurrence of a merged-person entity (a fact about person p) carried in an induced-mixed record: in per-block the record is the block itself; in composed the record is the composed sample rendering that block",
+      "falseIdentityOccurrence": "an occurrence of a merged-person entity whose attribution is the false merged identity (per-block: every such occurrence; composed: those rendered into the composed corpus; the difference is content dropped by the hub cap, reported as capDroppedOccurrences)",
+      "corruptionRate": "contaminatedOccurrences / cleanOccurrences, where cleanOccurrences counts every occurrence of a world-mappable entity across the whole corpus (identical denominator for both views)",
+      "amplificationFactor": "composed corruptionRate / per-block corruptionRate at the same merge rate; when per-block contamination is zero the factor is undefined and reported as null rather than smoothed"
+    },
+    "stats": {
+      "blocks": 216,
+      "positionedBlocks": 100,
+      "unpositionedBlocks": 116,
+      "spanMatchedOccurrences": 1039,
+      "entityOccurrences": 2075,
+      "worldMappableEntities": 778,
+      "cleanOccurrences": 1114,
+      "inherentMultiPersonEntities": 24,
+      "spanMatchedShare": 0.500723
+    }
+  },
+  "mergeDesign": {
+    "pairSelection": "the 20 designed same-name collision pairs (N6) are always merged; random disjoint non-collision pairs are a prefix of one deterministic Fisher-Yates shuffle (mulberry32, seed 20261124) over the eligible non-collision persons, taken as consecutive disjoint pairs; at rate r the ladder adds floor(r * eligible / 2) random pairs",
+    "ratesIncludedZeroBaseline": true,
+    "note": "merge rates are world-level person pair rates over the frozen manifest, chosen before any measurement (world-first)"
+  },
+  "falseMergeAmplification": {
+    "cleanOccurrences": 1114,
+    "rates": [
+      {
+        "rate": 0,
+        "randomPairs": 0,
+        "mergedClasses": 0,
+        "mergedPersons": 0,
+        "perBlock": {
+          "samples": 216,
+          "inducedMixedRecords": 0,
+          "contaminatedOccurrences": 0,
+          "corruptionRate": 0,
+          "falseIdentityOccurrences": 0,
+          "corpusSha256": "8cced8f3a05252c897d7b1da0b6d1c1a5c738652e05e2f07176b3f8d7b91c1bd"
+        },
+        "composed": {
+          "samples": 1113,
+          "inducedMixedRecords": 0,
+          "contaminatedOccurrences": 0,
+          "corruptionRate": 0,
+          "falseIdentityOccurrences": 0,
+          "capDroppedOccurrences": 0,
+          "corpusSha256": "9290b008972643c60bc4e85b77b8fd1e8518e818f0cd21464bf9854d7acf033a"
+        },
+        "amplificationFactor": null,
+        "falseNameAnchors": {
+          "mergedClasses": 0,
+          "canonicalOfExactlyOneMember": 0,
+          "canonicalSharedOrUnknown": 0
+        }
+      },
+      {
+        "rate": 0.05,
+        "randomPairs": 5,
+        "mergedClasses": 25,
+        "mergedPersons": 50,
+        "perBlock": {
+          "samples": 216,
+          "inducedMixedRecords": 0,
+          "contaminatedOccurrences": 0,
+          "corruptionRate": 0,
+          "falseIdentityOccurrences": 148,
+          "corpusSha256": "e94370acb243d3a2d664c3bfb53b0619240901c3dc861713866ec834a909516d"
+        },
+        "composed": {
+          "samples": 988,
+          "inducedMixedRecords": 40,
+          "contaminatedOccurrences": 148,
+          "corruptionRate": 0.132855,
+          "falseIdentityOccurrences": 148,
+          "capDroppedOccurrences": 0,
+          "corpusSha256": "6426471c9df056f977ab521e3cf416b5e536060868e23571858997244876286a"
+        },
+        "amplificationFactor": null,
+        "falseNameAnchors": {
+          "mergedClasses": 25,
+          "canonicalOfExactlyOneMember": 25,
+          "canonicalSharedOrUnknown": 0
+        }
+      },
+      {
+        "rate": 0.1,
+        "randomPairs": 10,
+        "mergedClasses": 30,
+        "mergedPersons": 60,
+        "perBlock": {
+          "samples": 216,
+          "inducedMixedRecords": 0,
+          "contaminatedOccurrences": 0,
+          "corruptionRate": 0,
+          "falseIdentityOccurrences": 199,
+          "corpusSha256": "667852fe41ec25edb393b3647ab5ba8880e973a9fdb2702c703ee163120e5861"
+        },
+        "composed": {
+          "samples": 958,
+          "inducedMixedRecords": 51,
+          "contaminatedOccurrences": 199,
+          "corruptionRate": 0.178636,
+          "falseIdentityOccurrences": 199,
+          "capDroppedOccurrences": 0,
+          "corpusSha256": "4119720804f55800279da11d2d43107fbd091652887cf03062afe5291efc5933"
+        },
+        "amplificationFactor": null,
+        "falseNameAnchors": {
+          "mergedClasses": 30,
+          "canonicalOfExactlyOneMember": 30,
+          "canonicalSharedOrUnknown": 0
+        }
+      },
+      {
+        "rate": 0.25,
+        "randomPairs": 26,
+        "mergedClasses": 46,
+        "mergedPersons": 92,
+        "perBlock": {
+          "samples": 216,
+          "inducedMixedRecords": 1,
+          "contaminatedOccurrences": 25,
+          "corruptionRate": 0.022442,
+          "falseIdentityOccurrences": 358,
+          "corpusSha256": "b59755b042f96a739dd16da6982d251acdada416b8cc754ccc543ead05fe769a"
+        },
+        "composed": {
+          "samples": 865,
+          "inducedMixedRecords": 118,
+          "contaminatedOccurrences": 358,
+          "corruptionRate": 0.321364,
+          "falseIdentityOccurrences": 358,
+          "capDroppedOccurrences": 0,
+          "corpusSha256": "c93ca4db93d059ba51432f3684d0ef3dc7d32752bd3d291ae85810f1442ea900"
+        },
+        "amplificationFactor": 14.32,
+        "falseNameAnchors": {
+          "mergedClasses": 46,
+          "canonicalOfExactlyOneMember": 46,
+          "canonicalSharedOrUnknown": 0
+        }
+      },
+      {
+        "rate": 0.5,
+        "randomPairs": 52,
+        "mergedClasses": 72,
+        "mergedPersons": 144,
+        "perBlock": {
+          "samples": 216,
+          "inducedMixedRecords": 2,
+          "contaminatedOccurrences": 48,
+          "corruptionRate": 0.043088,
+          "falseIdentityOccurrences": 614,
+          "corpusSha256": "be9920e72f502a3721fc94b42154bfc58b778d17a10c4690009821c8baa4a536"
+        },
+        "composed": {
+          "samples": 723,
+          "inducedMixedRecords": 148,
+          "contaminatedOccurrences": 614,
+          "corruptionRate": 0.551167,
+          "falseIdentityOccurrences": 614,
+          "capDroppedOccurrences": 0,
+          "corpusSha256": "e8c096f4ca3db0e153c5f9a01f06cddc0705107c58bed94a5c64aaa42c8cd0bd"
+        },
+        "amplificationFactor": 12.791667,
+        "falseNameAnchors": {
+          "mergedClasses": 72,
+          "canonicalOfExactlyOneMember": 72,
+          "canonicalSharedOrUnknown": 0
+        }
+      }
+    ]
+  },
+  "hubDuplication": {
+    "corpusKind": "honest composed corpus (readable identity, composed-v1 policy)",
+    "sampleCount": 1113,
+    "analyzedSamples": 1113,
+    "zeroShingleSamples": 0,
+    "shingle": "16-character shingles over lowercase whitespace-collapsed text",
+    "hashFunctions": 128,
+    "banding": "32 bands x 4 rows",
+    "lshThresholdApprox": 0.579552,
+    "nearDuplicateDefinition": "exact shingle-set Jaccard >= 0.8 over LSH candidate pairs",
+    "overall": {
+      "nearDuplicateSampleFraction": 1,
+      "nearDuplicatePairs": 20627,
+      "exactDuplicatePairs": 12569
+    },
+    "hub": {
+      "definition": "composed sample truncated by the composed-v1 hub cap (truncatedBlocks > 0)",
+      "hubSamples": 6,
+      "nearDuplicateSampleFraction": 0,
+      "nearDuplicatePairsInvolvingHubSamples": 0
+    },
+    "nonHub": {
+      "definition": "analyzed composed samples not truncated by the hub cap",
+      "samples": 1107,
+      "nearDuplicateSampleFraction": 1
+    },
+    "topNearDuplicatePairs": [
+      {
+        "pair": [
+          1,
+          616
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          1,
+          822
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          2,
+          265
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          5,
+          158
+        ],
+        "jaccard": 0.827586
+      },
+      {
+        "pair": [
+          5,
+          756
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          5,
+          1097
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          6,
+          377
+        ],
+        "jaccard": 1
+      },
+      {
+        "pair": [
+          8,
+          27
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          90
+        ],
+        "jaccard": 0.883408
+      },
+      {
+        "pair": [
+          8,
+          101
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          146
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          160
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          165
+        ],
+        "jaccard": 0.865934
+      },
+      {
+        "pair": [
+          8,
+          171
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          184
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          192
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          221
+        ],
+        "jaccard": 0.86403
+      },
+      {
+        "pair": [
+          8,
+          238
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          266
+        ],
+        "jaccard": 0.914634
+      },
+      {
+        "pair": [
+          8,
+          295
+        ],
+        "jaccard": 0.914634
+      }
+    ],
+    "capContext": {
+      "compositionPolicy": "composed-v1",
+      "hubCapBlocks": 8,
+      "capHitEntities": 6,
+      "maxTruncatedBlocks": 12
+    }
+  },
+  "designedNotRun": {
+    "title": "Entity-degree vs benefit saturation curve (benefit as a function of entity degree k)",
+    "status": "designed-not-run",
+    "design": {
+      "whatWouldBeMeasured": "Closed-book multi-hop recall delta of the composed corpus vs the per-block corpus at matched token budget, bucketed by entity degree k (composed contributing blocks per record: 1, 2-3, 4-7, >=8 = hub-cap-saturated), stratified over the manifest-authored Q1/Q2/Q3 questions whose target person falls in each bucket; the saturation point is the smallest degree bucket after which the composed-vs-per-block delta stops increasing.",
+      "estate": "fixtures/noisy-estate (world-first noisy estate; 60 manifest-authored questions, strata Q1 24 / Q2 24 / Q3 12)",
+      "armsAndBudget": "two LoRA arms (per-block, composed) at the sealed recipe r16/alpha32 with steps/lr from the Stage 4 sweep; degree buckets are an eval-time stratification of the two existing corpora, so no additional training runs beyond the two arms",
+      "judging": "the Stage K3 blinded rubric path with local-judge agreement column, results stratified per bucket and reported verbatim",
+      "ownerStage": "Stage K3 (GPU) owns the trained benefit measurement; the bucketing design above is recorded here so the curve can be executed without redesign"
+    },
+    "whyNotRun": "CPU-only session; the benefit side of the curve is a trained-model measurement owned by the GPU queue, and this run must not contend with the live GPU job",
+    "note": "No number in this artifact comes from the designed-not-run section."
+  },
+  "notes": [
+    "The engine is imported only to construct the corpora under test (perceiveMulti + buildAmnesiacCorpus); no engine module contributes any truth, threshold, or scoring rule.",
+    "Blocks built through the { blocks } seam carry no byte-range ids, so per-block sample identity within a configuration is keyed by (source, content); record mapping is asserted unambiguous at build time (no duplicate (source, content) pairs).",
+    "Attribution coverage: positional span matching resolves blocks whose content sits verbatim in its document (derived-format reconstructions do not); entity-level person attribution extends to all occurrences of a world-mappable entity, and only world-mappable entities enter merges and contamination counts.",
+    "Composed canonical anchors of merged classes are the lexicographically smallest merged surface value (the engine canonical-anchor rule), naming at most one class member; falseNameAnchors reports how often that anchor names exactly one person.",
+    "Amplification is quantified on the record-mixing measure, which is where the two views structurally differ: per-block false-merge damage also exists outside this measure (every merged-person occurrence is attributed to a false identity, reported as falseIdentityOccurrences for both views), but in per-block the records themselves stay single-person.",
+    "Where the per-block record-mixing rate is exactly zero (the low rates of the ladder) the amplification factor is undefined and reported as null; read the rate rows where the factor exists together with the falseIdentityOccurrences column, so the per-block view is never read as undamaged."
+  ],
+  "deviations": [
+    "The K4 handoff line names an open-world estate variant; this run uses the committed world-first noisy estate (spec 2026-11-24) as directed by the K4 work order: it is the committed estate with a spec-authored noise taxonomy and a frozen person-level answer key.",
+    "Positional span matching covers only blocks whose content sits verbatim in the document text (derived-format reconstructions do not); coverage is reported in truth.stats, and the induced-merge and contamination machinery is restricted to world-mappable entities, so this limitation cannot inflate contamination.",
+    "Hub-cap truncation means the composed view drops part of the contaminated content from the corpus (capDroppedOccurrences); composed contamination rates count only rendered occurrences, so contamination is never overstated by dropped content."
+  ]
+}
