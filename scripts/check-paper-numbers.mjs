@@ -602,6 +602,8 @@ const FM = j('composed-corpus-failure-modes.json');
 const OE = j('open-estate-baseline.json');
 const NB = j('noisy-estate-baseline.json');
 const NMAN = JSON.parse(readFileSync(new URL('fixtures/noisy-estate-manifest.json', ROOT), 'utf8'));
+const K7 = j('track-k7-cag-vs-rag-vs-bm25.json');
+const K7X = j('track-k7-bm25-contexts.json');
 {
   // K3 estate + budget
   const K3E = KH.estate;
@@ -681,6 +683,28 @@ const NMAN = JSON.parse(readFileSync(new URL('fixtures/noisy-estate-manifest.jso
   ok('k6:enron.merges', `with $${comma(EN.falseMerges.count)}$ false merges of which $${comma(EN.falseMerges.onCollisionPairs)}$ fall on designed collision pairs`, CG);
   checks++;
   if (!OE.enron.archiveSha256 || !OE.enron.sliceDir.startsWith('external')) { fails++; console.error('FAIL [k6:enron.pin] the committed artifact must carry the external Enron aggregates and archive pin'); }
+
+  // K7 non-training arms (BM25 lexical control and CAG over composed records)
+  const B7 = K7.arms.bm25_retrieval, C7 = K7.arms.cag;
+  const k7 = (a, s) => a.eval[s].exactMatchPct;
+  ok('k7:caption', 'The two K7 arms train nothing and were scored by exact match only', CG);
+  ok('k7:row.bm25', `BM25 retrieval (K7) & ${f1(k7(B7, 'Q1'))} & ${f1(k7(B7, 'Q2'))} & ${f1(k7(B7, 'Q3'))} & ${f1(k7(B7, 'all'))} & -- & -- \\\\`, CG);
+  ok('k7:row.cag', `CAG over composed records (K7) & ${f1(k7(C7, 'Q1'))} & ${f1(k7(C7, 'Q2'))} & ${f1(k7(C7, 'Q3'))} & ${f1(k7(C7, 'all'))} & -- & -- \\\\`, CG);
+  ok('k7:bm25.topK', `feeding top-${K7X.bm25.topK} contexts`, CG);
+  ok('k7:bm25.prose', `$${P(f1(k7(B7, 'all')))}$ overall ($${P(f1(k7(B7, 'Q1')))}$ Q1, $${P(f1(k7(B7, 'Q2')))}$ Q2, $${P(f1(k7(B7, 'Q3')))}$ Q3)`, CG);
+  const graphEm = emOf(KH.arms.retrieval);
+  ok('k7:graph.overall', `the graph retriever's $${P(f1(graphEm))}$ within noise at $n{=}${K7.estate.questions}$`, CG);
+  ok('k7:graph.honest', `on this estate the graph's contribution is not retrieval quality`, CG);
+  ok('k7:strata.prose', `at stratum sizes of $${B7.eval.Q1.n}$, $${B7.eval.Q2.n}$, and $${B7.eval.Q3.n}$`, CG);
+  ok('k7:q3.bm25', `BM25 answers $${B7.q3Disambiguation.exactMatchCount}$ of $${B7.q3Disambiguation.n}$`, CG);
+  const gq3 = KH.arms.retrieval.rows.filter(r => r.stratum === 'Q3');
+  ok('k7:q3.graph', `Graph-PPR $${gq3.filter(r => r.exact_match).length}$ of $${gq3.length}$`, CG);
+  ok('k7:q3.cag', `the cache arm $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$`, CG);
+  ok('k7:cache.unit', `$${K7.cacheUnit.selectedRecords}$ composed per-entity records and $${K7.cacheUnit.prefillTokens}$ prefill tokens`, CG);
+  ok('k7:cag.overall', `$${P(f1(k7(C7, 'all')))}$ against $${P(f1(graphEm))}$ and $${P(f1(k7(B7, 'all')))}$`, CG);
+  ok('k7:cag.q3', `leads on disambiguation ($${P(f1(k7(C7, 'Q3')))}$, $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$)`, CG);
+  ok('k7:cag.q1', `trails on single-document questions ($${P(f1(k7(C7, 'Q1')))}$ against BM25's $${P(f1(k7(B7, 'Q1')))}$)`, CG);
+  ok('k7:tokens.amortization', `appends $${C7.tokenAccounting.appendedTokensMean}$ mean tokens after the one-time prefill, against $${f0(B7.tokenAccounting.promptTokensMean)}$ mean prompt tokens`, CG);
 }
 
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */
