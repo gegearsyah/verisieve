@@ -7,6 +7,9 @@
  *   corpus carries SHA-256 receipts pinning the engine version hash. `view.identity`
  *   ('vaulted' = default, unchanged; 'readable' = explicit opt-in general mode: unmasked
  *   content, canonical readable entity anchors, no certificate ceremony) is part of the view.
+ *   `view.composition` ('per-block' = default, unchanged; 'composed' = readable-only relational
+ *   composition: ONE sample per resolved entity rendering its cross-document evidence blocks,
+ *   under canonicalized versioned policies receipted as `compositionPolicy`).
  * eraseEntity(state, entityId) → regenerated corpus whose byte-diff vs the original is
  *   exactly the erased entity's spans, proven by a diff receipt that fails loudly
  *   instead of emitting a subtly-wrong corpus.
@@ -39,6 +42,109 @@ export const AMNESIAC_TRAINING_RECIPE = Object.freeze({
 const SYSTEM_PROMPT = 'Answer strictly from the provided sanitized context.';
 // Readable (general) mode: the user's own data, their own model — no sanitizer framing.
 const READABLE_SYSTEM_PROMPT = 'Answer strictly from the provided context.';
+
+// Stage K1 composition policies — canonicalized versioned pure functions (adversarial finding 6:
+// selection, ordering and caps are policies, not facts). The policy version — not the engine
+// version — invalidates composed receipts: the default per-block path's bytes are unchanged.
+const COMPOSITION_POLICY = 'composed-v1';
+const COMPOSED_BLOCK_CAP = 8;
+
+// Canonical block order: source name lexicographically, then source byte offset ascending;
+// derived-format blocks (no byte range) after byte-ranged ones (same name order, then block id).
+const composedBlockOrder = (a, b) => {
+  if ((a.sourceRange == null) !== (b.sourceRange == null)) return a.sourceRange == null ? 1 : -1;
+  if (a.source !== b.source) return a.source < b.source ? -1 : 1;
+  if (a.sourceRange && b.sourceRange) {
+    if (a.sourceRange[0] !== b.sourceRange[0]) return a.sourceRange[0] - b.sourceRange[0];
+    if (a.sourceRange[1] !== b.sourceRange[1]) return a.sourceRange[1] - b.sourceRange[1];
+  }
+  return a.id < b.id ? -1 : 1;
+};
+
+// Render one composed sample body from its contributing blocks: every block as its own segment
+// prefixed with the labeled source tag, block-local entity spans mapped into render coordinates.
+function renderComposedBlocks(blocks) {
+  let content = '';
+  const spans = {};
+  for (const b of blocks) {
+    if (content) content += '\n';
+    const base = content.length + `[${b.source}] `.length;
+    content += `[${b.source}] ${b.content}`;
+    for (const [eid, blockSpans] of Object.entries(b.spans || {})) {
+      for (const [s0, e0] of blockSpans) (spans[eid] ||= []).push([base + s0, base + e0]);
+    }
+  }
+  for (const eid of Object.keys(spans)) spans[eid].sort((x, y) => x[0] - y[0]);
+  return { content, spans };
+}
+
+// Composed sample lines: per-sample multi-source provenance + the composed entity (sampleLine
+// for per-block samples is untouched).
+function composedSampleLine(s) {
+  return {
+    id: s.id,
+    target: s.target,
+    sources: s.sources,
+    entities: s.entities,
+    messages: [
+      { role: 'system', content: READABLE_SYSTEM_PROMPT },
+      { role: 'user', content: `Summarize everything the estate records about ${s.canonical}.` },
+      { role: 'assistant', content: s.content },
+    ],
+  };
+}
+
+// Relational sample composition (readable identity): for each resolved entity, ONE composed
+// SFT sample rendering its evidence blocks in canonical order under the v1 hub cap. Returns
+// the composed samples plus the composed entity index (each entity re-pointed at its sample).
+function composeReadableSamples(samples, perBlockIndex) {
+  const blocksOf = new Map();
+  for (const s of samples) {
+    for (const eid of s.entities) {
+      let list = blocksOf.get(eid);
+      if (!list) blocksOf.set(eid, (list = []));
+      list.push(s);
+    }
+  }
+  const composed = [];
+  for (const meta of perBlockIndex) {
+    const all = (blocksOf.get(meta.entityId) || []).slice().sort(composedBlockOrder);
+    const rendered = all.slice(0, COMPOSED_BLOCK_CAP);
+    const blockRecs = rendered.map((b) => ({
+      id: b.id,
+      source: b.source,
+      sourceRange: b.sourceRange,
+      content: b.content,
+      spans: b.spans || {},
+    }));
+    const { content, spans } = renderComposedBlocks(blockRecs);
+    const entities = [];
+    for (const b of rendered) {
+      for (const eid of b.entities) if (!entities.includes(eid)) entities.push(eid);
+    }
+    // Internal-only bookkeeping: blocks + render-coordinate spans (erasure input), the
+    // canonical value (user message), and the hub-cap truncation count. Never serialized.
+    composed.push({
+      id: sha256Hex(`composed\u0000${meta.entityId}\u0000${sha256Hex(content)}`),
+      target: meta.entityId,
+      canonical: meta.token,
+      entities,
+      content,
+      spans,
+      blocks: blockRecs,
+      truncatedBlocks: Math.max(0, all.length - COMPOSED_BLOCK_CAP),
+      sources: rendered.map((b) => ({ source: b.source, sourceRange: b.sourceRange })),
+    });
+  }
+  composed.sort((a, b) => (a.id < b.id ? -1 : 1));
+  // The composed index re-points each entity at its composed sample (not the per-block ones).
+  const composedIndex = perBlockIndex.map((e) => ({
+    ...e,
+    sampleIds: composed.filter((s) => s.entities.includes(e.entityId)).map((s) => s.id).sort(),
+  }));
+  return { composed, composedIndex };
+}
+
 const DELTA = 0.05;
 const WORKSPACE_SALT = 'versieve-amnesiac-v1';
 const VAULT_PLACEHOLDER_RX = /^<(?:PII|SECRET):[A-Za-z0-9_]+>$/;
@@ -207,6 +313,16 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     throw new TypeError(`buildAmnesiacCorpus: view.identity must be 'readable' or 'vaulted', got ${JSON.stringify(identity)}`);
   }
   const readable = identity === 'readable';
+  // Stage K1 composition seam: `view.composition: 'per-block' | 'composed'` (absent = 'per-block',
+  // byte-identical to the pre-K1 corpus; composed samples are a schema extension of their own).
+  const composition = view?.composition === undefined ? 'per-block' : view.composition;
+  const composed = composition === 'composed';
+  if (!composed && composition !== 'per-block') {
+    throw new TypeError(`buildAmnesiacCorpus: view.composition must be 'per-block' or 'composed', got ${JSON.stringify(composition)}`);
+  }
+  if (composed && !readable) {
+    throw new TypeError("buildAmnesiacCorpus: view.composition 'composed' currently requires view.identity 'readable' — composed private (vaulted) mode is a later stage");
+  }
   const perceived = await perceiveInputs(inputs, { ...options, workspaceSalt: options.workspaceSalt || WORKSPACE_SALT });
   const sourceBytes = collectSourceBytes(inputs);
   const sourceCursors = new Map();
@@ -350,6 +466,25 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     })
     .sort((a, b) => (a.entityId < b.entityId ? -1 : 1));
 
+  // Stage K1: composed corpus (readable identity) — the join is the training unit. One composed
+  // sample per resolved entity rendering its cross-document evidence blocks with per-sample
+  // multi-source provenance, under the canonicalized versioned composition policies.
+  if (composed) {
+    const { composed: composedSamples, composedIndex } = composeReadableSamples(samples, entityIndex);
+    const composedJsonl = composedSamples.map((s) => JSON.stringify(composedSampleLine(s))).join('\n') + (composedSamples.length ? '\n' : '');
+    const composedReceipt = {
+      engine: AMNESIAC_ENGINE_VERSION,
+      engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
+      corpusSha256: sha256Hex(composedJsonl),
+      sampleCount: composedSamples.length,
+      entityCount: composedIndex.length,
+      identity,
+      compositionPolicy: COMPOSITION_POLICY,
+      viewDigest: sha256Hex(JSON.stringify(view ?? null)),
+    };
+    return { jsonl: composedJsonl, samples: composedSamples, entityIndex: composedIndex, receipt: composedReceipt };
+  }
+
   const jsonl = serialize(samples);
   const receipt = {
     engine: AMNESIAC_ENGINE_VERSION,
@@ -390,14 +525,24 @@ export function eraseEntity(state, entityId) {
   // Readable mode erases by raw byte spans (mechanical regeneration; no protection claim);
   // vaulted mode erases by token occurrences over masked content.
   const readable = state.receipt.identity === 'readable';
+  // Composed readable corpus: re-prove erasure on the composed corpus, do not inherit it.
+  const composed = readable && state.receipt.compositionPolicy === COMPOSITION_POLICY;
   const changed = [];
   const regeneratedSamples = [];
+  let retractedCount = 0;
   for (const s of state.samples) {
     if (!s.entities.includes(entityId)) {
       regeneratedSamples.push(s);
       continue;
     }
     if (readable) {
+      // (a) the erased entity is the sample's TARGET: the whole sample is retracted —
+      // the composed sample exists to render that entity.
+      if (composed && s.target === entityId) {
+        retractedCount += 1;
+        changed.push({ id: s.id, retracted: true });
+        continue;
+      }
       const spans = (s.spans && s.spans[entityId]) || [];
       if (spans.length === 0) {
         throw new Error(`eraseEntity: sample ${s.id} lists readable entity ${entityId} but records no raw spans — rebuild the readable corpus instead of emitting a subtly-wrong one`);
@@ -416,8 +561,37 @@ export function eraseEntity(state, entityId) {
         entities: s.entities.filter((e) => e !== entityId),
         spans: spansWithoutEntity,
       };
-      const oldLine = JSON.stringify(sampleLine(s));
-      const newLine = JSON.stringify(sampleLine(regenerated));
+      if (composed) {
+        // (b) co-mentioned in a composed sample: remove the entity's raw spans from every
+        // contributing block and re-derive the render-coordinate spans for the remainder.
+        if (!Array.isArray(s.blocks)) {
+          throw new Error(`eraseEntity: composed sample ${s.id} carries no block bookkeeping — rebuild the composed corpus instead of emitting a subtly-wrong one`);
+        }
+        regenerated.blocks = s.blocks.map((b) => {
+          const blockSpans = (b.spans && b.spans[entityId]) || [];
+          const declared = (b.entities || []).includes(entityId);
+          if (declared && blockSpans.length === 0) {
+            throw new Error(`eraseEntity: composed sample ${s.id} anchors readable entity ${entityId} in block ${b.id} but records no raw spans — rebuild the composed corpus instead of emitting a subtly-wrong one`);
+          }
+          if (blockSpans.length === 0) return b;
+          let erasedBlockContent = b.content;
+          for (const [start, end] of blockSpans.slice().sort((a, c) => c[0] - a[0])) {
+            erasedBlockContent = erasedBlockContent.slice(0, start) + erasedBlockContent.slice(end);
+          }
+          const nextBlockSpans = { ...(b.spans || {}) };
+          delete nextBlockSpans[entityId];
+          return { ...b, content: erasedBlockContent, spans: nextBlockSpans };
+        });
+        const reRendered = renderComposedBlocks(regenerated.blocks);
+        // The two derivations of the same erasure (render-span removal → the serialized line;
+        // block-level removal → re-rendered spans for future erasures) must agree byte-for-byte.
+        if (reRendered.content !== regenerated.content) {
+          throw new Error(`eraseEntity: composed re-render diverges from span-removal for sample ${s.id} — failing loudly instead of emitting a subtly-wrong corpus`);
+        }
+        regenerated.spans = reRendered.spans;
+      }
+      const oldLine = JSON.stringify(composed ? composedSampleLine(s) : sampleLine(s));
+      const newLine = JSON.stringify(composed ? composedSampleLine(regenerated) : sampleLine(regenerated));
       const expectedDelta = -(removedBytes + (JSON.stringify(s.entities).length - JSON.stringify(regenerated.entities).length));
       if (newLine.length - oldLine.length !== expectedDelta) {
         throw new Error(`eraseEntity: byte-diff for sample ${s.id} exceeds the erased entity's spans — failing loudly instead of emitting a subtly-wrong corpus`);
@@ -462,14 +636,29 @@ export function eraseEntity(state, entityId) {
     throw new Error(`eraseEntity: changed samples ${changedIds} do not match the erased entity's index ${entry.sampleIds.join('|')} — failing loudly instead of emitting a subtly-wrong corpus`);
   }
 
-  const regeneratedEntityIndex = state.entityIndex.filter((e) => e.entityId !== entityId);
-  const jsonl = serialize(regeneratedSamples);
-  const receipt = { ...state.receipt, corpusSha256: sha256Hex(jsonl), entityCount: regeneratedEntityIndex.length };
-  const removedSpanCount = changed.reduce((n, c) => n + c.removedSpans, 0);
+  const regeneratedEntityIndex = composed
+    ? state.entityIndex
+        .filter((e) => e.entityId !== entityId)
+        .map((e) => ({
+          ...e,
+          sampleIds: regeneratedSamples.filter((s) => s.entities.includes(e.entityId)).map((s) => s.id).sort(),
+        }))
+    : state.entityIndex.filter((e) => e.entityId !== entityId);
+  const jsonl = composed
+    ? regeneratedSamples.map((s) => JSON.stringify(composedSampleLine(s))).join('\n') + (regeneratedSamples.length ? '\n' : '')
+    : serialize(regeneratedSamples);
+  const receipt = {
+    ...state.receipt,
+    corpusSha256: sha256Hex(jsonl),
+    entityCount: regeneratedEntityIndex.length,
+    // Composed retraction changes the sample count; span-removal samples keep their identity.
+    ...(composed ? { sampleCount: regeneratedSamples.length } : {}),
+  };
+  const removedSpanCount = changed.reduce((n, c) => n + (c.removedSpans || 0), 0);
   // Readable surfaces can diverge from one canonical token (aliases), so removed bytes are the
   // raw span bytes; vaulted surfaces are exact token occurrences.
   const removedSpanBytes = readable
-    ? changed.reduce((n, c) => n + c.removedBytes, 0)
+    ? changed.reduce((n, c) => n + (c.removedBytes || 0), 0)
     : removedSpanCount * token.length;
   const diffReceipt = {
     erasedEntityId: String(entityId),
@@ -481,7 +670,16 @@ export function eraseEntity(state, entityId) {
     unchangedSampleCount: state.samples.length - changed.length,
     removedSpanCount,
     removedSpanBytes,
-    perSample: changed.map((c) => (readable ? { id: c.id, removedSpans: c.removedSpans } : c)).sort((a, b) => (a.id < b.id ? -1 : 1)),
+    ...(composed
+      ? {
+          compositionPolicy: COMPOSITION_POLICY,
+          retractedSampleCount: retractedCount,
+          retractedSampleIds: changed.filter((c) => c.retracted).map((c) => c.id).sort(),
+        }
+      : {}),
+    perSample: changed
+      .map((c) => (readable ? (c.retracted ? { id: c.id, retracted: true } : { id: c.id, removedSpans: c.removedSpans }) : c))
+      .sort((a, b) => (a.id < b.id ? -1 : 1)),
     corpusSha256Before: state.receipt.corpusSha256,
     corpusSha256After: receipt.corpusSha256,
     diffVerified: true,

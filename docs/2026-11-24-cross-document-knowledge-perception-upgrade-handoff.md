@@ -1,4 +1,4 @@
-# Versieve Upgrade Handoff v2: Relational Sample Composition + the Two-Mode Engine (the "Knowledge Between All Data" Upgrade)
+# Versieve Upgrade Handoff v2: Relational Sample Composition (the "Knowledge Between All Data" Upgrade)
 
 Supersedes v1 (same file, 2026-11-24). Authoring session 2026-11-24, branch `fix/spec-15-remediation`.
 Built from the founder's two rulings this session — (1) the product is a training-data engine whose
@@ -17,21 +17,24 @@ stages (Stage 4 sweep, GPU ablation backfill, push-to-main gate) remain in force
 
 All rules from the remediation handoff §1 apply. Deltas, in priority order:
 
-1. **Privacy is a mode, not the product (founder ruling, 2026-11-24).** General mode = readable
-   entity identity (real names), no masking, no vault ceremony, no receipts in anyone's face.
-   Private mode = vault-salted IDs, masked content, certificates, erasure receipts — the enterprise
-   overlay. Every capability experiment defaults to readable identity; salted-vs-readable is an
-   ablation axis ("what does the privacy mode cost"), never the headline mechanism. Receipts,
-   salting, and diff ceremonies are designed inside the private mode and must never leak back into
-   the general-mode product surface or the framing of new mechanisms.
+1. **Privacy machinery is the default, quietly — never oversold (founder ruling, 2026-11-24,
+   correcting this handoff's own earlier "mode/upsell" framing).** The vault (salting, masking,
+   certificates, erasure receipts) is simply how the engine works by default: it is not a product
+   tier, not an upsell, and never the pitch. There is ONE product — the genuinely useful
+   training-data engine — and its privacy properties are stated once, plainly, where required
+   (e.g. the enterprise paper), never marketed. The readable identity view exists as an explicit
+   opt-in seam for training-data fidelity (users who want their model to learn real names from
+   their own documents) and as the default arm for capability experiments; it is not a "general
+   mode" product tier and copy must never frame modes/tiers. No "general mode vs private mode"
+   anywhere in product copy or papers.
 2. **The claim discipline for the novel mechanism.** "Graph-grounded SFT data" as a phrase is TAKEN
    (GraphGen 2505.20416 owns graph-neighborhood→SFT; EmbGen 2605.19394 owns entity-unit reassembly).
    The only defensible claim is the full conjunction: **deterministic composition of the actual
    source bytes of multiple heterogeneous documents into one training sample, selected by
    traversing the resolved entity graph, with canonicalized versioned policies** — the join IS the
-   training unit. In private mode this additionally carries provenance + erasure receipts; in
-   general mode the pitch is simply: sample boundaries follow knowledge structure, not byte
-   position.
+   training unit. In the vaulted default this additionally carries provenance + erasure receipts;
+   in the readable view the pitch is simply: sample boundaries follow knowledge structure, not
+   byte position.
 3. **The window is narrowing.** EmbGen (2026) is structurally halfway (entity units + reassembly,
    embedding clusters instead of a resolved graph, generated QA instead of real spans). Ship before
    the seam closes; re-check the citing literature the week of any submission; read EmbGen's full
@@ -87,7 +90,8 @@ translates into one mechanism and one capability, both measured:
 > evidence about it — a SQL row, an email signature, a transcript utterance, a deck bullet — as ONE
 > training sample with multi-source provenance. Cross-document facts become within-sample facts.
 > Sample boundaries follow knowledge structure, not byte position: the mechanical antithesis of
-> place-and-stitch. In general mode the identity anchors are real names; in private mode the same
+> place-and-stitch. In the readable view the identity anchors are real names; in the vaulted
+> default the same
 > composition carries vault-salted IDs, certificates, and byte-diff erasure receipts.
 >
 > **Identity binding as a trained capability (the capability, secondary):** the entity index
@@ -107,20 +111,23 @@ Owners: lead + subagents (haiku default, sonnet on one failure, opus for hard pr
 verifies everything; subagent green reports carry no authority. One logical commit per stage,
 explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs the GPU.
 
-**Stage K0 — The mode seam: general mode over one engine (CPU; product unlock)**
+**Stage K0 — The identity-view seam: readable opt-in over one engine (CPU)**
 - What: extend the existing `view` parameter of `buildAmnesiacCorpus(inputs, view)` with
-  `identity: 'readable' | 'vaulted'` (vaulted stays the default so every committed receipt
-  reproduces byte-identically; the app passes `readable` explicitly). Readable mode: entity anchors are the
+  `identity: 'readable' | 'vaulted'` (vaulted stays the default — privacy machinery is how the
+  engine works, quiet, byte-stable; the readable view is an explicit opt-in for training-data
+  fidelity, not a product tier). Readable view: entity anchors are the
   canonical resolved names, content is NOT masked, no certificate ceremony in the output — the
-  user's own data, their own model, names and all. Vaulted mode: exactly today's behavior. The
-  corpus stays a deterministic pure function of (inputs, view, engine version) in both modes;
-  the mode itself is part of the view hash.
-- Verify: TDD at the seam (red first): determinism in both modes; `eraseEntity` byte-diff exact in
-  both modes (in readable mode erasure is still mechanical regeneration — no protection claim
+  user's own data, their own model, names and all. Vaulted: exactly today's behavior. The
+  corpus stays a deterministic pure function of (inputs, view, engine version) in both views;
+  the view itself is part of the view hash.
+- Verify: TDD at the seam (red first): determinism in both views; `eraseEntity` byte-diff exact in
+  both views (in the readable view erasure is still mechanical regeneration — no protection claim
   made or needed); readable corpus contains zero `<PII:…>`/`<SECRET:…>` placeholders;
   `npm run test:ci`; `audit-wasm` unchanged (pure JS, zero WASM bytes).
-- Commit: `feat(corpus): general-mode view — readable identity, no vault ceremony`.
-- GATE: when general mode surfaces in the Rtio app UI — founder decides timing.
+- Commit: `feat(corpus): general-mode view — readable identity, no vault ceremony` (landed as
+  `362c890`, before the founder's no-tiers correction — the commit message keeps the old framing;
+  the code is correct).
+- GATE: when the readable view surfaces in the Rtio app UI as an opt-in — founder decides timing.
 
 **Stage K1 — Relational sample composition (CPU; the novel mechanism)**
 - What: composed-sample emitter in the corpus builder: traverse the entity index; for each entity
@@ -151,8 +158,8 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 **Stage K3 — Multi-arm head-to-head on the same estate, same budget (GPU; the decisive experiment)**
 - What: arms — (1) flat positional chunks, (2) per-block entity-indexed corpus (today's artifact),
   (3) composed corpus (K1), (4) composed + identity-contrastive pairs (K2). All readable identity
-  (general mode). Private-mode cost ablation: one arm re-run vaulted (salted IDs + masked spans) —
-  the "what does privacy cost" measurement. Recipe: sealed LoRA r16/α32, steps/lr from the Stage 4
+  (readable view — the experiment default). Vaulted-cost ablation: one arm re-run on the vaulted
+  default (salted IDs + masked spans) — the "what does privacy cost" measurement. Recipe: sealed LoRA r16/α32, steps/lr from the Stage 4
   sweep (record which combo). Eval, per the composition note §5: **closed-book multi-hop recall
   stratified by facts living in 1 vs ≥2 documents** (the direct test of the mechanism's
   hypothesis); blinded 0–2 rubric judging via the permitted judge path (DeepSeek swarm, sanitized
@@ -208,12 +215,14 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 - What: Paper 5 — *"the join is the training unit"* (relational composition: mechanism, multi-arm
   results, false-merge amplification, honest boundaries; confronts GraphGen/EmbGen/Multi-News by
   name; artifact/datasets framing). Paper 4 §7.3 converts to the measured result once K3 lands.
-  General-mode product copy for Rtio: point it at your documents → training data that knows your
-  world, names and all; private mode as the enterprise upsell layer. Word-ban grep now also covers
-  "perceive everything", "atomic knowledge", and any receipt ceremony in general-mode copy.
+  Product copy for Rtio: point it at your documents → training data that knows your world. The
+  privacy properties are stated once, plainly, where required — never marketed, never tiered
+  (Standing Rule 1). Word-ban grep now also covers
+  "perceive everything", "atomic knowledge", and any receipt/salt ceremony in product copy beyond
+  a single plain statement.
 - Verify: `check-paper-numbers.mjs` green; papers recompile 0 errors/0 undefined; word-ban clean.
 - Commit: `docs(papers): relational composition paper + honest multi-arm results` /
-  `docs(product): general-mode copy`.
+  `docs(product): copy`.
 
 ## 5. Skill Map
 
@@ -246,9 +255,10 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 20. **Hub entities ⇒ near-duplicate composed samples**: cap policies fix skew but are discretionary
     knobs — canonicalize and version them (trap 18), and report learnable-token efficiency after
     masking, not per-sample counts.
-21. **Masked-span fraction compounds in composed samples (private mode)**: one entity's render
-    mentions it in every block — the model can train mostly on placeholder-shaped context and emit
-    `<PII:…>`-shaped filler. General mode has no masking; measure the fluency probe per mode.
+21. **Masked-span fraction compounds in composed samples (the vaulted default)**: one entity's
+    render mentions it in every block — the model can train mostly on placeholder-shaped context
+    and emit `<PII:…>`-shaped filler. The readable view has no masking; measure the fluency probe
+    per view.
 22. **"It may only recreate RAG at train time"**: if the composed-corpus benefit vanishes whenever a
     retriever is available at inference, the mechanism is engineering overhead — the head-to-head
     must report the closed-book vs retrieval-available conditions.
@@ -259,8 +269,8 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 
 | Gate | Status |
 |---|---|
-| Mode ruling: general mode = readable identity, no ceremony; private mode = the overlay | **SETTLED 2026-11-24 (founder ruling, this session)** |
-| General-mode surfacing in the Rtio app UI (timing) | **OPEN — Stage K0 output exists; founder decides when it ships to the app** |
+| Privacy machinery = default, quiet, never oversold; readable identity = explicit opt-in seam (not a product tier) | **SETTLED 2026-11-24 (founder ruling; corrected same day from the earlier "mode/upsell" framing)** |
+| Readable-view surfacing in the Rtio app UI as an opt-in (timing) | **OPEN — Stage K0 output exists; founder decides when it ships to the app** |
 | K3 head-to-head runs without further approval (judge path already settled) | SETTLED by this handoff |
 | K6 open-estate source (public / founder-supplied real / third-party synthetic) | **OPEN — before Stage K6 touches data** |
 | Cloud-baseline egress exception (public estate only, if ever) | **OPEN — Stage K7** |
@@ -280,7 +290,7 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 - [ ] K5 taxonomy + coverage K with byte receipts, zero egress, anti-circularity CI.
 - [ ] K6 open-estate measurement + checked-in failure cases (gate closed first).
 - [ ] K7 benchmark packaged (gates closed first); K8 papers + product copy with word-ban grep
-      clean (incl. no receipt ceremony in general-mode copy).
+      clean (incl. no receipt/salt ceremony in product copy beyond a single plain statement).
 - [ ] Every number through `check-paper-numbers.mjs`; `npm run test:ci` green; explicit-path
       commits; run record below filled.
 
@@ -336,3 +346,41 @@ span bytes and their serialized form — it fails loudly (never silently) if tha
 (d) `results/*.json` wallclock fields regenerate on every suite run (pre-existing behavior) —
 committed artifacts restored after verification runs. Zero WASM bytes (pure JS);
 `audit-wasm` allVerified.
+
+**2026-11-24 (founder correction — no tiers, no overselling):** The founder corrected this
+handoff's own framing mid-execution: the privacy machinery is not a "mode" or an upsell — it is
+the DEFAULT, quietly; "we didn't need to oversell them." Standing Rule 1, the K0/K8 stage text,
+the gates table, and the framing section were reworded accordingly (the v2 title dropped
+"Two-Mode Engine"). The K0/K1 code is unaffected: vaulted is the default view (byte-stable,
+receipts reproduce), the readable view is an explicit opt-in seam for training-data fidelity and
+the experiments' default arm — one product, privacy stated once where required, never marketed.
+The K0 run-record entry above keeps its original "general mode" wording as history; this entry is
+the correction of record.
+
+**2026-11-24 (Stage K1 — relational sample composition, executed same session):**
+`view.composition: 'per-block' | 'composed'` shipped (absent = per-block, byte-identical;
+composed currently requires the readable view and throws a loud `TypeError` on vaulted — the
+composed vaulted variant is a later stage). **composed-v1 policies (canonicalized, versioned):**
+one composed sample per resolved entity; evidence blocks rendered as `[<source>] <content>`
+segments joined by `\n` in canonical order (byte-ranged before derived; source name
+lexicographic; source byte offset; content-digest block id); hub cap 8 (first 8 in canonical
+order, deterministic — no sampling; truncation count internal-only); sample id =
+sha256(`composed\0` + readableId + `\0` + sha256(content)); lines carry `target` + a
+`sources` provenance array (one `{source, sourceRange}` per contributing block, canonical order);
+`entities` = every entity anchored in rendered blocks, deduplicated first-appearance; receipt
+records `compositionPolicy: 'composed-v1'` — the **policy version, not the engine version,
+invalidates composed receipts** (the default per-block path's bytes are unchanged, so
+`AMNESIAC_ENGINE_VERSION` is untouched and the pinned vaulted SHA `6c857e0a…` reproduces).
+**Erasure re-proven on the composed corpus, not inherited:** target erase retracts exactly the
+sample (receipt `sampleCount` updated; diff receipt gains `compositionPolicy`,
+`retractedSampleCount`, `retractedSampleIds`); co-mention erase removes block-local raw spans,
+re-derives render-coordinate spans, and a **lead-added guard asserts the two derivations of the
+same erasure (render-span removal → serialized line; block-level removal → re-rendered spans)
+agree byte-for-byte** — the silent-divergence class this seam forbids. Executed by a sonnet
+subagent (TDD red→green: Amnesiac 10/11/12); **lead-verified**: full diff review, suite 12/12,
+`test:ci` 141+6 green, 793 paper-number checks 0 failures with zero check-script edits.
+**Deviations recorded:** (a) composed co-mention erase of a derived-format entity with no raw
+offsets fails loudly by design (K0 deviation (a) carried into K1 — the build succeeds, the erase
+refuses to guess); (b) JSON-escaping caveat carried over from K0 (loud failure direction);
+(c) composed entity-index entries keep per-block `occurrences` and re-point `sampleIds` at
+composed samples. Zero WASM bytes; `audit-wasm` unchanged.

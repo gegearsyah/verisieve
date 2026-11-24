@@ -367,3 +367,167 @@ test('Amnesiac 9: readable canonical-anchor rule — one resolved entity with mu
   assert.ok(!erased.jsonl.includes('Ms. Vance'), 'erasure must remove the titled-surname surface');
   assert.equal(a.jsonl, before, 'erasure must not mutate the original state');
 });
+
+// Stage K1 — relational sample composition: `composition: 'composed'` is an explicit opt-in
+// view dimension (absent = 'per-block', byte-identical to today's corpus). Composition ships
+// for readable identity first; the composed private mode is a later stage.
+const COMPOSED_VIEW = { identity: 'readable', composition: 'composed' };
+
+// Canonical composed order in the test's own words (source lexicographic, then byte offset;
+// derived blocks with no range after ranged ones, then block id).
+function sourcesInCanonicalOrder(sources) {
+  const cmp = (a, b) => {
+    if ((a.sourceRange == null) !== (b.sourceRange == null)) return a.sourceRange == null ? 1 : -1;
+    if (a.source !== b.source) return a.source < b.source ? -1 : 1;
+    const ar = a.sourceRange || [0, 0];
+    const br = b.sourceRange || [0, 0];
+    if (ar[0] !== br[0]) return ar[0] - br[0];
+    return ar[1] - br[1];
+  };
+  for (let i = 1; i < sources.length; i++) {
+    if (cmp(sources[i - 1], sources[i]) > 0) return false;
+  }
+  return true;
+}
+
+function removeSpansDesc(content, spans) {
+  let out = content;
+  for (const [start, end] of spans.slice().sort((x, y) => y[0] - x[0])) {
+    out = out.slice(0, start) + out.slice(end);
+  }
+  return out;
+}
+
+test('Amnesiac 10: composed determinism — two builds byte-identical, versioned composition policy receipt, per-block default untouched', async () => {
+  const a = await buildAmnesiacCorpus(INPUTS, COMPOSED_VIEW);
+  const b = await buildAmnesiacCorpus(INPUTS, COMPOSED_VIEW);
+
+  assert.equal(a.jsonl, b.jsonl, 'two composed builds with identical inputs must be byte-identical');
+  assert.deepEqual(a.receipt, b.receipt, 'composed receipts must be deterministic across identical runs');
+  assert.equal(a.receipt.corpusSha256, sha256Hex(a.jsonl), 'the composed receipt must pin the exact emitted bytes');
+  assert.equal(a.receipt.compositionPolicy, 'composed-v1', 'the composed receipt must record its composition policy version');
+  assert.equal(a.receipt.identity, 'readable', 'the composed receipt stays in its identity mode');
+  assert.equal(a.receipt.engineVersionSha256, AMNESIAC_ENGINE_VERSION_SHA256);
+
+  // the per-block default is untouched: no `composition` in the view → today's corpus, no new schema
+  const perBlock = await buildAmnesiacCorpus(INPUTS, READABLE_VIEW);
+  assert.ok(!('compositionPolicy' in perBlock.receipt), 'the per-block receipt must not grow a composition policy');
+  const perBlockLine = JSON.parse(linesOf(perBlock.jsonl)[0]);
+  assert.ok(!('target' in perBlockLine) && !('sources' in perBlockLine), 'per-block sample lines must stay byte-identical in schema');
+  assert.notEqual(a.receipt.viewDigest, perBlock.receipt.viewDigest, 'the composition dimension must be part of the view digest');
+
+  // composed mode is readable-only for now (composed private mode is a later stage)
+  await assert.rejects(() => buildAmnesiacCorpus(INPUTS, { composition: 'composed' }), /readable/, 'composed vaulted mode must fail loudly');
+  await assert.rejects(() => buildAmnesiacCorpus(INPUTS, { identity: 'readable', composition: 'chaos' }), /composition/, 'an unknown composition value must fail loudly');
+});
+
+test('Amnesiac 11: composed structure — one sample per entity, multi-file provenance in canonical order, labeled source tags with real names', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS, COMPOSED_VIEW);
+
+  // one composed sample per resolved entity; every sample has exactly one target; index matches
+  assert.equal(corpus.samples.length, corpus.entityIndex.length, 'the composed corpus must emit one sample per resolved entity');
+  assert.equal(new Set(corpus.samples.map((s) => s.target)).size, corpus.samples.length, 'composed sample targets must be unique');
+  const targetIds = new Set(corpus.samples.map((s) => s.target));
+  for (const e of corpus.entityIndex) {
+    assert.ok(targetIds.has(e.entityId), `entity ${e.entityId} must be the target of its composed sample`);
+  }
+
+  // emitted schema: target, sources, entities — and no internal bookkeeping leaks into the bytes
+  const lines = linesOf(corpus.jsonl).map((l) => JSON.parse(l));
+  for (const line of lines) {
+    assert.ok(Array.isArray(line.sources), 'a composed sample line must carry a sources array');
+    for (const src of line.sources) {
+      assert.ok(typeof src.source === 'string', 'each provenance entry must name its source');
+      assert.ok('sourceRange' in src, 'each provenance entry must record its sourceRange (null for derived formats)');
+    }
+    assert.ok(typeof line.target === 'string', 'a composed sample line must name its composed entity');
+    assert.ok(!JSON.stringify(line).includes('truncatedBlocks'), 'internal bookkeeping must never be emitted into the JSONL');
+  }
+
+  // multi-department entity: its composed sample's provenance spans ≥2 files, in canonical order
+  const person = corpus.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(person, 'the composed corpus must index the PERSON entity');
+  const personLine = lines.find((l) => l.target === person.entityId);
+  assert.ok(personLine, 'the PERSON entity must have its composed sample');
+  assert.ok(personLine.sources.length >= 2, `the PERSON sample must cite evidence from multiple files, got ${JSON.stringify(personLine.sources)}`);
+  assert.ok(sourcesInCanonicalOrder(personLine.sources), 'provenance entries must be in the canonical (source, offset) order');
+  const sources = personLine.sources.map((s) => s.source);
+  assert.ok(sources.includes('contracts/msa.txt') && sources.includes('notes/audit.txt'), 'the Ravi Chandra evidence must span both departments');
+
+  // render: labeled source tags in canonical order, unmasked real names, entity-named user message
+  const assistant = personLine.messages[2].content;
+  assert.ok(assistant.includes('[notes/audit.txt]'), 'the render must carry labeled source tags');
+  assert.ok(assistant.includes('[contracts/msa.txt]'), 'the render must carry labeled source tags');
+  assert.ok(assistant.indexOf('[contracts/msa.txt]') < assistant.indexOf('[notes/audit.txt]'), 'tags must follow the canonical order (contracts/ sorts before notes/)');
+  assert.ok(assistant.includes('Ravi Chandra'), 'readable composed content must contain the real names');
+  assert.ok(!assistant.includes('<PII:') && !assistant.includes('<SECRET:'), 'readable composed content carries zero placeholders');
+  assert.ok(personLine.messages[1].content.includes('Ravi Chandra'), 'the user message must name the composed entity');
+  assert.ok(personLine.entities.includes(person.entityId), 'the entities field must include the target entity');
+});
+
+// Hub fixture: one entity mentioned in more blocks than the v1 cap (8) — deterministically truncated.
+const HUB_INPUTS = Array.from({ length: 10 }, (_, i) => ({
+  name: `reviews/log-${i}.txt`,
+  text: `Sprint ${i} log: Ravi Chandra signed the follow-up note ${i}.`,
+}));
+
+test('Amnesiac 12: composed erasure — target retraction, exact co-mention span removal, hub-cap determinism', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS, COMPOSED_VIEW);
+  const person = corpus.entityIndex.find((e) => e.class === 'PERSON');
+  const before = corpus.jsonl;
+  const beforeLines = new Map(linesOf(corpus.jsonl).map((l) => [JSON.parse(l).id, l]));
+
+  const after = eraseEntity(corpus, person.entityId);
+  assert.equal(after.receipt.identity, 'readable', 'composed erasure stays in its identity mode');
+
+  // the target sample is retracted: sampleCount drops by exactly those samples
+  const retractedIds = after.diffReceipt.retractedSampleIds;
+  assert.equal(retractedIds.length, 1, 'exactly the erased entity target sample is retracted');
+  const targetSample = corpus.samples.find((s) => s.target === person.entityId);
+  assert.deepEqual(retractedIds, [targetSample.id], 'the retracted sample must be the erased entity target');
+  assert.equal(after.receipt.sampleCount, corpus.receipt.sampleCount - 1, 'retraction must change the sample count');
+  assert.equal(after.receipt.entityCount, corpus.receipt.entityCount - 1, 'erasure must drop the erased entity from the index');
+  assert.ok(!after.jsonl.includes(targetSample.id), 'the retracted sample must be gone from the regenerated bytes');
+  assert.ok(!after.jsonl.includes('Ravi Chandra'), 'the erased canonical name must be gone from the regenerated composed bytes');
+
+  // every remaining line is either untouched or regenerated by exactly the erased entity spans
+  const changedIds = new Set(after.diffReceipt.changedSampleIds);
+  for (const line of linesOf(after.jsonl)) {
+    const parsed = JSON.parse(line);
+    if (!changedIds.has(parsed.id)) {
+      assert.equal(line, beforeLines.get(parsed.id), `unchanged composed sample ${parsed.id} must remain byte-identical`);
+      continue;
+    }
+    const oldSample = corpus.samples.find((s) => s.id === parsed.id);
+    const oldLine = beforeLines.get(parsed.id);
+    const spans = oldSample.spans[person.entityId];
+    assert.ok(spans.length >= 1, `co-mention sample ${parsed.id} must record the erased entity spans`);
+    const spanBytes = spans.reduce((n, [s, e]) => n + (e - s), 0);
+    const expectedDelta = -(spanBytes + (JSON.stringify(oldSample.entities).length - JSON.stringify(parsed.entities).length));
+    assert.equal(line.length - oldLine.length, expectedDelta, `co-mention sample ${parsed.id} must differ by exactly the erased entity spans`);
+    assert.equal(JSON.parse(line).messages[2].content, removeSpansDesc(oldSample.content, spans), 'co-mention removal must cut exactly the erased spans from the render');
+    assert.ok(!parsed.entities.includes(person.entityId), 'the erased entity must be dropped from the entities list');
+  }
+  assert.equal(after.diffReceipt.diffVerified, true);
+
+  const after2 = eraseEntity(corpus, person.entityId);
+  assert.equal(after2.jsonl, after.jsonl, 'composed erasure must be deterministic');
+  assert.equal(corpus.jsonl, before, 'eraseEntity must not mutate the original composed state');
+
+  // hub cap: an entity with more blocks than the v1 cap renders the same first-8 selection every build
+  const hubA = await buildAmnesiacCorpus(HUB_INPUTS, COMPOSED_VIEW);
+  const hubB = await buildAmnesiacCorpus(HUB_INPUTS, COMPOSED_VIEW);
+  assert.equal(hubA.jsonl, hubB.jsonl, 'hub-cap selection must be deterministic across builds');
+  const hubEntity = hubA.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(hubEntity, 'the hub estate must index the hub person');
+  const hubSampleState = hubA.samples.find((s) => s.target === hubEntity.entityId);
+  assert.equal(hubSampleState.sources.length, 8, 'the composed sample must render at most the v1 cap of 8 evidence blocks');
+  assert.ok(hubSampleState.truncatedBlocks >= 1, 'internal bookkeeping must record the truncated blocks');
+  assert.deepEqual(
+    hubSampleState.sources.map((s) => s.source),
+    ['reviews/log-0.txt', 'reviews/log-1.txt', 'reviews/log-2.txt', 'reviews/log-3.txt', 'reviews/log-4.txt', 'reviews/log-5.txt', 'reviews/log-6.txt', 'reviews/log-7.txt'],
+    'the hub selection must be the first 8 blocks in canonical (source, offset) order'
+  );
+  const hubLine = JSON.parse(linesOf(hubA.jsonl)[0]);
+  assert.ok(!JSON.stringify(hubLine).includes('truncatedBlocks'), 'truncatedBlocks must stay internal bookkeeping');
+});
