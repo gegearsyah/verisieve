@@ -136,10 +136,67 @@ test('T7: WASM SQL executes INNER equi-JOIN on aliased instances of the loaded t
   // Left row 0 (pdf, tok 14) joins right rows 0 (14) and 1 (8)
   assert.deepEqual(joinRowsRes.rows, [['pdf_text', 8], ['pdf_text', 14]]);
 
-  // Cross-table JOIN is still fail-closed: the single-table ABI only loads the FROM table
+  // SELECT * inside a JOIN stays fail-closed (typed validation error, same with a second table)
   assert.throws(
     () => executeSqlWasm('SELECT * FROM documents JOIN pmc_pdf_data ON documents.source_mode = pmc_pdf_data.source_mode;', { tables }),
+    /SQL_VALIDATION_ERROR/i
+  );
+});
+
+test('T7: WASM SQL executes cross-table INNER equi-JOIN through the two-table host ABI', () => {
+  const tables = buildSqlTestTables();
+  // documents (5 rows: 2 pdf, 3 ocr) JOIN pmc_pdf_data (2 pdf rows) on the string key source_mode:
+  // KEEP_SAFE left rows: pdf(0.95,14), pdf(0.85,8), ocr(0.91,18) -> pdf rows pair 2x2 = 4, ocr pairs 0
+  const crossJoinRes = executeSqlWasm(
+    "SELECT d.source_mode AS sm, count(*) AS pairs FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode WHERE d.gatekeeper_action = 'KEEP_SAFE' GROUP BY d.source_mode ORDER BY pairs DESC;",
+    { tables }
+  );
+  assert.equal(crossJoinRes.ok, true);
+  assert.deepEqual(crossJoinRes.columns, ['sm', 'pairs']);
+  assert.deepEqual(crossJoinRes.rows, [['pdf_text', 4]]);
+
+  // Equal-token multi-key join with right-side projection
+  const crossRowsRes = executeSqlWasm(
+    'SELECT d.token_count AS dt, p.token_count AS pt FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode AND d.token_count = p.token_count ORDER BY dt ASC;',
+    { tables }
+  );
+  assert.deepEqual(crossRowsRes.columns, ['dt', 'pt']);
+  assert.deepEqual(crossRowsRes.rows, [[8, 8], [14, 14]]);
+
+  // Aggregation over the cross-table product with a right-side column in GROUP BY
+  const crossAggRes = executeSqlWasm(
+    'SELECT p.token_count AS pt, round(avg(d.pred_prob), 2) AS avg_prob FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode AND d.token_count = p.token_count GROUP BY p.token_count ORDER BY pt ASC;',
+    { tables }
+  );
+  assert.deepEqual(crossAggRes.rows, [[8, 0.85], [14, 0.95]]);
+});
+
+test('T7: cross-table JOIN failures stay fail-closed through the two-table host ABI and the JS fallback keeps rejecting JOINs', () => {
+  const tables = buildSqlTestTables();
+  // Unknown JOIN table: host cannot encode a second table -> typed rejection
+  assert.throws(
+    () => executeSqlWasm('SELECT a.source_mode AS m FROM documents a JOIN nope_unknown b ON a.source_mode = b.source_mode;', { tables }),
+    /UNKNOWN_SQL_TABLE/i
+  );
+  // Non-equi ON across two tables is rejected by the kernel
+  assert.throws(
+    () => executeSqlWasm('SELECT d.source_mode AS m FROM documents d JOIN pmc_pdf_data p ON d.token_count <= p.token_count;', { tables }),
     /UNSUPPORTED_SQL_JOIN/i
+  );
+  // SELECT * inside a cross-table JOIN is rejected
+  assert.throws(
+    () => executeSqlWasm('SELECT * FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode;', { tables }),
+    /SQL_VALIDATION_ERROR/i
+  );
+  // Unqualified columns stay ambiguous across two tables
+  assert.throws(
+    () => executeSqlWasm('SELECT source_mode AS m FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode;', { tables }),
+    /SQL_VALIDATION_ERROR/i
+  );
+  // The JS subset fallback keeps rejecting every JOIN (no two-table ABI there)
+  assert.throws(
+    () => executeSqlSubsetFallback('SELECT d.source_mode AS m FROM documents d JOIN pmc_pdf_data p ON d.source_mode = p.source_mode;', { tables }),
+    /UNKNOWN_SQL_TABLE_QUALIFIER|UNSUPPORTED_SQL_SYNTAX|UNSUPPORTED_SQL_JOIN/i
   );
 });
 

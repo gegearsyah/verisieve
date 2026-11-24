@@ -22,7 +22,11 @@ const EXPECTED_SQL_EXPORTS = [
   'vs_sql_out_cap',
   'vs_sql_last_err_len',
   'vs_sql_probe_table',
+  'vs_sql_probe_join',
+  'vs_sql_table2_ptr',
+  'vs_sql_table2_cap',
   'vs_sql_exec',
+  'vs_sql_exec2',
 ];
 
 const DEFAULT_EMPTY_TABLE_COLS = [
@@ -296,12 +300,30 @@ export function executeSqlWasm(sql, options = {}) {
   const tableName = Buffer.from(exp.memory.buffer, outPtr, probeLen).toString('utf8');
   const targetRows = resolveTableEntry(tables, tableName);
 
+  // Second-table probe: the kernel reports the JOIN target name only when the query actually joins
+  const joinProbeLen = exp.vs_sql_probe_join(sqlBytes.length);
+  if (joinProbeLen < 0) {
+    const errLen = exp.vs_sql_last_err_len();
+    const errMsg = Buffer.from(exp.memory.buffer, outPtr, errLen).toString('utf8');
+    throw new Error(errMsg || 'SQL_SYNTAX_ERROR: invalid SQL query');
+  }
+  let table2Bin = null;
+  if (joinProbeLen > 0) {
+    const joinTableName = Buffer.from(exp.memory.buffer, outPtr, joinProbeLen).toString('utf8');
+    const joinRows = resolveTableEntry(tables, joinTableName);
+    const table2Cap = exp.vs_sql_table2_cap();
+    table2Bin = encodeTableToBinary(Array.isArray(joinRows) ? joinRows : [], table2Cap);
+    new Uint8Array(exp.memory.buffer, exp.vs_sql_table2_ptr(), table2Cap).set(table2Bin);
+  }
+
   const tableCap = exp.vs_sql_table_cap();
   const tableBin = encodeTableToBinary(Array.isArray(targetRows) ? targetRows : [], tableCap);
   const tablePtr = exp.vs_sql_table_ptr();
   new Uint8Array(exp.memory.buffer, tablePtr, tableCap).set(tableBin);
 
-  const execLen = exp.vs_sql_exec(sqlBytes.length, tableBin.length);
+  const execLen = table2Bin !== null
+    ? exp.vs_sql_exec2(sqlBytes.length, tableBin.length, table2Bin.length)
+    : exp.vs_sql_exec(sqlBytes.length, tableBin.length);
   if (execLen < 0) {
     const errLen = exp.vs_sql_last_err_len();
     const errMsg = Buffer.from(exp.memory.buffer, outPtr, errLen).toString('utf8');

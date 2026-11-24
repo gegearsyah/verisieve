@@ -24,6 +24,7 @@ const TAG_STR: u8 = 3;
 
 static mut SQL_BUF: [u8; INPUT_CAP] = [0; INPUT_CAP];
 static mut TABLE_BUF: [u8; TABLE_CAP] = [0; TABLE_CAP];
+static mut TABLE2_BUF: [u8; TABLE_CAP] = [0; TABLE_CAP];
 static mut OUT_BUF: [u8; OUTPUT_CAP] = [0; OUTPUT_CAP];
 static mut LAST_ERR_LEN: u32 = 0;
 
@@ -55,6 +56,7 @@ enum Val {
 }
 
 const SQL_STR_FLAG: u32 = 0x8000_0000;
+const TABLE2_STR_FLAG: u32 = 0x4000_0000;
 
 static mut GROUP_OUT_CELLS: [Val; MAX_GROUPS * MAX_SELECT] = [Val::Null; MAX_GROUPS * MAX_SELECT];
 static mut GROUP_ROW_LIST: [u16; MAX_ROWS] = [0; MAX_ROWS];
@@ -94,6 +96,16 @@ pub extern "C" fn vs_sql_table_ptr() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn vs_sql_table_cap() -> u32 {
+    TABLE_CAP as u32
+}
+
+#[no_mangle]
+pub extern "C" fn vs_sql_table2_ptr() -> *mut u8 {
+    core::ptr::addr_of_mut!(TABLE2_BUF) as *mut u8
+}
+
+#[no_mangle]
+pub extern "C" fn vs_sql_table2_cap() -> u32 {
     TABLE_CAP as u32
 }
 
@@ -460,11 +472,72 @@ pub extern "C" fn vs_sql_probe_table(sql_len: u32) -> i32 {
     len as i32
 }
 
+// Light JOIN-table probe: returns the JOIN target ident written to OUT_BUF, 0 when the query
+// has no JOIN, or -1 with an error message. Full validation happens in vs_sql_exec2 after both
+// tables are loaded; this probe only locates the second table name so the host can encode it.
+#[no_mangle]
+pub extern "C" fn vs_sql_probe_join(sql_len: u32) -> i32 {
+    unsafe {
+        LAST_ERR_LEN = 0;
+    }
+    let sl = (sql_len as usize).min(INPUT_CAP);
+    let sql = unsafe { &SQL_BUF[..sl] };
+    let mut toks = [Tok::EMPTY; MAX_TOKENS];
+    let n_toks = match tokenize_sql(sql, &mut toks) {
+        Ok(n) => n,
+        Err(e) => return write_error(e),
+    };
+    let (table_tok, _) = match find_from_table(sql, &toks, n_toks) {
+        Ok(v) => v,
+        Err(e) => return write_error(e),
+    };
+    let mut pos = table_tok + 1;
+    if pos < n_toks && toks[pos].kind == TokKind::Ident {
+        let w = toks[pos].slice(sql);
+        if eq_ascii_icase(w, b"AS") {
+            pos += 1;
+            if pos < n_toks && toks[pos].kind == TokKind::Ident && !is_clause_boundary(sql, toks[pos]) {
+                pos += 1;
+            } else {
+                return 0;
+            }
+        } else if !is_clause_boundary(sql, toks[pos]) && !eq_ascii_icase(w, b"ON") {
+            pos += 1;
+        }
+    }
+    let is_join = pos < n_toks && toks[pos].kind == TokKind::Ident && eq_ascii_icase(toks[pos].slice(sql), b"JOIN");
+    let is_inner_join = pos + 2 < n_toks
+        && toks[pos].kind == TokKind::Ident
+        && eq_ascii_icase(toks[pos].slice(sql), b"INNER")
+        && toks[pos + 1].kind == TokKind::Ident
+        && eq_ascii_icase(toks[pos + 1].slice(sql), b"JOIN");
+    let name_tok = if is_join {
+        Some(pos + 1)
+    } else if is_inner_join {
+        Some(pos + 2)
+    } else {
+        None
+    };
+    match name_tok {
+        Some(k) if k < n_toks && toks[k].kind == TokKind::Ident => {
+            let t = toks[k].slice(sql);
+            let len = t.len().min(OUTPUT_CAP);
+            unsafe {
+                OUT_BUF[..len].copy_from_slice(&t[..len]);
+            }
+            len as i32
+        }
+        _ => 0,
+    }
+}
+
 struct TableView<'a> {
     col_names: [&'a [u8]; MAX_COLS],
     col_count: usize,
     row_count: usize,
     buf: &'a [u8],
+    base: usize, // row offset into the shared CELL_* decode arrays (second table stacks above the first)
+    flag: u32,   // marker ORed into string cell offsets so values remember their source buffer
 }
 
 fn read_u16_le(b: &[u8], off: &mut usize) -> Result<u16, &'static [u8]> {
@@ -485,7 +558,7 @@ fn read_u32_le(b: &[u8], off: &mut usize) -> Result<u32, &'static [u8]> {
     Ok(v)
 }
 
-fn decode_table<'a>(buf: &'a [u8]) -> Result<TableView<'a>, &'static [u8]> {
+fn decode_table<'a>(buf: &'a [u8], base: usize, flag: u32) -> Result<TableView<'a>, &'static [u8]> {
     let mut off = 0usize;
     let col_count = read_u16_le(buf, &mut off)? as usize;
     if col_count > MAX_COLS {
@@ -501,7 +574,7 @@ fn decode_table<'a>(buf: &'a [u8]) -> Result<TableView<'a>, &'static [u8]> {
         off += nlen;
     }
     let row_count = read_u32_le(buf, &mut off)? as usize;
-    if row_count > MAX_ROWS {
+    if base + row_count > MAX_ROWS {
         return Err(b"TABLE_DECODE_ERROR: row count exceeds MAX_ROWS");
     }
 
@@ -512,7 +585,7 @@ fn decode_table<'a>(buf: &'a [u8]) -> Result<TableView<'a>, &'static [u8]> {
             }
             let tag = buf[off];
             off += 1;
-            let idx = r * MAX_COLS + c;
+            let idx = (base + r) * MAX_COLS + c;
             match tag {
                 TAG_NULL => unsafe {
                     CELL_OFFS[idx] = 0;
@@ -559,6 +632,8 @@ fn decode_table<'a>(buf: &'a [u8]) -> Result<TableView<'a>, &'static [u8]> {
         col_count,
         row_count,
         buf,
+        base,
+        flag,
     })
 }
 
@@ -572,7 +647,7 @@ fn find_col(tv: &TableView, name: &[u8]) -> Option<usize> {
 }
 
 fn raw_cell_val(tv: &TableView, row: usize, col: usize) -> Val {
-    let idx = row * MAX_COLS + col;
+    let idx = (tv.base + row) * MAX_COLS + col;
     let meta = unsafe { CELL_META[idx] };
     let off = unsafe { CELL_OFFS[idx] };
     let tag = (meta >> 29) as u8;
@@ -594,13 +669,23 @@ fn raw_cell_val(tv: &TableView, row: usize, col: usize) -> Val {
             ];
             Val::Num(f64::from_le_bytes(bytes))
         }
-        TAG_STR => Val::Str(off, len),
+        TAG_STR => Val::Str(off | tv.flag, len),
         _ => Val::Null,
     }
 }
 
+// View pair threaded through evaluation: tv is the FROM table, tv2 the JOIN right side
+// (equal to tv when the query does not join or joins two instances of one table).
+#[derive(Clone, Copy)]
+struct Views<'a> {
+    sql: &'a [u8],
+    tv: &'a TableView<'a>,
+    tv2: &'a TableView<'a>,
+}
+
 // In JOIN mode flagged column refs address the (left,right) pair product, not the source row
-fn read_cell_val(tv: &TableView, row: usize, col: usize) -> Val {
+fn read_cell_val(views: &Views, row: usize, col: usize) -> Val {
+    let (tv, tv2) = (views.tv, views.tv2);
     if col & COL_JOIN_BIT != 0 {
         let c = col & COL_IDX_MASK;
         if col & COL_SIDE_R_BIT != 0 {
@@ -608,7 +693,7 @@ fn read_cell_val(tv: &TableView, row: usize, col: usize) -> Val {
             if r == JOIN_SENTINEL {
                 return Val::Null;
             }
-            return raw_cell_val(tv, r as usize, c);
+            return raw_cell_val(tv2, r as usize, c);
         }
         let l = unsafe { JOIN_LROW[row] };
         return raw_cell_val(tv, l as usize, c);
@@ -718,6 +803,7 @@ fn is_clause_boundary(sql: &[u8], tok: Tok) -> bool {
             || eq_ascii_icase(tok.slice(sql), b"INNER")
             || eq_ascii_icase(tok.slice(sql), b"LEFT")
             || eq_ascii_icase(tok.slice(sql), b"RIGHT")
+            || eq_ascii_icase(tok.slice(sql), b"CROSS")
             || eq_ascii_icase(tok.slice(sql), b"UNION")
             || eq_ascii_icase(tok.slice(sql), b"OFFSET"))
 }
@@ -744,7 +830,7 @@ fn check_unsupported_keyword(w: &[u8]) -> Result<(), &'static [u8]> {
 
 fn parse_col_ref(
     sql: &[u8],
-    tv: &TableView,
+    views: &Views,
     table_name: &[u8],
     jctx: Option<(&[u8], &[u8])>,
     toks: &[Tok],
@@ -767,7 +853,8 @@ fn parse_col_ref(
             };
             name = toks[*pos + 1].slice(sql);
             *pos += 2;
-            let c = find_col(tv, name).ok_or(b"UNKNOWN_SQL_COLUMN: column does not exist in table" as &[u8])?;
+            let view = if side == 1 { views.tv2 } else { views.tv };
+            let c = find_col(view, name).ok_or(b"UNKNOWN_SQL_COLUMN: column does not exist in table" as &[u8])?;
             return Ok(c | COL_JOIN_BIT | (side << 17));
         }
         if !eq_ascii_icase(name, table_name) {
@@ -776,19 +863,22 @@ fn parse_col_ref(
         name = toks[*pos + 1].slice(sql);
         *pos += 2;
     }
-    let c = find_col(tv, name).ok_or(b"UNKNOWN_SQL_COLUMN: column does not exist in table" as &[u8])?;
+    let c = find_col(views.tv, name).ok_or(b"UNKNOWN_SQL_COLUMN: column does not exist in table" as &[u8])?;
     if jctx.is_some() {
         return Err(b"SQL_VALIDATION_ERROR: unqualified column is ambiguous in JOIN query");
     }
     Ok(c)
 }
 
-// Parses the FROM tail: optional alias, then optionally JOIN <instance> [alias] ON equi-key(s).
+// Parses the FROM tail: optional alias, then optionally JOIN <table> [alias] ON equi-key(s).
+// In single-table mode (multi = false) only aliased instances of the FROM table may be joined;
+// in two-table mode (multi = true) the JOIN target is a second host-encoded table.
 // Returns the join context (side qualifiers) and the token position just past the clause.
 fn parse_join_tail<'a>(
     sql: &'a [u8],
-    tv: &TableView,
+    views: &Views<'a>,
     table_name: &'a [u8],
+    multi: bool,
     toks: &[Tok],
     mut pos: usize,
     n_toks: usize,
@@ -830,11 +920,13 @@ fn parse_join_tail<'a>(
     if pos >= n_toks || toks[pos].kind != TokKind::Ident {
         return Err(b"SQL_SYNTAX_ERROR: expected table name after JOIN");
     }
-    if !eq_ascii_icase(toks[pos].slice(sql), table_name) {
+    let join_name = toks[pos].slice(sql);
+    let same_table = eq_ascii_icase(join_name, table_name);
+    if !multi && !same_table {
         return Err(b"UNSUPPORTED_SQL_JOIN: JOIN table is not the loaded table (aliased instances of the FROM table only)");
     }
     pos += 1;
-    let mut q2 = table_name;
+    let mut q2 = join_name;
     if pos < n_toks && toks[pos].kind == TokKind::Ident {
         let aw = toks[pos].slice(sql);
         if eq_ascii_icase(aw, b"AS") {
@@ -849,10 +941,10 @@ fn parse_join_tail<'a>(
             pos += 1;
         }
     }
-    if q2 == table_name || eq_ascii_icase(q1, q2) {
+    if eq_ascii_icase(q1, q2) || (same_table && eq_ascii_icase(q2, table_name)) {
         return Err(b"SQL_VALIDATION_ERROR: JOIN requires distinct aliases for both sides");
     }
-    if !q1_is_alias {
+    if same_table && !q1_is_alias {
         return Err(b"SQL_VALIDATION_ERROR: JOIN requires an alias on the left instance too");
     }
     if pos >= n_toks || toks[pos].kind != TokKind::Ident || !eq_ascii_icase(toks[pos].slice(sql), b"ON") {
@@ -863,12 +955,12 @@ fn parse_join_tail<'a>(
         JOIN_NKEYS = 0;
     }
     loop {
-        let lc = parse_col_ref(sql, tv, table_name, Some((q1, q2)), toks, &mut pos, n_toks)?;
+        let lc = parse_col_ref(sql, views, table_name, Some((q1, q2)), toks, &mut pos, n_toks)?;
         if pos >= n_toks || toks[pos].kind != TokKind::Eq {
             return Err(b"UNSUPPORTED_SQL_JOIN: only equi-join ON col = col comparisons are supported");
         }
         pos += 1;
-        let rc = parse_col_ref(sql, tv, table_name, Some((q1, q2)), toks, &mut pos, n_toks)?;
+        let rc = parse_col_ref(sql, views, table_name, Some((q1, q2)), toks, &mut pos, n_toks)?;
         let (l, r) = if lc & COL_SIDE_R_BIT != 0 {
             if rc & COL_SIDE_R_BIT != 0 {
                 return Err(b"SQL_VALIDATION_ERROR: ON comparison must reference both join sides");
@@ -899,7 +991,7 @@ fn parse_join_tail<'a>(
 
 fn parse_agg_call(
     sql: &[u8],
-    tv: &TableView,
+    views: &Views,
     table_name: &[u8],
     jctx: Option<(&[u8], &[u8])>,
     toks: &[Tok],
@@ -933,7 +1025,7 @@ fn parse_agg_call(
         *pos += 1;
         (AggKind::CountAll, 0usize)
     } else {
-        let c = parse_col_ref(sql, tv, table_name, jctx, toks, pos, n_toks)?;
+        let c = parse_col_ref(sql, views, table_name, jctx, toks, pos, n_toks)?;
         (agg_base, c)
     };
     if *pos >= n_toks || toks[*pos].kind != TokKind::RParen {
@@ -945,7 +1037,7 @@ fn parse_agg_call(
 
 fn parse_select_list(
     sql: &[u8],
-    tv: &TableView,
+    views: &Views,
     table_name: &[u8],
     jctx: Option<(&[u8], &[u8])>,
     toks: &[Tok],
@@ -982,7 +1074,7 @@ fn parse_select_list(
                     }
                     let inner_agg = *pos + 1 < n_toks && toks[*pos].kind == TokKind::Ident && toks[*pos + 1].kind == TokKind::LParen;
                     let res_kind = if inner_agg {
-                        let (agg, col) = parse_agg_call(sql, tv, table_name, jctx, toks, pos, n_toks)?;
+                        let (agg, col) = parse_agg_call(sql, views, table_name, jctx, toks, pos, n_toks)?;
                         let mut digits: i8 = 0;
                         if *pos < n_toks && toks[*pos].kind == TokKind::Comma {
                             *pos += 1;
@@ -999,7 +1091,7 @@ fn parse_select_list(
                             round_digits: digits,
                         }
                     } else {
-                        let col = parse_col_ref(sql, tv, table_name, jctx, toks, pos, n_toks)?;
+                        let col = parse_col_ref(sql, views, table_name, jctx, toks, pos, n_toks)?;
                         let mut digits: u8 = 0;
                         if *pos < n_toks && toks[*pos].kind == TokKind::Comma {
                             *pos += 1;
@@ -1017,7 +1109,7 @@ fn parse_select_list(
                     *pos += 1;
                     res_kind
                 } else {
-                    let (agg, col) = parse_agg_call(sql, tv, table_name, jctx, toks, pos, n_toks)?;
+                    let (agg, col) = parse_agg_call(sql, views, table_name, jctx, toks, pos, n_toks)?;
                     SelectItemKind::Agg {
                         agg,
                         col,
@@ -1046,7 +1138,7 @@ fn parse_select_list(
                 if eq_ascii_icase(toks[*pos].slice(sql), b"FROM") {
                     return Err(b"SQL_SYNTAX_ERROR: empty SELECT column list before FROM");
                 }
-                let col = parse_col_ref(sql, tv, table_name, jctx, toks, pos, n_toks)?;
+                let col = parse_col_ref(sql, views, table_name, jctx, toks, pos, n_toks)?;
                 let expr_end = toks[*pos - 1].end;
                 let mut alias_tok: i16 = -1;
                 if *pos < n_toks && toks[*pos].kind == TokKind::Ident && eq_ascii_icase(toks[*pos].slice(sql), b"AS") {
@@ -1084,7 +1176,7 @@ fn parse_select_list(
 
 struct ExprParser<'a> {
     sql: &'a [u8],
-    tv: &'a TableView<'a>,
+    views: &'a Views<'a>,
     table_name: &'a [u8],
     jctx: Option<(&'a [u8], &'a [u8])>,
     toks: &'a [Tok],
@@ -1186,7 +1278,7 @@ impl<'a> ExprParser<'a> {
                 } else {
                     let c = parse_col_ref(
                         self.sql,
-                        self.tv,
+                        self.views,
                         self.table_name,
                         self.jctx,
                         self.toks,
@@ -1282,9 +1374,9 @@ impl<'a> ExprParser<'a> {
     }
 }
 
-fn eval_operand(_sql: &[u8], tv: &TableView, row: usize, op: Operand) -> Val {
+fn eval_operand(views: &Views, row: usize, op: Operand) -> Val {
     match op {
-        Operand::Col(c) => read_cell_val(tv, row, c),
+        Operand::Col(c) => read_cell_val(views, row, c),
         Operand::LitNum(v) => Val::Num(v),
         Operand::LitBool(b) => Val::Bool(b),
         Operand::LitStr(s, e) => Val::Str((s as u32) | SQL_STR_FLAG, (e - s) as u32),
@@ -1292,16 +1384,19 @@ fn eval_operand(_sql: &[u8], tv: &TableView, row: usize, op: Operand) -> Val {
     }
 }
 
-fn val_str_bytes<'a>(v: Val, table_buf: &'a [u8], sql_buf: &'a [u8]) -> Option<&'a [u8]> {
+fn val_str_bytes<'v>(v: Val, views: &'v Views<'v>) -> Option<&'v [u8]> {
     match v {
         Val::Str(off, len) => {
-            if (off & SQL_STR_FLAG) != 0 {
-                let s = (off & !SQL_STR_FLAG) as usize;
-                Some(&sql_buf[s..s + len as usize])
+            let f = off & (SQL_STR_FLAG | TABLE2_STR_FLAG);
+            let s = (off & !(SQL_STR_FLAG | TABLE2_STR_FLAG)) as usize;
+            let buf = if f == SQL_STR_FLAG {
+                views.sql
+            } else if f == TABLE2_STR_FLAG {
+                views.tv2.buf
             } else {
-                let s = off as usize;
-                Some(&table_buf[s..s + len as usize])
-            }
+                views.tv.buf
+            };
+            Some(&buf[s..s + len as usize])
         }
         _ => None,
     }
@@ -1343,18 +1438,17 @@ fn sql_str_eq(a: &[u8], a_from_sql: bool, b: &[u8], b_from_sql: bool) -> bool {
     i == a.len() && j == b.len()
 }
 
-fn cmp_vals_exact(a: Val, b: Val, table_buf: &[u8], sql_buf: &[u8]) -> Option<Ordering> {
+fn cmp_vals_exact(a: Val, b: Val, views: &Views) -> Option<Ordering> {
     match (a, b) {
         (Val::Null, _) | (_, Val::Null) => None,
         (Val::Num(x), Val::Num(y)) => x.partial_cmp(&y),
         (Val::Bool(x), Val::Bool(y)) => Some(x.cmp(&y)),
-        (Val::Str(oa, la), Val::Str(ob, lb)) => {
+        (Val::Str(oa, _la), Val::Str(ob, _lb)) => {
             let a_sql = (oa & SQL_STR_FLAG) != 0;
             let b_sql = (ob & SQL_STR_FLAG) != 0;
-            let sa = val_str_bytes(a, table_buf, sql_buf)?;
-            let sb = val_str_bytes(b, table_buf, sql_buf)?;
+            let sa = val_str_bytes(a, views)?;
+            let sb = val_str_bytes(b, views)?;
             if !a_sql && !b_sql {
-                let _ = (la, lb);
                 Some(sa.cmp(sb))
             } else if sql_str_eq(sa, a_sql, sb, b_sql) {
                 Some(Ordering::Equal)
@@ -1391,29 +1485,30 @@ fn like_match(text: &[u8], pat: &[u8]) -> bool {
     pi == pat.len()
 }
 
-fn eval_expr(nodes: &[ExprNode], id: u8, sql: &[u8], tv: &TableView, row: usize) -> bool {
+fn eval_expr(nodes: &[ExprNode], id: u8, views: &Views, row: usize) -> bool {
     match nodes[id as usize] {
-        ExprNode::Or(a, b) => eval_expr(nodes, a, sql, tv, row) || eval_expr(nodes, b, sql, tv, row),
-        ExprNode::And(a, b) => eval_expr(nodes, a, sql, tv, row) && eval_expr(nodes, b, sql, tv, row),
-        ExprNode::Not(a) => !eval_expr(nodes, a, sql, tv, row),
+        ExprNode::Or(a, b) => eval_expr(nodes, a, views, row) || eval_expr(nodes, b, views, row),
+        ExprNode::And(a, b) => eval_expr(nodes, a, views, row) && eval_expr(nodes, b, views, row),
+        ExprNode::Not(a) => !eval_expr(nodes, a, views, row),
         ExprNode::IsNull(c, neg) => {
-            let is_n = matches!(read_cell_val(tv, row, c), Val::Null);
+            let is_n = matches!(read_cell_val(views, row, c), Val::Null);
             if neg { !is_n } else { is_n }
         }
         ExprNode::Like(c, ps, pe, neg) => {
-            let m = match read_cell_val(tv, row, c) {
-                Val::Str(off, len) => {
-                    let s = &tv.buf[off as usize..off as usize + len as usize];
-                    like_match(s, &sql[ps as usize..pe as usize])
+            let cv = read_cell_val(views, row, c);
+            let m = match cv {
+                Val::Str(_, _) => {
+                    let s = val_str_bytes(cv, views).unwrap_or(&[]);
+                    like_match(s, &views.sql[ps as usize..pe as usize])
                 }
                 _ => false,
             };
             if neg { !m } else { m }
         }
         ExprNode::Cmp(op, lhs, rhs) => {
-            let va = eval_operand(sql, tv, row, lhs);
-            let vb = eval_operand(sql, tv, row, rhs);
-            match cmp_vals_exact(va, vb, tv.buf, sql) {
+            let va = eval_operand(views, row, lhs);
+            let vb = eval_operand(views, row, rhs);
+            match cmp_vals_exact(va, vb, views) {
                 None => false,
                 Some(ord) => match op {
                     CmpOp::Eq => ord == Ordering::Equal,
@@ -1450,7 +1545,7 @@ fn round_f64_digits(val: f64, digits: i8) -> f64 {
     if out == 0.0 { 0.0 } else { out }
 }
 
-fn fnv1a_val(h: u64, v: Val, table_buf: &[u8]) -> u64 {
+fn fnv1a_val(h: u64, v: Val, views: &Views) -> u64 {
     let mut acc = h;
     let feed = |mut x: u64, b: u8| -> u64 {
         x ^= b as u64;
@@ -1467,9 +1562,9 @@ fn fnv1a_val(h: u64, v: Val, table_buf: &[u8]) -> u64 {
             }
             acc
         }
-        Val::Str(off, len) => {
+        Val::Str(_, _) => {
             acc = feed(acc, 3);
-            let s = &table_buf[off as usize..off as usize + len as usize];
+            let s = val_str_bytes(v, views).unwrap_or(&[]);
             for &byte in s {
                 acc = feed(acc, byte);
             }
@@ -1478,21 +1573,21 @@ fn fnv1a_val(h: u64, v: Val, table_buf: &[u8]) -> u64 {
     }
 }
 
-fn vals_equal_group(a: Val, b: Val, table_buf: &[u8]) -> bool {
+fn vals_equal_group(a: Val, b: Val, views: &Views) -> bool {
     match (a, b) {
         (Val::Null, Val::Null) => true,
         (Val::Bool(x), Val::Bool(y)) => x == y,
         (Val::Num(x), Val::Num(y)) => x == y,
-        (Val::Str(oa, la), Val::Str(ob, lb)) => {
-            let sa = &table_buf[oa as usize..oa as usize + la as usize];
-            let sb = &table_buf[ob as usize..ob as usize + lb as usize];
+        (Val::Str(_, _), Val::Str(_, _)) => {
+            let sa = val_str_bytes(a, views).unwrap_or(&[]);
+            let sb = val_str_bytes(b, views).unwrap_or(&[]);
             sa == sb
         }
         _ => false,
     }
 }
 
-fn cmp_out_vals(a: Val, b: Val, table_buf: &[u8], sql_buf: &[u8]) -> Ordering {
+fn cmp_out_vals(a: Val, b: Val, views: &Views) -> Ordering {
     match (a, b) {
         (Val::Null, Val::Null) => Ordering::Equal,
         (Val::Null, _) => Ordering::Greater, // Nulls last
@@ -1500,8 +1595,8 @@ fn cmp_out_vals(a: Val, b: Val, table_buf: &[u8], sql_buf: &[u8]) -> Ordering {
         (Val::Num(x), Val::Num(y)) => x.partial_cmp(&y).unwrap_or(Ordering::Equal),
         (Val::Bool(x), Val::Bool(y)) => x.cmp(&y),
         (Val::Str(_, _), Val::Str(_, _)) => {
-            let sa = val_str_bytes(a, table_buf, sql_buf).unwrap_or(&[]);
-            let sb = val_str_bytes(b, table_buf, sql_buf).unwrap_or(&[]);
+            let sa = val_str_bytes(a, views).unwrap_or(&[]);
+            let sb = val_str_bytes(b, views).unwrap_or(&[]);
             sa.cmp(sb)
         }
         (Val::Num(_), _) => Ordering::Less,
@@ -1531,7 +1626,7 @@ fn push_u32(out: &mut [u8], pos: &mut usize, v: u32) -> Result<(), &'static [u8]
     Ok(())
 }
 
-fn push_val(out: &mut [u8], pos: &mut usize, v: Val, table_buf: &[u8]) -> Result<(), &'static [u8]> {
+fn push_val(out: &mut [u8], pos: &mut usize, v: Val, views: &Views) -> Result<(), &'static [u8]> {
     if *pos >= out.len() {
         return Err(b"OUTPUT_BUFFER_OVERFLOW: result exceeds OUT_BUF capacity");
     }
@@ -1556,7 +1651,7 @@ fn push_val(out: &mut [u8], pos: &mut usize, v: Val, table_buf: &[u8]) -> Result
             out[*pos + 1..*pos + 9].copy_from_slice(&n.to_le_bytes());
             *pos += 9;
         }
-        Val::Str(off, len) => {
+        Val::Str(_, len) => {
             let sl = len as usize;
             if *pos + 5 + sl > out.len() {
                 return Err(b"OUTPUT_BUFFER_OVERFLOW: result exceeds OUT_BUF capacity");
@@ -1565,30 +1660,39 @@ fn push_val(out: &mut [u8], pos: &mut usize, v: Val, table_buf: &[u8]) -> Result
             *pos += 1;
             out[*pos..*pos + 4].copy_from_slice(&len.to_le_bytes());
             *pos += 4;
-            let src = &table_buf[off as usize..off as usize + sl];
-            out[*pos..*pos + sl].copy_from_slice(src);
+            let src = val_str_bytes(v, views)
+                .ok_or(b"OUTPUT_BUFFER_OVERFLOW: result exceeds OUT_BUF capacity" as &[u8])?;
+            out[*pos..*pos + sl].copy_from_slice(&src[..sl]);
             *pos += sl;
         }
     }
     Ok(())
 }
 
-fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize, &'static [u8]> {
+fn exec_query(
+    sql: &[u8],
+    table_buf: &[u8],
+    table2_buf: Option<&[u8]>,
+    out_buf: &mut [u8],
+) -> Result<usize, &'static [u8]> {
     let mut toks = [Tok::EMPTY; MAX_TOKENS];
     let n_toks = tokenize_sql(sql, &mut toks)?;
     let (table_tok, table_name) = find_from_table(sql, &toks, n_toks)?;
-    let tv = decode_table(table_buf)?;
+    let tv = decode_table(table_buf, 0, 0)?;
+    let tv2_storage = table2_buf.map(|b2| decode_table(b2, tv.row_count, TABLE2_STR_FLAG)).transpose()?;
+    let tv2_view = tv2_storage.as_ref().unwrap_or(&tv);
+    let views = Views { sql, tv: &tv, tv2: tv2_view };
 
     if toks[0].kind != TokKind::Ident || !eq_ascii_icase(toks[0].slice(sql), b"SELECT") {
         return Err(b"UNSUPPORTED_SQL_STATEMENT: only SELECT queries are allowed");
     }
     // Parse the FROM/JOIN tail up front so the SELECT list and WHERE see the join ctx
-    let (jctx, join_end) = parse_join_tail(sql, &tv, table_name, &toks, table_tok + 1, n_toks)?;
+    let (jctx, join_end) = parse_join_tail(sql, &views, table_name, table2_buf.is_some(), &toks, table_tok + 1, n_toks)?;
 
     let mut pos = 1usize;
 
     let mut raw_select = [SelectItem::EMPTY; MAX_SELECT];
-    let n_raw_select = parse_select_list(sql, &tv, table_name, jctx, &toks, &mut pos, n_toks, &mut raw_select)?;
+    let n_raw_select = parse_select_list(sql, &views, table_name, jctx, &toks, &mut pos, n_toks, &mut raw_select)?;
 
     if pos >= n_toks || toks[pos].kind != TokKind::Ident || !eq_ascii_icase(toks[pos].slice(sql), b"FROM") {
         return Err(b"SQL_SYNTAX_ERROR: expected FROM after SELECT list");
@@ -1599,7 +1703,7 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
     let mut where_root: Option<u8> = None;
     let mut expr_parser = ExprParser {
         sql,
-        tv: &tv,
+        views: &views,
         table_name,
         jctx,
         toks: &toks,
@@ -1632,7 +1736,7 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
             if n_group_cols >= MAX_SELECT {
                 return Err(b"SQL_SYNTAX_ERROR: too many GROUP BY columns");
             }
-            let c = parse_col_ref(sql, &tv, table_name, jctx, &toks, &mut pos, n_toks)?;
+            let c = parse_col_ref(sql, &views, table_name, jctx, &toks, &mut pos, n_toks)?;
             group_cols[n_group_cols] = c;
             n_group_cols += 1;
             if pos < n_toks && toks[pos].kind == TokKind::Comma {
@@ -1813,7 +1917,10 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
             out_col_names[i] = toks[proj_items[i].alias_tok as usize].slice(sql);
         } else {
             out_col_names[i] = match proj_items[i].kind {
-                SelectItemKind::Col(c) => tv.col_names[c],
+                SelectItemKind::Col(c) => {
+                    let view = if c & COL_SIDE_R_BIT != 0 { views.tv2 } else { views.tv };
+                    view.col_names[c & COL_IDX_MASK]
+                }
                 SelectItemKind::Agg { agg: AggKind::CountAll, .. } => b"count",
                 _ => &sql[proj_items[i].label_start as usize..proj_items[i].label_end as usize],
             };
@@ -1850,7 +1957,8 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                 } else {
                     return Err(b"UNKNOWN_SQL_TABLE_QUALIFIER: unknown table qualifier in ORDER BY");
                 };
-                let c = find_col(&tv, colname)
+                let view = if side_bit == COL_SIDE_R_BIT { views.tv2 } else { views.tv };
+                let c = find_col(view, colname)
                     .ok_or(b"UNKNOWN_SQL_COLUMN: column does not exist in table" as &[u8])?;
                 order_src_col[k] = Some(c | COL_JOIN_BIT | side_bit);
             } else if let Some(sc) = find_col(&tv, oname) {
@@ -1869,13 +1977,13 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
             let nk = JOIN_NKEYS;
             let mut jr = 0usize;
             for l in 0..tv.row_count {
-                for r in 0..tv.row_count {
+                for r in 0..views.tv2.row_count {
                     let mut ok = true;
                     for k in 0..nk {
                         if !vals_equal_group(
                             raw_cell_val(&tv, l, JOIN_KEYS_L[k] as usize),
-                            raw_cell_val(&tv, r, JOIN_KEYS_R[k] as usize),
-                            tv.buf,
+                            raw_cell_val(views.tv2, r, JOIN_KEYS_R[k] as usize),
+                            &views,
                         ) {
                             ok = false;
                             break;
@@ -1902,7 +2010,7 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
     for r in 0..scan_rows {
         let keep = match where_root {
             None => true,
-            Some(root) => eval_expr(&expr_parser.nodes[..expr_parser.n_nodes], root, sql, &tv, r),
+            Some(root) => eval_expr(&expr_parser.nodes[..expr_parser.n_nodes], root, &views, r),
         };
         if keep {
             unsafe {
@@ -1940,7 +2048,7 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                 let row = unsafe { FILTERED_ROWS[fi] } as usize;
                 let mut h: u64 = 14695981039346656037;
                 for g in 0..n_group_cols {
-                    h = fnv1a_val(h, read_cell_val(&tv, row, group_cols[g]), tv.buf);
+                    h = fnv1a_val(h, read_cell_val(&views, row, group_cols[g]), &views);
                 }
                 let mut found_g = usize::MAX;
                 for gi in 0..g_count {
@@ -1949,9 +2057,9 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                         let mut eq = true;
                         for g in 0..n_group_cols {
                             if !vals_equal_group(
-                                read_cell_val(&tv, row, group_cols[g]),
-                                read_cell_val(&tv, repr, group_cols[g]),
-                                tv.buf,
+                                read_cell_val(&views, row, group_cols[g]),
+                                read_cell_val(&views, repr, group_cols[g]),
+                                &views,
                             ) {
                                 eq = false;
                                 break;
@@ -1993,14 +2101,14 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                         if n_filtered == 0 {
                             Val::Null
                         } else {
-                            read_cell_val(&tv, unsafe { GROUP_REPR_ROW[gi] } as usize, c)
+                            read_cell_val(&views, unsafe { GROUP_REPR_ROW[gi] } as usize, c)
                         }
                     }
                     SelectItemKind::RoundCol { col, digits } => {
                         if n_filtered == 0 {
                             Val::Null
                         } else {
-                            match read_cell_val(&tv, unsafe { GROUP_REPR_ROW[gi] } as usize, col) {
+                            match read_cell_val(&views, unsafe { GROUP_REPR_ROW[gi] } as usize, col) {
                                 Val::Num(x) => Val::Num(round_f64_digits(x, digits as i8)),
                                 other => other,
                             }
@@ -2017,23 +2125,23 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                             match agg {
                                 AggKind::CountAll => cnt += 1,
                                 AggKind::CountCol => {
-                                    if !matches!(read_cell_val(&tv, r, col), Val::Null) {
+                                    if !matches!(read_cell_val(&views, r, col), Val::Null) {
                                         cnt += 1;
                                     }
                                 }
                                 AggKind::Sum | AggKind::Avg => {
-                                    if let Val::Num(x) = read_cell_val(&tv, r, col) {
+                                    if let Val::Num(x) = read_cell_val(&views, r, col) {
                                         sum_v += x;
                                         cnt += 1;
                                     }
                                 }
                                 AggKind::Min => {
-                                    let cv = read_cell_val(&tv, r, col);
+                                    let cv = read_cell_val(&views, r, col);
                                     if !matches!(cv, Val::Null) {
                                         min_v = Some(match min_v {
                                             None => cv,
                                             Some(mv) => {
-                                                if cmp_out_vals(cv, mv, tv.buf, sql) == Ordering::Less {
+                                                if cmp_out_vals(cv, mv, &views) == Ordering::Less {
                                                     cv
                                                 } else {
                                                     mv
@@ -2043,12 +2151,12 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                                     }
                                 }
                                 AggKind::Max => {
-                                    let cv = read_cell_val(&tv, r, col);
+                                    let cv = read_cell_val(&views, r, col);
                                     if !matches!(cv, Val::Null) {
                                         max_v = Some(match max_v {
                                             None => cv,
                                             Some(mv) => {
-                                                if cmp_out_vals(cv, mv, tv.buf, sql) == Ordering::Greater {
+                                                if cmp_out_vals(cv, mv, &views) == Ordering::Greater {
                                                     cv
                                                 } else {
                                                     mv
@@ -2121,12 +2229,12 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                             unsafe { GROUP_OUT_CELLS[slot * MAX_SELECT + order_proj_idx[k]] }
                         } else if let Some(sc) = order_src_col[k] {
                             let r = unsafe { FILTERED_ROWS[slot] } as usize;
-                            read_cell_val(&tv, r, sc)
+                            read_cell_val(&views, r, sc)
                         } else {
                             let r = unsafe { FILTERED_ROWS[slot] } as usize;
                             match proj_items[order_proj_idx[k]].kind {
-                                SelectItemKind::Col(c) => read_cell_val(&tv, r, c),
-                                SelectItemKind::RoundCol { col, digits } => match read_cell_val(&tv, r, col) {
+                                SelectItemKind::Col(c) => read_cell_val(&views, r, c),
+                                SelectItemKind::RoundCol { col, digits } => match read_cell_val(&views, r, col) {
                                     Val::Num(x) => Val::Num(round_f64_digits(x, digits as i8)),
                                     other => other,
                                 },
@@ -2136,7 +2244,7 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
                     };
                     let va = get_val(prev_slot as usize);
                     let vb = get_val(cur_slot as usize);
-                    ord = cmp_out_vals(va, vb, tv.buf, sql);
+                    ord = cmp_out_vals(va, vb, &views);
                     if order_items[k].desc {
                         ord = ord.reverse();
                     }
@@ -2186,23 +2294,22 @@ fn exec_query(sql: &[u8], table_buf: &[u8], out_buf: &mut [u8]) -> Result<usize,
             } else {
                 let r = unsafe { FILTERED_ROWS[slot] } as usize;
                 match proj_items[j].kind {
-                    SelectItemKind::Col(c) => read_cell_val(&tv, r, c),
-                    SelectItemKind::RoundCol { col, digits } => match read_cell_val(&tv, r, col) {
+                    SelectItemKind::Col(c) => read_cell_val(&views, r, c),
+                    SelectItemKind::RoundCol { col, digits } => match read_cell_val(&views, r, col) {
                         Val::Num(x) => Val::Num(round_f64_digits(x, digits as i8)),
                         other => other,
                     },
                     _ => Val::Null,
                 }
             };
-            push_val(out_buf, &mut out_pos, val, tv.buf)?;
+            push_val(out_buf, &mut out_pos, val, &views)?;
         }
     }
 
     Ok(out_pos)
 }
 
-#[no_mangle]
-pub extern "C" fn vs_sql_exec(sql_len: u32, table_len: u32) -> i32 {
+fn exec_impl(sql_len: u32, table_len: u32, table2_len: Option<u32>) -> i32 {
     unsafe {
         LAST_ERR_LEN = 0;
     }
@@ -2210,11 +2317,31 @@ pub extern "C" fn vs_sql_exec(sql_len: u32, table_len: u32) -> i32 {
     let tl = (table_len as usize).min(TABLE_CAP);
     let sql = unsafe { slice::from_raw_parts(core::ptr::addr_of!(SQL_BUF) as *const u8, sl) };
     let tbuf = unsafe { slice::from_raw_parts(core::ptr::addr_of!(TABLE_BUF) as *const u8, tl) };
+    let t2buf = match table2_len {
+        Some(l2) => unsafe {
+            Some(slice::from_raw_parts(
+                core::ptr::addr_of!(TABLE2_BUF) as *const u8,
+                (l2 as usize).min(TABLE_CAP),
+            ))
+        },
+        None => None,
+    };
     let obuf = unsafe { slice::from_raw_parts_mut(core::ptr::addr_of_mut!(OUT_BUF) as *mut u8, OUTPUT_CAP) };
-    match exec_query(sql, tbuf, obuf) {
+    match exec_query(sql, tbuf, t2buf, obuf) {
         Ok(n) => n as i32,
         Err(msg) => write_error(msg),
     }
+}
+
+#[no_mangle]
+pub extern "C" fn vs_sql_exec(sql_len: u32, table_len: u32) -> i32 {
+    exec_impl(sql_len, table_len, None)
+}
+
+// Two-table execution path: the JOIN right side is the host-encoded TABLE2_BUF.
+#[no_mangle]
+pub extern "C" fn vs_sql_exec2(sql_len: u32, table_len: u32, table2_len: u32) -> i32 {
+    exec_impl(sql_len, table_len, Some(table2_len))
 }
 
 #[cfg(test)]
@@ -2264,10 +2391,10 @@ mod tests {
         Str(&'a str),
     }
 
-    fn run_sql(sql: &str, tbuf: &[u8]) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+    fn run_sql2(sql: &str, tbuf: &[u8], tbuf2: Option<&[u8]>) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
         let _guard = TEST_MUTEX.lock().unwrap();
         let mut obuf = vec![0u8; OUTPUT_CAP];
-        match exec_query(sql.as_bytes(), tbuf, &mut obuf) {
+        match exec_query(sql.as_bytes(), tbuf, tbuf2, &mut obuf) {
             Err(e) => Err(String::from_utf8_lossy(e).into_owned()),
             Ok(len) => {
                 let b = &obuf[..len];
@@ -2314,6 +2441,10 @@ mod tests {
                 Ok((cols, rows))
             }
         }
+    }
+
+    fn run_sql(sql: &str, tbuf: &[u8]) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+        run_sql2(sql, tbuf, None)
     }
 
     #[test]
@@ -2413,6 +2544,125 @@ mod tests {
         assert!(run_sql("SELECT a.source_mode FROM documents a JOIN documents ON a.source_mode = a.source_mode", &tbuf).is_err());
         assert!(run_sql("SELECT a.source_mode FROM documents a JOIN documents b ON a.token_count <= b.token_count", &tbuf).is_err());
         assert!(run_sql("SELECT a.source_mode FROM documents a JOIN documents b ON a.source_mode = b.source_mode OR 1=1", &tbuf).is_err());
+    }
+
+    #[test]
+    fn executes_cross_table_inner_equi_join() {
+        let docs = encode_test_table(
+            &["doc_id", "source_mode", "token_count"],
+            &[
+                &[TestVal::Num(1.0), TestVal::Str("pdf_text"), TestVal::Num(14.0)],
+                &[TestVal::Num(2.0), TestVal::Str("ocr_scan"), TestVal::Num(18.0)],
+                &[TestVal::Num(3.0), TestVal::Str("pdf_text"), TestVal::Num(8.0)],
+            ],
+        );
+        let tags = encode_test_table(
+            &["doc_id", "tag"],
+            &[
+                &[TestVal::Num(1.0), TestVal::Str("alpha")],
+                &[TestVal::Num(2.0), TestVal::Str("beta")],
+                &[TestVal::Num(1.0), TestVal::Str("gamma")],
+            ],
+        );
+
+        let (cols, rows) = run_sql2(
+            "SELECT d.source_mode AS sm, t.tag AS tg FROM documents d JOIN tags t ON d.doc_id = t.doc_id ORDER BY tg ASC;",
+            &docs,
+            Some(&tags),
+        )
+        .unwrap();
+        assert_eq!(cols, vec!["sm", "tg"]);
+        assert_eq!(
+            rows,
+            vec![
+                vec!["pdf_text", "alpha"],
+                vec!["ocr_scan", "beta"],
+                vec!["pdf_text", "gamma"],
+            ]
+        );
+
+        // INNER keyword, right-side WHERE-free projection, and a string join key across two buffers
+        let people = encode_test_table(
+            &["name", "dept"],
+            &[
+                &[TestVal::Str("ada"), TestVal::Str("legal")],
+                &[TestVal::Str("bob"), TestVal::Str("finance")],
+                &[TestVal::Str("ada"), TestVal::Str("ops")],
+            ],
+        );
+        let certs = encode_test_table(
+            &["name", "status"],
+            &[
+                &[TestVal::Str("ada"), TestVal::Str("KEEP_SAFE")],
+                &[TestVal::Str("zed"), TestVal::Str("DROP")],
+            ],
+        );
+        let (cols2, rows2) = run_sql2(
+            "SELECT p.name AS who, c.status AS st FROM people p INNER JOIN certs c ON p.name = c.name WHERE p.dept = 'legal' ORDER BY st ASC;",
+            &people,
+            Some(&certs),
+        )
+        .unwrap();
+        assert_eq!(cols2, vec!["who", "st"]);
+        assert_eq!(rows2, vec![vec!["ada", "KEEP_SAFE"]]);
+
+        // GROUP BY over the cross-table product
+        let (_, rows3) = run_sql2(
+            "SELECT d.source_mode AS sm, count(*) AS links FROM documents d JOIN tags t ON d.doc_id = t.doc_id GROUP BY d.source_mode ORDER BY links DESC;",
+            &docs,
+            Some(&tags),
+        )
+        .unwrap();
+        assert_eq!(rows3, vec![vec!["pdf_text", "2"], vec!["ocr_scan", "1"]]);
+    }
+
+    #[test]
+    fn rejects_unsupported_cross_table_joins() {
+        let docs = encode_test_table(
+            &["doc_id", "source_mode"],
+            &[&[TestVal::Num(1.0), TestVal::Str("pdf_text")]],
+        );
+        let tags = encode_test_table(
+            &["doc_id", "tag"],
+            &[&[TestVal::Num(1.0), TestVal::Str("alpha")]],
+        );
+        // SELECT * inside a JOIN stays rejected
+        assert!(run_sql2("SELECT * FROM documents d JOIN tags t ON d.doc_id = t.doc_id", &docs, Some(&tags)).is_err());
+        // Non-equi ON comparisons are rejected
+        assert!(run_sql2("SELECT d.doc_id AS d1 FROM documents d JOIN tags t ON d.doc_id < t.doc_id", &docs, Some(&tags)).is_err());
+        // Duplicate qualifiers are rejected
+        assert!(run_sql2("SELECT d.doc_id AS d1 FROM documents d JOIN tags d ON d.doc_id = d.doc_id", &docs, Some(&tags)).is_err());
+        // Unqualified columns are ambiguous across join sides
+        assert!(run_sql2("SELECT doc_id AS d1 FROM documents d JOIN tags t ON d.doc_id = t.doc_id", &docs, Some(&tags)).is_err());
+        // Unknown right-side columns are rejected
+        assert!(run_sql2("SELECT d.doc_id AS d1, t.missing AS m FROM documents d JOIN tags t ON d.doc_id = t.doc_id", &docs, Some(&tags)).is_err());
+        // The single-table ABI keeps rejecting cross-table joins (host parity: fallback cannot load two tables)
+        assert!(run_sql("SELECT a.doc_id AS d1 FROM documents a JOIN tags t ON a.doc_id = t.doc_id", &docs).is_err());
+    }
+
+    #[test]
+    fn probe_join_locates_second_table_name() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let cases = [
+            ("SELECT d.tag AS t FROM docs d JOIN tags_ref t ON d.id = t.id;", "tags_ref"),
+            ("SELECT d.tag FROM docs AS d INNER JOIN tags_ref ON d.id = tags_ref.id;", "tags_ref"),
+            ("SELECT tag FROM docs WHERE id = 1;", ""),
+            ("SELECT tag FROM docs ORDER BY tag;", ""),
+        ];
+        for (sql, want) in cases {
+            let sb = sql.as_bytes();
+            unsafe {
+                SQL_BUF[..sb.len()].copy_from_slice(sb);
+                let n = vs_sql_probe_join(sb.len() as u32);
+                if want.is_empty() {
+                    assert_eq!(n, 0, "expected no join probe for {sql}");
+                } else {
+                    assert!(n > 0, "expected join probe for {sql}");
+                    let name = String::from_utf8_lossy(&OUT_BUF[..n as usize]).into_owned();
+                    assert_eq!(name, want, "join probe mismatch for {sql}");
+                }
+            }
+        }
     }
 }
 
