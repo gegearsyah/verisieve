@@ -247,3 +247,87 @@ to raw Wikidata; DBpedia (CC BY-SA 3.0) if an older share-alike is acceptable; O
 - Wikidata's dump-level CC0 is confirmed; the dumps legal page also warns that some text and
   images may be included under fair use, so a Wikipedia text layer needs per-article review
   before redistribution.
+
+## 9. Founder adoption and feasibility fetch (2026-11-24)
+
+Section 8.5 ranked **Wikidata (CC0) with Wikipedia article text (CC BY-SA 4.0)** as slot 1. The
+founder adopted that recommendation on 2026-11-24. This section records the adoption and a
+feasibility fetch performed the same day. It does not start estate construction: building the
+third estate remains a separately gated work order with its own spec. Section 8.6's "no download
+was performed" applies to that sweep, not to this section.
+
+### 9.1 What was fetched
+
+Inventory fetch only, and it lives outside the repository in `open-estate-downloads/wikidata-feasibility`,
+beside `open-estate-enron-slice`, under the same rule as the Enron slice. Nothing was copied into
+the repository tree. No real person was relabeled and no synthetic overlay was built.
+
+| Item | Source | Result |
+|---|---|---|
+| Structured facts | `https://query.wikidata.org/sparql`, JSON results, explicit User-Agent | 200 distinct real persons (occupation chief executive officer, Q484876), each with at least one employer statement (P108) and an English sitelink; 2,173 claim rows across employer, position held (P39), educated at (P69) and member of (P463); 2,644,843 bytes |
+| Article text | `https://en.wikipedia.org/w/api.php` (`prop=extracts`, `exintro`, `explaintext`, ten batches of 20) | intro extract for 200 of 200 persons; 111,765 characters, 126,423 bytes across ten batch files |
+
+The bounded SPARQL query is saved verbatim in the fetch manifest. Two attempts are recorded there
+as deviations. The broad query (all four career properties required on any human, label service,
+LIMIT 200) returned HTTP 504 after 66 s, and a narrower attempt returned 200 rows but only 29
+distinct persons because the optional-claim cross-product consumed the row limit. The saved query
+uses a `DISTINCT` subselect over persons and returned 200 distinct persons in 13 s.
+
+### 9.2 Clustering yield
+
+| Measure | Count |
+|---|---|
+| Persons with structured facts | 200 |
+| Persons with article text | 200 |
+| Persons with both | **200 of 200** |
+| Persons with at least two structured properties | 185 |
+| employer / educated at / position held / member of | 200 / 147 / 115 / 29 |
+| Persons with all four | 22 |
+
+The per-entity clustering property does materialize at this scale. Every fetched person yields one
+multi-field record: a name, employer and other career facts, plus prose about the same person. The
+join is not the bottleneck, because the query required an English sitelink by construction. Two
+honest limits sit on top of the number:
+
+- The article layer was fetched as intro extracts only. Median length is 407 characters and 71 of
+  200 are under 300 characters, so the intro is a synopsis, not a document. Estate construction
+  needs full article text or article dumps for a document-like mention surface. This fetch shows
+  the plumbing works; it does not show that the text is substantial.
+- The structured layer is curated statements, not noisy mentions. Wikidata gives clean values and
+  aliases, which is the truth surface, while the mention surface has to be composed from article
+  prose and, per Section 5, from the synthetic overlay for ground truth by construction.
+
+### 9.3 What is missing for estate construction
+
+- **Mention inventory quality**: article prose carries real mentions of the subject and of other
+  people and organizations, which is the raw material. This fetch did not extract or measure
+  mentions, so alias coverage, collisions between people who share a label, and cross-entity
+  co-mention density are unmeasured.
+- **Noise types**: Wikidata statements are curated and Wikipedia intros are edited prose. Natural
+  noise here is misspellings, honorifics and name order, transliteration variants, and
+  redirect/alias ambiguity, all much lighter than the noisy-estate N1 to N8 set. A benchmark needs
+  the noise designed and labeled, not merely present.
+- **Question key**: neither source carries a query or QA key. Questions over the composed records
+  would have to be authored against the structured layer, with answers by construction.
+- **Documents per entity**: one English article means one text document per person. A
+  multi-document per-entity cluster needs other language editions, section-level splits, or the
+  overlay.
+- **License surface**: the structured layer is CC0, but the article text is CC BY-SA 4.0, so the
+  combined estate inherits share-alike. The per-article fair-use caveat in Section 8.6 still applies.
+
+Verdict: the source pair passes the feasibility question for the unit under test, per-entity
+composed records. It does not supply a mention inventory, a noise taxonomy or a question key, and
+those are exactly the work items that must be specified before the estate is constructed.
+
+### 9.4 Pinned sources added (fetched 2026-11-24)
+
+- https://query.wikidata.org/sparql: live SPARQL endpoint, JSON results
+- https://en.wikipedia.org/w/api.php: MediaWiki API, TextExtracts intro extracts
+- Licenses as verified in Section 8: https://www.wikidata.org/wiki/Wikidata:Licensing and
+  https://dumps.wikimedia.org/legal.html
+
+Fetch files (external to the repository): `wikidata-people.sparql.json`,
+`wikipedia-extracts-batch-01.json` through `wikipedia-extracts-batch-10.json`, and
+`wikidata-feasibility-manifest.json`, which carries the fetch date, the exact query text, the
+license statements with their Section 8 sources, per-file SHA-256, the entity counts above and the
+two failed attempts.
