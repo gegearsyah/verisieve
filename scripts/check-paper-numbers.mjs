@@ -533,11 +533,11 @@ const CG = tex('verisieve-graph-grounded-enterprise-corpus.tex');
   ok('corpus:surfaces.prose', 'nine network entry points', CG);
 
   const E = ABL.estate;
-  ok('corpus:estate.files', `${f0(E.fileCount)}-file`, CG);
-  ok('corpus:estate.departments', `${f0(E.departments.length)}-department`, CG);
-  ok('corpus:estate.modalities', `across ${f0(E.modalities.length)} modalities`, CG);
+  ok('corpus:estate.files', `${f0(E.fileCount)} files`, CG);
+  ok('corpus:estate.departments', `${f0(E.departments.length)} departments (IT, business, shared, meetings)`, CG);
+  ok('corpus:estate.modalities', `and ${f0(E.modalities.length)} modalities`, CG);
   ok('corpus:estate.gtEntities', `${f0(E.groundTruthEntityCount)} ground-truth entities`, CG);
-  ok('corpus:estate.corpusEntities', `${f0(E.corpusIndexedEntityCount)} corpus entities`, CG);
+  ok('corpus:estate.corpusEntities', `${f0(E.corpusIndexedEntityCount)}-entity corpus`, CG);
   ok('corpus:estate.indexed', `the ${f0(E.corpusIndexedEntityCount)} indexed entities`, CG);
   ok('corpus:cert.pass', P(f4(ABL.certificates.passRate * 100)), CG);
   ok('corpus:cert.lower', P(f4(ABL.certificates.certifiedPassRateLowerBound * 100)), CG);
@@ -616,7 +616,7 @@ const K7X = j('track-k7-bm25-contexts.json');
   checks++;
   if (K3E.questions !== 60) { fails++; console.error(`FAIL [k3:estate.q] expected 60 questions, got ${K3E.questions}`); }
   ok('k3:estate.q.prose', 'Sixty eval questions live only in the manifest', CG);
-  ok('k3:budget', `budget of $${comma(KH.budget.budget)}$ training tokens`, CG);
+  ok('k3:budget', `token budget capped at $${comma(KH.budget.budget)}$ training tokens`, CG);
   const CAN = KH.buildReceipts.canaries;
   ok('k3:canaries', `a ${comma(CAN.rows)}-row canary batch (${comma(CAN.canaryCount)} canaries at 1, 5, and 20 repetitions)`, CG);
 
@@ -733,11 +733,11 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k7:ci.base', `$${P(emAll(KH.arms.base))}$ ($${baslo}$ to $${bashi}$) for the untrained base`, CG);
   ok('k7:bm25.params', `(Okapi BM25, $k_1{=}${K7X.bm25.k1}$, $b{=}${K7X.bm25.b}$, $${K7X.pool.passages}$ passages`, CG);
   ok('k7:setcover', `greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons`, CG);
-  ok('k7:abstract.controls', `a lexical BM25 control ties the graph retriever ($${P(f1(k7(B7, 'all')))}$ against $${P(emAll(KH.arms.retrieval))}$, overlapping $95\\%$ intervals at $n{=}${K7.estate.questions}$)`, CG);
-  ok('k7:abstract.cag', `the composed records cached as one fixed unit tie the retrieval arms ($${P(k7(C7, 'all'))}$)`, CG);
+  ok('k7:abstract.controls', `retrieval over the entity graph, with no fine-tuning, answers $${P(emAll(KH.arms.retrieval))}$ of questions exactly ($${P(f1(emOf(KH.arms.retrieval, 'Q2')))}$ on the 24-question cross-document stratum), and a lexical BM25 control ties it at $${P(f1(k7(B7, 'all')))}$ within noise at $n{=}${K7.estate.questions}$`, CG);
+  ok('k7:abstract.cag', `It ties the retrieval arms overall, within noise at $n{=}${K7.estate.questions}$ ($${P(f1(k7(C7, 'all')))}$ against $${P(f1(graphEm))}$ and $${P(f1(k7(B7, 'all')))}$)`, CG);
   ok('k7:abstract.hybrid', `answers $${P(k7(H7, 'all'))}$, the strongest arm measured`, CG);
-  ok('k7:abstract.router', `pays off as a retrieval index and, in the strongest measured arm, as a router`, CG);
-  ok('k7:conclusion.router', `and, in the strongest measured arm, as a router ($${P(k7(H7, 'all'))}$ when each question's cache is prefilled from the asked person's own records, against $${P(f1(k7(B7, 'all')))}$ for the lexical control)`, CG);
+  ok('k7:abstract.router', `the graph pays off as a retrieval index, not as a training format`, CG);
+  ok('k7:conclusion.router', `and, in the strongest measured arm, as a router ($${P(k7(H7, 'all'))}$ when each question's cache is prefilled from the asked person's own records, given a correctly resolved identity rather than doing retrieval, against $${P(f1(k7(B7, 'all')))}$ for the lexical control)`, CG);
 }
 
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */
