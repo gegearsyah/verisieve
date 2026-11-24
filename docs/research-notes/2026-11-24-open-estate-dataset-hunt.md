@@ -147,3 +147,103 @@ by construction). The two layers are labeled separately in the manifest so no me
 - https://catalog.ldc.upenn.edu/LDC2005T19: Fisher, fee-gated (ledger)
 - https://www.opensanctions.org/licensing/: CC BY-NC 4.0 (ledger)
 - https://resources.data.gov/: no blanket license statement found (per-dataset verification required)
+
+## 8. Third-estate sweep: NER corpora, KB-derived records, public registers (2026-11-24)
+
+Scope: candidates for a possible third estate, tested against three properties: (a) records that
+hang together per entity, (b) an open license (permissive or CC BY; NC and fee-gated are
+automatic rejections), (c) enough structure to serve as a real-mention source under the
+layered-honesty design of Section 5. The Section 3 ledger stands unchanged; OpenSanctions and
+Fisher were not revisited. Every license below was read on the distributing organization's own
+page or license file, fetched on 2026-11-24. No dataset was downloaded.
+
+Result up front: the NER literature is uniformly flat span annotation and therefore cannot
+supply the estate's unit of per-entity composed records. The per-entity property exists in
+knowledge bases and in public company registers, and that is where the usable candidates are.
+
+### 8.1 NER and identity corpora
+
+| Candidate | Primary source (fetched) | License, exact | Contents | Per-entity clustering | Verdict |
+|---|---|---|---|---|---|
+| **CoNLL-2003** | [archived official page](https://web.archive.org/web/2021/https://www.clips.uantwerpen.be/conll2003/ner/) and [README](https://web.archive.org/web/2021/https://www.clips.uantwerpen.be/conll2003/ner/000README); the live page returns HTTP 404 today | **No license covers the words.** README: "The words of the articles in the two corpora have not been included here for copyright reasons." English text requires the Reuters Corpus (RCV1) from [NIST](https://trec.nist.gov/data/reuters/reuters.html), whose stories are "under the copyright of Reuters Ltd and/or Thomson Reuters" and released under signed agreements; German text requires the LDC ECI corpus (LDC94T5) | IOB NER plus POS and chunk columns, English and German newswire sentences | **No**: flat sentences, no per-person document sets | **REJECTED**: text is not redistributable; both source corpora are agreement-gated |
+| **OntoNotes 5.0** | [LDC2013T19](https://catalog.ldc.upenn.edu/LDC2013T19) | "LDC User Agreement for Non-Members"; no price is published, only "Login for the applicable fee" | 2.9 M words of English, Chinese and Arabic across news, conversation, weblogs, newsgroups, broadcast; syntax, predicate-argument, word sense, coreference | **No**: annotated spans across unrelated documents | **REJECTED**: fee-gated, same reason as Fisher in the Section 3 ledger |
+| **WikiNER** | [figshare record](https://figshare.com/articles/dataset/Learning_multilingual_named_entity_recognition_from_Wikipedia/5462500), DOI 10.6084/m9.figshare.5462500; license read from the figshare API record (`CC BY 4.0`) | **CC BY 4.0** (authors' deposit of the Nothman et al. 2013 data; the figshare description says the data "was originally available at http://schwa.org/resources", and figshare is the verified distribution point) | Per-language `.bz2` corpora `aij-wikiner-{lang}-wp2/wp3` (the file list includes de, en, es, fr, it and others), tagged Wikipedia sentences | **No**: sentence-level spans only | **WEAK**: the cleanest license of any NER corpus here, but flat spans; usable as a mention inventory, not as an estate |
+| **MultiNERD** | [repo](https://github.com/Babelscape/multiNERD) and [LICENSE](https://raw.githubusercontent.com/Babelscape/multiNERD/master/LICENSE) | "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License" (LICENSE file). The README says "CC BY-SA-NC 4.0" and the badge says CC BY-NC 4.0; all three readings are NC | 10 languages, 15 entity types, BabelNet/Wikidata/Wikipedia references, image URLs | **No**: sentence spans | **REJECTED**: non-commercial clause |
+| **Few-NERD** | [repo](https://github.com/thunlp/Few-NERD) | "Few-NERD dataset is distributed under the CC BY-SA 4.0 license"; "The code is distributed under the Apache 2.0 license" (the GitHub API reports the repository license as Apache-2.0, so the README is the data-specific statement) | 188,200 sentences, 491,711 entities, 8 coarse and 66 fine types | **No**: sentence spans | **WEAK**: license is fine, structure is wrong for the unit under test |
+| **PERSED** | none found. `persed.space` is a learning-design consultancy; GitHub repo and code search return no corpus | n/a | n/a | n/a | **NOT A CORPUS**: record it as a name collision; no primary source exists |
+
+The honest reading of this table: no NER corpus is a candidate for the estate. Their span
+inventories can seed mention lists, and WikiNER's CC BY 4.0 is the only one whose license allows
+redistribution without further questions, but none of them group documents by entity.
+
+### 8.2 Knowledge-base-derived estates
+
+| Candidate | Primary source (fetched) | License, exact | Contents | Per-entity clustering | Verdict |
+|---|---|---|---|---|---|
+| **Wikidata** | [Wikidata:Licensing](https://www.wikidata.org/wiki/Wikidata:Licensing), [database download](https://www.wikidata.org/wiki/Wikidata:Database_download), [Wikimedia dumps legal](https://dumps.wikimedia.org/legal.html) | **CC0 for structured data**: "Copyrights of structured data in the main, Property, Lexeme, and EntitySchema namespaces are waived" (dumps legal page); other-namespace text is CC BY-SA 4.0. The licensing page: Wikidata "requires a CC0 license" | Entities with labels, aliases, descriptions, statements, qualifiers, references and sitelinks; JSON and RDF dumps, truthy and full variants | **Yes**: one composed record per QID, with aliases across languages and sitelinks to per-language Wikipedia articles | **STRONG**: CC0 covers exactly the structured layer, real names in aliases and statements, no fee, no registration |
+| **Wikipedia text** (via Wikimedia dumps) | [dumps legal](https://dumps.wikimedia.org/legal.html) | CC BY-SA 4.0 and GFDL; "Some text may be available only under the Creative Commons license" | Article text per entity per language | **Partial**: one article per entity per language, so a multi-language article set is a per-entity cluster; no multiple documents per entity within one language | **STRONG when paired with Wikidata**: supplies document-like text; the combined estate inherits CC BY-SA |
+| **DBpedia** | [about page](https://www.dbpedia.org/about/), [resources](https://www.dbpedia.org/resources/), [datasets](https://www.dbpedia.org/datasets/) | "Creative Commons Attribution-ShareAlike 3.0 License" and "GNU Free Documentation License" | "cleaned data from Wikipedia in all languages and Wikidata", "more than 228 million entities"; per-entity content includes "e.g., Wikipedia infoboxes, text, and mapping resources", with "19 types of Wikipedia content, e.g. abstracts, images, person data or external links"; "around 20 language chapters" | **Yes**: one resource per entity per language chapter | **MEDIUM**: license is usable (share-alike, not NC) but the 3.0 version is older and the records are abstract-level, not documents |
+| **YAGO** | [homepage](https://yago-knowledge.org/) and [downloads](https://yago-knowledge.org/downloads) | "This work is licensed under a Creative Commons Attribution 4.0 International License"; latest release YAGO 4.6, built from Wikidata plus the schema.org taxonomy | Facts about people, cities, countries, movies and organizations, with a class taxonomy; download links from the downloads page | **Yes, at fact level**: per-entity assertions, no documents | **MEDIUM**: the most permissive KB license here (CC BY, attribution only), useful as a graph layer under a synthetic overlay, not as a document estate |
+
+### 8.3 Public registers and open metadata
+
+| Candidate | Primary source (fetched) | License, exact | Contents | Per-entity clustering | Verdict |
+|---|---|---|---|---|---|
+| **UK Companies House** | [data products guidance](https://www.gov.uk/guidance/companies-house-data-products), [public task and Crown copyright](https://www.gov.uk/government/publications/companies-house-accreditation-to-information-fair-traders-scheme/public-task-copyright-and-crown-copyright), [download page](https://download.companieshouse.gov.uk/en_output.html) | **Open Government Licence v3.0** for agency content ("All content is available under the Open Government Licence v3.0, except where otherwise stated"). Public-register information is made available under section 47 of the Copyright, Designs and Patents Act 1988 and Schedule 1 of SI 1997/3032, and Companies House "imposes no rules or requirements on how the information on the public register is used" | Monthly CSV snapshot of live companies (address, SIC, status, accounts and confirmation dates, previous names), accounts filings in iXBRL/XBRL, PSC JSON snapshot, per-company URI service | **Yes**: per company number, with PSC records naming real people | **STRONG**: enterprise-document shape, real names, attribution-only license, no fee |
+| **SEC EDGAR** | [accessing EDGAR data](https://www.sec.gov/os/accessing-edgar-data), [SEC privacy and reuse page](https://www.sec.gov/about/privacy-information) | **No license grant.** "Anyone can access and download this information for free"; SEC site content "may be copied or further distributed by users of the web site without the SEC's permission". Filings are company-authored public records, so copyright in the filing text stays with the filer | Submissions by CIK, form types, XBRL company facts, index files | **Yes**: per CIK, one cluster of filings per company | **STRONG with a caveat**: the best on-theme document clusters; redistribution of filing text is a founder question, like Enron in Section 6 |
+| **OpenAlex** | [about page](https://openalex.org/about), [data docs](https://help.openalex.org/data/) | **CC0** | Works, authors, sources, institutions, publishers, funders, topics, with native IDs and external IDs | **Yes**: per author (work list) and per institution | **MEDIUM**: CC0 and entity-shaped, but records are metadata, not documents |
+| **ORCID public data file** | [public data file page](https://info.orcid.org/public-data-file/) | "Creative Commons CC0 1.0 Universal public domain dedication" | "all public data in the ORCID Registry associated with an ORCID record created or claimed by an individual" | **Yes**: per person | **MEDIUM**: clean CC0 per-person records, metadata only |
+
+### 8.4 Pinned sources added in this sweep (all fetched 2026-11-24)
+
+- https://web.archive.org/web/2021/https://www.clips.uantwerpen.be/conll2003/ner/ and .../000README: CoNLL-2003 annotations-only distribution, Reuters and ECI requirements
+- https://trec.nist.gov/data/reuters/reuters.html: Reuters Corpus copyright and signed agreements
+- https://catalog.ldc.upenn.edu/LDC2013T19: OntoNotes 5.0, LDC non-member agreement, fee gate
+- https://figshare.com/articles/dataset/Learning_multilingual_named_entity_recognition_from_Wikipedia/5462500: WikiNER, CC BY 4.0 (via figshare API record, DOI 10.6084/m9.figshare.5462500)
+- https://github.com/Babelscape/multiNERD and https://raw.githubusercontent.com/Babelscape/multiNERD/master/LICENSE: CC BY-NC-SA 4.0
+- https://github.com/thunlp/Few-NERD: dataset CC BY-SA 4.0, code Apache 2.0
+- https://www.wikidata.org/wiki/Wikidata:Licensing, https://www.wikidata.org/wiki/Wikidata:Database_download, https://dumps.wikimedia.org/legal.html: CC0 for structured data, CC BY-SA 4.0 for other text
+- https://www.dbpedia.org/about/: CC BY-SA 3.0 plus GFDL; https://www.dbpedia.org/resources/ and https://www.dbpedia.org/datasets/: content description
+- https://yago-knowledge.org/ and https://yago-knowledge.org/downloads: CC BY 4.0, YAGO 4.6
+- https://www.sec.gov/os/accessing-edgar-data and https://www.sec.gov/about/privacy-information: free access, reuse permitted, no license grant
+- https://www.gov.uk/guidance/companies-house-data-products and https://www.gov.uk/government/publications/companies-house-accreditation-to-information-fair-traders-scheme/public-task-copyright-and-crown-copyright: OGL v3.0 and public-register terms
+- https://openalex.org/about and https://help.openalex.org/data/: CC0, entity structure
+- https://info.orcid.org/public-data-file/: CC0 1.0 public data file
+
+### 8.5 Recommendation ranking for a possible third estate
+
+| Rank | Pick | Why |
+|---|---|---|
+| 1 | **Wikidata (CC0) with Wikipedia article text (CC BY-SA 4.0)** | The strongest verified open source here for a composed record per entity (aliases, statements, sitelinks), with real names, real document text, no fee and no registration. Fits the overlay design directly: the structured layer is the truth surface, the article layer is the mention surface. Caveat: the combined estate inherits CC BY-SA from the article text |
+| 2 | **UK Companies House (OGL v3.0)** | Per-company clusters that look like the enterprise documents the benchmark already uses: accounts filings, company snapshot, PSC records naming real people. Attribution-only license, explicit statement that reuse of public-register information is unrestricted |
+| 3 | **SEC EDGAR (public records, reuse permitted)** | Larger and more document-shaped than Companies House, with filings grouped by CIK and XBRL facts. The open question is filer copyright in the filing text and SEC rate limits; treat redistribution as a founder decision, as with Enron |
+
+Not ranked, but usable as layers: YAGO 4.6 (CC BY 4.0) if a pre-built facts graph is preferred
+to raw Wikidata; DBpedia (CC BY-SA 3.0) if an older share-alike is acceptable; OpenAlex or ORCID
+(CC0) only if a metadata-only estate is acceptable, since neither carries documents.
+
+### 8.6 What remains unverified
+
+- No download was performed. Every license claim is a page-level statement, not a file-level
+  inspection of the distributed archive.
+- CoNLL-2003's live official page returns 404; its license evidence is the archived copy of that
+  page and its README. The Reuters RCV1 agreement text itself was not fetched (it requires a
+  signed application to NIST), so "research use only" rests on the CoNLL README and NIST page.
+- WikiNER's original schwa.org distribution is dead; the figshare deposit by the authors is the
+  verified license source, and the figshare article page returned 403 to the fetch tool, so the
+  license came from the figshare API record for the same DOI.
+- The Companies House OGL statement is a site-level statement; the data product page does not
+  label each download separately, and public-register information rests on statutory wording
+  rather than an SPDX license.
+- EDGAR has no explicit license. "Public record" plus the SEC reuse sentence is not the same as
+  a grant from the filers, and that gap is unresolved.
+- DBpedia's license is quoted from the organization's about page, not from a per-file header.
+- OpenAlex's license is quoted from its about page; the data documentation does not restate it.
+- MultiNERD's README, badge and LICENSE disagree on the exact variant; all readings include NC,
+  so the rejection does not depend on which one is right.
+- The OntoNotes fee is not published; only the login gate was verified.
+- PERSED does not exist as a corpus under that name; only a same-named consultancy appears in
+  search results.
+- Wikidata's dump-level CC0 is confirmed; the dumps legal page also warns that some text and
+  images may be included under fair use, so a Wikipedia text layer needs per-article review
+  before redistribution.
