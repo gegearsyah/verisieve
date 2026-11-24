@@ -115,7 +115,7 @@ Compare **Isolated Baseline Parser (Flat Text/OCR)** vs. **Versieve `Perceive-Ev
 ## 3. Exact Execution Checklist for the Next Agent Session (In Order)
 
 - [ ] **Step 1 — Formalize Phase II Theory (`docs/2026-11-24-perceive-everything-theoretical-framework.md`):**
-  - Append Section 6 (`WASM-VIG` Inverse-Graphics Chart & Diagram Recovery Bounds), Section 7 (`WASM-APSD` Spectral-Prosodic Diarization & Deictic Co-Attention), and Section 8 (Proposition 4: `IB-AMP` Submodular Budgeted Triage $(1 - 1/e)$ Guarantee).
+  - Append Section 6 (`WASM-VIG` Inverse-Graphics Chart & Diagram Recovery Bounds), Section 7 (`WASM-APSD` Spectral-Prosodic Diarization & Deictic Co-Attention), and Section 8 (Proposition 4: `IB-AMP` Submodular Budgeted Triage $(1 - 1/e)/2$ Guarantee — plain cost-benefit greedy under a budget is $(1-1/e)/2$ (Khuller–Moss–Naor 1999); the full $1-1/e$ requires Sviridenko-style partial enumeration. Corrected 2026-11-24 per the literature-review verdict Q3.).
 - [ ] **Step 2 — Compile `WASM-VIG`, `WASM-APSD`, and `IB-AMP` Kernels into `rust/verisieve-media` (`verisieve_media.wasm`):**
   - Implement in `#![no_std]` Rust (`rust/verisieve-media/src/`):
     1. `vs_media_perceptual_dhash64` (`64-bit` dHash + edge/entropy score for `IB-AMP` submodular triage).
