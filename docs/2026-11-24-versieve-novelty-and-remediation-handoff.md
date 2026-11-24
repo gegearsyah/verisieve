@@ -333,3 +333,76 @@ untouched by the suite; 955 paper-number checks, 0 failures.
 **2026-11-24 (Item 2, Paper 4 defensibility, literature part):** six citations verified against primary sources only (arXiv export API and, for full-text claims, the paper HTML): 2412.15605 (CAG, WWW '25), 2505.08261 (adaptive compression, hybrid CAG-RAG), 2307.03172 (Lost in the Middle), 2407.16833 (RAG or long-context; the handoff's author attribution "Xu et al" was wrong and the export API corrected it to Li et al), 2306.05685 (LLM-as-a-judge), 2305.17926 (judges manipulable by response order). Edits to `paper/verisieve-graph-grounded-enterprise-corpus.tex`: a cache-augmented-generation related-work paragraph (scoped to what the CAG paper actually says: corpora 21k to 85k tokens, BERTScore, sparse and dense baselines, "limited and manageable size", the hybrid quote verbatim; our exact match stated as not comparable to their BERTScore), a long-context bounding clause on the retrieval win, and a judge-reliability citation appended to the existing low-agreement caveat so the caveat cites a norm instead of only apologizing. No existing numeric claim touched. Compiled clean, zero undefined references; 955 paper-number checks, 0 failures; references spill to page 9, within the venue's 10 pages excluding references. The K7-dependent parts (BM25 and CAG rows in the K3 table, the lexical-control paragraph, checker needles) landed separately after the K7 artifact existed, per the measured-first rule.
 
 **2026-11-24 (Item 3, open-data hunt extension):** `docs/research-notes/2026-11-24-open-estate-dataset-hunt.md` gained Section 8 (a dated third-estate sweep; the Section 3 rejection ledger untouched). Verified from primary sources: CoNLL-2003 is rejected (its own README withholds the words for copyright and both underlying corpora are agreement-gated), OntoNotes rejected (LDC fee gate, same reason as Fisher), MultiNERD rejected (non-commercial clause), WikiNER is CC BY 4.0 but flat spans, Few-NERD is CC BY-SA 4.0 but flat spans; no NER corpus groups documents per entity, so the NER direction is closed for the estate unit. The per-entity property lives in knowledge bases and registers: Wikidata structured data is CC0 (other namespaces CC BY-SA 4.0) and OpenAlex is CC0 (both re-verified against primary sources at lead review), UK Companies House is OGL v3.0, SEC EDGAR has no license grant with a filer-copyright caveat. Ranking: Wikidata plus Wikipedia text; Companies House; EDGAR. No downloads were performed; that stays a separately gated step.
+
+**2026-11-24 (K7 follow-up, the hybrid routing arm, executed in the `matilda-k7` worktree on
+`feat/k7-cag-bm25`):** the per-question record-selection arm that the Item 4 assessment named as the
+hybrid direction was built and measured, per the founder gate release.
+`scripts/run-track-k7-cag-vs-rag-vs-bm25.py` gained a third arm `cag_hybrid`: per question,
+candidates are the composed records whose target or entity list carries the question person's
+canonical identity key (the same key functions the cache-unit selection uses); a record whose own
+target carries the person's key is a subject record, and the person's subject records (2 or 3 each;
+an id-ascending mention-only fallback for a person with no subject record exists and never
+triggered) are prefilled as a fresh DynamicCache with the question appended; no KV state crosses
+questions; 32,768 minus 1,024 token budget, zero cap hits. **Results, 60 questions, exact match:**
+81.7% overall (Q1 87.5, Q2 79.2, Q3 75.0 = 9 of 12; one abstention), against BM25 60.0 and
+fixed-cache CAG 51.7; token accounting mean 2,940.3 prefill tokens per question (176,419 total
+against the fixed cache's one-time 16,607: the amortization is given up) with 15 mean appended
+tokens. The two committed arms are byte-identical to the pre-hybrid artifact (rows, evals, token
+accounting, cacheUnit, estate all deep-equal, verified against the HEAD blob); two full GPU runs are
+byte-identical, on-disk artifact sha256
+`0c060acde0fbc74f2d0e1d178537531b48aaae7d55d335de6942102391d0fd61` (supersedes the two-arm
+`d56a3ead66a71fdf22e13b1d74c427d9625d8f6b3c49b52e689504a71eca201d`). Wallclock, timing log only:
+hybrid mean 285.3 ms per question (prefill 62.6 ms) against BM25 608.1 and CAG 582.6; smaller
+per-question prefills decode faster than the fixed cache. **Honesty scoping, binding for the
+paper:** the hybrid's router consumes the question's labeled person identity rather than doing
+retrieval, so disambiguation is settled by routing, not in context; the question texts state the
+full name (Q3 adds a title hint), so name extraction is trivial on this estate, but the arm measures
+routing given a correct identity resolution, not resolution itself. **Deviations, recorded not
+smoothed:** (a) the work-order premise that a person matches 1 or 2 records is false on this corpus:
+hub-capped records list whole rosters in their entity lists, so target-plus-entity matching returns
+76 to 217 candidates per person (mean 109.3); the implemented rule selects the person's own subject
+records instead, and the broad literal rule remains a one-line switch recorded here as the rejected
+alternative; (b) the CPU smoke ran in the k7 CUDA venv (the system Python has no torch); (c)
+diagnostic, not in the artifact: the expected value appears verbatim in the hybrid prefill for 55 of
+60 questions against 47 of 60 for BM25 top-6, which pre-explains the Q1 and Q3 jump (selection moved
+the numbers, not decoding); (d) no new node test file (the K7 suites are node-side; selection
+order-independence was checked by an assert-based self-check under shuffled record order, which
+passed). Paper integration: the `tab:k3` hybrid row, the measured hybrid sentences in the
+non-training-controls paragraph, and seven new `k7:` checker needles plus the caption needle update
+landed in the same commit as the artifact (measured-first: artifact, paper, and needles together).
+Executed by a haiku subagent; lead-verified (deep-identity of the committed arms against the HEAD
+blob, eval and sha extraction, banned-word and em-dash greps clean, wallclock confined to the timing
+log).
+
+**2026-11-24 (lead fix, the fresh-clone `test:ci` gap closed loudly):** K7 deviation (h) recorded
+that `test/pdf-image-pipeline.test.js` silently depends on the untracked 261 MB local cache
+`results/untrusted-benchmarks/` and a fresh clone fails 7 tests with `PMC_EXTRACTION_EMPTY`. The
+silent dependency is now a loud skip: the suite defines `PMC_SKIP` mirroring
+`resolveDefaultPmcPaths()` (environment dir, then `results/untrusted-benchmarks/pmc`, then
+`fixtures/pmc`) and guards the real-PDF tests with `{ skip: PMC_SKIP }`, with a message naming the
+fetch command (`node scripts/fetch-public-benchmarks.mjs`) or the `VERISIEVE_PAPERS_DIR` override.
+Verified both ways in the `matilda-k7` worktree: with the cache present 17 of 17 tests pass with an
+empty behavioral diff, and with the cache hidden the guarded tests skip loudly instead of failing.
+The cache stays untracked (Enron-slice precedent: external benchmark bytes never enter the
+repository).
+
+**2026-11-24 (founder gate 3, third-estate decision adopted and feasibility-proven; construction
+still gated):** the founder adopted the Wikidata plus Wikipedia slot ranked at the top of the hunt
+note's Section 8 sweep; the adoption and the feasibility fetch are recorded as a dated Section 9
+addendum in `docs/research-notes/2026-11-24-open-estate-dataset-hunt.md` (the Section 3 rejection
+ledger untouched). The no-commit feasibility fetch lives outside the repository at
+`open-estate-downloads/wikidata-feasibility/`: one SPARQL slice (200 real CEO persons with employer,
+educated-at, position, and member-of facts; 2,644,843 B, sha256
+`3f50207278c9de70ead076fb714c9fe9cf9997ec1321bd83aba7193230d9fca6`), ten Wikipedia TextExtracts
+batches (200 of 200 persons returned text), and a manifest carrying endpoints, the query text,
+license citations verified against primary sources (Wikidata structured data CC0; other namespaces
+and Wikipedia text CC BY-SA 4.0), per-file sha256 pins, and entity counts. **Feasibility verdict:**
+the per-entity clustering property materializes at this scale (200 of 200 persons carry both
+structured facts and article text; employer 200 of 200, educated-at 147 of 200, position 115 of 200,
+member-of 29 of 200), and the honest limit is recorded beside it: the extract text is thin (median
+407 characters, 71 of 200 under 300), so the text layer is a synopsis, not a document layer, and
+estate construction needs full-text extracts or dumps before the document layer is proven. Zero
+repository bytes. Estate construction remains a separately gated work order; fetching the full-text
+layer is the named next step. Deviations recorded: one SPARQL 504 (retried, succeeded); the employer
+cross-product row-limit trap (worked around by dropping label lookups from the same query); the
+TextExtracts 20-title cap (batched by 20).

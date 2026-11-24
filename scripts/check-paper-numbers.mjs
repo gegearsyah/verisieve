@@ -685,9 +685,9 @@ const K7X = j('track-k7-bm25-contexts.json');
   if (!OE.enron.archiveSha256 || !OE.enron.sliceDir.startsWith('external')) { fails++; console.error('FAIL [k6:enron.pin] the committed artifact must carry the external Enron aggregates and archive pin'); }
 
   // K7 non-training arms (BM25 lexical control and CAG over composed records)
-  const B7 = K7.arms.bm25_retrieval, C7 = K7.arms.cag;
+  const B7 = K7.arms.bm25_retrieval, C7 = K7.arms.cag, H7 = K7.arms.cag_hybrid;
   const k7 = (a, s) => a.eval[s].exactMatchPct;
-  ok('k7:caption', 'The two K7 arms train nothing and were scored by exact match only', CG);
+  ok('k7:caption', 'The three K7 arms train nothing and were scored by exact match only', CG);
   ok('k7:row.bm25', `BM25 retrieval (K7) & ${f1(k7(B7, 'Q1'))} & ${f1(k7(B7, 'Q2'))} & ${f1(k7(B7, 'Q3'))} & ${f1(k7(B7, 'all'))} & -- & -- \\\\`, CG);
   ok('k7:row.cag', `CAG over composed records (K7) & ${f1(k7(C7, 'Q1'))} & ${f1(k7(C7, 'Q2'))} & ${f1(k7(C7, 'Q3'))} & ${f1(k7(C7, 'all'))} & -- & -- \\\\`, CG);
   ok('k7:bm25.topK', `feeding top-${K7X.bm25.topK} contexts`, CG);
@@ -705,6 +705,14 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k7:cag.q3', `leads on disambiguation ($${P(f1(k7(C7, 'Q3')))}$, $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$)`, CG);
   ok('k7:cag.q1', `trails on single-document questions ($${P(f1(k7(C7, 'Q1')))}$ against BM25's $${P(f1(k7(B7, 'Q1')))}$)`, CG);
   ok('k7:tokens.amortization', `appends $${C7.tokenAccounting.appendedTokensMean}$ mean tokens after the one-time prefill, against $${f0(B7.tokenAccounting.promptTokensMean)}$ mean prompt tokens`, CG);
+  const hsel = H7.rows.map(r => r.selectedRecords);
+  ok('k7:row.hybrid', `CAG hybrid routing (K7) & ${f1(k7(H7, 'Q1'))} & ${f1(k7(H7, 'Q2'))} & ${f1(k7(H7, 'Q3'))} & ${f1(k7(H7, 'all'))} & -- & -- \\\\`, CG);
+  ok('k7:q3.hybrid', `and the hybrid routing arm $${H7.q3Disambiguation.exactMatchCount}$ of $${H7.q3Disambiguation.n}$`, CG);
+  ok('k7:hybrid.records', `the person's $${Math.min(...hsel)}$ or $${Math.max(...hsel)}$ subject records`, CG);
+  ok('k7:hybrid.overall', `$${P(f1(k7(H7, 'all')))}$ overall ($${P(f1(k7(H7, 'Q1')))}$ Q1, $${P(f1(k7(H7, 'Q2')))}$ Q2, $${P(f1(k7(H7, 'Q3')))}$ Q3, $${H7.q3Disambiguation.exactMatchCount}$ of $${H7.q3Disambiguation.n}$ disambiguation)`, CG);
+  ok('k7:hybrid.hedge', `at $n{=}${K7.estate.questions}$ this is one estate's measurement`, CG);
+  ok('k7:hybrid.prefill', `a mean of $${f0(H7.tokenAccounting.prefillTokensMean)}$ prefill tokens rebuilds the cache per question`, CG);
+  ok('k7:hybrid.appended', `still appends only $${H7.tokenAccounting.appendedTokensMean}$ mean tokens`, CG);
 }
 
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */

@@ -16,6 +16,10 @@ Arms:
   cag             one cache unit (the selected composed per-entity records) prefilled once,
                   each question appended after the cache, answer, cache cropped back to the
                   prefill boundary before the next question (Chan et al., arXiv:2412.15605).
+  cag_hybrid      per-question record selection by the question person's canonical identity,
+                  a fresh per-question DynamicCache over the selected records, append the
+                  question, answer; no cache state is shared across questions (hybrid CAG-RAG,
+                  arXiv:2505.08261).
 
 Cache API used (transformers 4.57.6): DynamicCache() built by a model forward with
 past_key_values=cache, then DynamicCache.crop(boundary) between questions. The 4.57 class
@@ -106,6 +110,19 @@ RECORD_RENDERING = (
     "JSON target/entity/id fields are not prefilled, so the cache carries the same raw estate "
     "text the BM25 contexts carry. Selected record texts are joined with blank lines in "
     "cache-unit order."
+)
+
+HYBRID_SELECTION_RULE = (
+    "Per question, candidates are the composed records whose target or entity list carries a "
+    "canonical identity key of the question personId (normalized full name, email, or phone "
+    "digits; the same key function the cache unit uses). A record whose own target carries a "
+    "person key is a subject record for that person; subject records are ordered by target "
+    "string then record id ascending. Only when a person has no subject record does selection "
+    "fall back to the records that merely mention the person in their entity list, ordered by "
+    "record id ascending. Records are added in that order only while the rendered prefill stays "
+    "within 32768 minus 1024 reserved tokens; a record that does not fit is counted as a cap hit, "
+    "and record text is never shortened. Each question gets its own prefill and DynamicCache; "
+    "no KV state is reused across questions."
 )
 
 STRATA = ("Q1", "Q2", "Q3", "all")
@@ -379,6 +396,64 @@ def select_cache_unit(tok, records: list[dict], question_rows: list[dict], perso
     }
 
 
+def target_identity_keys(rec: dict) -> set[str]:
+    parts = str(rec.get("target", "")).split(":", 2)
+    if len(parts) != 3 or parts[0] != "ent":
+        return set()
+    kind, value = parts[1], parts[2]
+    if kind == "person":
+        return {_person_key(value)}
+    if kind == "email":
+        return {_email_key(value)}
+    if kind == "phone":
+        return {_phone_key(value)}
+    return set()
+
+
+def select_hybrid_records(tok, records: list[dict], person_keys: set[str], scaffold_tokens: int, token_budget: int) -> dict:
+    candidates = [rec for rec in records if person_keys & record_identity_keys(rec)]
+    subject: list[dict] = []
+    mention: list[dict] = []
+    for rec in candidates:
+        (subject if target_identity_keys(rec) & person_keys else mention).append(rec)
+    subject.sort(key=lambda rec: (str(rec.get("target", "")), str(rec.get("id", ""))))
+    mention.sort(key=lambda rec: str(rec.get("id", "")))
+    pool = subject or mention
+
+    selected: list[dict] = []
+    texts: list[str] = []
+    used = scaffold_tokens
+    cap_hits = 0
+    for rec in pool:
+        text = record_text(rec)
+        add = len(tok.encode(text, add_special_tokens=False)) + (2 if texts else 0)
+        if used + add > token_budget:
+            cap_hits += 1
+            continue
+        selected.append(rec)
+        texts.append(text)
+        used += add
+
+    prefill_str, tail = build_prefill(tok, "\n\n".join(texts))
+    prefill_tokens = len(tok.encode(prefill_str, add_special_tokens=False))
+    while prefill_tokens > token_budget and selected:
+        selected.pop()
+        texts.pop()
+        cap_hits += 1
+        prefill_str, tail = build_prefill(tok, "\n\n".join(texts))
+        prefill_tokens = len(tok.encode(prefill_str, add_special_tokens=False))
+
+    return {
+        "candidateRecords": len(candidates),
+        "subjectRecords": len(subject),
+        "selectedRecords": len(selected),
+        "budgetDroppedRecords": cap_hits,
+        "prefillTokens": prefill_tokens,
+        "prefill": prefill_str,
+        "tail": tail,
+    }
+
+
 # ---- K7 arms ----
 def _row(q: dict, answer: str, **extra) -> dict:
     row = {
@@ -508,6 +583,96 @@ def run_cag_arm(model, tok, questions: list[dict], prefill_str: str, tail: str, 
     }
 
 
+def run_hybrid_arm(model, tok, questions: list[dict], records: list[dict], person_by_qid: dict[str, str], manifest: dict, timing: dict) -> dict:
+    device = model.get_input_embeddings().weight.device
+    person_ids = sorted({person_by_qid[q["qid"]] for q in questions})
+    keys_by_person = person_identity_keys(manifest, person_ids)
+    empty_prefill, _ = build_prefill(tok, "")
+    scaffold_tokens = len(tok.encode(empty_prefill, add_special_tokens=False))
+    token_budget = CONTEXT_LIMIT - HEADROOM_TOKENS
+
+    rows = []
+    for q in questions:
+        plan = select_hybrid_records(
+            tok, records, keys_by_person[person_by_qid[q["qid"]]], scaffold_tokens, token_budget
+        )
+        prefill_ids = tok(plan["prefill"], return_tensors="pt", add_special_tokens=False)["input_ids"].to(device)
+        cache = DynamicCache()
+        t0 = time.perf_counter()
+        with torch.inference_mode():
+            model(
+                input_ids=prefill_ids,
+                attention_mask=torch.ones_like(prefill_ids),
+                past_key_values=cache,
+                use_cache=True,
+                logits_to_keep=1,
+            )
+        prefill_ms = (time.perf_counter() - t0) * 1000.0
+        boundary = cache.get_seq_length()
+        if boundary != prefill_ids.shape[1]:
+            raise RuntimeError(f"cache boundary {boundary} != prefill tokens {prefill_ids.shape[1]}")
+
+        append_text = q["question"] + plan["tail"]
+        append_ids = tok(append_text, return_tensors="pt", add_special_tokens=False)["input_ids"].to(device)
+        attention_mask = torch.ones((1, boundary + append_ids.shape[1]), dtype=torch.long, device=device)
+        generated: list[int] = []
+        cur = append_ids
+        t0 = time.perf_counter()
+        with torch.inference_mode():
+            for _ in range(MAX_NEW_TOKENS):
+                out = model(
+                    input_ids=cur,
+                    attention_mask=attention_mask,
+                    past_key_values=cache,
+                    use_cache=True,
+                    logits_to_keep=1,
+                )
+                nxt = int(out.logits[0, -1].argmax().item())
+                if nxt == tok.eos_token_id:
+                    break
+                generated.append(nxt)
+                cur = torch.tensor([[nxt]], dtype=torch.long, device=device)
+                attention_mask = torch.cat(
+                    [attention_mask, torch.ones((1, 1), dtype=torch.long, device=device)], dim=1
+                )
+        ms = (time.perf_counter() - t0) * 1000.0
+        text = tok.decode(generated, skip_special_tokens=True).strip()
+        text = re.sub(r" think.*? response", "", text, flags=re.S).strip()
+        rows.append(_row(
+            q, text,
+            appendedTokens=len(append_ids[0]),
+            cachePrefillTokens=boundary,
+            candidateRecords=plan["candidateRecords"],
+            subjectRecords=plan["subjectRecords"],
+            selectedRecords=plan["selectedRecords"],
+            budgetDroppedRecords=plan["budgetDroppedRecords"],
+        ))
+        timing["perQuestion"].append({
+            "arm": "cag_hybrid", "qid": q["qid"], "latencyMs": round(ms, 1), "prefillMs": round(prefill_ms, 1),
+        })
+        print(
+            f"[k7] cag_hybrid {q['qid']}: em={rows[-1]['exact_match']} "
+            f"records={plan['selectedRecords']}/{plan['candidateRecords']} "
+            f"prefill={boundary} latency_ms={round(ms, 1)} answer={text!r}"
+        )
+        del cache
+    return {
+        "kind": "cag_hybrid",
+        "rows": rows,
+        "tokenAccounting": {
+            "questions": len(rows),
+            "prefillTokensTotal": sum(r["cachePrefillTokens"] for r in rows),
+            "prefillTokensMean": round(sum(r["cachePrefillTokens"] for r in rows) / max(1, len(rows)), 1),
+            "prefillTokensMin": min(r["cachePrefillTokens"] for r in rows),
+            "prefillTokensMax": max(r["cachePrefillTokens"] for r in rows),
+            "appendedTokensTotal": sum(r["appendedTokens"] for r in rows),
+            "appendedTokensMean": round(sum(r["appendedTokens"] for r in rows) / max(1, len(rows)), 1),
+            "capHits": sum(r["budgetDroppedRecords"] for r in rows),
+            "note": "a fresh per-question DynamicCache is built from the selected records and discarded after the answer; no KV state carries across questions",
+        },
+    }
+
+
 def write_timing(timing: dict) -> None:
     TIMING_PATH.parent.mkdir(parents=True, exist_ok=True)
     TIMING_PATH.write_text(json.dumps(timing, indent=2), encoding="utf-8")
@@ -621,6 +786,7 @@ def main() -> None:
                 "sha256": sha256_file(composed_path),
             },
             "cacheUnitSelectionRule": SELECTION_RULE,
+            "cagHybridSelectionRule": HYBRID_SELECTION_RULE,
             "contextLimitTokens": CONTEXT_LIMIT,
             "headroomTokens": HEADROOM_TOKENS,
             "cacheApi": "transformers 4.57.6 DynamicCache + model forward(past_key_values=cache); DynamicCache.crop(boundary) between questions",
@@ -635,7 +801,7 @@ def main() -> None:
         "cacheUnit": cache_unit,
         "notes": [
             RECORD_RENDERING,
-            "Both arms use base Qwen2.5-1.5B-Instruct with no training and the K3 exact-match scorer.",
+            "All three arms use base Qwen2.5-1.5B-Instruct with no training and the K3 exact-match scorer.",
             "The cached prefill carries only composed record text, never the manifest answer key.",
             "60 questions is small: a few points of exact-match difference between arms is noise; read the per-stratum counts alongside.",
             "Wallclock measurements live in results/track-k7-timing-log.json and are not part of this artifact.",
@@ -678,6 +844,14 @@ def main() -> None:
     print("[k7] === arm: cag ===")
     artifact["arms"]["cag"] = run_cag_arm(model, tok, questions, prefill_str, tail, timing)
     arm_summary(artifact["arms"]["cag"])
+    write_artifact(artifact, out_path)
+    write_timing(timing)
+
+    print("[k7] === arm: cag_hybrid ===")
+    artifact["arms"]["cag_hybrid"] = run_hybrid_arm(
+        model, tok, questions, estate_records, person_by_qid, manifest, timing
+    )
+    arm_summary(artifact["arms"]["cag_hybrid"])
     write_artifact(artifact, out_path)
     write_timing(timing)
 
