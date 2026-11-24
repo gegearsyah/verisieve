@@ -272,6 +272,16 @@ export function buildMediaEngineFromInstance(instance) {
       return Number(ex.vs_media_scene_delta(channels >>> 0));
     },
 
+    // 64-bit dHash over caller-supplied RGB/RGBA bytes (no decode in the kernel);
+    // wasm i64 arrives as a signed BigInt and is reinterpreted as u64.
+    computePerceptualDhash64(pixels, width, height, channels = 3) {
+      writeIn1(pixels);
+      return BigInt.asUintN(
+        64,
+        ex.vs_media_perceptual_dhash64(width >>> 0, height >>> 0, channels >>> 0)
+      );
+    },
+
     trackTemporalBoxes(detections = [], queryTimeMs = 0, options = {}) {
       const buf = new ArrayBuffer(detections.length * 24);
       const dv = new DataView(buf);

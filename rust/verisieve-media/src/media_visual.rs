@@ -482,6 +482,40 @@ pub fn compute_frame_scene_delta(frame_a: &[u8], frame_b: &[u8], channels: usize
     l1
 }
 
+/// 64-bit difference hash (dHash) over caller-supplied RGB/RGBA bytes (no decode in the kernel —
+/// PNG/JPEG decode stays in JS). Samples a 9x8 luma grid nearest-neighbor (BT.601 luma, integer),
+/// then sets bit `y*8 + c` iff grid[y][c] > grid[y][c+1] (row y, columns c..c+1).
+/// Returns 0 on empty/degenerate input; near-duplicate frames yield low Hamming distance.
+pub fn compute_dhash64(pixels: &[u8], width: usize, height: usize, channels: usize) -> u64 {
+    if width == 0 || height == 0 || channels < 3 {
+        return 0;
+    }
+    let min_len = width * height * channels;
+    if pixels.len() < min_len {
+        return 0;
+    }
+    let mut grid = [0u8; 72];
+    for gy in 0..8 {
+        let sy = gy * height / 8;
+        for gx in 0..9 {
+            let sx = gx * width / 9;
+            let off = (sy * width + sx) * channels;
+            // BT.601 luma, integer (77+150+29 = 256): exact for R=G=B
+            grid[gy * 9 + gx] =
+                (((pixels[off] as u32) * 77 + (pixels[off + 1] as u32) * 150 + (pixels[off + 2] as u32) * 29) >> 8) as u8;
+        }
+    }
+    let mut hash: u64 = 0;
+    for y in 0..8 {
+        for c in 0..8 {
+            if grid[y * 9 + c] > grid[y * 9 + c + 1] {
+                hash |= 1u64 << (y * 8 + c);
+            }
+        }
+    }
+    hash
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct TimedBox {
     pub time_ms: u32,

@@ -1,0 +1,184 @@
+{
+  "artifact": "results/media-dhash-triage.json",
+  "generatedBy": "node scripts/run-media-dhash-triage-bench.mjs",
+  "fixtureKind": "deterministic SYNTHETIC (seeded LCG screen-share emulation) — no real video-keyframe fixture set exists in-repo",
+  "fixture": {
+    "seed": 20261124,
+    "sequences": 6,
+    "slidesPerSequence": 4,
+    "framesPerSlide": 16,
+    "totalFrames": 384,
+    "frameWidth": 64,
+    "frameHeight": 48,
+    "channels": 3,
+    "jitterModel": "per-pixel luma delta in +/-3 (LCG, seed 20261124)"
+  },
+  "dhashKernel": {
+    "export": "vs_media_perceptual_dhash64",
+    "algorithm": "dHash: 9x8 nearest-neighbor grid, integer BT.601 luma, bit y*8+c set iff grid[y][c] > grid[y][c+1]",
+    "wasmSha256": "C2AD51D1C9CAF09C49D19B07624767EA0A2D48E5E2B026C0D98CC6C592FB39CE",
+    "wasmBytes": 191715
+  },
+  "selector": {
+    "algorithm": "Minoux lazy-greedy coverage maximization with near-duplicate suppression (coverageHamming threshold)",
+    "approximationGuarantee": "at least (1 - 1/e)/2 of optimal coverage — plain lazy-greedy under a cardinality budget; the full (1 - 1/e) is NOT claimed (no Sviridenko partial enumeration implemented)",
+    "coverageHamming": 8
+  },
+  "hashSeparation": {
+    "intraSlideMeanHamming": 4.9,
+    "intraslideMaxHamming": 9,
+    "crossSlideMeanHamming": 37.46,
+    "crossSlideMinHamming": 34,
+    "separateAtHamming": 8
+  },
+  "pruningCurve": [
+    {
+      "budget": 1,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 1,
+      "meanPruningRate": 0.9844,
+      "minPruningRate": 0.9844,
+      "maxPruningRate": 0.9844,
+      "meanLazyGreedyHashComparisons": 64.7
+    },
+    {
+      "budget": 2,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 2,
+      "meanPruningRate": 0.9688,
+      "minPruningRate": 0.9688,
+      "maxPruningRate": 0.9688,
+      "meanLazyGreedyHashComparisons": 76.2
+    },
+    {
+      "budget": 4,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 3.8333333333333335,
+      "meanPruningRate": 0.9401,
+      "minPruningRate": 0.9375,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 103.8
+    },
+    {
+      "budget": 6,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 136
+    },
+    {
+      "budget": 8,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 10,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 12,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 16,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 20,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 24,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    },
+    {
+      "budget": 32,
+      "framesPerSequence": 64,
+      "meanKeyframesSelected": 4.166666666666667,
+      "meanPruningRate": 0.9349,
+      "minPruningRate": 0.9063,
+      "maxPruningRate": 0.9531,
+      "meanLazyGreedyHashComparisons": 139.5
+    }
+  ],
+  "suppressionUnconstrained": [
+    {
+      "sequenceIndex": 0,
+      "frames": 64,
+      "keyframesSelected": 3,
+      "pruningRate": 0.9531
+    },
+    {
+      "sequenceIndex": 1,
+      "frames": 64,
+      "keyframesSelected": 4,
+      "pruningRate": 0.9375
+    },
+    {
+      "sequenceIndex": 2,
+      "frames": 64,
+      "keyframesSelected": 4,
+      "pruningRate": 0.9375
+    },
+    {
+      "sequenceIndex": 3,
+      "frames": 64,
+      "keyframesSelected": 4,
+      "pruningRate": 0.9375
+    },
+    {
+      "sequenceIndex": 4,
+      "frames": 64,
+      "keyframesSelected": 6,
+      "pruningRate": 0.9063
+    },
+    {
+      "sequenceIndex": 5,
+      "frames": 64,
+      "keyframesSelected": 4,
+      "pruningRate": 0.9375
+    }
+  ],
+  "corpusLevel": {
+    "totalFrames": 384,
+    "budget": 24,
+    "meanKeyframesSelected": 20,
+    "pruningRate": 0.9479,
+    "lazyGreedyHashComparisons": 1055
+  },
+  "notes": [
+    "All pruning-rate numbers are measured on the synthetic fixtures above, not assumed.",
+    "\"pruningRate\" = frames not selected as keyframes / total frames (the triage decision)."
+  ]
+}

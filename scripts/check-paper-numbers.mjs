@@ -49,7 +49,7 @@ const P = s => s + '\\%'; // tex percent form
 for (const mod of ['verisieve_clean', 'verisieve_sql', 'verisieve_graph', 'verisieve_dl', 'verisieve_media']) {
   ok(`wasm:${mod}`, comma(statSync(new URL(`vendor/wasm/${mod}.wasm`, ROOT)).size), M);
 }
-ok('wasm:media.caption', '$190{,}873$\\,B', M);
+ok('wasm:media.caption', '$191{,}715$\\,B', M);
 
 /* ---------------- Paper 3: tab:secrets + Exp.3 prose (expR3) ---------------- */
 const R3 = SECRETS.expR3_externalSecrets;

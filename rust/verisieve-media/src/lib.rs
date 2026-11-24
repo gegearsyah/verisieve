@@ -9,7 +9,8 @@
 //! - Deterministic Spoken Inverse Text Normalization (Spoken ITN) with word-span back-pointers
 //! - RIFF WAV PCM16/24/Float32 codec + forensic metadata scrubber + sample-accurate redactor + VAD
 //! - JPEG/PNG/ISOBMFF MP4 metadata scrubbers, RGB/RGBA pixel blur/pixelate/blackout,
-//!   64-bin RGB scene-change detector, and temporal bounding-box tracker
+//!   64-bin RGB scene-change detector, 64-bit dHash perceptual fingerprint, and temporal
+//!   bounding-box tracker
 
 pub mod audio_dsp;
 pub mod cfbf;
@@ -723,6 +724,15 @@ pub extern "C" fn vs_media_scene_delta(channels: u32) -> f32 {
     })
 }
 
+/// Input1: RGB/RGBA pixels (no decode in the kernel). Returns 64-bit dHash as i64 (BigInt in JS).
+#[no_mangle]
+pub extern "C" fn vs_media_perceptual_dhash64(width: u32, height: u32, channels: u32) -> i64 {
+    STATE.with(|cell| {
+        let st = cell.borrow();
+        media_visual::compute_dhash64(&st.in_buf, width as usize, height as usize, channels as usize) as i64
+    })
+}
+
 /// Input1: packed detections [u32 time_ms, u32 track_id, f32 x1, f32 y1, f32 x2, f32 y2] (24B each).
 /// Writes JSON array of active padded PixelBoxes at `query_time_ms` into `meta_json`.
 #[no_mangle]
@@ -963,5 +973,63 @@ mod tests {
         let miss = ring.query_candidate("Confidence", salt, 4, 220, 650, 850, 200);
         assert!(!miss.matched);
         assert_eq!(miss.coupled_score_x1000, 220);
+    }
+
+    /// Known-value vector. Hand-derived 9x8 grayscale grid (R=G=B=v rows so integer BT.601
+    /// luma == v). Bit y*8+c set iff grid[y][c] > grid[y][c+1]; bit c is the c-th bit of byte y
+    /// (LSB-first packing), so byte y = sum over c of grid_compare_c << c:
+    /// row0 increasing -> 0x00 | row1 decreasing -> 0xFF | row2 flat -> 0x00
+    /// row3 "1 0 1 0 .." -> 0x55 | row4 "0 1 0 1 .." -> 0xAA | row5 single spike at c=4 -> 0x10
+    /// row6 "1 0 1 0 .." -> 0x55 | row7 flat -> 0x00
+    #[test]
+    fn test_dhash_known_value_vector() {
+        let rows: [[u8; 9]; 8] = [
+            [0, 8, 16, 24, 32, 40, 48, 56, 64],
+            [64, 56, 48, 40, 32, 24, 16, 8, 0],
+            [100; 9],
+            [10, 0, 10, 0, 10, 0, 10, 0, 10],
+            [0, 10, 0, 10, 0, 10, 0, 10, 0],
+            [128, 128, 128, 128, 200, 128, 128, 128, 128],
+            [200, 128, 200, 128, 200, 128, 200, 128, 200],
+            [25; 9],
+        ];
+        let mut px = Vec::with_capacity(9 * 8 * 3);
+        for row in rows.iter() {
+            for v in row.iter() {
+                px.extend_from_slice(&[*v, *v, *v]);
+            }
+        }
+        let h = media_visual::compute_dhash64(&px, 9, 8, 3);
+        assert_eq!(h, 0x0055_10AA_5500_FF00);
+
+        // 2x2-uniform upscale of the same grid (18x16) must hash identically
+        let mut px2 = Vec::with_capacity(18 * 16 * 3);
+        for y2 in 0..16 {
+            for x2 in 0..18 {
+                let v = rows[y2 / 2][x2 / 2];
+                px2.extend_from_slice(&[v, v, v]);
+            }
+        }
+        assert_eq!(media_visual::compute_dhash64(&px2, 18, 16, 3), h);
+    }
+
+    #[test]
+    fn test_dhash_degenerate_and_invariants() {
+        // Uniform image -> no horizontal gradient -> all bits clear
+        let flat = vec![7u8; 32 * 32 * 3];
+        assert_eq!(media_visual::compute_dhash64(&flat, 32, 32, 3), 0);
+        // Degenerate inputs return 0 rather than panicking
+        assert_eq!(media_visual::compute_dhash64(&[], 4, 4, 3), 0);
+        assert_eq!(media_visual::compute_dhash64(&[0, 0, 0], 0, 8, 3), 0);
+        let small = vec![10u8; 2 * 2 * 3];
+        assert_eq!(media_visual::compute_dhash64(&small, 2, 2, 2), 0); // channels < 3
+        // Near-duplicate (single-pixel luma bump on a smooth field) stays low-Hamming vs
+        // a full gradient flip
+        let grad: Vec<u8> = (0..9 * 8).flat_map(|i| vec![i as u8; 3]).collect();
+        let grad_flip: Vec<u8> = (0..9 * 8).rev().flat_map(|i| vec![i as u8; 3]).collect();
+        let popcnt = |v: u64| v.count_ones();
+        let d_near = popcnt(media_visual::compute_dhash64(&grad, 9, 8, 3)
+            ^ media_visual::compute_dhash64(&grad_flip, 9, 8, 3));
+        assert!(d_near >= 60, "flipped gradient must be far: got {}", d_near);
     }
 }
