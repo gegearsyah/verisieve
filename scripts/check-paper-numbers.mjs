@@ -700,7 +700,7 @@ const K7X = j('track-k7-bm25-contexts.json');
   const gq3 = KH.arms.retrieval.rows.filter(r => r.stratum === 'Q3');
   ok('k7:q3.graph', `Graph-PPR $${gq3.filter(r => r.exact_match).length}$ of $${gq3.length}$`, CG);
   ok('k7:q3.cag', `the cache arm $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$`, CG);
-  ok('k7:cache.unit', `$${K7.cacheUnit.selectedRecords}$ composed per-entity records and $${K7.cacheUnit.prefillTokens}$ prefill tokens`, CG);
+  ok('k7:cache.unit', `$${K7.cacheUnit.selectedRecords}$ composed per-entity records selected by greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons and $${K7.cacheUnit.prefillTokens}$ prefill tokens`, CG);
   ok('k7:cag.overall', `$${P(f1(k7(C7, 'all')))}$ against $${P(f1(graphEm))}$ and $${P(f1(k7(B7, 'all')))}$`, CG);
   ok('k7:cag.q3', `leads on disambiguation ($${P(f1(k7(C7, 'Q3')))}$, $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$)`, CG);
   ok('k7:cag.q1', `trails on single-document questions ($${P(f1(k7(C7, 'Q1')))}$ against BM25's $${P(f1(k7(B7, 'Q1')))}$)`, CG);
@@ -713,6 +713,31 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k7:hybrid.hedge', `at $n{=}${K7.estate.questions}$ this is one estate's measurement`, CG);
   ok('k7:hybrid.prefill', `a mean of $${f0(H7.tokenAccounting.prefillTokensMean)}$ prefill tokens rebuilds the cache per question`, CG);
   ok('k7:hybrid.appended', `still appends only $${H7.tokenAccounting.appendedTokensMean}$ mean tokens`, CG);
+
+  // Exact binomial (Clopper-Pearson) 95% intervals, computed from committed rows
+  const lgamma = (() => { const t = [0]; for (let i = 1; i < 500; i++) t[i] = t[i - 1] + Math.log(i); return n => t[n]; })();
+  const binomCdf = (k, n, p) => { if (k >= n) return 1; if (k < 0) return 0; let s = 0; for (let i = 0; i <= k; i++) s += Math.exp(lgamma(n) - lgamma(i) - lgamma(n - i) + i * Math.log(p) + (n - i) * Math.log(1 - p)); return Math.min(1, Math.max(0, s)); };
+  const solveP = (k, n, target) => { let lo = 0, hi = 1; for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (binomCdf(k, n, m) > target) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const cp95 = (k, n) => [k === 0 ? 0 : solveP(k - 1, n, 0.975), k === n ? 1 : solveP(k, n, 0.025)];
+  const cnt = arm => arm.rows.filter(r => r.exact_match).length;
+  const emAll = arm => f1(100 * cnt(arm) / arm.rows.length);
+  const ci = arm => { const [lo, hi] = cp95(cnt(arm), arm.rows.length); return [f1(100 * lo), f1(100 * hi)]; };
+  const [plo, phi] = ci(KH.arms.retrieval), [blo, bhi] = ci(B7), [clo, chi] = ci(C7), [hlo, hhi] = ci(H7), [mlo, mhi] = ci(KH.arms.composed), [pblo, pbhi] = ci(KH.arms.per_block), [flo, fhi] = ci(KH.arms.flat), [baslo, bashi] = ci(KH.arms.base);
+  ok('k7:ci.ppr', `Graph-PPR $${P(emAll(KH.arms.retrieval))}$, interval $${plo}$ to $${phi}$`, CG);
+  ok('k7:ci.bm25', `BM25 $${P(f1(k7(B7, 'all')))}$, $${blo}$ to $${bhi}$`, CG);
+  ok('k7:ci.cag', `CAG $${P(k7(C7, 'all'))}$, $${clo}$ to $${chi}$`, CG);
+  ok('k7:ci.hybrid', `$${P(k7(H7, 'all'))}$ ($${hlo}$ to $${hhi}$)`, CG);
+  ok('k7:ci.composed', `at $${P(emAll(KH.arms.composed))}$ ($${mlo}$ to $${mhi}$)`, CG);
+  ok('k7:ci.perblock', `against $${P(emAll(KH.arms.per_block))}$ ($${pblo}$ to $${pbhi}$) per-block`, CG);
+  ok('k7:ci.flat', `$${P(emAll(KH.arms.flat))}$ ($${flo}$ to $${fhi}$) flat`, CG);
+  ok('k7:ci.base', `$${P(emAll(KH.arms.base))}$ ($${baslo}$ to $${bashi}$) for the untrained base`, CG);
+  ok('k7:bm25.params', `(Okapi BM25, $k_1{=}${K7X.bm25.k1}$, $b{=}${K7X.bm25.b}$, $${K7X.pool.passages}$ passages`, CG);
+  ok('k7:setcover', `greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons`, CG);
+  ok('k7:abstract.controls', `a lexical BM25 control ties the graph retriever ($${P(f1(k7(B7, 'all')))}$ against $${P(emAll(KH.arms.retrieval))}$, overlapping $95\\%$ intervals at $n{=}${K7.estate.questions}$)`, CG);
+  ok('k7:abstract.cag', `the composed records cached as one fixed unit tie the retrieval arms ($${P(k7(C7, 'all'))}$)`, CG);
+  ok('k7:abstract.hybrid', `answers $${P(k7(H7, 'all'))}$, the strongest arm measured`, CG);
+  ok('k7:abstract.router', `pays off as a retrieval index and, in the strongest measured arm, as a router`, CG);
+  ok('k7:conclusion.router', `and, in the strongest measured arm, as a router ($${P(k7(H7, 'all'))}$ when each question's cache is prefilled from the asked person's own records, against $${P(f1(k7(B7, 'all')))}$ for the lexical control)`, CG);
 }
 
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */

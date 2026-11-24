@@ -418,3 +418,22 @@ layer. Files sha-pinned in the external manifest; zero repository bytes. Details
 hunt note's Section 9.5. Executed by a haiku subagent; lead-verified (stats independently
 recomputed from `wikipedia-fulltext.json`, shas matched, spot checks on the shortest article
 and the redirect entry). Estate construction remains gated.
+
+**2026-11-25 (Paper 4 narrative pass, founder-released):** the paper's story had not absorbed its
+own K7 results: the abstract and conclusion ended at the K3-era reading (retrieval 53.3%, composed
+11.7%) while the strongest measured arm (hybrid routing, 81.7%) lived only in a table row and one
+paragraph. Founder released three artifact-backed edits, no new benchmark runs: (a) the abstract and
+conclusion now carry the measured K7 story (lexical BM25 ties graph-PPR with overlapping intervals,
+so the graph's contribution is not retrieval quality; fixed-cache CAG ties the retrieval arms; hybrid
+routing 81.7% is the strongest arm, scoped as routing given a correctly resolved identity); (b) exact
+binomial (Clopper-Pearson) 95% intervals were computed from the committed per-question artifacts for
+every arm in `tab:k3` and added as an "Uncertainty at n=60" paragraph: the retrieval-and-cache arms
+are statistically indistinguishable (PPR 40.0 to 66.3, BM25 46.5 to 72.4, CAG 38.4 to 64.8), the
+hybrid's 69.6 to 90.5 clears the graph and cache arms' upper bounds and overlaps only BM25's top, and
+the trained arms are separated from every retrieval arm; the interval implementation was validated
+against R's `binom.test` (23/24 two-sided lower 78.88 to four decimals; the certificate's 81.7108 is
+the LTT-calibrated bound, a different calibration, both stated); (c) the K7 methodology sentences
+gained the artifact-backed parameters (Okapi BM25 k1 1.5, b 0.75, 216 passages; greedy set-cover over
+the 52 question persons). Every new number is checker-needled and artifact-derived: the checker
+gained a self-contained Clopper-Pearson implementation (`cp95`) computing the intervals from the
+committed rows, so the needles cannot drift from the artifacts.
