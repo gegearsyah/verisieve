@@ -156,9 +156,15 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 - Commit: `feat(corpus): identity-contrastive pair compilation from the entity index`.
 
 **Stage K3 — Multi-arm head-to-head on the same estate, same budget (GPU; the decisive experiment)**
-- What: arms — (1) flat positional chunks, (2) per-block entity-indexed corpus (today's artifact),
-  (3) composed corpus (K1), (4) composed + identity-contrastive pairs (K2). All readable identity
-  (readable view — the experiment default). Vaulted-cost ablation: one arm re-run on the vaulted
+- What: arms, all at **equal token budget**: (1) flat positional chunks, (2) per-block
+  entity-indexed corpus (today's artifact), (3) composed corpus (K1), (4) composed +
+  identity-contrastive pairs (K2), (5) **retrieval over the same entity graph at inference time,
+  no fine-tuning** (the track-C Graph-PPR path; the graph may pay off more as a retrieval index
+  than as a training format; this skepticism is on the record in Paper 4's claims section and
+  its design cites in-context pretraining and knowledge-capacity results, both pinned), (6)
+  **base model, no fine-tuning**. All training arms readable identity (the experiment default,
+  and where the knowledge claim lives: the vaulted default masks loss on vault spans and can
+  only claim lineage/erasure). Vaulted-cost ablation: one arm re-run on the vaulted
   default (salted IDs + masked spans) — the "what does privacy cost" measurement. Recipe: sealed LoRA r16/α32, steps/lr from the Stage 4
   sweep (record which combo). Eval, per the composition note §5: **closed-book multi-hop recall
   stratified by facts living in 1 vs ≥2 documents** (the direct test of the mechanism's
@@ -188,7 +194,14 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 **Stage K5 — Benchmark families: identity-merge taxonomy + coverage K (CPU)**
 - What: v1's K2+K3, mode-independent. (a) Cross-document identity-merge P/R/F1 with false-merge/
   false-split taxonomy by surface-form difficulty (estate difficulty knob; sub-100 rows by
-  design — Standing Rule: no new all-100 table without a difficulty knob). (b) Knowledge-perception
+  design — Standing Rule: no new all-100 table without a difficulty knob). **Scoring is pairwise +
+  B-cubed precision/recall including false-merge rate, not exact-match-only** (external-critique
+  adoption: 54/54 on planted values is exact matching, not resolution; the estate's own PPRL
+  benchmark already measures 4.88% false links at dev threshold on 500 common names, and that
+  regime is what K5 must measure). Noise set (adoption): typos, nicknames/abbreviations, shared
+  inboxes, same-name collisions, stale records. **Generator-independence rule:** the noisy estate
+  variant must not be authored by the same generator that defines the truth it is scored against,
+  otherwise the benchmark is solved by construction again. (b) Knowledge-perception
   coverage K: % of manifest facts spanning ≥2 documents recoverable from perception output alone,
   at the shipped byte budget (387,267 B), zero egress, byte receipts. Score from perception output
   + existing sample fields only — no further schema change in this stage.
@@ -203,6 +216,15 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 - Gate (founder chooses): public-data estate with independently known entity overlap /
   founder-supplied real documents (never leave the machine) / third-party synthetic with
   hand-verified truth.
+- Verified open-data inventory (2026-11-24, primary sources, lead re-checked the load-bearing
+  licenses): `docs/research-notes/2026-11-24-open-estate-dataset-hunt.md`. Short version: AMI
+  Meeting Corpus (CC BY 4.0, direct download, the only verified corpus with real named-person
+  identity linked across its own modalities), ICSI (CC BY 4.0 at the AMI host, ~70 h more),
+  Enron (1.7 GB, no stated license: internal use fine, redistribution is a founder question),
+  Stack Exchange (92.3 GB CC BY-SA 4.0 bulk). 8 GB is trivially reachable; what exists nowhere is
+  ground-truth cross-corpus identity, so the recommended design is a layered estate: real-identity
+  audio (overlay honestly impossible), overlay-synthesized identities on text/email/docs/
+  spreadsheets (truth by construction), the two layers labeled separately in the manifest.
 - Commit: `feat(bench): open-estate cross-document perception measurement`.
 
 **Stage K7 — Benchmark packaging + baselines (FOUNDER GATES: cloud baseline, release)**
@@ -417,3 +439,30 @@ composed-corpus states (the spec only mandated vaulted); (e) cross-modal = diffe
 extensions. Zero WASM bytes. Same-session adjacent commit: Paper 4 updated with the composition
 section (built/receipted/unmeasured framing, four-arm K3 design, EAE/KEPLER/Multi-News/EmbGen
 related work, zero new numbers — `95c7895`).
+
+**2026-11-24 (external critique relayed by the founder; lead verified every checkable claim
+before acting):** A well-informed external critique of Paper 4's value claims arrived mid-flow.
+Verification first: the critique's repo-specific numbers are real (`pprlFalseLinkRateAtDevThrPct`
+4.8818 in `results/reviewer-secrets-audio-pprl-benchmarks.json`; the track-C Graph-PPR retrieval
+arm; redacted-target LoRA fragility in the track-D line). One claimed citation was wrong from
+memory and was re-pinned on the abs page: the in-context pretraining paper is Shi et al.,
+"In-Context Pretraining: Language Modeling Beyond Document Boundaries" (arXiv:2310.10638), which
+groups related documents into shared training contexts and is genuinely the closest prior art to
+composition; Allen-Zhu & Li knowledge capacity verified as arXiv:2404.05405. **Verdicts and
+actions:** (1) "extracted without error" softened to "extracted exactly on the estate", scoped;
+(2) vaulting-vs-learning stated explicitly: the vaulted default masks loss on vault spans, so it
+claims lineage and exact erasure, not learned names; the knowledge-training claim, if any, lives
+in the readable view, which the comparison runs; (3) `entities` is JSONL metadata in the per-block
+export, the loss sees identity only where a view renders it into tokens; (4) certificate
+circularity stated (detector-closed re-scan, n=24 is small-sample arithmetic); (5) Table 1
+baselines score 0 by construction, real-extractor comparison stated as open work; (6) linking
+unit is the value, not the person, 54/54 is exact matching on planted values; the 4.88% PPRL
+false-link rate entered the paper with a new CI needle (check now 794/0); (7) K3 upgraded to six
+arms at equal token budget: added retrieval-over-the-graph (Graph-PPR) and base-model arms, with
+stated skepticism, and K5 upgraded to pairwise + B-cubed scoring with the noise set
+(typos, nicknames, shared inboxes, name collisions, stale records) and a generator-independence
+rule. The title ("How Training Data Should Look") is the founder's own repositioning and is
+treated as a design-thesis title with the open comparison scoped in the abstract; a rename is a
+founder gate if they want it. Committed: `4ef233f` (paper remediation + bib + needle),
+`72665ed` (open-estate dataset hunt note, also this date; AMI/ICSI licenses re-verified by the
+lead on the source pages).
