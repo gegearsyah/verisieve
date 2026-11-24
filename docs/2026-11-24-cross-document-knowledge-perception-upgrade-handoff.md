@@ -306,3 +306,33 @@ mechanism, pair compiler (K2) readable-first, multi-arm head-to-head (K3) as the
 experiment, false-merge amplification (K4) mandatory, benchmark families demoted to K5 behind the
 mechanism. GPU state at authoring: Stage 4 sweep 6/18 combos; ablation backfill and K3 queued.
 DEVIATIONS: none yet — no K-stage code executed.
+
+**2026-11-24 (Stage K0 — the mode seam, executed same session):** `view.identity:
+'readable' | 'vaulted'` shipped at the existing `buildAmnesiacCorpus(inputs, view)` seam.
+**Vaulted stays the default and is byte-untouched** — the v2 line "default general" was corrected
+before execution (flipping the default would break byte-identical reproduction of every committed
+receipt); the app passes `readable` explicitly. Readable mode: unmasked content (the user's own
+data, names and all), entity anchors = canonical readable identity (`ent:<class>:<canonical>`,
+canonical = lexicographically smallest raw surface form resolving to the entity — deterministic,
+documented in code), no certificate/training-recipe ceremony, plain "provided context" system
+prompt, `receipt.identity: 'readable'`, mode pins the view digest. `eraseEntity` is span-exact in
+readable mode too (raw offsets recorded per sample, internal-only, never emitted into the JSONL),
+with the same loud-failure byte-diff guards. Executed by a sonnet subagent (TDD red→green: Amnesiac
+7/8/9); **lead-verified**: full diff review, suite 9/9, `test:ci` 138+6 green, and 793
+paper-number checks 0 failures with zero check-script edits (the vaulted-regression pin:
+corpus SHA `6c857e0a…`, asserted in Amnesiac 1). Lead fixes on top of the subagent's output:
+(1) readable-id collision is impossible under value-salted identity but would silently merge
+entities if that invariant ever breaks — now asserted loudly at build time; (2) removed a no-op
+tautological assertion the subagent left in Amnesiac 7; (3) the estate's atomic tmp+rename write
+EPERM'd flakily on Windows when two parallel test processes regenerate the estate concurrently
+(rename over a still-open file) — bounded 10×50 ms EPERM retry added to `writeAtomic`; two
+consecutive full `test:ci` runs green after the fix.
+**Deviations recorded:** (a) derived-format entities with no raw offsets fall back to the vault
+token as the readable anchor (placeholder-shaped id on those entities, best-effort, commented —
+fixing it needs perception to emit raw values for derived formats; not blocking); (b) readable
+per-sample diff receipts carry removedSpans only, with removedBytes aggregated in the diff receipt;
+(c) the readable eraseEntity line-delta guard assumes no JSON-escaping length deltas between raw
+span bytes and their serialized form — it fails loudly (never silently) if that ever trips;
+(d) `results/*.json` wallclock fields regenerate on every suite run (pre-existing behavior) —
+committed artifacts restored after verification runs. Zero WASM bytes (pure JS);
+`audit-wasm` allVerified.

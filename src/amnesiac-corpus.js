@@ -4,7 +4,9 @@
  *
  * buildAmnesiacCorpus(inputs, view) → deterministic entity-indexed SFT JSONL: every sample
  *   records its source byte-ranges + entity IDs, carries a gatekeeper certificate, and the
- *   corpus carries SHA-256 receipts pinning the engine version hash.
+ *   corpus carries SHA-256 receipts pinning the engine version hash. `view.identity`
+ *   ('vaulted' = default, unchanged; 'readable' = explicit opt-in general mode: unmasked
+ *   content, canonical readable entity anchors, no certificate ceremony) is part of the view.
  * eraseEntity(state, entityId) → regenerated corpus whose byte-diff vs the original is
  *   exactly the erased entity's spans, proven by a diff receipt that fails loudly
  *   instead of emitting a subtly-wrong corpus.
@@ -35,6 +37,8 @@ export const AMNESIAC_TRAINING_RECIPE = Object.freeze({
 });
 
 const SYSTEM_PROMPT = 'Answer strictly from the provided sanitized context.';
+// Readable (general) mode: the user's own data, their own model — no sanitizer framing.
+const READABLE_SYSTEM_PROMPT = 'Answer strictly from the provided context.';
 const DELTA = 0.05;
 const WORKSPACE_SALT = 'versieve-amnesiac-v1';
 const VAULT_PLACEHOLDER_RX = /^<(?:PII|SECRET):[A-Za-z0-9_]+>$/;
@@ -135,7 +139,7 @@ function sampleLine(s) {
     sourceRange: s.sourceRange,
     entities: s.entities,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: s.system || SYSTEM_PROMPT },
       { role: 'user', content: `Summarize the key record from ${s.source} (${s.role}).` },
       { role: 'assistant', content: s.content },
     ],
@@ -196,6 +200,13 @@ function computeCertificates(samples) {
  * `view` is a declarative projection filter over the perception result ({ sources: [...] }).
  */
 export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
+  // Stage K0 mode seam: `view.identity: 'readable' | 'vaulted'` (vaulted = default, byte-identical
+  // to the pre-seam behavior; readable = explicit opt-in general mode with no privacy machinery).
+  const identity = view?.identity === undefined ? 'vaulted' : view.identity;
+  if (identity !== 'readable' && identity !== 'vaulted') {
+    throw new TypeError(`buildAmnesiacCorpus: view.identity must be 'readable' or 'vaulted', got ${JSON.stringify(identity)}`);
+  }
+  const readable = identity === 'readable';
   const perceived = await perceiveInputs(inputs, { ...options, workspaceSalt: options.workspaceSalt || WORKSPACE_SALT });
   const sourceBytes = collectSourceBytes(inputs);
   const sourceCursors = new Map();
@@ -209,13 +220,17 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
   const samples = [];
   const idSeen = new Set();
   const entityMeta = new Map();
+  // Readable mode bookkeeping: every raw surface value that resolved to each (vault-salted) entity,
+  // for the canonical-anchor rule, and per-sample spans for mechanical span-exact regeneration.
+  const surfaces = readable ? new Map() : null;
 
   for (const blk of rawBlocks) {
     const originalText = String(blk.originalText);
-    const content = String(blk.maskedText ?? '');
+    // Vaulted: masked content (placeholders over the user's own text). Readable: the user's own
+    // text unmasked — names, addresses and secrets included; no protection machinery in the surface.
+    const content = readable ? originalText : String(blk.maskedText ?? '');
     const source = String(blk.source || 'document');
     const role = String(blk.structRole || 'PROSE');
-    const gate = blk.gateAction || 'KEEP_SAFE_REDACTED';
 
     let sourceRange = null;
     const bytes = sourceBytes.get(source);
@@ -241,8 +256,6 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
       meta.occurrences += 1;
     }
 
-    const { detectedCount, detectedClasses } = countDetected(blk.entities || []);
-    const { missedCount, missedClasses } = countMisses(content);
     const baseId = sha256Hex(`${source}\u0000${sourceRange ? sourceRange.join(':') : 'x'}\u0000${sha256Hex(originalText)}`);
     let id = baseId;
     if (idSeen.has(id)) {
@@ -255,20 +268,42 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
       while (idSeen.has(id)) id = sha256Hex(`${baseId}\u0000occ:${dup++}`);
     }
     idSeen.add(id);
-    samples.push({
-      id,
-      source,
-      sourceRange,
-      role,
-      gate,
-      risk: Number((blk.coupledRiskScore ?? 0).toFixed(4)),
-      content,
-      entities,
-      detectedCount,
-      detectedClasses,
-      missedCount,
-      missedClasses,
-    });
+    if (readable) {
+      // Per-sample raw spans (offsets into the unmasked content = originalText) per entity, for
+      // mechanical span-exact erasure. Internal bookkeeping only — never emitted into the JSONL.
+      const blockSpans = {};
+      for (const ent of blk.entities || []) {
+        if (!ent.entityId || !Number.isInteger(ent.start) || !Number.isInteger(ent.end)) continue;
+        const value = originalText.slice(ent.start, ent.end);
+        let list = surfaces.get(ent.entityId);
+        if (!list) {
+          list = [];
+          surfaces.set(ent.entityId, list);
+        }
+        list.push(value);
+        (blockSpans[ent.entityId] ||= []).push([ent.start, ent.end]);
+      }
+      for (const eid of Object.keys(blockSpans)) blockSpans[eid].sort((a, b) => a[0] - b[0]);
+      samples.push({ id, source, sourceRange, role, system: READABLE_SYSTEM_PROMPT, spans: blockSpans, content, entities });
+    } else {
+      const gate = blk.gateAction || 'KEEP_SAFE_REDACTED';
+      const { detectedCount, detectedClasses } = countDetected(blk.entities || []);
+      const { missedCount, missedClasses } = countMisses(content);
+      samples.push({
+        id,
+        source,
+        sourceRange,
+        role,
+        gate,
+        risk: Number((blk.coupledRiskScore ?? 0).toFixed(4)),
+        content,
+        entities,
+        detectedCount,
+        detectedClasses,
+        missedCount,
+        missedClasses,
+      });
+    }
   }
 
   samples.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -276,26 +311,59 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     for (const eid of s.entities) entityMeta.get(eid)?.sampleIds.add(s.id);
   }
 
+  // Canonical readable-anchor rule: among every raw surface form that resolved to the same
+  // entity (full name, titled alias, bare surname spans), the lexicographically smallest
+  // surface value is the canonical anchor — deterministic and independent of mention order.
+  let readableOf = null;
+  if (readable) {
+    readableOf = new Map();
+    for (const m of entityMeta.values()) {
+      const values = (surfaces.get(m.entityId) || []).filter((v) => v.trim() !== '').sort();
+      // best effort when a derived-format input records an entity with no raw offsets
+      const canonical = values[0] ?? m.token ?? m.entityId;
+      readableOf.set(m.entityId, { id: `ent:${m.class.toLowerCase()}:${canonical}`, canonical });
+    }
+    // Distinct vaulted entities cannot share a raw surface value (value-salted identity: same
+    // string → same vault ID → one entity), so readable ids are unique by construction. If that
+    // invariant ever breaks, collisions would silently merge entities — fail loudly instead.
+    const uniqueIds = new Set([...readableOf.values()].map((r) => r.id));
+    if (uniqueIds.size !== readableOf.size) {
+      throw new Error('buildAmnesiacCorpus: readable identity collision — distinct entities mapped to one readable id');
+    }
+    for (const s of samples) {
+      s.entities = s.entities.map((eid) => readableOf.get(eid)?.id ?? eid);
+      if (s.spans) {
+        const remapped = {};
+        for (const [eid, spans] of Object.entries(s.spans)) remapped[readableOf.get(eid)?.id ?? eid] = spans;
+        s.spans = remapped;
+      }
+    }
+  }
+
   const entityIndex = [...entityMeta.values()]
-    .map((m) => ({
-      entityId: m.entityId,
-      class: m.class,
-      token: m.token,
-      sampleIds: [...m.sampleIds].sort(),
-      occurrences: m.occurrences,
-    }))
+    .map((m) => {
+      if (readable) {
+        const r = readableOf.get(m.entityId);
+        return { entityId: r.id, class: m.class, token: r.canonical, sampleIds: [...m.sampleIds].sort(), occurrences: m.occurrences };
+      }
+      return { entityId: m.entityId, class: m.class, token: m.token, sampleIds: [...m.sampleIds].sort(), occurrences: m.occurrences };
+    })
     .sort((a, b) => (a.entityId < b.entityId ? -1 : 1));
 
   const jsonl = serialize(samples);
-  const certificates = computeCertificates(samples);
   const receipt = {
     engine: AMNESIAC_ENGINE_VERSION,
     engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
     corpusSha256: sha256Hex(jsonl),
     sampleCount: samples.length,
     entityCount: entityIndex.length,
+    ...(readable ? { identity } : {}),
     viewDigest: sha256Hex(JSON.stringify(view ?? null)),
   };
+  // Readable mode has no certificate ceremony and no placeholder-masking recipe: the general
+  // mode emits none of the vault's protection machinery, only the corpus and its receipt.
+  if (readable) return { jsonl, samples, entityIndex, receipt };
+  const certificates = computeCertificates(samples);
   return { jsonl, samples, entityIndex, certificates, trainingRecipe: AMNESIAC_TRAINING_RECIPE, receipt };
 }
 
@@ -319,11 +387,43 @@ export function eraseEntity(state, entityId) {
   }
 
   const token = entry.token;
+  // Readable mode erases by raw byte spans (mechanical regeneration; no protection claim);
+  // vaulted mode erases by token occurrences over masked content.
+  const readable = state.receipt.identity === 'readable';
   const changed = [];
   const regeneratedSamples = [];
   for (const s of state.samples) {
     if (!s.entities.includes(entityId)) {
       regeneratedSamples.push(s);
+      continue;
+    }
+    if (readable) {
+      const spans = (s.spans && s.spans[entityId]) || [];
+      if (spans.length === 0) {
+        throw new Error(`eraseEntity: sample ${s.id} lists readable entity ${entityId} but records no raw spans — rebuild the readable corpus instead of emitting a subtly-wrong one`);
+      }
+      let erasedContent = s.content;
+      let removedBytes = 0;
+      for (const [start, end] of spans.slice().sort((a, b) => b[0] - a[0])) {
+        erasedContent = erasedContent.slice(0, start) + erasedContent.slice(end);
+        removedBytes += end - start;
+      }
+      const spansWithoutEntity = { ...(s.spans || {}) };
+      delete spansWithoutEntity[entityId];
+      const regenerated = {
+        ...s,
+        content: erasedContent,
+        entities: s.entities.filter((e) => e !== entityId),
+        spans: spansWithoutEntity,
+      };
+      const oldLine = JSON.stringify(sampleLine(s));
+      const newLine = JSON.stringify(sampleLine(regenerated));
+      const expectedDelta = -(removedBytes + (JSON.stringify(s.entities).length - JSON.stringify(regenerated.entities).length));
+      if (newLine.length - oldLine.length !== expectedDelta) {
+        throw new Error(`eraseEntity: byte-diff for sample ${s.id} exceeds the erased entity's spans — failing loudly instead of emitting a subtly-wrong corpus`);
+      }
+      regeneratedSamples.push(regenerated);
+      changed.push({ id: s.id, removedSpans: spans.length, removedBytes });
       continue;
     }
     const occurrences = s.content.split(token).length - 1;
@@ -364,24 +464,32 @@ export function eraseEntity(state, entityId) {
 
   const regeneratedEntityIndex = state.entityIndex.filter((e) => e.entityId !== entityId);
   const jsonl = serialize(regeneratedSamples);
-  const certificates = computeCertificates(regeneratedSamples);
   const receipt = { ...state.receipt, corpusSha256: sha256Hex(jsonl), entityCount: regeneratedEntityIndex.length };
+  const removedSpanCount = changed.reduce((n, c) => n + c.removedSpans, 0);
+  // Readable surfaces can diverge from one canonical token (aliases), so removed bytes are the
+  // raw span bytes; vaulted surfaces are exact token occurrences.
+  const removedSpanBytes = readable
+    ? changed.reduce((n, c) => n + c.removedBytes, 0)
+    : removedSpanCount * token.length;
   const diffReceipt = {
     erasedEntityId: String(entityId),
     erasedClass: entry.class,
-    erasedToken: token,
+    erasedToken: readable ? entry.token : token,
     engine: AMNESIAC_ENGINE_VERSION,
     engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
     changedSampleIds: changed.map((c) => c.id).sort(),
     unchangedSampleCount: state.samples.length - changed.length,
-    removedSpanCount: changed.reduce((n, c) => n + c.removedSpans, 0),
-    removedSpanBytes: changed.reduce((n, c) => n + c.removedSpans, 0) * token.length,
-    perSample: changed.sort((a, b) => (a.id < b.id ? -1 : 1)),
+    removedSpanCount,
+    removedSpanBytes,
+    perSample: changed.map((c) => (readable ? { id: c.id, removedSpans: c.removedSpans } : c)).sort((a, b) => (a.id < b.id ? -1 : 1)),
     corpusSha256Before: state.receipt.corpusSha256,
     corpusSha256After: receipt.corpusSha256,
     diffVerified: true,
   };
   diffReceipt.diffReceiptSha256 = sha256Hex(JSON.stringify(diffReceipt));
+  // Readable mode carries no certificate ceremony; erasure is plain mechanical regeneration.
+  if (readable) return { jsonl, samples: regeneratedSamples, entityIndex: regeneratedEntityIndex, receipt, diffReceipt };
+  const certificates = computeCertificates(regeneratedSamples);
   return {
     jsonl,
     samples: regeneratedSamples,

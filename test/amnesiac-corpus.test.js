@@ -60,6 +60,9 @@ test('Amnesiac 1: determinism — two builds with identical inputs produce byte-
     assert.ok(Array.isArray(s.entities), `sample ${s.id} must record its entity IDs`);
   }
 
+  // vaulted-regression pin: the default (no `identity` in view) corpus SHA must stay byte-identical to the committed artifact era
+  assert.equal(a.receipt.corpusSha256, '6c857e0a0ea10daff6b2c6a9d2bb921a858edebabd3c29c621d8cb4c324411cd');
+
   // receipts pin the engine version hash
   assert.equal(a.receipt.engine, AMNESIAC_ENGINE_VERSION);
   assert.equal(a.receipt.engineVersionSha256, AMNESIAC_ENGINE_VERSION_SHA256);
@@ -236,4 +239,131 @@ test('Amnesiac 6: repeated derived-format blocks disambiguate instead of abortin
   const erased = eraseEntity(state, 'ent:person:repeat01');
   assert.equal(erased.receipt.entityCount, 0, 'the regenerated receipt must state the post-erasure entity count, not the pre-erasure one');
   assert.equal(erased.diffReceipt.diffVerified, true);
+});
+
+// Stage K0 — the mode seam: `identity: 'readable'` is the explicit opt-in general mode
+// (no vault ceremony; vaulted stays the default so committed receipts reproduce byte-identically).
+const READABLE_VIEW = { identity: 'readable' };
+
+const ALIAS_INPUTS = [
+  // Intra-block titled-surname coreference: "Elena Vance" and "Ms. Vance" resolve to one entity
+  // (the vault's canonicalAlias link), giving that entity two distinct raw surface forms.
+  { name: 'reviews/lead.txt', text: 'Elena Vance led the quarterly review, and Ms. Vance approved the budget.' },
+];
+
+test('Amnesiac 7: readable identity — determinism, unmasked content, readable anchors, no vault ceremony, mode pins the view hash', async () => {
+  const a = await buildAmnesiacCorpus(INPUTS, READABLE_VIEW);
+  const b = await buildAmnesiacCorpus(INPUTS, READABLE_VIEW);
+
+  assert.equal(a.jsonl, b.jsonl, 'two readable builds with identical inputs must be byte-identical');
+  assert.deepEqual(a.receipt, b.receipt, 'readable receipts must be deterministic across identical runs');
+  assert.equal(a.receipt.corpusSha256, sha256Hex(a.jsonl), 'the readable corpus receipt must pin the exact emitted bytes');
+  assert.equal(a.receipt.identity, 'readable', 'the readable receipt must record its mode');
+
+  // no privacy machinery in the product surface: zero placeholders, real names in the bytes
+  assert.ok(!a.jsonl.includes('<PII:'), 'readable corpus must contain zero <PII:…> placeholders');
+  assert.ok(!a.jsonl.includes('<SECRET:'), 'readable corpus must contain zero <SECRET:…> placeholders');
+  assert.ok(a.jsonl.includes('Ravi Chandra'), 'readable corpus must contain the real entity names');
+  // readable mode carries the user's own data unmasked; no protection claim
+  assert.ok(a.jsonl.includes('ghp_0123456789abcdefghijklmnopqrstuvwxyzAB'), 'readable mode does not mask or quarantine anything');
+
+  // readable anchors are canonical resolved identities, not salted digests
+  assert.ok(a.entityIndex.length >= 2, 'readable corpus must index entities');
+  for (const e of a.entityIndex) {
+    assert.doesNotMatch(e.entityId, /^ent:[a-z_]+:[0-9a-f]{16}$/, 'readable entity IDs must not be vault-salted digests');
+    assert.ok(e.token && !e.token.startsWith('<'), `readable anchor token ${e.token} must be a plain canonical value`);
+  }
+  const person = a.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(person.entityId.includes('Ravi Chandra'), 'the PERSON readable anchor must embed the canonical name');
+
+  // no certificate ceremony in the readable output
+  assert.ok(!('certificates' in a), 'readable output must omit the certificate ceremony');
+  assert.ok(!('trainingRecipe' in a), 'readable output must omit the placeholder-masking training recipe');
+
+  // the mode is part of the view hash: same inputs, different mode → different corpus SHA
+  const vaulted = await buildAmnesiacCorpus(INPUTS);
+  assert.notEqual(a.receipt.corpusSha256, vaulted.receipt.corpusSha256, 'readable and vaulted views must produce different corpus receipts');
+  assert.notEqual(a.receipt.viewDigest, vaulted.receipt.viewDigest, 'the mode must be part of the view digest');
+});
+
+test('Amnesiac 8: readable erasure — regeneration is mechanical and the byte-diff is exactly the erased entity spans', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS, READABLE_VIEW);
+  const person = corpus.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(person, 'readable corpus must index the PERSON entity');
+  assert.ok(person.sampleIds.length >= 2, 'the PERSON entity must span multiple samples');
+
+  const before = corpus.jsonl;
+  const after = eraseEntity(corpus, person.entityId);
+  assert.equal(after.receipt.identity, 'readable', 'erasure must stay in the readable mode of its corpus');
+
+  const beforeLines = linesOf(before);
+  const afterLines = linesOf(after.jsonl);
+  assert.equal(afterLines.length, beforeLines.length, 'readable erasure must not add or drop samples');
+
+  const changedIds = new Set(after.diffReceipt.changedSampleIds);
+  assert.equal(changedIds.size, person.sampleIds.length, 'erasure must regenerate exactly the samples referencing the erased entity');
+  assert.equal(after.diffReceipt.unchangedSampleCount, beforeLines.length - changedIds.size);
+
+  const id = person.entityId;
+  let totalSpanBytes = 0;
+  for (let i = 0; i < beforeLines.length; i++) {
+    const oldSample = corpus.samples[i];
+    const newSample = after.samples[i];
+    assert.equal(newSample.id, oldSample.id, 'sample identity must survive readable erasure');
+    if (!changedIds.has(oldSample.id)) {
+      assert.equal(afterLines[i], beforeLines[i], `unchanged sample ${oldSample.id} must remain byte-identical after readable erasure`);
+      continue;
+    }
+    const spans = oldSample.spans[id];
+    assert.ok(spans.length >= 1, `changed sample ${oldSample.id} must record the erased entity spans`);
+    const spanBytes = spans.reduce((n, [s, e]) => n + (e - s), 0);
+    totalSpanBytes += spanBytes;
+    // byte-diff arithmetic: exactly the spans removed plus the entity id entry dropped, nothing else
+    const lineDelta = afterLines[i].length - beforeLines[i].length;
+    const expected = -(spanBytes + (JSON.stringify(oldSample.entities).length - JSON.stringify(newSample.entities).length));
+    assert.equal(lineDelta, expected, `changed sample ${oldSample.id} line diff must equal its erased spans plus the dropped entity id`);
+    // the regenerated content is exactly the original minus those byte spans
+    let expectedContent = oldSample.content;
+    let cut = 0;
+    for (const [s, e] of spans.slice().sort((x, y) => x[0] - y[0])) {
+      expectedContent = expectedContent.slice(0, s - cut) + expectedContent.slice(e - cut);
+      cut += e - s;
+    }
+    assert.equal(newSample.content, expectedContent, 'readable erasure must remove exactly the recorded entity spans');
+    assert.deepEqual(newSample.entities, oldSample.entities.filter((e) => e !== id), 'entity list diff must drop exactly the erased entity');
+    assert.equal(after.diffReceipt.diffVerified, true);
+  }
+
+  assert.equal(after.diffReceipt.removedSpanBytes, totalSpanBytes, 'diff receipt must state the exact removed span bytes');
+  assert.equal(after.diffReceipt.removedSpanCount, after.diffReceipt.perSample.reduce((n, p) => n + p.removedSpans, 0));
+
+  // spans are actually gone from the bytes
+  assert.ok(!after.jsonl.includes('Ravi Chandra'), 'the erased canonical name must be gone from the regenerated bytes');
+
+  const after2 = eraseEntity(corpus, person.entityId);
+  assert.equal(after2.jsonl, after.jsonl, 'readable erasure must be deterministic');
+  assert.equal(corpus.jsonl, before, 'eraseEntity must not mutate the original readable corpus state');
+});
+
+test('Amnesiac 9: readable canonical-anchor rule — one resolved entity with multiple surface forms gets one stable anchor across builds', async () => {
+  const view = { identity: 'readable' };
+  const a = await buildAmnesiacCorpus(ALIAS_INPUTS, view);
+  const b = await buildAmnesiacCorpus(ALIAS_INPUTS, view);
+
+  const person = a.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(person, 'the alias-estate readable corpus must index the PERSON entity');
+  assert.equal(person.entityId, b.entityIndex.find((e) => e.class === 'PERSON').entityId, 'the same resolved entity must get the same readable anchor every build');
+  assert.equal(person.token, b.entityIndex.find((e) => e.class === 'PERSON').token, 'the canonical token must be stable across builds');
+
+  // canonical rule: the lexicographically smallest surface form resolving to the entity
+  // ("Elena Vance" is the smallest of the "Elena Vance" full-name + "Ms. Vance" titled surfaces)
+  assert.equal(person.token, 'Elena Vance', 'the canonical anchor must be the lexicographically smallest surface form');
+  assert.ok(person.entityId.includes('Elena Vance'), 'the readable anchor must embed the canonical value');
+
+  // both surfaces were spans of the same resolved entity
+  const before = a.jsonl;
+  const erased = eraseEntity(a, person.entityId);
+  assert.ok(!erased.jsonl.includes('Elena Vance'), 'erasure must remove the full-name surface');
+  assert.ok(!erased.jsonl.includes('Ms. Vance'), 'erasure must remove the titled-surname surface');
+  assert.equal(a.jsonl, before, 'erasure must not mutate the original state');
 });

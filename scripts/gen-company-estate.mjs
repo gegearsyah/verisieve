@@ -356,7 +356,17 @@ export function generateEstate() {
   const writeAtomic = (abs, data) => {
     const tmp = `${abs}.tmp-${process.pid}`;
     fs.writeFileSync(tmp, data);
-    fs.renameSync(tmp, abs);
+    // Windows EPERMs rename over a file another parallel test process still has open; it is
+    // transient, so retry briefly instead of failing the whole suite.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        fs.renameSync(tmp, abs);
+        return;
+      } catch (e) {
+        if (e.code !== 'EPERM' || attempt >= 10) throw e;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+      }
+    }
   };
   const fileRecords = [];
   const textsByPath = new Map();
