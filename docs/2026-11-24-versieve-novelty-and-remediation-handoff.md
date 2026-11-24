@@ -11,6 +11,11 @@
 
 *Positioning note:* the "Leakage-Certified Scene Perception" research bet (see research notes) is not the product — it is the **certificate layer** that makes deliverable 4's "without any leakage" provable instead of marketing. The market framing above is the thesis; the science serves it.
 
+**Adopted identity mechanism (founder gate Q5, closed 2026-11-24): "Amnesiac Corpus"**
+> *Every training corpus is a deterministic, entity-indexed projection of your company's connection graph, so an erasure request provably regenerates the corpus minus that entity — and a fresh audited LoRA adapter trains on it in minutes — with zero data leaving the machine.*
+
+Honest-framing rules (binding, from the novelty research): certificates are stated as **certified detection recall per entity class at stated confidence + measured canary exposure** — never "DP", never "provable anonymity"; the erasure claim **always bundles the adapter retrain** (corpus erasure alone ≠ Article 17 model erasure). Evidence: the wedge is verified empty and the buyer pains verified real in [2026-11-24-company-brain-market-landscape.md](research-notes/2026-11-24-company-brain-market-landscape.md) and [2026-11-24-company-brain-novelty-mechanisms.md](research-notes/2026-11-24-company-brain-novelty-mechanisms.md) — no competitor sells client-side whole-estate ingestion, corpus+graph as one deliverable, or certified zero-leakage training data; all prior erasure work (SISA 1912.03817, Eternal Sunshine 1911.04933, Amnesiac 2010.10981, LoRA unlearning 2411.08443) operates on the *model*, nobody on the *corpus*.
+
 **Inputs this handoff was written from (all checked in):**
 - [docs/research-notes/2026-11-24-argon-parity-feasibility-audit.md](2026-11-24-argon-parity-feasibility-audit.md) — codebase reality check; every reviewer claim tested against raw JSONs
 - [docs/research-notes/2026-11-24-argon-parity-literature-review.md](2026-11-24-argon-parity-literature-review.md) — primary-source verdicts on every statistical/citation claim
@@ -101,9 +106,12 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - Abort: if the OpenRouter agent errors, fall back to local judges for the run and record the deviation — do not block the epoch sweep.
 - Commit: `feat(paper3): DeepSeek agent-swarm judge + PT-LM epoch/lr sweep`.
 
-**Stage 5 — GATE: adopt the Company-Brain thesis (product-first, certificate-backed)**
-- **Founder gate — ask, never assume.** Adopt the product thesis: **Versieve = the client-side Company Brain** — (1) perfect omnimodal capture, (2) cross-source/cross-department connection graph, (3) zero egress, (4) connection visualization + training-ready JSONL with zero leakage. The scientific mechanism claim underneath deliverable 4 is **"Leakage-Certified Scene Perception"** (every scene-graph element carries a finite-sample non-leakage certificate computed by the same O(1) sketch that persists entity identity, in a <500 KB zero-egress kernel), with **SREM** as its mechanism chapter. Before asking, the lead runs the one unresolved prior-art check (the C-P3L "conformal PII sanitization" question) so the gate is decided on complete information.
-- No commit; this decision rewrites Stage 6–10 framing.
+**Stage 5 — Build the Amnesiac Corpus core (the identity mechanism; gate closed 2026-11-24)**
+- What: at the `perceiveMulti()` level, add ONE new seam — the Amnesiac Corpus API: `buildAmnesiacCorpus(inputs, view)` → deterministic, entity-indexed SFT JSONL (each sample records its source byte-ranges and entity IDs) + per-sample gatekeeper certificates + SHA-256 receipts; `eraseEntity(state, entityId)` → regenerated corpus whose **byte-diff vs the original is exactly the erased entity's spans**, plus a diff receipt. Version-pin determinism (same inputs + same engine version → byte-identical corpus; receipts carry the version hash). The formal spec lives in the issue tracker (see Stage 5a).
+- Verify: TDD at the new seam (red → green): determinism test (two runs → identical bytes), erasure test (byte-diff = entity spans exactly), certificate test (injected PII → pass rate vs. stated confidence), zero-egress assertion (no network calls in the corpus path); `npm run test:ci`; `audit-wasm` unchanged.
+- Abort: if determinism breaks under kernel/source drift, stop and pin the versioning receipt — never hand-wave "deterministic".
+- Commit: `feat(amnesiac): entity-indexed deterministic corpus builder + provable erasure + certificates`.
+- **Stage 5a — Publish the implementation spec** (to-spec skill): the spec for the Amnesiac Corpus API, its seams, user stories, and testing decisions goes to the GitHub issue tracker with the `ready-for-agent` label; link it from this handoff's run record.
 
 **Stage 6 — Vector-side perception (pure JS; zero WASM bytes)**
 - What: `parsePptxBuffer` extracts `<p:cxnSp>` connector arrows (`diagramEdges`) and `ppt/charts/chart*.xml` series (`chartSeries`); PDF content-stream vector-path parsing (`m/l/re/S/f`) for ruling-line tables in born-digital PDFs; wire edges into `verisieve_graph.wasm` (edge types already exist).
@@ -126,11 +134,10 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - Verify: `cargo test`; a synthetic 2-speaker fixture with known turn boundaries → purity ≥ target set by the founder; `audit-wasm` size check (24 KB headroom is shared with Stage 8 — if exceeded, GATE the size ceiling).
 - Commit: `feat(media-wasm): F0/prosody + speaker clustering-lite on PCM`.
 
-**Stage 10 — Argon-Perceive-Bench v1 + the Company-Brain slice + paper updates**
-- What: 6 workspaces with **GT-by-construction** (no "Argon oracle" at runtime; Argon is the inspiration and one static reference column only, if the founder wants it); **Workspace 4 is keyframes + WAV + VTT — no mp4-decode claim** (video decode stays fail-closed external); anti-circularity CI assertion on every workspace (no GT token may reach any seed argument — the codebase has already demonstrated this failure mode once); frame the benchmark around the adopted thesis: coverage/leakage certificates per scene-graph element, byte-budget frontier (50/215/500 KB), ablations vs Presidio / PerceptFence-style rules / plain Bloom / unbounded dictionary.
-- **Company-Brain slice (the product demo this all exists for):** Workspace 6 extended into the founder's four-pillar story — ingest a mock company's mixed estate (SQL dump, CSVs, meeting WAV+transcript, notes, proposal decks, email), then demonstrate: (P1) capture across all of them; (P2) **cross-department linking** — SR-MP ring + graph PPR/louvain surface that IT's and Business's "similar" data are the same entities/records, emitted as the connection graph; (P3) zero-egress receipt for the whole run; (P4) two exports off `perceiveMulti()`'s existing graph-index/SFT-JSONL plumbing: a **connection-graph visualization artifact** (serialized graph + rendered figure, dataviz skill first) and **training-ready JSONL with per-span leakage certificates**.
-- Verify: `node scripts/eval-argon-parity-benchmark.mjs` → `results/argon-parity-benchmark.json`; `npm run test:ci`; `check-paper-numbers.mjs` green; papers + README updated; figures follow the dataviz skill.
-- Commit: `feat(bench): Argon-Perceive-Bench v1 + company-brain slice (GT-by-construction, anti-circularity)` then `docs(papers): Phase II results`.
+**Stage 10 — Amnesiac Corpus ablation + Company-Brain slice + browser graph + paper updates**
+- What: the **proving ablation** for the mechanism (from the novelty research): synthetic multi-department estate (SQL dump, CSVs, meeting WAV+transcript, notes, proposal decks, email — P1 capture across all); deletion requests at **1/5/20% of entities**; measure (a) byte-diff of regenerated corpus = exactly the erased spans, (b) **adapter retrain wall-clock vs. full retrain** (deterministic seeded LoRA, the PT-LM recipe), (c) **Carlini canary exposure pre/post retrain (target ≤ chance)**, (d) per-sample certificate pass rate vs. injected PII — **head-to-head against SISA and approximate LoRA unlearning**. Plus: (P2) cross-department linking surfaced via SR-MP ring + graph PPR/louvain (IT's and Business's "similar" data shown as the same entities); (P3) zero-egress receipt for the whole run; (P4) the **connection graph rendered live in the browser** (Rtio sandbox, per founder ruling Q3) plus the training-ready JSONL export with per-sample certificates. Argon-Perceive-Bench v1 runs alongside: 6 workspaces, GT-by-construction, **Workspace 4 = keyframes + WAV + VTT (no mp4-decode claim)**, anti-circularity CI assertion on every workspace.
+- Verify: ablation lands in `results/amnesiac-corpus-ablation.json` + figures (dataviz skill first); `node scripts/eval-argon-parity-benchmark.mjs` → `results/argon-parity-benchmark.json`; `npm run test:ci`; `check-paper-numbers.mjs` green; papers + README updated with the honest-framing rules (no "DP", no "provable anonymity", no "first").
+- Commit: `feat(bench): Amnesiac Corpus ablation + company-brain slice + Argon-Perceive-Bench v1` then `docs(papers): Amnesiac Corpus results`.
 - GATE: pushing to `main` — founder decides.
 
 ---
@@ -156,6 +163,8 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 8. Judge egress discipline: only sanitized eval outputs to the DeepSeek agent; strip think blocks; canaries never leave.
 9. R1-style reasoning models are unstable for rubric judging — pin the rubric, parse only the final verdict.
 10. The reviewer's banned words ("mathematically grounded", "eliminates", "first") will keep coming back in drafts — grep for them in Stage 1 CI too.
+11. **Amnesiac Corpus rejection risks** (from the novelty research, design against them): (a) corpus erasure ≠ model erasure under Art 17 — the claim must always bundle the deterministic adapter retrain; (b) redaction ≠ DP — CLIOPATRA-class attacks (2603.09781) break layered-redaction overclaims, LeakageBench (2609.02207) shows localized redaction still leaks; (c) "just engineering" dismissal — answer with the ablation, not adjectives; (d) determinism breaks under kernel/source drift — version-pinned receipts are the defense; (e) GraphGen adjacency (2505.20416) — the novelty is erasure-compliant deterministic regeneration, not KG→text generation.
+12. Architecture split (founder ruling Q3, 2026-11-24): browser (Rtio sandbox) = perception, connection-graph visualization, export; company machines = corpus lifecycle + LoRA training. Zero-cloud is the invariant; zero-import WASM is required only for the shipping library kernels.
 
 ## 6. Founder Gates
 
@@ -165,7 +174,8 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 | Naming: "Versieve" prose / `verisieve` identifiers | SETTLED 2026-11-24 |
 | Cloud DeepSeek agent-swarm judging of sanitized outputs | SETTLED 2026-11-24 (yes — judging only) |
 | Real JOIN in the Rust SQL kernel (option B) | SETTLED 2026-11-24 (B) |
-| Adopt the Company-Brain thesis (product-first; "Leakage-Certified Scene Perception" as the certificate layer) | **OPEN — Stage 5** |
+| Adopt the Company-Brain thesis (product-first; "Leakage-Certified Scene Perception" as the certificate layer) | SETTLED 2026-11-24 |
+| Adopt "Amnesiac Corpus" as the identity mechanism (gate Q5) | SETTLED 2026-11-24 (yes — the one mechanism) |
 | Size-ceiling renegotiation (media 215 KB / total <400 KB) | **OPEN — triggers on Stage 8/9 overflow** |
 | Push to `main` | **OPEN — end of Stage 10** |
 
@@ -176,6 +186,9 @@ Owners: lead = this session's model; subagents = haiku default, sonnet on one fa
 - [ ] TAB SR-MP reported with paired test, dumb coreference baseline, isolated τ=0.70 row from real data; losing rows not omitted.
 - [ ] Paper 3 graded by DeepSeek agent swarm + local-judge agreement column; PT-LM epoch/lr sweep reported; hyperparameters and OOS column in the paper.
 - [ ] Novelty thesis adopted (gate closed) and the C-P3L prior-art question resolved.
+- [ ] Amnesiac Corpus spec published to the issue tracker with `ready-for-agent`.
+- [ ] Amnesiac Corpus core built at one new seam: deterministic entity-indexed corpus, provable erasure (byte-diff = erased spans exactly), per-sample certificates, version-pinned determinism receipts.
+- [ ] Amnesiac ablation run: 1/5/20% entity deletion vs SISA and approximate LoRA unlearning — byte-diff, retrain wall-clock, canary exposure at chance, certificate pass rate.
 - [ ] Vector diagram/chart extraction, SQL JOIN, dHash triage, prosody kernel shipped behind green TDD + unchanged import discipline (`audit-wasm` allVerified).
 - [ ] Argon-Perceive-Bench v1 runs end-to-end GT-by-construction with anti-circularity CI; no mp4-decode claim.
 - [ ] Company-Brain slice demonstrated: mixed-estate ingestion → cross-department link discovery (IT ↔ Business) → connection-graph visualization → training-ready JSONL with leakage certificates, zero egress.
