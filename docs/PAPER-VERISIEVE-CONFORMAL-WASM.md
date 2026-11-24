@@ -19,7 +19,7 @@ We report a comprehensive systems measurement across **1,207 real public benchma
 We evaluate four core system races and report both empirical wins and four honest null boundaries:
 1. **Race 1 (PDF Ingestion):** Direct byte-stream extraction recovers clean ASCII in 11.2 ms (0.0% CER), but 4 of 8 clinical PDFs utilize CIDFont Identity-H ToUnicode tables where raw stream parsing yields 0 valid ASCII lines, requiring automated fallback to 2D-tiled OCR ($512\times 512$ canvas with seam deduplication, achieving 96.4% recall on 199 FUNSD forms).
 2. **Race 2 (PII Disambiguation):** Context-aware regex reduces biomedical false-positive corruption on PubMedQA from 13.8% to 11.6% (1.4% on core clinical nouns), but reaches an honest rule-based ceiling of 45.1% recall on unstructured bare international names in `ai4privacy-200k` (vs >95% on structured email/phone/IP/cards).
-3. **Race 3 (Conformal Gatekeeper Calibration):** On 1,207 real public documents (50/25/25 split), Learn-Then-Test guarantees zero test false alarms at $\delta=0.05$ across $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$, but finite-sample binomial constraints at $\alpha=0.01$ permit exactly $k=0$ calibration errors ($\operatorname{BinomCDF}(0; 301, 0.01) = 0.0486 \le 0.05$), forcing $\tau_{\text{keep}} \ge 0.51$ and an expanded 24.2% human review abstention zone.
+3. **Race 3 (Conformal Gatekeeper Calibration):** On 1,207 real public documents (50/25/25 split), Learn-Then-Test guarantees zero test false alarms at $\delta=0.05$ across $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$, but finite-sample binomial constraints at $\alpha=0.01$ permit exactly $k=0$ calibration errors ($\mathrm{BinomCDF}(0; 301, 0.01) = 0.0486 \le 0.05$), forcing $\tau_{\text{keep}} \ge 0.51$ and an expanded 24.2% human review abstention zone.
 4. **Race 4 (Substrate Performance & Downstream Scaling):** In same-session substrate benchmarks, pure WebAssembly achieves cold-start initialization in 1.6 ms (54.8 MB RSS, 60.1 KB core), outpacing local Python (7,155 ms, 434 MB RSS) by $>4,000\times$, while compiled native C99 (`gcc -O3`) executes hot-loop 520-dimensional inference in 0.80 ms, outperforming pure JavaScript/WASM (2.08 ms) by $2.6\times$ (published as an honest JavaScript loss). Downstream model training on the certified safe shard inside `verisieve_dl.wasm` improves validation loss monotonically from 0.312 to 0.164 with 0.0% PII exposure.
 
 ---
@@ -141,7 +141,7 @@ VeriSieve maps every input image onto an isometric square canvas:
 $$\mathcal{C} = [0, 512] \times [0, 512]$$
 Given an input raster of width $w$ and height $h$, the global isotropic scaling factor $s$ is:
 $$s = \frac{512}{\max(w, h)}$$
-The scaled dimensions are $w' = \operatorname{round}(w \cdot s)$ and $h' = \operatorname{round}(h \cdot s)$, with symmetric centering offsets:
+The scaled dimensions are $w' = \mathrm{round}(w \cdot s)$ and $h' = \mathrm{round}(h \cdot s)$, with symmetric centering offsets:
 $$\Delta_x = \left\lfloor \frac{512 - w'}{2} \right\rfloor, \quad \Delta_y = \left\lfloor \frac{512 - h'}{2} \right\rfloor$$
 Any point $(x, y)$ in original page space maps bijectively to canvas space $(u, v)$ via:
 $$\begin{pmatrix} u \\ v \end{pmatrix} = s \begin{pmatrix} x \\ y \end{pmatrix} + \begin{pmatrix} \Delta_x \\ \Delta_y \end{pmatrix}$$
@@ -149,12 +149,12 @@ $$\begin{pmatrix} u \\ v \end{pmatrix} = s \begin{pmatrix} x \\ y \end{pmatrix} 
 #### Seam Deduplication Across Overlapping Tiles
 To process high-density documents without exceeding tile context boundaries, the canvas is partitioned into overlapping windows $T_{i, j}$ with stride $S = 256$ and window dimension $W = 320$, yielding an overlap margin $\Omega = 64\text{ pixels}$. 
 
-When a text token string $t_k$ is recognized in multiple overlapping tiles, bounding box seam deduplication is resolved via intersection-over-union (IoU) and normalized Levenshtein string similarity $\operatorname{LevSim}(t_a, t_b)$:
-$$\operatorname{IoU}(B_a, B_b) = \frac{\operatorname{Area}(B_a \cap B_b)}{\operatorname{Area}(B_a \cup B_b)}$$
+When a text token string $t_k$ is recognized in multiple overlapping tiles, bounding box seam deduplication is resolved via intersection-over-union (IoU) and normalized Levenshtein string similarity $\mathrm{LevSim}(t_a, t_b)$:
+$$\mathrm{IoU}(B_a, B_b) = \frac{\mathrm{Area}(B_a \cap B_b)}{\mathrm{Area}(B_a \cup B_b)}$$
 Two recognition records $r_a, r_b$ are declared duplicate if:
-$$\operatorname{IoU}(B_a, B_b) \ge 0.45 \quad \text{and} \quad \operatorname{LevSim}(t_a, t_b) \ge 0.80$$
+$$\mathrm{IoU}(B_a, B_b) \ge 0.45 \quad \text{and} \quad \mathrm{LevSim}(t_a, t_b) \ge 0.80$$
 In case of duplication, VeriSieve preserves the candidate located further from tile margins, maximizing optical focus:
-$$r^* = \arg\min_{r \in \{r_a, r_b\}} \operatorname{dist}(B_r, \partial T)$$
+$$r^* = \arg\min_{r \in \{r_a, r_b\}} \mathrm{dist}(B_r, \partial T)$$
 
 ---
 
@@ -178,7 +178,7 @@ If a capitalized sequence $S \in \mathcal{E}_{\text{domain}}$, or if $S$ is imme
 To maintain tamper-evident legal auditability without leaking secrets in logs, VeriSieve constructs a Merkle hash chain over all processed chunks. Let $R_i$ be the $i$-th chunk record. Before computing the cryptographic digest, all raw data fields (`.raw`, `.data`, `.rows`) are physically stripped:
 $$R_i^* = R_i \setminus \{\text{.raw}, \text{.data}, \text{.rows}\}$$
 The block hash $H_i$ is computed recursively as:
-$$H_i = \operatorname{SHA256}\left( H_{i-1} \,\|\, \operatorname{CanonicalJSON}(R_i^*) \right), \quad H_0 = 0^{64}$$
+$$H_i = \mathrm{SHA256}\left( H_{i-1} \,\|\, \mathrm{CanonicalJSON}(R_i^*) \right), \quad H_0 = 0^{64}$$
 Any downstream auditor can verify chain integrity and attest that no unredacted PII was committed to persistent audit logs.
 
 ---
@@ -195,16 +195,16 @@ $$\hat{Y}_\tau(X) = \mathbb{I}\left( f(X) \ge \tau \right)$$
 We define the **False-Alarm Risk** $R(\tau)$ as the expected rate of admitting unsafe chunks into the `KEEP_SAFE` training shard:
 $$R(\tau) = \mathbb{E}\left[ \mathbb{I}(f(X) \ge \tau) \;\middle|\; Y = 0 \right]$$
 The objective is to find the smallest threshold $\tau^*$ that guarantees:
-$$\operatorname{P}\left( R(\tau^*) > \alpha \right) \le \delta$$
+$$\mathrm{P}\left( R(\tau^*) > \alpha \right) \le \delta$$
 where $\alpha \in (0, 1)$ is the user-specified risk budget (e.g. $\alpha = 0.05$ for a $5\%$ maximum hazard rate) and $\delta \in (0, 1)$ is the failure probability (e.g. $\delta = 0.05$ for a $95\%$ statistical confidence certificate).
 
 #### Exact Binomial Tail Bound
 Let $n_0 = \sum_{i=1}^n \mathbb{I}(Y_i = 0)$ be the number of hazardous chunks in the calibration set, and let:
 $$k_\tau = \sum_{i: Y_i = 0} \mathbb{I}\left( f(X_i) \ge \tau \right)$$
-be the observed count of false alarms under threshold $\tau$. Under the null hypothesis $H_{0, \tau}: R(\tau) > \alpha$, the distribution of $k_\tau$ is stochastically dominated by a Binomial distribution $\operatorname{Binomial}(n_0, \alpha)$.
+be the observed count of false alarms under threshold $\tau$. Under the null hypothesis $H_{0, \tau}: R(\tau) > \alpha$, the distribution of $k_\tau$ is stochastically dominated by a Binomial distribution $\mathrm{Binomial}(n_0, \alpha)$.
 
 The exact finite-sample p-value $p(\tau)$ is computed via the Binomial Cumulative Distribution Function:
-$$p(\tau) = \operatorname{BinomCDF}(k_\tau, n_0, \alpha) = \sum_{j=0}^{k_\tau} \binom{n_0}{j} \alpha^j (1 - \alpha)^{n_0 - j}$$
+$$p(\tau) = \mathrm{BinomCDF}(k_\tau, n_0, \alpha) = \sum_{j=0}^{k_\tau} \binom{n_0}{j} \alpha^j (1 - \alpha)^{n_0 - j}$$
 
 ```
                 EXACT BINOMIAL LEARN-THEN-TEST CONFORMAL BOUNDS
@@ -224,7 +224,7 @@ This formally certifies the threshold $\tau_{\text{keep}}$ at the $95\%$ confide
 
 #### Three-Way Triage Action Space
 VeriSieve partitions the decision continuum into three mutually exclusive operational actions:
-$$\operatorname{Action}(X) = \begin{cases}
+$$\mathrm{Action}(X) = \begin{cases}
 \text{KEEP\_SAFE}, & f(X) \ge \tau_{\text{keep}} \\
 \text{ABSTAIN\_HUMAN\_REVIEW}, & \tau_{\text{drop}} < f(X) < \tau_{\text{keep}} \\
 \text{DROP\_OR\_QUARANTINE}, & f(X) \le \tau_{\text{drop}}
@@ -258,7 +258,7 @@ To achieve complete zero-egress isolation, VeriSieve implements a standalone Web
 Text tokens are encoded via ternary weight quantization (BitNet b1.58, Wang et al., 2024), constraining model weights to:
 $$W_{i, j} \in \{-1, 0, +1\}$$
 Weights are quantized via absolute-mean scaling:
-$$\gamma = \frac{1}{nm} \sum_{i, j} |W_{i, j}|, \quad \widetilde{W} = \operatorname{Clip}\left(\operatorname{round}\left( \frac{W}{\gamma} \right), -1, +1\right)$$
+$$\gamma = \frac{1}{nm} \sum_{i, j} |W_{i, j}|, \quad \widetilde{W} = \mathrm{Clip}\left(\mathrm{round}\left( \frac{W}{\gamma} \right), -1, +1\right)$$
 Ternary weights are bit-packed at 2 bits per weight, allowing 4 weight values per byte. Matrix multiplications reduce from floating-point multiply-accumulate (MAC) operations to integer additions and subtractions:
 $$y = x \widetilde{W} = \sum_{j: \widetilde{W}_{i, j} = +1} x_j - \sum_{j: \widetilde{W}_{i, j} = -1} x_j$$
 
@@ -503,7 +503,7 @@ A critical scientific question is whether deterministic PII masking is genuinely
 ## 4. Limitations, Exchangeability & Covariate Shift Analysis
 
 ### 4.1 The Exchangeability Assumption in Document Ingestion
-The finite-sample validity of the Learn-Then-Test bound ($\operatorname{P}(R(\tau) > \alpha) \le \delta$) relies on the assumption that calibration document chunks $Z_1, \dots, Z_{n_0}$ and subsequent runtime ingestion chunks $Z_{n_0 + 1}, \dots$ are **exchangeable** under data distribution $\mathcal{P}$.
+The finite-sample validity of the Learn-Then-Test bound ($\mathrm{P}(R(\tau) > \alpha) \le \delta$) relies on the assumption that calibration document chunks $Z_1, \dots, Z_{n_0}$ and subsequent runtime ingestion chunks $Z_{n_0 + 1}, \dots$ are **exchangeable** under data distribution $\mathcal{P}$.
 
 In real-world enterprise deployments, exchangeability can be violated under two regimes:
 1. **Severe Covariate Shift:** Ingesting a document modality radically different from calibration data (e.g., calibrating the gatekeeper on clean born-digital clinical research papers and deploying it on handwritten 19th-century cursive wills or thermal fax receipts).
@@ -530,7 +530,7 @@ Under severe shift, VeriSieve's three-way triage displays **graceful failure deg
 For environments where exchangeability cannot be assumed (e.g. adversarial document streaming or continuous time-series drifts), VeriSieve's LTT formulation can be extended via **conformal martingales** and testing by betting (Waudby-Smith & Ramdas, 2023; Podkopaev & Ramdas, 2021). By constructing a non-negative supermartingale process:
 $$M_t = \prod_{i=1}^t \left( 1 + \lambda_i (S_i - \alpha) \right), \quad M_0 = 1$$
 Ville's maximal inequality guarantees that the probability of the hazard rate exceeding $\alpha$ at any stopping time is bounded by $\delta$:
-$$\operatorname{P}\left( \exists t \ge 1: M_t \ge \frac{1}{\delta} \right) \le \delta$$
+$$\mathrm{P}\left( \exists t \ge 1: M_t \ge \frac{1}{\delta} \right) \le \delta$$
 This enables dynamic, automated recalibration of $\tau_{\text{keep}}$ on non-stationary document streams without manual intervention.
 
 ---

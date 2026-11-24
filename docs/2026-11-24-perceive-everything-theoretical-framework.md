@@ -25,14 +25,14 @@ However, sending confidential clinical, legal, or enterprise media to a frontier
 
 In standard Learn-Then-Test (LTT) conformal gatekeeping (Angelopoulos et al., 2021), calibration units $i \in \{1, \dots, n_{\text{cal}}\}$ are assumed to be independent and identically distributed (or exchangeable) at the **paragraph/chunk level**. Under chunk-level exchangeability, the number of unsafe calibration chunks falsely auto-released at threshold $\lambda \in [0, 1]$,
 $$K_{\text{naive}}(\lambda) = \sum_{i=1}^{n_{\text{cal,unsafe}}} \mathbb{I}\bigl[\hat{p}_{\text{safe}}(X_i) \ge \lambda\bigr],$$
-follows a binomial distribution $\operatorname{Binomial}(n_{\text{cal,unsafe}}, R(\lambda))$ under the null hypothesis $H_0: R(\lambda) > \alpha$.
+follows a binomial distribution $\mathrm{Binomial}(n_{\text{cal,unsafe}}, R(\lambda))$ under the null hypothesis $H_0: R(\lambda) > \alpha$.
 
 **Why Chunk-Level IID Fails on Real Documents and Media (`TAB` ECHR Critique):**  
 In real multi-paragraph legal rulings (`TAB`), slide decks (`.pptx`), or multi-turn call recordings (`.wav`), chunks within the same parent document $D_m = \{c_{m,1}, \dots, c_{m,N_m}\}$ are **strongly positively correlated**:
-$$\operatorname{Cov}\Bigl(\mathbb{I}\bigl[\hat{p}_{\text{safe}}(c_{m,j}) \ge \lambda\bigr],\, \mathbb{I}\bigl[\hat{p}_{\text{safe}}(c_{m,k}) \ge \lambda\bigr]\Bigr) = \rho_m > 0 \quad (j \neq k).$$
+$$\mathrm{Cov}\Bigl(\mathbb{I}\bigl[\hat{p}_{\text{safe}}(c_{m,j}) \ge \lambda\bigr],\, \mathbb{I}\bigl[\hat{p}_{\text{safe}}(c_{m,k}) \ge \lambda\bigr]\Bigr) = \rho_m > 0 \quad (j \neq k).$$
 Consequently, the variance of the chunk-summed error count satisfies:
-$$\operatorname{Var}\!\left(\sum_{m=1}^M \sum_{j=1}^{N_{m,\text{unsafe}}} Z_{m,j}(\lambda)\right) = \sum_{m=1}^M \operatorname{Var}(Z_{m,\cdot}) \bigl(1 + (N_{m,\text{unsafe}} - 1)\rho_m\bigr) \gg n_{\text{cal,unsafe}} \alpha(1-\alpha).$$
-Treating $n_{\text{cal,unsafe}} = \sum_{m=1}^M N_{m,\text{unsafe}}$ correlated paragraphs as independent binomial trials underestimates the tail variance by the **Cluster Design Effect** $\operatorname{DEFF} = 1 + (\bar{N}_{\text{unsafe}} - 1)\bar{\rho}$. In Paper 2 (`Section 4.2`), this exact intra-document correlation caused chunk-IID LTT on `TAB` (`1,999` test paragraphs across `127` rulings) to overshoot the $\alpha = 0.10$ budget (`10.10%` on Hybrid LTT and `10.47%` on NER-MaxConf LTT).
+$$\mathrm{Var}\!\left(\sum_{m=1}^M \sum_{j=1}^{N_{m,\text{unsafe}}} Z_{m,j}(\lambda)\right) = \sum_{m=1}^M \mathrm{Var}(Z_{m,\cdot}) \bigl(1 + (N_{m,\text{unsafe}} - 1)\rho_m\bigr) \gg n_{\text{cal,unsafe}} \alpha(1-\alpha).$$
+Treating $n_{\text{cal,unsafe}} = \sum_{m=1}^M N_{m,\text{unsafe}}$ correlated paragraphs as independent binomial trials underestimates the tail variance by the **Cluster Design Effect** $\mathrm{DEFF} = 1 + (\bar{N}_{\text{unsafe}} - 1)\bar{\rho}$. In Paper 2 (`Section 4.2`), this exact intra-document correlation caused chunk-IID LTT on `TAB` (`1,999` test paragraphs across `127` rulings) to overshoot the $\alpha = 0.10$ budget (`10.10%` on Hybrid LTT and `10.47%` on NER-MaxConf LTT).
 
 ### 2.2 Proposition 1 (Hierarchical Document-Clustered Conformal Risk Control — `HC-CRC`)
 
@@ -47,12 +47,12 @@ $$\hat{R}_{\text{cluster}}(\lambda) = \frac{1}{M_0} \sum_{m=1}^{M_0} L_m(\lambda
 Because the parent documents $D_1, \dots, D_{M_0}, D_{M_0+1}$ are exchangeable and each cluster loss $L_m(\lambda) \in [0, 1]$ is bounded in $[0, 1]$ regardless of the intra-document correlation $\rho_m \in [-1, 1]$ or cluster size $N_m$, define the effective conservatively rounded cluster violation count
 $$K_{\text{HC}}(\lambda) = \left\lceil \sum_{m=1}^{M_0} L_m(\lambda) \right\rceil \in \{0, 1, \dots, M_0\},$$
 and the Hoeffding-Bentkus upper tail $p$-value at document sample size $M_0$:
-$$p_{\text{HC}}(\lambda; \alpha) = \min\Bigl(1,\, \operatorname{BinomCDF}\bigl(K_{\text{HC}}(\lambda);\, M_0,\, \alpha\bigr),\, \exp\bigl(-2 M_0 \max(0, \alpha - \hat{R}_{\text{cluster}}(\lambda))^2\bigr)\Bigr).$$
+$$p_{\text{HC}}(\lambda; \alpha) = \min\Bigl(1,\, \mathrm{BinomCDF}\bigl(K_{\text{HC}}(\lambda);\, M_0,\, \alpha\bigr),\, \exp\bigl(-2 M_0 \max(0, \alpha - \hat{R}_{\text{cluster}}(\lambda))^2\bigr)\Bigr).$$
 Since $\Lambda = \{\lambda_1 > \lambda_2 > \dots > \lambda_G\}$ is ordered monotonically from strictest ($\lambda_1 = 1.0$) to loosest ($\lambda_G = 0.01$) and $L_m(\lambda)$ is non-increasing in $\lambda$, fixed-sequence testing (stopping at the first $\lambda_g$ that fails $p_{\text{HC}}(\lambda_g; \alpha) \le \delta$) controls the family-wise error rate without Bonferroni penalty:
 $$\mathbb{P}\Bigl(\mathbb{E}\bigl[L_{M_0+1}(\hat{\lambda}_{\text{HC}})\bigr] \le \alpha\Bigr) \ge 1 - \delta.$$
-Furthermore, if we weight each cluster by its empirical importance or apply the design-effect-adjusted effective sample size $M_{\text{eff}} = \frac{(\sum_m |U_m|)^2}{\sum_m |U_m|^2 \cdot \operatorname{DEFF}_{\text{cal}}}$, `HC-CRC` strictly eliminates the intra-document correlation overshoot across all $\alpha \in [0.01, 0.20]$.
+Furthermore, if we weight each cluster by its empirical importance or apply the design-effect-adjusted effective sample size $M_{\text{eff}} = \frac{(\sum_m |U_m|)^2}{\sum_m |U_m|^2 \cdot \mathrm{DEFF}_{\text{cal}}}$, `HC-CRC` strictly eliminates the intra-document correlation overshoot across all $\alpha \in [0.01, 0.20]$.
 
-*Proof Sketch:* By results of Hoeffding (1963, Theorem 1) and Bentkus (2004), for any independent or exchangeable random variables $L_1, \dots, L_{M_0} \in [0, 1]$ with common mean $\mu = \mathbb{E}[L_m(\lambda)] > \alpha$, the sum $\sum_{m=1}^{M_0} L_m(\lambda)$ is convex-order dominated by a sum of $M_0$ i.i.d. $\operatorname{Bernoulli}(\mu)$ random variables. Therefore, for any integer $k = \lceil \sum_{m=1}^{M_0} L_m(\lambda) \rceil$, $\mathbb{P}(\sum_{m=1}^{M_0} L_m(\lambda) \le k \mid \mu > \alpha) \le \operatorname{BinomCDF}(k; M_0, \alpha)$. Monotonicity of $L_m(\lambda)$ in $\lambda$ guarantees that the fixed-sequence stopping rule $\hat{\lambda}_{\text{HC}} = \inf\{\lambda \in \Lambda : \forall \lambda' \ge \lambda,\, p_{\text{HC}}(\lambda'; \alpha) \le \delta\}$ is a valid level-$\delta$ test at the true threshold $\lambda^* = \inf\{\lambda : \mathbb{E}[L(\lambda)] \le \alpha\}$. $\blacksquare$
+*Proof Sketch:* By results of Hoeffding (1963, Theorem 1) and Bentkus (2004), for any independent or exchangeable random variables $L_1, \dots, L_{M_0} \in [0, 1]$ with common mean $\mu = \mathbb{E}[L_m(\lambda)] > \alpha$, the sum $\sum_{m=1}^{M_0} L_m(\lambda)$ is convex-order dominated by a sum of $M_0$ i.i.d. $\mathrm{Bernoulli}(\mu)$ random variables. Therefore, for any integer $k = \lceil \sum_{m=1}^{M_0} L_m(\lambda) \rceil$, $\mathbb{P}(\sum_{m=1}^{M_0} L_m(\lambda) \le k \mid \mu > \alpha) \le \mathrm{BinomCDF}(k; M_0, \alpha)$. Monotonicity of $L_m(\lambda)$ in $\lambda$ guarantees that the fixed-sequence stopping rule $\hat{\lambda}_{\text{HC}} = \inf\{\lambda \in \Lambda : \forall \lambda' \ge \lambda,\, p_{\text{HC}}(\lambda'; \alpha) \le \delta\}$ is a valid level-$\delta$ test at the true threshold $\lambda^* = \inf\{\lambda : \mathbb{E}[L(\lambda)] \le \alpha\}$. $\blacksquare$
 
 ### 2.3 Proposition 2 (Anytime-Valid Streaming Conformal Martingales — `E-LTT`)
 
@@ -108,8 +108,8 @@ We design **`SR-MP` (Sparse-Reference Multimodal Perception)** and compile its c
    where $d(a, c) = 1 + \lambda_d |c - c_a|$ is the cross-block / cross-modal temporal distance, and the sketch similarity kernel $\Psi(\text{sig}(m), \text{sig}_a)$ is:
    $$\Psi(\text{sig}(m), \text{sig}_a) = \begin{cases}
    1.0, & \text{if } h_{\text{tok}}(m) = h_{\text{tok}}(a), \\
-   \max\bigl(\operatorname{Dice}_{128}(m, a),\, 0.82\bigr), & \text{if } h_{\text{phon}}(m) = h_{\text{phon}}(a) \wedge \operatorname{Dice}_{128}(m, a) \ge \tau_{\text{phon}} \wedge \bigl||m| - |a|\bigr| \le 2, \\
-   \operatorname{Dice}_{128}(m, a), & \text{if } \operatorname{Dice}_{128}(m, a) \ge \tau_{\text{Dice}} \wedge \bigl||m| - |a|\bigr| \le 2, \\
+   \max\bigl(\mathrm{Dice}_{128}(m, a),\, 0.82\bigr), & \text{if } h_{\text{phon}}(m) = h_{\text{phon}}(a) \wedge \mathrm{Dice}_{128}(m, a) \ge \tau_{\text{phon}} \wedge \bigl||m| - |a|\bigr| \le 2, \\
+   \mathrm{Dice}_{128}(m, a), & \text{if } \mathrm{Dice}_{128}(m, a) \ge \tau_{\text{Dice}} \wedge \bigl||m| - |a|\bigr| \le 2, \\
    0, & \text{otherwise.}
    \end{cases}$$
 3. **False-Positive Invariance on Uncoupled Domain Terms:** For any domain noun $w \notin \mathcal{R}_{512}$ whose 128-bit Bloom Dice similarity with all seeded anchors satisfies $\Psi(\text{sig}(w), \text{sig}_a) = 0$ (empirical pairwise collision rate $0.15\%$–$0.27\%$ at $\tau_{\text{Dice}} \in [0.75, 0.78]$ across $124{,}750$ common-name pairs), $S_{\text{SR-MP}}(w, c) = s_{\text{local}}(w) < \tau_{\text{anchor}}$. Thus `SR-MP` promotes cross-paragraph and cross-modal mentions while preserving the high-threshold precision of $\tau_{\text{anchor}}$. $\blacksquare$

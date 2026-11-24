@@ -67,7 +67,7 @@ Treat a visual page, slide, or video keyframe $I \in \mathbb{R}^{H \times W \tim
 - When an audio/voice segment $u_i$ at timestamp $[t_{i,0}, t_{i,1}]$ co-occurs with visual slides or video keyframes $\{v_j\}$:
   - Detect **deictic & structural cues** in $u_i$ (spatial demonstratives: *"top-right"*, *"bottom table"*, *"this chart"*, *"slide 3"*, *"row 2"*; visual attributes: *"red bar"*, *"peak"*, *"arrow"*; or shared entity/numeric tokens).
   - Compute the **Cross-Modal Grounding Score**:
-    $$G(u_i, v_j) = \sigma\!\Bigl(\alpha_{\text{time}} \cdot \operatorname{IoU}_{\text{time}}(u_i, v_j) + \alpha_{\text{spatial}} \cdot \operatorname{Match}_{\text{spatial}}(u_i, \text{bbox}(v_j)) + \alpha_{\text{sem}} \cdot \operatorname{Sim}_{\text{SR-MP}}(u_i, v_j)\Bigr)$$
+    $$G(u_i, v_j) = \sigma\!\Bigl(\alpha_{\text{time}} \cdot \mathrm{IoU}_{\text{time}}(u_i, v_j) + \alpha_{\text{spatial}} \cdot \mathrm{Match}_{\text{spatial}}(u_i, \text{bbox}(v_j)) + \alpha_{\text{sem}} \cdot \mathrm{Sim}_{\text{SR-MP}}(u_i, v_j)\Bigr)$$
   - Link every grounded speech turn to its visual target region via a `GROUNDED_TO` edge in `verisieve_graph.wasm` and `groundedVisualBlockId` in both `perceptionStream` and `sceneTimeline`.
 
 ---
@@ -78,7 +78,7 @@ Treat a visual page, slide, or video keyframe $I \in \mathbb{R}^{H \times W \tim
 Let $\mathcal{U} = \{u_1, \dots, u_N\}$ be all candidate perception units in a long document, slide deck, or video stream (e.g., $N = 3{,}600$ video frames or $500$ page tiles). Let Pass-0 in `verisieve_media.wasm` compute an ultra-fast (`< 0.05 ms`) `64-bit` structural-perceptual sketch $\phi(u) \in \{0,1\}^{64}$ (`vs_media_perceptual_dhash64`) and local entropy/change score $h(u) \in [0, 1]$.
 
 Under a strict client-side latency budget $B_{\text{ms}}$, selecting the subset $S \subseteq \mathcal{U}$ of units to promote to heavy Pass-1/Pass-2 perception (OCR, chart inversion, neural NER, VLM crop) maximizes the **Facility-Location + Surprisal Submodular Objective**:
-$$F(S) = \sum_{u \in \mathcal{U}} \max_{s \in S} \operatorname{Sim}_{64}(\phi(u), \phi(s)) + \lambda \sum_{s \in S} h(s) \quad \text{s.t.} \quad \sum_{s \in S} c(s) \le B_{\text{ms}}$$
+$$F(S) = \sum_{u \in \mathcal{U}} \max_{s \in S} \mathrm{Sim}_{64}(\phi(u), \phi(s)) + \lambda \sum_{s \in S} h(s) \quad \text{s.t.} \quad \sum_{s \in S} c(s) \le B_{\text{ms}}$$
 
 - **Proposition 4 (Monotone Submodularity & $(1 - 1/e)$ Approximation Guarantee):** $F(S)$ is monotone non-decreasing and submodular ($\Delta F(u \mid A) \ge \Delta F(u \mid B)$ for $A \subseteq B$). Cost-normalized lazy greedy selection in `src/perceive.js` achieves a $(1 - 1/e)/2$ worst-case (and $(1 - 1/e)$ uniform-cost) approximation to the optimal omniscient frame/tile subset in $O(N \log N)$ time while pruning $90\%$--$98\%$ of redundant video frames and blank/boilerplate tiles.
 
