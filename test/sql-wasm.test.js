@@ -116,6 +116,33 @@ test('T7: executeSqlWasm executes SELECT, compound WHERE, GROUP BY, aggregates, 
   assert.notEqual(trainOut.results.duckdb_audit.version, '1.5.5');
 });
 
+test('T7: WASM SQL executes INNER equi-JOIN on aliased instances of the loaded table (kernel-side join product)', () => {
+  const tables = buildSqlTestTables();
+  // documents: 4 pdf (KEEP_SAFE 0.95 tok14 / KEEP_SAFE 0.85 tok8), 3 ocr (0.91 tok18, 0.08 tok20, 0.44 tok12)
+  const joinRes = executeSqlWasm(
+    "SELECT a.source_mode AS mode, count(*) AS pair_count FROM documents a INNER JOIN documents b ON a.source_mode = b.source_mode AND a.token_count = b.token_count GROUP BY a.source_mode ORDER BY pair_count DESC;",
+    { tables }
+  );
+  assert.equal(joinRes.ok, true);
+  assert.deepEqual(joinRes.columns, ['mode', 'pair_count']);
+  // Multi-key equi-join: identity pairs only -> pdf group 2 pairs, ocr group 3 pairs
+  assert.deepEqual(joinRes.rows, [['ocr_scan', 3], ['pdf_text', 2]]);
+
+  const joinRowsRes = executeSqlWasm(
+    "SELECT a.source_mode AS a_mode, b.token_count AS b_tokens FROM documents a JOIN documents b ON a.source_mode = b.source_mode WHERE a.token_count = 14 GROUP BY a.source_mode, b.token_count ORDER BY b_tokens ASC;",
+    { tables }
+  );
+  assert.deepEqual(joinRowsRes.columns, ['a_mode', 'b_tokens']);
+  // Left row 0 (pdf, tok 14) joins right rows 0 (14) and 1 (8)
+  assert.deepEqual(joinRowsRes.rows, [['pdf_text', 8], ['pdf_text', 14]]);
+
+  // Cross-table JOIN is still fail-closed: the single-table ABI only loads the FROM table
+  assert.throws(
+    () => executeSqlWasm('SELECT * FROM documents JOIN pmc_pdf_data ON documents.source_mode = pmc_pdf_data.source_mode;', { tables }),
+    /UNSUPPORTED_SQL_JOIN/i
+  );
+});
+
 test('T7: strict SQL validator in WASM and JS subset fallback rejects unsupported syntax, multi-statement injection, and unknown columns', () => {
   const tables = buildSqlTestTables();
   const invalidQueries = [
