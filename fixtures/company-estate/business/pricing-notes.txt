@@ -1,0 +1,4 @@
+Renewal pricing memo (Business).
+Owner: Elena Vance (elena.vance@northfield-ltd.example). Approvers: Victor Adeyemi and Daniel Petrov.
+Renewal window for ORG-8115 closes 2026-12-01; the counter-proposal references project QUARRY.
+Cost escalations must be logged against PEBBLE and shared with ondrej.novak@northfield-ltd.example (IT capacity planning) before the board review.

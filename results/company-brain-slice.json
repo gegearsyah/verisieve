@@ -1,0 +1,3027 @@
+{
+  "kind": "company-brain-slice",
+  "stage": 10,
+  "seed": 20261124,
+  "engine": "versieve-amnesiac-corpus-v1",
+  "anti_circularity_note": "GT (entity list + per-file char spans) lives only in fixtures/company-estate-manifest.json. The engine path receives only estate files; the manifest is read solely in this scorer to score P2 linking and to enumerate the declared read surface. Nothing GT-shaped enters the engine inputs, seeds, tokens or graph.",
+  "zero_egress_note": "The entire run (perception, linking, corpus export, graph build) executes with http/https/net/tls/dns/fetch trapped to throw. egressBytes is measured as zero and externalCalls as the empty array; any attempted call aborts the run.",
+  "p2": {
+    "linkMetric": {
+      "unit": "gtEntity:departmentPair",
+      "scopeNote": "Persons only: the engine has PERSON/EMAIL/PHONE vault classes; org ids and project codenames have no engine class (estate GT only, per the ablation). A GT person carries name + email + phone values, each its own salted engine id; the bridge that matches them is scorer-side under the pinned workspace salt.",
+      "gtLinks": 54,
+      "predictedLinks": 54,
+      "recoveredLinks": 54,
+      "falsePositives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "entityResolution": {
+      "gtPersonCount": 16,
+      "gtEntitiesObserved": 16,
+      "bridgedEngineEntityCount": 48,
+      "engineObservedBridgedEntityCount": 48,
+      "bridgeVerifiedByRawValueMentions": 212,
+      "rawValueMismatches": 0,
+      "corefAliasMentionsAttributedBySaltedId": 0,
+      "note": "A salted id is shared across every mention of the same value in every department and modality — that identity IS the cross-department link; the GT manifest only scores it."
+    },
+    "crossDepartmentExamples": [
+      {
+        "departmentPair": [
+          "business",
+          "it"
+        ],
+        "linkedGtEntityCount": 16,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15",
+              "ent:email:e28665cdc6502c38"
+            ]
+          },
+          {
+            "gtEntityId": "person:marcus-bell",
+            "sharedEngineEntityIds": [
+              "ent:person:a037f4c4d787293c",
+              "ent:email:647a46510a4db47d",
+              "ent:phone:9e97f838b69b91b3"
+            ]
+          },
+          {
+            "gtEntityId": "person:ondrej-novak",
+            "sharedEngineEntityIds": [
+              "ent:person:73d434b0fd924f21",
+              "ent:email:1cc72bd1bca27bc2"
+            ]
+          },
+          {
+            "gtEntityId": "person:hana-ito",
+            "sharedEngineEntityIds": [
+              "ent:person:d4a0890a9d52108d",
+              "ent:email:395259bdb0b9fda3"
+            ]
+          },
+          {
+            "gtEntityId": "person:lena-weber",
+            "sharedEngineEntityIds": [
+              "ent:person:01e30619778b4391",
+              "ent:email:6e512898ed97474d",
+              "ent:phone:36a474e43e4fb7b6"
+            ]
+          },
+          {
+            "gtEntityId": "person:kwame-asante",
+            "sharedEngineEntityIds": [
+              "ent:person:50e3e9b771d155ee",
+              "ent:email:16a4b9481edaf349"
+            ]
+          },
+          {
+            "gtEntityId": "person:tomas-vidal",
+            "sharedEngineEntityIds": [
+              "ent:person:4734c5fe5e60fb4b",
+              "ent:email:ff629f83c7d23451"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3",
+              "ent:email:da3217e2bebe16ee",
+              "ent:phone:19b99df3e62f1954"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f",
+              "ent:email:e8583972267879f8"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358",
+              "ent:email:857b9d7cb86ca26d"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935",
+              "ent:email:af635dcf645ca2c2",
+              "ent:phone:30dbedabbe78b7b2"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3",
+              "ent:email:3ea2a8fc17183cf1"
+            ]
+          },
+          {
+            "gtEntityId": "person:nadia-farouk",
+            "sharedEngineEntityIds": [
+              "ent:person:d78e78f9084244ed",
+              "ent:email:cde9c50b71b560fa"
+            ]
+          },
+          {
+            "gtEntityId": "person:victor-adeyemi",
+            "sharedEngineEntityIds": [
+              "ent:person:9fc3aba4748fc811",
+              "ent:email:15298f14ed5b565e"
+            ]
+          },
+          {
+            "gtEntityId": "person:grace-okonkwo",
+            "sharedEngineEntityIds": [
+              "ent:person:dfe3509f7ae097fd",
+              "ent:email:db645701e5dcd53b"
+            ]
+          },
+          {
+            "gtEntityId": "person:felix-marchetti",
+            "sharedEngineEntityIds": [
+              "ent:person:16d6ada21103c5b8",
+              "ent:email:25127f97c2b327bc"
+            ]
+          }
+        ]
+      },
+      {
+        "departmentPair": [
+          "business",
+          "meetings"
+        ],
+        "linkedGtEntityCount": 7,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15"
+            ]
+          },
+          {
+            "gtEntityId": "person:tomas-vidal",
+            "sharedEngineEntityIds": [
+              "ent:person:4734c5fe5e60fb4b"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3"
+            ]
+          }
+        ]
+      },
+      {
+        "departmentPair": [
+          "business",
+          "shared"
+        ],
+        "linkedGtEntityCount": 9,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15",
+              "ent:email:e28665cdc6502c38"
+            ]
+          },
+          {
+            "gtEntityId": "person:hana-ito",
+            "sharedEngineEntityIds": [
+              "ent:person:d4a0890a9d52108d"
+            ]
+          },
+          {
+            "gtEntityId": "person:lena-weber",
+            "sharedEngineEntityIds": [
+              "ent:person:01e30619778b4391"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f",
+              "ent:email:e8583972267879f8"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358",
+              "ent:email:857b9d7cb86ca26d"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935",
+              "ent:email:af635dcf645ca2c2"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:victor-adeyemi",
+            "sharedEngineEntityIds": [
+              "ent:person:9fc3aba4748fc811",
+              "ent:email:15298f14ed5b565e"
+            ]
+          }
+        ]
+      },
+      {
+        "departmentPair": [
+          "it",
+          "meetings"
+        ],
+        "linkedGtEntityCount": 7,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15"
+            ]
+          },
+          {
+            "gtEntityId": "person:tomas-vidal",
+            "sharedEngineEntityIds": [
+              "ent:person:4734c5fe5e60fb4b"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3"
+            ]
+          }
+        ]
+      },
+      {
+        "departmentPair": [
+          "it",
+          "shared"
+        ],
+        "linkedGtEntityCount": 9,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15",
+              "ent:email:e28665cdc6502c38",
+              "ent:phone:42ca8317da237dfd"
+            ]
+          },
+          {
+            "gtEntityId": "person:hana-ito",
+            "sharedEngineEntityIds": [
+              "ent:person:d4a0890a9d52108d"
+            ]
+          },
+          {
+            "gtEntityId": "person:lena-weber",
+            "sharedEngineEntityIds": [
+              "ent:person:01e30619778b4391"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f",
+              "ent:email:e8583972267879f8"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358",
+              "ent:email:857b9d7cb86ca26d"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935",
+              "ent:email:af635dcf645ca2c2"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:victor-adeyemi",
+            "sharedEngineEntityIds": [
+              "ent:person:9fc3aba4748fc811",
+              "ent:email:15298f14ed5b565e"
+            ]
+          }
+        ]
+      },
+      {
+        "departmentPair": [
+          "meetings",
+          "shared"
+        ],
+        "linkedGtEntityCount": 6,
+        "links": [
+          {
+            "gtEntityId": "person:priya-sharma",
+            "sharedEngineEntityIds": [
+              "ent:person:ddfb3ab30e10ef15"
+            ]
+          },
+          {
+            "gtEntityId": "person:ines-duarte",
+            "sharedEngineEntityIds": [
+              "ent:person:8023f2aba43ab7c3"
+            ]
+          },
+          {
+            "gtEntityId": "person:elena-vance",
+            "sharedEngineEntityIds": [
+              "ent:person:048a7eb56adb0b8f"
+            ]
+          },
+          {
+            "gtEntityId": "person:ravi-chandra",
+            "sharedEngineEntityIds": [
+              "ent:person:d4896fc37b9be358"
+            ]
+          },
+          {
+            "gtEntityId": "person:sarah-kwon",
+            "sharedEngineEntityIds": [
+              "ent:person:7c2789239d3d2935"
+            ]
+          },
+          {
+            "gtEntityId": "person:daniel-petrov",
+            "sharedEngineEntityIds": [
+              "ent:person:7783aa74741924c3"
+            ]
+          }
+        ]
+      }
+    ],
+    "graphSeams": {
+      "srmpRing": {
+        "anchorPoolSize": 82,
+        "propagatedSpansCount": 7,
+        "note": "SR-MP ring anchors resolve repeated, bare-surname and ASR-corrupted mentions across chunks, modalities and departments onto one salted entity id (GC-CRC passes 1–2)."
+      },
+      "louvain": {
+        "communityCount": 12,
+        "nodeCount": 153
+      },
+      "ppr": {
+        "seededEntityCount": 42,
+        "iterations": 30,
+        "topK": 24,
+        "seedsReachingBusinessPassages": 42,
+        "reachRate": 1,
+        "note": "Personalized PageRank over the Dual-CSR perception graph, seeded with a cross-department entity node; a seed \"reaches\" when a Business-source passage lands in its top-K."
+      }
+    },
+    "engineObserved": {
+      "uniqueEntityCount": 76,
+      "crossDepartmentEntityCount": 44,
+      "crossModalityEntityCount": 48
+    }
+  },
+  "p3": {
+    "audioCapture": {
+      "failClosed": true,
+      "provider": "supplied_word_timestamps (no local ASR weights on this CPU box)",
+      "wordTimestampsSource": "meetings/weekly-sync.vtt (estate caption track)",
+      "wordCount": 127,
+      "note": "No local ASR weights on this CPU box: the seam fails closed rather than reaching out. The caption track supplies wordTimestamps exactly as a meeting recorder would — estate capture data, never GT."
+    },
+    "receipt": {
+      "egressBytes": 0,
+      "externalCalls": [],
+      "networkSurfacesArmed": [
+        "connect",
+        "createConnection",
+        "fetch",
+        "get",
+        "lookup",
+        "request",
+        "resolve",
+        "resolve4",
+        "resolve6"
+      ],
+      "externalCallsNote": "Every network entry point above was replaced with a throwing trap for the whole run (perception, linking, corpus export, graph build). A single attempted call aborts the run instead of moving bytes.",
+      "fileReads": {
+        "surfaces": [
+          "fixtures/company-estate-manifest.json",
+          "fixtures/company-estate/business/accounts.csv",
+          "fixtures/company-estate/business/board-proposal.pptx",
+          "fixtures/company-estate/business/contract-edits.csv",
+          "fixtures/company-estate/business/pricing-notes.txt",
+          "fixtures/company-estate/it/escalation-notes.txt",
+          "fixtures/company-estate/it/runbook.txt",
+          "fixtures/company-estate/it/service-inventory.sql",
+          "fixtures/company-estate/meetings/weekly-sync-transcript.txt",
+          "fixtures/company-estate/meetings/weekly-sync.vtt",
+          "fixtures/company-estate/meetings/weekly-sync.wav",
+          "fixtures/company-estate/shared/kickoff-announcement.eml",
+          "fixtures/company-estate/shared/review-q3.eml",
+          "vendor/wasm/verisieve_clean.wasm",
+          "vendor/wasm/verisieve_graph.wasm",
+          "vendor/wasm/verisieve_media.wasm"
+        ],
+        "byteCount": 732636,
+        "note": "Exhaustive local read surface by construction: the estate corpus files, the GT manifest (scorer-side only), and the three zero-import engine wasm kernels. No other file is read; the engine path writes nothing (outputs are emitted by this scorer after the traps are restored)."
+      }
+    }
+  },
+  "p4": {
+    "export": {
+      "seamNote": "Reuses the Amnesiac Corpus JSONL seam (src/amnesiac-corpus.js buildAmnesiacCorpus) unchanged — no new corpus format. Per-sample certificates ride in the artifact keyed by the sample content-digest id.",
+      "jsonl": "{\"id\":\"0037307ed9a2bc60c7f219b2295d1040d230df48664bf1542ddbac5d3e950e4b\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:048a7eb56adb0b8f\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_07>: One risk: the notes bridge references project LANTERN, same stakeholders as today.\"}]}\n{\"id\":\"083d3a94aa455c47e5607437938c4591a83771d1cd1d8187ec4b88f41060ac64\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:048a7eb56adb0b8f\",\"ent:person:d4896fc37b9be358\",\"ent:person:8023f2aba43ab7c3\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_07>: Legal will co-sign with <PII:PERSON_01>; the invoice run contact stays <PII:PERSON_02>, plus four four two zero seven nine four six zero nine two one.\"}]}\n{\"id\":\"0d5acd5aca1694236e6376522ccc1c15075a7a464979dcbd9116f42aae57c651\",\"source\":\"business/board-proposal.pptx\",\"sourceRange\":null,\"entities\":[\"ent:person:f1a41baa0c5189c4\",\"ent:person:048a7eb56adb0b8f\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/board-proposal.pptx (HEADER).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_22>: <PII:PERSON_07> | Board proposal\"}]}\n{\"id\":\"1dbbdaef46b2874efc54d35853bdc198d6aec83fe7ccae2735f74af35047ddf6\",\"source\":\"business/pricing-notes.txt\",\"sourceRange\":[0,376],\"entities\":[\"ent:person:048a7eb56adb0b8f\",\"ent:email:e8583972267879f8\",\"ent:person:9fc3aba4748fc811\",\"ent:person:7783aa74741924c3\",\"ent:dob:48a76654662a1bd7\",\"ent:email:1cc72bd1bca27bc2\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/pricing-notes.txt (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Renewal pricing memo (Business).\\nOwner: <PII:PERSON_07> (<PII:EMAIL_09>). Approvers: <PII:PERSON_15> and <PII:PERSON_05>.\\nRenewal window for ORG-8115 closes <PII:DOB_12>; the counter-proposal references project QUARRY.\\nCost escalations must be logged against PEBBLE and shared with <PII:EMAIL_03> (IT capacity planning) before the board review.\"}]}\n{\"id\":\"2dda64a5cd3b986c6b396f91f16dbd4611d542ef5980fd5d1b0e34d9a44e5622\",\"source\":\"meetings/weekly-sync-transcript.txt\",\"sourceRange\":[0,1041],\"entities\":[\"ent:person:f9766b8287796a52\",\"ent:dob:d6aed68016b6dc45\",\"ent:person:ddfb3ab30e10ef15\",\"ent:person:048a7eb56adb0b8f\",\"ent:address:659099e6ad922114\",\"ent:person:261e25cd76d10eaf\",\"ent:person:8303007ddf8d0b3b\",\"ent:person:d4896fc37b9be358\",\"ent:person:8023f2aba43ab7c3\",\"ent:person:4734c5fe5e60fb4b\",\"ent:person:7c2789239d3d2935\",\"ent:person:7783aa74741924c3\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync-transcript.txt (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Meeting transcript — weekly sync, <PII:PERSON_08> (IT + Business), <PII:DOB_11>.\\n[00:00] <PII:PERSON_06>: Welcome to the weekly sync. IT agenda: project AMBER rollout and the ORG-2271 renewal.\\n[00:01] <PII:PERSON_07>: Business confirms the board pack; the ORG-<PII:ADDRESS_02> QUARRY is attached.\\n[00:03] <PII:PERSON_06>: Platform side is on track; I will send the checklist from <PII:PERSON_24> dot <PII:PERSON_25> at northfield-ltd dot example this afternoon.\\n[00:04] <PII:PERSON_07>: Legal will co-sign with <PII:PERSON_01>; the invoice run contact stays <PII:PERSON_02>, plus four four two zero seven nine four six zero nine two one.\\n[00:06] <PII:PERSON_06>: Deployment approvals still route through <PII:PERSON_03>; escalation phone plus four four two zero seven nine four six zero nine one eight.\\n[00:08] <PII:PERSON_07>: One risk: the notes bridge references project LANTERN, same stakeholders as today.\\n[00:09] <PII:PERSON_06>: Finance sign-off goes to <PII:PERSON_04> and <PII:PERSON_05> before Friday.\\n[00:10] <PII:PERSON_07>: Close. Actions owned by <PII:PERSON_06> and <PII:PERSON_07>.\"}]}\n{\"id\":\"3b529a60c01400e737fcd08c60729220a4822e65d6da8222062efcd456012215\",\"source\":\"it/runbook.txt\",\"sourceRange\":[0,591],\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:person:d4a0890a9d52108d\",\"ent:email:e28665cdc6502c38\",\"ent:person:4734c5fe5e60fb4b\",\"ent:email:ff629f83c7d23451\",\"ent:phone:bc7a6407d66cd93f\",\"ent:secret_github_pat:17ca6185759a6b07\",\"ent:dob:daaf7cad936d91a2\",\"ent:person:50e3e9b771d155ee\",\"ent:email:cde9c50b71b560fa\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from it/runbook.txt (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Service runbook — platform escalation path (IT).\\nPrimary on-call is <PII:PERSON_06>; pager escalation goes to <PII:PERSON_11> after 30 minutes.\\nAccess requests for project AMBER must be mailed to <PII:EMAIL_01> with the ticket number.\\nVendor contact for deployment approvals: <PII:PERSON_03>, <PII:EMAIL_07>, <PII:PHONE_07>.\\nThe legacy deploy token <SECRET:GITHUB_PAT_01> was rotated on <PII:DOB_01>.\\nDatabase restore drills run on Thursdays; <PII:PERSON_13> keeps the checklist and pings <PII:EMAIL_13> for sign-off.\"}]}\n{\"id\":\"3cd3cc8d09245fd48efbcbd4489679f3239c9413296d613a41f9cfe48aa20b45\",\"source\":\"shared/kickoff-announcement.eml\",\"sourceRange\":null,\"entities\":[\"ent:person:048a7eb56adb0b8f\",\"ent:email:e8583972267879f8\",\"ent:email:03bbea171c105450\",\"ent:email:ec4038efac89fd03\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from shared/kickoff-announcement.eml (HEADER).\"},{\"role\":\"assistant\",\"content\":\"FROM: <PII:PERSON_07> <<PII:EMAIL_09>>\\nTO: <PII:EMAIL_17>, <PII:EMAIL_18>\\nSUBJECT: Kickoff declaration — Project AMBER\\nDATE: Wed, 18 Nov 2026 09:00:00 +0000\"}]}\n{\"id\":\"4f454dfc95e96d1496899266371e0c3c978f09ad43b4625dee085ae40221a4e3\",\"source\":\"meetings/weekly-sync.wav\",\"sourceRange\":null,\"entities\":[\"ent:person:261e25cd76d10eaf\",\"ent:person:8303007ddf8d0b3b\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.wav (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"Welcome to the weekly sync. IT agenda: project AMBER rollout and the ORG-<PII:ADDRESS_01> pack; the ORG-<PII:ADDRESS_02> QUARRY is attached. Platform side is on track; I will send the checklist from <PII:PERSON_24> dot <PII:PERSON_25> at northfield-ltd dot example this afternoon. Legal will co-sign with <PII:PERSON_01>; the invoice run contact stays <PII:PERSON_02>, plus 442079460921 Deployment approvals still route through <PII:PERSON_03>; escalation phone plus 4420794609181 risk: the notes bridge references project LANTERN, same stakeholders as today. Finance sign-off goes to <PII:PERSON_04> and <PII:PERSON_05> before Friday. Close. Actions owned by <PII:PERSON_06> and <PII:PERSON_07>.\"}]}\n{\"id\":\"6cc4ec7b88c85824f09f48a0475f87c36c4f93738f1be017f8d3ed364bb462ea\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:048a7eb56adb0b8f\",\"ent:address:659099e6ad922114\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_07>: Business confirms the board pack; the ORG-<PII:ADDRESS_02> QUARRY is attached.\"}]}\n{\"id\":\"729e7575f9ab56848d215dff72a4ba6c498dcf1ac7f3eb02454dfe6e114887b5\",\"source\":\"business/board-proposal.pptx\",\"sourceRange\":null,\"entities\":[\"ent:person:01e30619778b4391\",\"ent:phone:24872a4135690ceb\",\"ent:person:73d434b0fd924f21\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/board-proposal.pptx (SPEAKER_NOTES).\"},{\"role\":\"assistant\",\"content\":\"Before the board vote, call <PII:PERSON_12> (<PII:PHONE_18>) and confirm project AMBER staffing with <PII:PERSON_10>.\"}]}\n{\"id\":\"7d301d4bff72009e9d5a9fcf55fe6860312c4f4d92932c6d3b6ec7b585fdbe1f\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:person:7c2789239d3d2935\",\"ent:person:7783aa74741924c3\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_06>: Finance sign-off goes to <PII:PERSON_04> and <PII:PERSON_05> before Friday.\"}]}\n{\"id\":\"852690a7e7895703c45aef078a0cfb7f9baf2b6a16a5a0512f023d471aa48f95\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:ddfb3ab30e10ef15\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_06>: Welcome to the weekly sync. IT agenda: project AMBER rollout and the ORG-2271 renewal.\"}]}\n{\"id\":\"88f451ca9b31a77d4b0934317de57c6ffe33902dca85753309d78e71f046ac53\",\"source\":\"business/accounts.csv\",\"sourceRange\":[0,756],\"entities\":[\"ent:person:27e59aee111b4ec4\",\"ent:person:a037f4c4d787293c\",\"ent:email:647a46510a4db47d\",\"ent:phone:9e97f838b69b91b3\",\"ent:person:20d69a9bb6254aa5\",\"ent:person:01e30619778b4391\",\"ent:email:6e512898ed97474d\",\"ent:phone:36a474e43e4fb7b6\",\"ent:person:7c7adc80c4dfaa6e\",\"ent:person:8023f2aba43ab7c3\",\"ent:email:da3217e2bebe16ee\",\"ent:phone:19b99df3e62f1954\",\"ent:person:b49264db494428ac\",\"ent:person:7c2789239d3d2935\",\"ent:email:af635dcf645ca2c2\",\"ent:phone:30dbedabbe78b7b2\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/accounts.csv (PROSE).\"},{\"role\":\"assistant\",\"content\":\"org_id,account_name,contact_name,contact_email,contact_phone,payment_terms,project_code\\nORG-2271,<PII:PERSON_18> Ltd,<PII:PERSON_09>,<PII:EMAIL_02>,<PII:PHONE_02>,net 30,PEBBLE\\nORG-3174,<PII:PERSON_19> Group,<PII:PERSON_12>,<PII:EMAIL_05>,<PII:PHONE_05>,net 30,QUARRY\\nORG-4402,<PII:PERSON_20> plc,<PII:PERSON_02>,<PII:EMAIL_08>,<PII:PHONE_08>,net 30,AMBER\\nORG-8115,<PII:PERSON_21> Co,<PII:PERSON_04>,<PII:EMAIL_11>,<PII:PHONE_11>,net 30,LANTERN\\nORG-2271,<PII:PERSON_18> Ltd — renewals,<PII:PERSON_09>,<PII:EMAIL_02>,<PII:PHONE_02>,net 45,AMBER\\nORG-4402,<PII:PERSON_20> plc — renewals,<PII:PERSON_02>,<PII:EMAIL_08>,<PII:PHONE_08>,net 30,PEBBLE\"}]}\n{\"id\":\"8c3b5ba508578a2521e64ffa081d9bdc5037a649d9fe17c62769d2d30fb122f3\",\"source\":\"shared/review-q3.eml\",\"sourceRange\":null,\"entities\":[\"ent:address:12f9c36d2eb6dab6\",\"ent:person:d4896fc37b9be358\",\"ent:person:7783aa74741924c3\",\"ent:person:01e30619778b4391\",\"ent:person:8023f2aba43ab7c3\",\"ent:phone:cb2232f0a3ddc0fe\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from shared/review-q3.eml (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Reviewers on the Q<PII:ADDRESS_03>: <PII:PERSON_01>, <PII:PERSON_05> and <PII:PERSON_12> (lerunbook escalation path).\\nFinance contact for the invoice run: <PII:PERSON_02> <PII:PHONE_17>. Deck for the review meeting is attached.\"}]}\n{\"id\":\"901b153eba000f781599b05a15e533f1443305162d73a20dc821093103eb9812\",\"source\":\"business/contract-edits.csv\",\"sourceRange\":[0,1534],\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:email:e28665cdc6502c38\",\"ent:person:048a7eb56adb0b8f\",\"ent:person:d4a0890a9d52108d\",\"ent:dob:78d6cb391fd1cabf\",\"ent:person:a037f4c4d787293c\",\"ent:email:647a46510a4db47d\",\"ent:person:d4896fc37b9be358\",\"ent:person:01e30619778b4391\",\"ent:dob:aa638fbc79de5706\",\"ent:person:73d434b0fd924f21\",\"ent:email:1cc72bd1bca27bc2\",\"ent:person:7c2789239d3d2935\",\"ent:person:50e3e9b771d155ee\",\"ent:dob:787c33c0bf0aee4d\",\"ent:email:395259bdb0b9fda3\",\"ent:person:7783aa74741924c3\",\"ent:person:4734c5fe5e60fb4b\",\"ent:dob:62a0e2ee1bdcb49c\",\"ent:email:6e512898ed97474d\",\"ent:person:d78e78f9084244ed\",\"ent:person:8023f2aba43ab7c3\",\"ent:dob:327a194cc79edecc\",\"ent:email:16a4b9481edaf349\",\"ent:person:9fc3aba4748fc811\",\"ent:dob:f8fa6bbc52e12f2d\",\"ent:email:ff629f83c7d23451\",\"ent:person:dfe3509f7ae097fd\",\"ent:dob:9e924313344c6a25\",\"ent:email:da3217e2bebe16ee\",\"ent:person:16d6ada21103c5b8\",\"ent:dob:609ac20755d7ea91\",\"ent:email:e8583972267879f8\",\"ent:dob:de6a4c0ae8799a3a\",\"ent:email:857b9d7cb86ca26d\",\"ent:dob:d6aed68016b6dc45\",\"ent:email:af635dcf645ca2c2\",\"ent:email:3ea2a8fc17183cf1\",\"ent:email:cde9c50b71b560fa\",\"ent:email:15298f14ed5b565e\",\"ent:email:db645701e5dcd53b\",\"ent:email:25127f97c2b327bc\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/contract-edits.csv (PROSE).\"},{\"role\":\"assistant\",\"content\":\"clause,editor_name,editor_email,submitted_by,reviewer,last_touched\\nSLA-01,<PII:PERSON_06>,<PII:EMAIL_01>,<PII:PERSON_07>,<PII:PERSON_11>,<PII:DOB_03>\\nSLA-02,<PII:PERSON_09>,<PII:EMAIL_02>,<PII:PERSON_01>,<PII:PERSON_12>,<PII:DOB_04>\\nSLA-03,<PII:PERSON_10>,<PII:EMAIL_03>,<PII:PERSON_04>,<PII:PERSON_13>,<PII:DOB_05>\\nSLA-04,<PII:PERSON_11>,<PII:EMAIL_04>,<PII:PERSON_05>,<PII:PERSON_03>,<PII:DOB_06>\\nSLA-05,<PII:PERSON_12>,<PII:EMAIL_05>,<PII:PERSON_14>,<PII:PERSON_02>,<PII:DOB_07>\\nSLA-06,<PII:PERSON_13>,<PII:EMAIL_06>,<PII:PERSON_15>,<PII:PERSON_07>,<PII:DOB_08>\\nSLA-01,<PII:PERSON_03>,<PII:EMAIL_07>,<PII:PERSON_16>,<PII:PERSON_01>,<PII:DOB_02>\\nSLA-02,<PII:PERSON_02>,<PII:EMAIL_08>,<PII:PERSON_17>,<PII:PERSON_04>,<PII:DOB_09>\\nSLA-03,<PII:PERSON_07>,<PII:EMAIL_09>,<PII:PERSON_06>,<PII:PERSON_05>,<PII:DOB_10>\\nSLA-04,<PII:PERSON_01>,<PII:EMAIL_10>,<PII:PERSON_09>,<PII:PERSON_14>,<PII:DOB_11>\\nSLA-05,<PII:PERSON_04>,<PII:EMAIL_11>,<PII:PERSON_10>,<PII:PERSON_15>,<PII:DOB_03>\\nSLA-06,<PII:PERSON_05>,<PII:EMAIL_12>,<PII:PERSON_11>,<PII:PERSON_16>,<PII:DOB_04>\\nSLA-01,<PII:PERSON_14>,<PII:EMAIL_13>,<PII:PERSON_12>,<PII:PERSON_17>,<PII:DOB_05>\\nSLA-02,<PII:PERSON_15>,<PII:EMAIL_14>,<PII:PERSON_13>,<PII:PERSON_06>,<PII:DOB_06>\\nSLA-03,<PII:PERSON_16>,<PII:EMAIL_15>,<PII:PERSON_03>,<PII:PERSON_09>,<PII:DOB_07>\\nSLA-04,<PII:PERSON_17>,<PII:EMAIL_16>,<PII:PERSON_02>,<PII:PERSON_10>,<PII:DOB_08>\"}]}\n{\"id\":\"996d8687b59b65078fa071abe60d08dbdffa7cbd1db39bbea786f177ecaf1d3f\",\"source\":\"business/board-proposal.pptx\",\"sourceRange\":null,\"entities\":[\"ent:person:f9766b8287796a52\",\"ent:person:048a7eb56adb0b8f\",\"ent:email:e8583972267879f8\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/board-proposal.pptx (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Board proposal — <PII:PERSON_08>\\nPrepared by <PII:PERSON_07>, <PII:EMAIL_09>\\nProject QUARRY vs renewal ORG-8115\"}]}\n{\"id\":\"a739d6e6772e5712f3dd0ab35407d7135fd481bf6711959811ada09f5bf99f52\",\"source\":\"business/board-proposal.pptx\",\"sourceRange\":null,\"entities\":[\"ent:person:7c2789239d3d2935\",\"ent:email:af635dcf645ca2c2\",\"ent:phone:30dbedabbe78b7b2\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from business/board-proposal.pptx (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Commercial terms\\nContact desk: <PII:PERSON_04> <PII:EMAIL_11> <PII:PHONE_11>\\nParallel workstream: PEBBLE (vendor ORG-4402)\"}]}\n{\"id\":\"afa1bd697b2b8502dd2c8165b25a4dbc98032798d2563a184bfaaacf289501d3\",\"source\":\"shared/review-q3.eml\",\"sourceRange\":null,\"entities\":[\"ent:person:7c2789239d3d2935\",\"ent:email:af635dcf645ca2c2\",\"ent:person:d4896fc37b9be358\",\"ent:email:857b9d7cb86ca26d\",\"ent:person:9fc3aba4748fc811\",\"ent:email:15298f14ed5b565e\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from shared/review-q3.eml (HEADER).\"},{\"role\":\"assistant\",\"content\":\"FROM: <PII:PERSON_04> <<PII:EMAIL_11>>\\nTO: <PII:PERSON_01> <<PII:EMAIL_10>>, <PII:PERSON_15> <<PII:EMAIL_14>>\\nSUBJECT: Q3 review edits — SLA clauses\\nDATE: Fri, 20 Nov 2026 15:30:00 +0000\"}]}\n{\"id\":\"c80f5015841248e12e27ac3fd0c4dec2fcba24aea2ce1de56232e66053598042\",\"source\":\"it/escalation-notes.txt\",\"sourceRange\":[0,366],\"entities\":[\"ent:dob:9e924313344c6a25\",\"ent:person:24078b625d892e8e\",\"ent:person:01e30619778b4391\",\"ent:phone:36a474e43e4fb7b6\",\"ent:person:d4896fc37b9be358\",\"ent:email:857b9d7cb86ca26d\",\"ent:person:7c2789239d3d2935\",\"ent:person:dfe3509f7ae097fd\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from it/escalation-notes.txt (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Handover notes — incident bridge, week of <PII:DOB_02>.\\nOpen incident <PII:PERSON_23>1043 is owned by <PII:PERSON_12> (<PII:PHONE_05>); deputy <PII:PERSON_01> (<PII:EMAIL_10>).\\nStakeholders to contact: <PII:PERSON_04> for finance sign-off and <PII:PERSON_16> for comms.\\nLinked workstream: LANTERN under supplier ORG-3174, with the same contact list as the AMBER bridge.\"}]}\n{\"id\":\"cd73b149d015f31969b615cb6a920918cde0998e5c9b347ce12b01ba74fbb7c0\",\"source\":\"shared/kickoff-announcement.eml\",\"sourceRange\":null,\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:email:e28665cdc6502c38\",\"ent:person:7c7adc80c4dfaa6e\",\"ent:phone:42ca8317da237dfd\",\"ent:person:d4a0890a9d52108d\",\"ent:person:8023f2aba43ab7c3\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from shared/kickoff-announcement.eml (PROSE).\"},{\"role\":\"assistant\",\"content\":\"Kickoff for project AMBER lands Monday. IT lead is <PII:PERSON_06> (<PII:EMAIL_01>);\\nvendor ORG-2271 (<PII:PERSON_20> plc) renews against project PEBBLE in the same window.\\nPhone bridge: <PII:PHONE_01> (ask for <PII:PERSON_11>). Business approval: <PII:PERSON_02>.\"}]}\n{\"id\":\"d64be9fe75c224ac5a85ab5955163035aa6e532dcd84fa4867b5f2b089574fa1\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:048a7eb56adb0b8f\",\"ent:person:ddfb3ab30e10ef15\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_07>: Close. Actions owned by <PII:PERSON_06> and <PII:PERSON_07>.\"}]}\n{\"id\":\"ed8117b2e5c77326850fe0841eb2ff31e4892aa9bae006f3a242c4c07615924f\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:person:261e25cd76d10eaf\",\"ent:person:8303007ddf8d0b3b\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_06>: Platform side is on track; I will send the checklist from <PII:PERSON_24> dot <PII:PERSON_25> at northfield-ltd dot example this afternoon.\"}]}\n{\"id\":\"f087218416c01732d4eb14dcaac68d0a3aece6641691dc2020d7b09fe46cd91f\",\"source\":\"it/service-inventory.sql\",\"sourceRange\":[0,4344],\"entities\":[\"ent:person:f9766b8287796a52\",\"ent:person:ddfb3ab30e10ef15\",\"ent:email:e28665cdc6502c38\",\"ent:phone:42ca8317da237dfd\",\"ent:person:a037f4c4d787293c\",\"ent:email:647a46510a4db47d\",\"ent:phone:9e97f838b69b91b3\",\"ent:person:73d434b0fd924f21\",\"ent:email:1cc72bd1bca27bc2\",\"ent:phone:027a0ec3acbb6bb0\",\"ent:person:d4a0890a9d52108d\",\"ent:email:395259bdb0b9fda3\",\"ent:phone:2506f99a98732030\",\"ent:person:01e30619778b4391\",\"ent:email:6e512898ed97474d\",\"ent:phone:36a474e43e4fb7b6\",\"ent:person:50e3e9b771d155ee\",\"ent:email:16a4b9481edaf349\",\"ent:phone:e5cf143c26430ae0\",\"ent:person:4734c5fe5e60fb4b\",\"ent:email:ff629f83c7d23451\",\"ent:phone:bc7a6407d66cd93f\",\"ent:person:8023f2aba43ab7c3\",\"ent:email:da3217e2bebe16ee\",\"ent:phone:19b99df3e62f1954\",\"ent:person:048a7eb56adb0b8f\",\"ent:email:e8583972267879f8\",\"ent:phone:b4dff970106873b1\",\"ent:person:d4896fc37b9be358\",\"ent:email:857b9d7cb86ca26d\",\"ent:phone:24d949d3457e3f5a\",\"ent:person:7c2789239d3d2935\",\"ent:email:af635dcf645ca2c2\",\"ent:phone:30dbedabbe78b7b2\",\"ent:person:7783aa74741924c3\",\"ent:email:3ea2a8fc17183cf1\",\"ent:phone:de7b2ed12e2b960b\",\"ent:person:d78e78f9084244ed\",\"ent:email:cde9c50b71b560fa\",\"ent:phone:4c1563f0470b85cb\",\"ent:person:9fc3aba4748fc811\",\"ent:email:15298f14ed5b565e\",\"ent:phone:06df0077f8950e91\",\"ent:person:dfe3509f7ae097fd\",\"ent:email:db645701e5dcd53b\",\"ent:phone:e68f3c09a248680f\",\"ent:person:16d6ada21103c5b8\",\"ent:email:25127f97c2b327bc\",\"ent:phone:2de792c5c9d6c88a\",\"ent:person:27e59aee111b4ec4\",\"ent:person:20d69a9bb6254aa5\",\"ent:person:7c7adc80c4dfaa6e\",\"ent:person:b49264db494428ac\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from it/service-inventory.sql (PROSE).\"},{\"role\":\"assistant\",\"content\":\"-- <PII:PERSON_08> internal service inventory (text SQL dump, INSERT statements only)\\nCREATE TABLE employees (emp_id INT, full_name TEXT, email TEXT, phone TEXT, department TEXT, project_code TEXT);\\nCREATE TABLE tickets (ticket_id INT, project_code TEXT, assigned_name TEXT, org_id TEXT, summary TEXT);\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (100, '<PII:PERSON_06>', '<PII:EMAIL_01>', '<PII:PHONE_01>', 'IT', 'AMBER');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (101, '<PII:PERSON_09>', '<PII:EMAIL_02>', '<PII:PHONE_02>', 'BUSINESS', 'LANTERN');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (102, '<PII:PERSON_10>', '<PII:EMAIL_03>', '<PII:PHONE_03>', 'IT', 'PEBBLE');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (103, '<PII:PERSON_11>', '<PII:EMAIL_04>', '<PII:PHONE_04>', 'BUSINESS', 'QUARRY');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (104, '<PII:PERSON_12>', '<PII:EMAIL_05>', '<PII:PHONE_05>', 'IT', 'AMBER');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (105, '<PII:PERSON_13>', '<PII:EMAIL_06>', '<PII:PHONE_06>', 'BUSINESS', 'LANTERN');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (106, '<PII:PERSON_03>', '<PII:EMAIL_07>', '<PII:PHONE_07>', 'IT', 'PEBBLE');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (107, '<PII:PERSON_02>', '<PII:EMAIL_08>', '<PII:PHONE_08>', 'BUSINESS', 'QUARRY');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (108, '<PII:PERSON_07>', '<PII:EMAIL_09>', '<PII:PHONE_09>', 'IT', 'AMBER');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (109, '<PII:PERSON_01>', '<PII:EMAIL_10>', '<PII:PHONE_10>', 'BUSINESS', 'LANTERN');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (110, '<PII:PERSON_04>', '<PII:EMAIL_11>', '<PII:PHONE_11>', 'IT', 'PEBBLE');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (111, '<PII:PERSON_05>', '<PII:EMAIL_12>', '<PII:PHONE_12>', 'BUSINESS', 'QUARRY');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (112, '<PII:PERSON_14>', '<PII:EMAIL_13>', '<PII:PHONE_13>', 'IT', 'AMBER');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (113, '<PII:PERSON_15>', '<PII:EMAIL_14>', '<PII:PHONE_14>', 'BUSINESS', 'LANTERN');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (114, '<PII:PERSON_16>', '<PII:EMAIL_15>', '<PII:PHONE_15>', 'IT', 'PEBBLE');\\nINSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (115, '<PII:PERSON_17>', '<PII:EMAIL_16>', '<PII:PHONE_16>', 'BUSINESS', 'QUARRY');\\nINSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7700, 'AMBER', '<PII:PERSON_06>', 'ORG-2271', 'Rotate service credentials for <PII:PERSON_18> Ltd contact <PII:EMAIL_01> before the next release.');\\nINSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7701, 'LANTERN', '<PII:PERSON_12>', 'ORG-3174', 'Rotate service credentials for <PII:PERSON_19> Group contact <PII:EMAIL_05> before the next release.');\\nINSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7702, 'PEBBLE', '<PII:PERSON_07>', 'ORG-4402', 'Rotate service credentials for <PII:PERSON_20> plc contact <PII:EMAIL_09> before the next release.');\\nINSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7703, 'QUARRY', '<PII:PERSON_14>', 'ORG-8115', 'Rotate service credentials for <PII:PERSON_21> Co contact <PII:EMAIL_13> before the next release.');\"}]}\n{\"id\":\"fc79e28560f18130670375ed29d1be70685f2e7aa82981e25617ce597e372812\",\"source\":\"meetings/weekly-sync.vtt\",\"sourceRange\":null,\"entities\":[\"ent:person:ddfb3ab30e10ef15\",\"ent:person:4734c5fe5e60fb4b\"],\"messages\":[{\"role\":\"system\",\"content\":\"Answer strictly from the provided sanitized context.\"},{\"role\":\"user\",\"content\":\"Summarize the key record from meetings/weekly-sync.vtt (TRANSCRIPT_TURN).\"},{\"role\":\"assistant\",\"content\":\"<PII:PERSON_06>: Deployment approvals still route through <PII:PERSON_03>; escalation phone plus four four two zero seven nine four six zero nine one eight.\"}]}\n",
+      "sampleCount": 24,
+      "entityCount": 76,
+      "receipt": {
+        "engine": "versieve-amnesiac-corpus-v1",
+        "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+        "corpusSha256": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
+        "sampleCount": 24,
+        "entityCount": 76,
+        "viewDigest": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      },
+      "trainingRecipe": {
+        "family": "lora",
+        "seed": 42,
+        "placeholderMasking": "labels[-100] on <PII:...>/<SECRET:...> spans (PT-LM)",
+        "hyperparameters": {
+          "r": 16,
+          "alpha": 32,
+          "lr": 0.0002,
+          "steps": 80,
+          "batch": "2x4 grad-accum",
+          "maxLen": 768
+        }
+      },
+      "certificates": {
+        "statedConfidence": 0.95,
+        "calibrationMethod": "Clopper-Pearson binomial lower bound at stated confidence (fixed-sequence Learn-Then-Test inversion over binomCdf)",
+        "passRate": 0.958333,
+        "certifiedPassRateLowerBound": 0.817108,
+        "quarantinedSampleCount": 1,
+        "classes": {
+          "ADDRESS": {
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.368403
+          },
+          "DATE_OF_BIRTH": {
+            "detectedCount": 20,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.860892
+          },
+          "EMAIL": {
+            "detectedCount": 57,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.948801
+          },
+          "GITHUB_PAT": {
+            "detectedCount": 1,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.05
+          },
+          "PERSON": {
+            "detectedCount": 153,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.98061
+          },
+          "PHONE": {
+            "detectedCount": 28,
+            "missedCount": 0,
+            "certifiedRecallLowerBound": 0.898534
+          }
+        },
+        "perSample": [
+          {
+            "id": "0037307ed9a2bc60c7f219b2295d1040d230df48664bf1542ddbac5d3e950e4b",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 1,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "083d3a94aa455c47e5607437938c4591a83771d1cd1d8187ec4b88f41060ac64",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "0d5acd5aca1694236e6376522ccc1c15075a7a464979dcbd9116f42aae57c651",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 2,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "1dbbdaef46b2874efc54d35853bdc198d6aec83fe7ccae2735f74af35047ddf6",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 6,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "2dda64a5cd3b986c6b396f91f16dbd4611d542ef5980fd5d1b0e34d9a44e5622",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 20,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "3b529a60c01400e737fcd08c60729220a4822e65d6da8222062efcd456012215",
+            "gate": "QUARANTINE_SECRET",
+            "risk": 0.92,
+            "detectedCount": 10,
+            "missedCount": 0,
+            "certifiedPass": false
+          },
+          {
+            "id": "3cd3cc8d09245fd48efbcbd4489679f3239c9413296d613a41f9cfe48aa20b45",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 4,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "4f454dfc95e96d1496899266371e0c3c978f09ad43b4625dee085ae40221a4e3",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 2,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "6cc4ec7b88c85824f09f48a0475f87c36c4f93738f1be017f8d3ed364bb462ea",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 2,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "729e7575f9ab56848d215dff72a4ba6c498dcf1ac7f3eb02454dfe6e114887b5",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "7d301d4bff72009e9d5a9fcf55fe6860312c4f4d92932c6d3b6ec7b585fdbe1f",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "852690a7e7895703c45aef078a0cfb7f9baf2b6a16a5a0512f023d471aa48f95",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 1,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "88f451ca9b31a77d4b0934317de57c6ffe33902dca85753309d78e71f046ac53",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 24,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "8c3b5ba508578a2521e64ffa081d9bdc5037a649d9fe17c62769d2d30fb122f3",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 6,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "901b153eba000f781599b05a15e533f1443305162d73a20dc821093103eb9812",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 80,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "996d8687b59b65078fa071abe60d08dbdffa7cbd1db39bbea786f177ecaf1d3f",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "a739d6e6772e5712f3dd0ab35407d7135fd481bf6711959811ada09f5bf99f52",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "afa1bd697b2b8502dd2c8165b25a4dbc98032798d2563a184bfaaacf289501d3",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 6,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "c80f5015841248e12e27ac3fd0c4dec2fcba24aea2ce1de56232e66053598042",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 8,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "cd73b149d015f31969b615cb6a920918cde0998e5c9b347ce12b01ba74fbb7c0",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 6,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "d64be9fe75c224ac5a85ab5955163035aa6e532dcd84fa4867b5f2b089574fa1",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "ed8117b2e5c77326850fe0841eb2ff31e4892aa9bae006f3a242c4c07615924f",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 3,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "f087218416c01732d4eb14dcaac68d0a3aece6641691dc2020d7b09fe46cd91f",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 61,
+            "missedCount": 0,
+            "certifiedPass": true
+          },
+          {
+            "id": "fc79e28560f18130670375ed29d1be70685f2e7aa82981e25617ce597e372812",
+            "gate": "KEEP_SAFE_REDACTED",
+            "risk": 0.92,
+            "detectedCount": 2,
+            "missedCount": 0,
+            "certifiedPass": true
+          }
+        ]
+      }
+    },
+    "connectionGraph": {
+      "raw": {
+        "kind": "company-brain-connection-graph",
+        "stage": 10,
+        "seed": 20261124,
+        "note": "Engine-observable structure over the company estate: masked salted tokens only, no raw values, no GT. Nodes are departments, estate files, and salted entities; edges are file containment, per-file mentions, and cross-department shared-entity links measured in the P2 receipt. Rendered statically by department column in the Rtio sandbox (perception + visualization + export only).",
+        "departments": [
+          "business",
+          "it",
+          "meetings",
+          "shared"
+        ],
+        "nodes": [
+          {
+            "id": "dept:business",
+            "type": "department",
+            "label": "business"
+          },
+          {
+            "id": "dept:it",
+            "type": "department",
+            "label": "it"
+          },
+          {
+            "id": "dept:meetings",
+            "type": "department",
+            "label": "meetings"
+          },
+          {
+            "id": "dept:shared",
+            "type": "department",
+            "label": "shared"
+          },
+          {
+            "id": "file:it/service-inventory.sql",
+            "type": "file",
+            "label": "service-inventory.sql",
+            "departments": [
+              "it"
+            ],
+            "modality": "sql"
+          },
+          {
+            "id": "file:it/runbook.txt",
+            "type": "file",
+            "label": "runbook.txt",
+            "departments": [
+              "it"
+            ],
+            "modality": "text"
+          },
+          {
+            "id": "file:it/escalation-notes.txt",
+            "type": "file",
+            "label": "escalation-notes.txt",
+            "departments": [
+              "it"
+            ],
+            "modality": "text"
+          },
+          {
+            "id": "file:business/accounts.csv",
+            "type": "file",
+            "label": "accounts.csv",
+            "departments": [
+              "business"
+            ],
+            "modality": "csv"
+          },
+          {
+            "id": "file:business/contract-edits.csv",
+            "type": "file",
+            "label": "contract-edits.csv",
+            "departments": [
+              "business"
+            ],
+            "modality": "csv"
+          },
+          {
+            "id": "file:business/pricing-notes.txt",
+            "type": "file",
+            "label": "pricing-notes.txt",
+            "departments": [
+              "business"
+            ],
+            "modality": "text"
+          },
+          {
+            "id": "file:shared/kickoff-announcement.eml",
+            "type": "file",
+            "label": "kickoff-announcement.eml",
+            "departments": [
+              "shared"
+            ],
+            "modality": "email"
+          },
+          {
+            "id": "file:shared/review-q3.eml",
+            "type": "file",
+            "label": "review-q3.eml",
+            "departments": [
+              "shared"
+            ],
+            "modality": "email"
+          },
+          {
+            "id": "file:meetings/weekly-sync-transcript.txt",
+            "type": "file",
+            "label": "weekly-sync-transcript.txt",
+            "departments": [
+              "meetings"
+            ],
+            "modality": "transcript"
+          },
+          {
+            "id": "file:meetings/weekly-sync.vtt",
+            "type": "file",
+            "label": "weekly-sync.vtt",
+            "departments": [
+              "meetings"
+            ],
+            "modality": "captions"
+          },
+          {
+            "id": "file:meetings/weekly-sync.wav",
+            "type": "file",
+            "label": "weekly-sync.wav",
+            "departments": [
+              "meetings"
+            ],
+            "modality": "audio"
+          },
+          {
+            "id": "file:business/board-proposal.pptx",
+            "type": "file",
+            "label": "board-proposal.pptx",
+            "departments": [
+              "business"
+            ],
+            "modality": "deck"
+          },
+          {
+            "id": "ent:address:12f9c36d2eb6dab6",
+            "type": "entity",
+            "label": "<PII:ADDRESS_03>",
+            "piiKind": "ADDRESS",
+            "mentionCount": 1,
+            "departments": [
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:address:659099e6ad922114",
+            "type": "entity",
+            "label": "<PII:ADDRESS_02>",
+            "piiKind": "ADDRESS",
+            "mentionCount": 2,
+            "departments": [
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:dob:327a194cc79edecc",
+            "type": "entity",
+            "label": "<PII:DOB_07>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:48a76654662a1bd7",
+            "type": "entity",
+            "label": "<PII:DOB_12>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 1,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:609ac20755d7ea91",
+            "type": "entity",
+            "label": "<PII:DOB_09>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 1,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:62a0e2ee1bdcb49c",
+            "type": "entity",
+            "label": "<PII:DOB_06>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:787c33c0bf0aee4d",
+            "type": "entity",
+            "label": "<PII:DOB_05>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:78d6cb391fd1cabf",
+            "type": "entity",
+            "label": "<PII:DOB_03>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:9e924313344c6a25",
+            "type": "entity",
+            "label": "<PII:DOB_02>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:dob:aa638fbc79de5706",
+            "type": "entity",
+            "label": "<PII:DOB_04>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:d6aed68016b6dc45",
+            "type": "entity",
+            "label": "<PII:DOB_11>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:dob:daaf7cad936d91a2",
+            "type": "entity",
+            "label": "<PII:DOB_01>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:dob:de6a4c0ae8799a3a",
+            "type": "entity",
+            "label": "<PII:DOB_10>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 1,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:dob:f8fa6bbc52e12f2d",
+            "type": "entity",
+            "label": "<PII:DOB_08>",
+            "piiKind": "DATE_OF_BIRTH",
+            "mentionCount": 2,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:email:03bbea171c105450",
+            "type": "entity",
+            "label": "<PII:EMAIL_17>",
+            "piiKind": "EMAIL",
+            "mentionCount": 1,
+            "departments": [
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:15298f14ed5b565e",
+            "type": "entity",
+            "label": "<PII:EMAIL_14>",
+            "piiKind": "EMAIL",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:16a4b9481edaf349",
+            "type": "entity",
+            "label": "<PII:EMAIL_06>",
+            "piiKind": "EMAIL",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:1cc72bd1bca27bc2",
+            "type": "entity",
+            "label": "<PII:EMAIL_03>",
+            "piiKind": "EMAIL",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:25127f97c2b327bc",
+            "type": "entity",
+            "label": "<PII:EMAIL_16>",
+            "piiKind": "EMAIL",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:395259bdb0b9fda3",
+            "type": "entity",
+            "label": "<PII:EMAIL_04>",
+            "piiKind": "EMAIL",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:3ea2a8fc17183cf1",
+            "type": "entity",
+            "label": "<PII:EMAIL_12>",
+            "piiKind": "EMAIL",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:647a46510a4db47d",
+            "type": "entity",
+            "label": "<PII:EMAIL_02>",
+            "piiKind": "EMAIL",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:6e512898ed97474d",
+            "type": "entity",
+            "label": "<PII:EMAIL_05>",
+            "piiKind": "EMAIL",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:857b9d7cb86ca26d",
+            "type": "entity",
+            "label": "<PII:EMAIL_10>",
+            "piiKind": "EMAIL",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:af635dcf645ca2c2",
+            "type": "entity",
+            "label": "<PII:EMAIL_11>",
+            "piiKind": "EMAIL",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:cde9c50b71b560fa",
+            "type": "entity",
+            "label": "<PII:EMAIL_13>",
+            "piiKind": "EMAIL",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:da3217e2bebe16ee",
+            "type": "entity",
+            "label": "<PII:EMAIL_08>",
+            "piiKind": "EMAIL",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:db645701e5dcd53b",
+            "type": "entity",
+            "label": "<PII:EMAIL_15>",
+            "piiKind": "EMAIL",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:email:e28665cdc6502c38",
+            "type": "entity",
+            "label": "<PII:EMAIL_01>",
+            "piiKind": "EMAIL",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:e8583972267879f8",
+            "type": "entity",
+            "label": "<PII:EMAIL_09>",
+            "piiKind": "EMAIL",
+            "mentionCount": 6,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:ec4038efac89fd03",
+            "type": "entity",
+            "label": "<PII:EMAIL_18>",
+            "piiKind": "EMAIL",
+            "mentionCount": 1,
+            "departments": [
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:email:ff629f83c7d23451",
+            "type": "entity",
+            "label": "<PII:EMAIL_07>",
+            "piiKind": "EMAIL",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:01e30619778b4391",
+            "type": "entity",
+            "label": "<PII:PERSON_12>",
+            "piiKind": "PERSON",
+            "mentionCount": 9,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:048a7eb56adb0b8f",
+            "type": "entity",
+            "label": "<PII:PERSON_07>",
+            "piiKind": "PERSON",
+            "mentionCount": 19,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:16d6ada21103c5b8",
+            "type": "entity",
+            "label": "<PII:PERSON_17>",
+            "piiKind": "PERSON",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:20d69a9bb6254aa5",
+            "type": "entity",
+            "label": "<PII:PERSON_19>",
+            "piiKind": "PERSON",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:24078b625d892e8e",
+            "type": "entity",
+            "label": "<PII:PERSON_23>",
+            "piiKind": "PERSON",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:261e25cd76d10eaf",
+            "type": "entity",
+            "label": "<PII:PERSON_24>",
+            "piiKind": "PERSON",
+            "mentionCount": 3,
+            "departments": [
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:person:27e59aee111b4ec4",
+            "type": "entity",
+            "label": "<PII:PERSON_18>",
+            "piiKind": "PERSON",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:4734c5fe5e60fb4b",
+            "type": "entity",
+            "label": "<PII:PERSON_03>",
+            "piiKind": "PERSON",
+            "mentionCount": 7,
+            "departments": [
+              "business",
+              "it",
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:person:50e3e9b771d155ee",
+            "type": "entity",
+            "label": "<PII:PERSON_13>",
+            "piiKind": "PERSON",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:73d434b0fd924f21",
+            "type": "entity",
+            "label": "<PII:PERSON_10>",
+            "piiKind": "PERSON",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:7783aa74741924c3",
+            "type": "entity",
+            "label": "<PII:PERSON_05>",
+            "piiKind": "PERSON",
+            "mentionCount": 8,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:7c2789239d3d2935",
+            "type": "entity",
+            "label": "<PII:PERSON_04>",
+            "piiKind": "PERSON",
+            "mentionCount": 10,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:7c7adc80c4dfaa6e",
+            "type": "entity",
+            "label": "<PII:PERSON_20>",
+            "piiKind": "PERSON",
+            "mentionCount": 4,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:8023f2aba43ab7c3",
+            "type": "entity",
+            "label": "<PII:PERSON_02>",
+            "piiKind": "PERSON",
+            "mentionCount": 10,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:8303007ddf8d0b3b",
+            "type": "entity",
+            "label": "<PII:PERSON_25>",
+            "piiKind": "PERSON",
+            "mentionCount": 3,
+            "departments": [
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:person:9fc3aba4748fc811",
+            "type": "entity",
+            "label": "<PII:PERSON_15>",
+            "piiKind": "PERSON",
+            "mentionCount": 6,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:a037f4c4d787293c",
+            "type": "entity",
+            "label": "<PII:PERSON_09>",
+            "piiKind": "PERSON",
+            "mentionCount": 6,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:b49264db494428ac",
+            "type": "entity",
+            "label": "<PII:PERSON_21>",
+            "piiKind": "PERSON",
+            "mentionCount": 2,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:d4896fc37b9be358",
+            "type": "entity",
+            "label": "<PII:PERSON_01>",
+            "piiKind": "PERSON",
+            "mentionCount": 9,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:d4a0890a9d52108d",
+            "type": "entity",
+            "label": "<PII:PERSON_11>",
+            "piiKind": "PERSON",
+            "mentionCount": 6,
+            "departments": [
+              "business",
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:d78e78f9084244ed",
+            "type": "entity",
+            "label": "<PII:PERSON_14>",
+            "piiKind": "PERSON",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:ddfb3ab30e10ef15",
+            "type": "entity",
+            "label": "<PII:PERSON_06>",
+            "piiKind": "PERSON",
+            "mentionCount": 17,
+            "departments": [
+              "business",
+              "it",
+              "meetings",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:person:dfe3509f7ae097fd",
+            "type": "entity",
+            "label": "<PII:PERSON_16>",
+            "piiKind": "PERSON",
+            "mentionCount": 5,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:person:f1a41baa0c5189c4",
+            "type": "entity",
+            "label": "<PII:PERSON_22>",
+            "piiKind": "PERSON",
+            "mentionCount": 1,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:person:f9766b8287796a52",
+            "type": "entity",
+            "label": "<PII:PERSON_08>",
+            "piiKind": "PERSON",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it",
+              "meetings"
+            ]
+          },
+          {
+            "id": "ent:phone:027a0ec3acbb6bb0",
+            "type": "entity",
+            "label": "<PII:PHONE_03>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:06df0077f8950e91",
+            "type": "entity",
+            "label": "<PII:PHONE_14>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:19b99df3e62f1954",
+            "type": "entity",
+            "label": "<PII:PHONE_08>",
+            "piiKind": "PHONE",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:24872a4135690ceb",
+            "type": "entity",
+            "label": "<PII:PHONE_18>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "business"
+            ]
+          },
+          {
+            "id": "ent:phone:24d949d3457e3f5a",
+            "type": "entity",
+            "label": "<PII:PHONE_10>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:2506f99a98732030",
+            "type": "entity",
+            "label": "<PII:PHONE_04>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:2de792c5c9d6c88a",
+            "type": "entity",
+            "label": "<PII:PHONE_16>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:30dbedabbe78b7b2",
+            "type": "entity",
+            "label": "<PII:PHONE_11>",
+            "piiKind": "PHONE",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:36a474e43e4fb7b6",
+            "type": "entity",
+            "label": "<PII:PHONE_05>",
+            "piiKind": "PHONE",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:42ca8317da237dfd",
+            "type": "entity",
+            "label": "<PII:PHONE_01>",
+            "piiKind": "PHONE",
+            "mentionCount": 2,
+            "departments": [
+              "it",
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:phone:4c1563f0470b85cb",
+            "type": "entity",
+            "label": "<PII:PHONE_13>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:9e97f838b69b91b3",
+            "type": "entity",
+            "label": "<PII:PHONE_02>",
+            "piiKind": "PHONE",
+            "mentionCount": 3,
+            "departments": [
+              "business",
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:b4dff970106873b1",
+            "type": "entity",
+            "label": "<PII:PHONE_09>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:bc7a6407d66cd93f",
+            "type": "entity",
+            "label": "<PII:PHONE_07>",
+            "piiKind": "PHONE",
+            "mentionCount": 2,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:cb2232f0a3ddc0fe",
+            "type": "entity",
+            "label": "<PII:PHONE_17>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "shared"
+            ]
+          },
+          {
+            "id": "ent:phone:de7b2ed12e2b960b",
+            "type": "entity",
+            "label": "<PII:PHONE_12>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:e5cf143c26430ae0",
+            "type": "entity",
+            "label": "<PII:PHONE_06>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:phone:e68f3c09a248680f",
+            "type": "entity",
+            "label": "<PII:PHONE_15>",
+            "piiKind": "PHONE",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          },
+          {
+            "id": "ent:secret_github_pat:17ca6185759a6b07",
+            "type": "entity",
+            "label": "<SECRET:GITHUB_PAT_01>",
+            "piiKind": "GITHUB_PAT",
+            "mentionCount": 1,
+            "departments": [
+              "it"
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "source": "dept:it",
+            "target": "file:it/service-inventory.sql",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:it",
+            "target": "file:it/runbook.txt",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:it",
+            "target": "file:it/escalation-notes.txt",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:business",
+            "target": "file:business/accounts.csv",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:business",
+            "target": "file:business/contract-edits.csv",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:business",
+            "target": "file:business/pricing-notes.txt",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:shared",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:shared",
+            "target": "file:shared/review-q3.eml",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:meetings",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:meetings",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:meetings",
+            "target": "file:meetings/weekly-sync.wav",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "dept:business",
+            "target": "file:business/board-proposal.pptx",
+            "type": "CONTAINS_FILE",
+            "weight": 1
+          },
+          {
+            "source": "ent:address:12f9c36d2eb6dab6",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:address:659099e6ad922114",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:address:659099e6ad922114",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:327a194cc79edecc",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:48a76654662a1bd7",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:dob:609ac20755d7ea91",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:dob:62a0e2ee1bdcb49c",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:787c33c0bf0aee4d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:78d6cb391fd1cabf",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:9e924313344c6a25",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:9e924313344c6a25",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:aa638fbc79de5706",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:d6aed68016b6dc45",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:d6aed68016b6dc45",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:dob:daaf7cad936d91a2",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:dob:de6a4c0ae8799a3a",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:dob:f8fa6bbc52e12f2d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:03bbea171c105450",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:email:15298f14ed5b565e",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:15298f14ed5b565e",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:15298f14ed5b565e",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:16a4b9481edaf349",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:16a4b9481edaf349",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:1cc72bd1bca27bc2",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:1cc72bd1bca27bc2",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:1cc72bd1bca27bc2",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:25127f97c2b327bc",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:25127f97c2b327bc",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:395259bdb0b9fda3",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:395259bdb0b9fda3",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:3ea2a8fc17183cf1",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:3ea2a8fc17183cf1",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:647a46510a4db47d",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:647a46510a4db47d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:647a46510a4db47d",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:6e512898ed97474d",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:6e512898ed97474d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:6e512898ed97474d",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:857b9d7cb86ca26d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:857b9d7cb86ca26d",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:857b9d7cb86ca26d",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:857b9d7cb86ca26d",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:af635dcf645ca2c2",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:af635dcf645ca2c2",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:af635dcf645ca2c2",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:af635dcf645ca2c2",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:af635dcf645ca2c2",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:cde9c50b71b560fa",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:cde9c50b71b560fa",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:cde9c50b71b560fa",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:da3217e2bebe16ee",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:da3217e2bebe16ee",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:da3217e2bebe16ee",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:email:db645701e5dcd53b",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:db645701e5dcd53b",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:email:e28665cdc6502c38",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:e28665cdc6502c38",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:e28665cdc6502c38",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:e28665cdc6502c38",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:email:e8583972267879f8",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:email:e8583972267879f8",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:email:e8583972267879f8",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:email:e8583972267879f8",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:email:e8583972267879f8",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:email:ec4038efac89fd03",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:email:ff629f83c7d23451",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:ff629f83c7d23451",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:email:ff629f83c7d23451",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:01e30619778b4391",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:048a7eb56adb0b8f",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 19
+          },
+          {
+            "source": "ent:person:16d6ada21103c5b8",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:person:16d6ada21103c5b8",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:person:20d69a9bb6254aa5",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:person:20d69a9bb6254aa5",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:person:24078b625d892e8e",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:person:261e25cd76d10eaf",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:261e25cd76d10eaf",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:261e25cd76d10eaf",
+            "target": "file:meetings/weekly-sync.wav",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:27e59aee111b4ec4",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:27e59aee111b4ec4",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:4734c5fe5e60fb4b",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 7
+          },
+          {
+            "source": "ent:person:4734c5fe5e60fb4b",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 7
+          },
+          {
+            "source": "ent:person:4734c5fe5e60fb4b",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 7
+          },
+          {
+            "source": "ent:person:4734c5fe5e60fb4b",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 7
+          },
+          {
+            "source": "ent:person:4734c5fe5e60fb4b",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 7
+          },
+          {
+            "source": "ent:person:50e3e9b771d155ee",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:50e3e9b771d155ee",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:50e3e9b771d155ee",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:73d434b0fd924f21",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:73d434b0fd924f21",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:73d434b0fd924f21",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7783aa74741924c3",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 8
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c2789239d3d2935",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:7c7adc80c4dfaa6e",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:person:7c7adc80c4dfaa6e",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:person:7c7adc80c4dfaa6e",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 4
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8023f2aba43ab7c3",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 10
+          },
+          {
+            "source": "ent:person:8303007ddf8d0b3b",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:8303007ddf8d0b3b",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:8303007ddf8d0b3b",
+            "target": "file:meetings/weekly-sync.wav",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:9fc3aba4748fc811",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:9fc3aba4748fc811",
+            "target": "file:business/pricing-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:9fc3aba4748fc811",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:9fc3aba4748fc811",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:a037f4c4d787293c",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:a037f4c4d787293c",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:a037f4c4d787293c",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:b49264db494428ac",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:person:b49264db494428ac",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4896fc37b9be358",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 9
+          },
+          {
+            "source": "ent:person:d4a0890a9d52108d",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:d4a0890a9d52108d",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:d4a0890a9d52108d",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:d4a0890a9d52108d",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 6
+          },
+          {
+            "source": "ent:person:d78e78f9084244ed",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:d78e78f9084244ed",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:meetings/weekly-sync.vtt",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:ddfb3ab30e10ef15",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 17
+          },
+          {
+            "source": "ent:person:dfe3509f7ae097fd",
+            "target": "file:business/contract-edits.csv",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:dfe3509f7ae097fd",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:dfe3509f7ae097fd",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 5
+          },
+          {
+            "source": "ent:person:f1a41baa0c5189c4",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:person:f9766b8287796a52",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:f9766b8287796a52",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:person:f9766b8287796a52",
+            "target": "file:meetings/weekly-sync-transcript.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:027a0ec3acbb6bb0",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:06df0077f8950e91",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:19b99df3e62f1954",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:19b99df3e62f1954",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:24872a4135690ceb",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:24d949d3457e3f5a",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:2506f99a98732030",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:2de792c5c9d6c88a",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:30dbedabbe78b7b2",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:30dbedabbe78b7b2",
+            "target": "file:business/board-proposal.pptx",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:30dbedabbe78b7b2",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:36a474e43e4fb7b6",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:36a474e43e4fb7b6",
+            "target": "file:it/escalation-notes.txt",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:36a474e43e4fb7b6",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:42ca8317da237dfd",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:phone:42ca8317da237dfd",
+            "target": "file:shared/kickoff-announcement.eml",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:phone:4c1563f0470b85cb",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:9e97f838b69b91b3",
+            "target": "file:business/accounts.csv",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:9e97f838b69b91b3",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 3
+          },
+          {
+            "source": "ent:phone:b4dff970106873b1",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:bc7a6407d66cd93f",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:phone:bc7a6407d66cd93f",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 2
+          },
+          {
+            "source": "ent:phone:cb2232f0a3ddc0fe",
+            "target": "file:shared/review-q3.eml",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:de7b2ed12e2b960b",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:e5cf143c26430ae0",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:phone:e68f3c09a248680f",
+            "target": "file:it/service-inventory.sql",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "ent:secret_github_pat:17ca6185759a6b07",
+            "target": "file:it/runbook.txt",
+            "type": "MENTIONS_IN",
+            "weight": 1
+          },
+          {
+            "source": "dept:business",
+            "target": "dept:it",
+            "type": "SHARED_ENTITIES",
+            "weight": 42
+          },
+          {
+            "source": "dept:business",
+            "target": "dept:meetings",
+            "type": "SHARED_ENTITIES",
+            "weight": 9
+          },
+          {
+            "source": "dept:business",
+            "target": "dept:shared",
+            "type": "SHARED_ENTITIES",
+            "weight": 15
+          },
+          {
+            "source": "dept:it",
+            "target": "dept:meetings",
+            "type": "SHARED_ENTITIES",
+            "weight": 8
+          },
+          {
+            "source": "dept:it",
+            "target": "dept:shared",
+            "type": "SHARED_ENTITIES",
+            "weight": 16
+          },
+          {
+            "source": "dept:meetings",
+            "target": "dept:shared",
+            "type": "SHARED_ENTITIES",
+            "weight": 6
+          }
+        ]
+      },
+      "nodeCount": 92,
+      "edgeCount": 208,
+      "entityNodeCount": 76,
+      "sharedEntityEdgeCount": 6,
+      "graphSha256": "a2bc1461b590bca29a60c4066682eb30b250fd9b92fb712c15346be0a7c41c39",
+      "renderer": {
+        "target": "Rtio sandbox (../Rtio/frontend) — the browser renders perception, the connection graph and the export only; no corpus lifecycle, no training in the browser",
+        "page": "app/company-graph",
+        "component": "components/company-brain/ConnectionGraphViewer.tsx",
+        "layout": "static department-column SVG (no new npm dependencies)",
+        "deployCopy": null
+      }
+    }
+  },
+  "perception": {
+    "receipt": {
+      "engine": "versieve-gccrc-v1",
+      "blockCount": 24,
+      "chunkCount": 30,
+      "anchorPoolSize": 82,
+      "propagatedSpansCount": 7,
+      "forensicFindingsCount": 2,
+      "perceptionSha256": "667e73ef4fff3bcae05ccd1b6a2a5e23fe7d2a0780a10921820d1c8427a0b905",
+      "receiptSha256": "9cc6fb1fbb22193762387e01243187a0cf6ac019aa5efc7265f2c1053a1e6665"
+    },
+    "blockCount": 24,
+    "anchorPoolSize": 82,
+    "propagatedSpansCount": 7
+  },
+  "wallclock": {
+    "perceptionWallclockMs": 130.71620000000001,
+    "totalWallclockMs": 249.94439999999997
+  }
+}

@@ -1,0 +1,7 @@
+org_id,account_name,contact_name,contact_email,contact_phone,payment_terms,project_code
+ORG-2271,Harrow Logistics Ltd,Marcus Bell,marcus.bell@northfield-ltd.example,+44 20 7946 0903,net 30,PEBBLE
+ORG-3174,Calder Freight Group,Lena Weber,lena.weber@northfield-ltd.example,+44 20 7946 0912,net 30,QUARRY
+ORG-4402,Nuneaton Textiles plc,Ines Duarte,ines.duarte@northfield-ltd.example,+44 20 7946 0921,net 30,AMBER
+ORG-8115,Ardwick Tooling Co,Sarah Kwon,sarah.kwon@northfield-ltd.example,+44 20 7946 0930,net 30,LANTERN
+ORG-2271,Harrow Logistics Ltd — renewals,Marcus Bell,marcus.bell@northfield-ltd.example,+44 20 7946 0903,net 45,AMBER
+ORG-4402,Nuneaton Textiles plc — renewals,Ines Duarte,ines.duarte@northfield-ltd.example,+44 20 7946 0921,net 30,PEBBLE

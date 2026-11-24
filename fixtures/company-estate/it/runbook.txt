@@ -1,0 +1,6 @@
+Service runbook — platform escalation path (IT).
+Primary on-call is Priya Sharma; pager escalation goes to Hana Ito after 30 minutes.
+Access requests for project AMBER must be mailed to priya.sharma@northfield-ltd.example with the ticket number.
+Vendor contact for deployment approvals: Tomas Vidal, tomas.vidal@northfield-ltd.example, +44 20 7946 0918.
+The legacy deploy token ghp_TESTTOKEN0123456789abcdefghijklmnopqrstuvwxyz was rotated on 2026-11-20.
+Database restore drills run on Thursdays; Kwame Asante keeps the checklist and pings nadia.farouk@northfield-ltd.example for sign-off.

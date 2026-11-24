@@ -1,0 +1,17 @@
+clause,editor_name,editor_email,submitted_by,reviewer,last_touched
+SLA-01,Priya Sharma,priya.sharma@northfield-ltd.example,Elena Vance,Hana Ito,2026-11-10
+SLA-02,Marcus Bell,marcus.bell@northfield-ltd.example,Ravi Chandra,Lena Weber,2026-11-11
+SLA-03,Ondrej Novak,ondrej.novak@northfield-ltd.example,Sarah Kwon,Kwame Asante,2026-11-12
+SLA-04,Hana Ito,hana.ito@northfield-ltd.example,Daniel Petrov,Tomas Vidal,2026-11-13
+SLA-05,Lena Weber,lena.weber@northfield-ltd.example,Nadia Farouk,Ines Duarte,2026-11-14
+SLA-06,Kwame Asante,kwame.asante@northfield-ltd.example,Victor Adeyemi,Elena Vance,2026-11-15
+SLA-01,Tomas Vidal,tomas.vidal@northfield-ltd.example,Grace Okonkwo,Ravi Chandra,2026-11-16
+SLA-02,Ines Duarte,ines.duarte@northfield-ltd.example,Felix Marchetti,Sarah Kwon,2026-11-17
+SLA-03,Elena Vance,elena.vance@northfield-ltd.example,Priya Sharma,Daniel Petrov,2026-11-18
+SLA-04,Ravi Chandra,ravi.chandra@northfield-ltd.example,Marcus Bell,Nadia Farouk,2026-11-19
+SLA-05,Sarah Kwon,sarah.kwon@northfield-ltd.example,Ondrej Novak,Victor Adeyemi,2026-11-10
+SLA-06,Daniel Petrov,daniel.petrov@northfield-ltd.example,Hana Ito,Grace Okonkwo,2026-11-11
+SLA-01,Nadia Farouk,nadia.farouk@northfield-ltd.example,Lena Weber,Felix Marchetti,2026-11-12
+SLA-02,Victor Adeyemi,victor.adeyemi@northfield-ltd.example,Kwame Asante,Priya Sharma,2026-11-13
+SLA-03,Grace Okonkwo,grace.okonkwo@northfield-ltd.example,Tomas Vidal,Marcus Bell,2026-11-14
+SLA-04,Felix Marchetti,felix.marchetti@northfield-ltd.example,Ines Duarte,Ondrej Novak,2026-11-15

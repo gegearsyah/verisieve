@@ -1,0 +1,2668 @@
+{
+  "kind": "company-estate-manifest",
+  "stage": 10,
+  "seed": 20261124,
+  "anti_circularity_note": "Ground truth lives ONLY in this manifest. The estate files contain no GT markers, and nothing in this file is fed to the engine; the ablation runner reads the manifest only to score engine coverage and injected-PII counts, outside the corpus path.",
+  "estateDir": "fixtures/company-estate",
+  "departments": [
+    "it",
+    "business",
+    "shared",
+    "meetings"
+  ],
+  "modalities": [
+    "sql",
+    "csv",
+    "text",
+    "email",
+    "transcript",
+    "captions",
+    "audio",
+    "deck"
+  ],
+  "audio_capture_note": "The caption track (meetings/weekly-sync.vtt) carries spoken-form emails/phones; in the engine those Spoken-ITN-normalize onto the same salted entities as the written forms. That linkage is engine-observed, not GT-asserted. A caller without local ASR weights supplies the caption word timeline as wordTimestamps — recorder capture, never ground truth.",
+  "files": [
+    {
+      "path": "it/service-inventory.sql",
+      "department": "it",
+      "modality": "sql",
+      "bytes": 4345
+    },
+    {
+      "path": "it/runbook.txt",
+      "department": "it",
+      "modality": "text",
+      "bytes": 592
+    },
+    {
+      "path": "it/escalation-notes.txt",
+      "department": "it",
+      "modality": "text",
+      "bytes": 367
+    },
+    {
+      "path": "business/accounts.csv",
+      "department": "business",
+      "modality": "csv",
+      "bytes": 757
+    },
+    {
+      "path": "business/contract-edits.csv",
+      "department": "business",
+      "modality": "csv",
+      "bytes": 1535
+    },
+    {
+      "path": "business/pricing-notes.txt",
+      "department": "business",
+      "modality": "text",
+      "bytes": 377
+    },
+    {
+      "path": "shared/kickoff-announcement.eml",
+      "department": "shared",
+      "modality": "email",
+      "bytes": 611
+    },
+    {
+      "path": "shared/review-q3.eml",
+      "department": "shared",
+      "modality": "email",
+      "bytes": 895
+    },
+    {
+      "path": "meetings/weekly-sync-transcript.txt",
+      "department": "meetings",
+      "modality": "transcript",
+      "bytes": 1042,
+      "transcriptOf": "meetings/weekly-sync.wav"
+    },
+    {
+      "path": "meetings/weekly-sync.vtt",
+      "department": "meetings",
+      "modality": "captions",
+      "bytes": 1169,
+      "transcriptOf": "meetings/weekly-sync.wav"
+    },
+    {
+      "path": "meetings/weekly-sync.wav",
+      "department": "meetings",
+      "modality": "audio",
+      "bytes": 393290
+    },
+    {
+      "path": "business/board-proposal.pptx",
+      "department": "business",
+      "modality": "deck",
+      "bytes": 1258
+    }
+  ],
+  "population": {
+    "people": [
+      {
+        "name": "Priya Sharma",
+        "email": "priya.sharma@northfield-ltd.example",
+        "phone": "+44 20 7946 0900"
+      },
+      {
+        "name": "Marcus Bell",
+        "email": "marcus.bell@northfield-ltd.example",
+        "phone": "+44 20 7946 0903"
+      },
+      {
+        "name": "Ondrej Novak",
+        "email": "ondrej.novak@northfield-ltd.example",
+        "phone": "+44 20 7946 0906"
+      },
+      {
+        "name": "Hana Ito",
+        "email": "hana.ito@northfield-ltd.example",
+        "phone": "+44 20 7946 0909"
+      },
+      {
+        "name": "Lena Weber",
+        "email": "lena.weber@northfield-ltd.example",
+        "phone": "+44 20 7946 0912"
+      },
+      {
+        "name": "Kwame Asante",
+        "email": "kwame.asante@northfield-ltd.example",
+        "phone": "+44 20 7946 0915"
+      },
+      {
+        "name": "Tomas Vidal",
+        "email": "tomas.vidal@northfield-ltd.example",
+        "phone": "+44 20 7946 0918"
+      },
+      {
+        "name": "Ines Duarte",
+        "email": "ines.duarte@northfield-ltd.example",
+        "phone": "+44 20 7946 0921"
+      },
+      {
+        "name": "Elena Vance",
+        "email": "elena.vance@northfield-ltd.example",
+        "phone": "+44 20 7946 0924"
+      },
+      {
+        "name": "Ravi Chandra",
+        "email": "ravi.chandra@northfield-ltd.example",
+        "phone": "+44 20 7946 0927"
+      },
+      {
+        "name": "Sarah Kwon",
+        "email": "sarah.kwon@northfield-ltd.example",
+        "phone": "+44 20 7946 0930"
+      },
+      {
+        "name": "Daniel Petrov",
+        "email": "daniel.petrov@northfield-ltd.example",
+        "phone": "+44 20 7946 0933"
+      },
+      {
+        "name": "Nadia Farouk",
+        "email": "nadia.farouk@northfield-ltd.example",
+        "phone": "+44 20 7946 0936"
+      },
+      {
+        "name": "Victor Adeyemi",
+        "email": "victor.adeyemi@northfield-ltd.example",
+        "phone": "+44 20 7946 0939"
+      },
+      {
+        "name": "Grace Okonkwo",
+        "email": "grace.okonkwo@northfield-ltd.example",
+        "phone": "+44 20 7946 0942"
+      },
+      {
+        "name": "Felix Marchetti",
+        "email": "felix.marchetti@northfield-ltd.example",
+        "phone": "+44 20 7946 0945"
+      }
+    ],
+    "orgIds": [
+      "ORG-2271",
+      "ORG-3174",
+      "ORG-4402",
+      "ORG-8115"
+    ],
+    "orgNames": [
+      "Harrow Logistics Ltd",
+      "Calder Freight Group",
+      "Nuneaton Textiles plc",
+      "Ardwick Tooling Co"
+    ],
+    "projectCodes": [
+      "AMBER",
+      "LANTERN",
+      "PEBBLE",
+      "QUARRY"
+    ]
+  },
+  "deckEntityOccurrences": [
+    {
+      "id": "person:ondrej-novak",
+      "values": [
+        "Ondrej Novak"
+      ]
+    },
+    {
+      "id": "person:lena-weber",
+      "values": [
+        "Lena Weber"
+      ]
+    },
+    {
+      "id": "person:elena-vance",
+      "values": [
+        "Elena Vance",
+        "elena.vance@northfield-ltd.example"
+      ]
+    },
+    {
+      "id": "person:sarah-kwon",
+      "values": [
+        "Sarah Kwon",
+        "sarah.kwon@northfield-ltd.example",
+        "+44 20 7946 0930"
+      ]
+    },
+    {
+      "id": "org:org-4402",
+      "values": [
+        "ORG-4402"
+      ]
+    },
+    {
+      "id": "org:org-8115",
+      "values": [
+        "ORG-8115"
+      ]
+    },
+    {
+      "id": "project:amber",
+      "values": [
+        "AMBER"
+      ]
+    },
+    {
+      "id": "project:pebble",
+      "values": [
+        "PEBBLE"
+      ]
+    },
+    {
+      "id": "project:quarry",
+      "values": [
+        "QUARRY"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "person:priya-sharma",
+      "class": "person",
+      "values": [
+        "Priya Sharma",
+        "priya.sharma@northfield-ltd.example",
+        "+44 20 7946 0900"
+      ],
+      "spokenValues": [
+        "priya dot sharma at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine zero zero"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "business/contract-edits.csv",
+        "shared/kickoff-announcement.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              398,
+              410
+            ],
+            [
+              3434,
+              3446
+            ],
+            [
+              414,
+              449
+            ],
+            [
+              3522,
+              3557
+            ],
+            [
+              453,
+              469
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              68,
+              80
+            ],
+            [
+              186,
+              221
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              74,
+              86
+            ],
+            [
+              840,
+              852
+            ],
+            [
+              1320,
+              1332
+            ],
+            [
+              87,
+              122
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              383,
+              395
+            ],
+            [
+              397,
+              432
+            ],
+            [
+              541,
+              557
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              86,
+              98
+            ],
+            [
+              312,
+              324
+            ],
+            [
+              620,
+              632
+            ],
+            [
+              882,
+              894
+            ],
+            [
+              1010,
+              1022
+            ],
+            [
+              384,
+              430
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              41,
+              53
+            ],
+            [
+              317,
+              329
+            ],
+            [
+              675,
+              687
+            ],
+            [
+              987,
+              999
+            ],
+            [
+              1139,
+              1151
+            ],
+            [
+              388,
+              434
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 26
+    },
+    {
+      "id": "person:marcus-bell",
+      "class": "person",
+      "values": [
+        "Marcus Bell",
+        "marcus.bell@northfield-ltd.example",
+        "+44 20 7946 0903"
+      ],
+      "spokenValues": [
+        "marcus dot bell at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine zero three"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "business/contract-edits.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              584,
+              595
+            ],
+            [
+              599,
+              633
+            ],
+            [
+              637,
+              653
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              118,
+              129
+            ],
+            [
+              556,
+              567
+            ],
+            [
+              130,
+              164
+            ],
+            [
+              568,
+              602
+            ],
+            [
+              165,
+              181
+            ],
+            [
+              603,
+              619
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              162,
+              173
+            ],
+            [
+              934,
+              945
+            ],
+            [
+              1414,
+              1425
+            ],
+            [
+              174,
+              208
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 13
+    },
+    {
+      "id": "person:ondrej-novak",
+      "class": "person",
+      "values": [
+        "Ondrej Novak",
+        "ondrej.novak@northfield-ltd.example",
+        "+44 20 7946 0906"
+      ],
+      "spokenValues": [
+        "ondrej dot novak at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine zero six"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/contract-edits.csv",
+        "business/pricing-notes.txt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              776,
+              788
+            ],
+            [
+              792,
+              827
+            ],
+            [
+              831,
+              847
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              251,
+              263
+            ],
+            [
+              1022,
+              1034
+            ],
+            [
+              1511,
+              1523
+            ],
+            [
+              264,
+              299
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              293,
+              328
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 8
+    },
+    {
+      "id": "person:hana-ito",
+      "class": "person",
+      "values": [
+        "Hana Ito",
+        "hana.ito@northfield-ltd.example",
+        "+44 20 7946 0909"
+      ],
+      "spokenValues": [
+        "hana dot ito at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine zero nine"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "business/contract-edits.csv",
+        "shared/kickoff-announcement.eml"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              963,
+              971
+            ],
+            [
+              975,
+              1006
+            ],
+            [
+              1010,
+              1026
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              107,
+              115
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              135,
+              143
+            ],
+            [
+              342,
+              350
+            ],
+            [
+              1119,
+              1127
+            ],
+            [
+              351,
+              382
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              567,
+              575
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 9
+    },
+    {
+      "id": "person:lena-weber",
+      "class": "person",
+      "values": [
+        "Lena Weber",
+        "lena.weber@northfield-ltd.example",
+        "+44 20 7946 0912"
+      ],
+      "spokenValues": [
+        "lena dot weber at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine one two"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/accounts.csv",
+        "business/contract-edits.csv",
+        "shared/review-q3.eml",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1148,
+              1158
+            ],
+            [
+              3690,
+              3700
+            ],
+            [
+              1162,
+              1195
+            ],
+            [
+              3776,
+              3809
+            ],
+            [
+              1199,
+              1215
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              89,
+              99
+            ],
+            [
+              101,
+              117
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              226,
+              236
+            ],
+            [
+              237,
+              270
+            ],
+            [
+              271,
+              287
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              222,
+              232
+            ],
+            [
+              427,
+              437
+            ],
+            [
+              1209,
+              1219
+            ],
+            [
+              438,
+              471
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              518,
+              528
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 15
+    },
+    {
+      "id": "person:kwame-asante",
+      "class": "person",
+      "values": [
+        "Kwame Asante",
+        "kwame.asante@northfield-ltd.example",
+        "+44 20 7946 0915"
+      ],
+      "spokenValues": [
+        "kwame dot asante at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine one five"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "business/contract-edits.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1330,
+              1342
+            ],
+            [
+              1346,
+              1381
+            ],
+            [
+              1385,
+              1401
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              497,
+              509
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              311,
+              323
+            ],
+            [
+              515,
+              527
+            ],
+            [
+              1307,
+              1319
+            ],
+            [
+              528,
+              563
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 8
+    },
+    {
+      "id": "person:tomas-vidal",
+      "class": "person",
+      "values": [
+        "Tomas Vidal",
+        "tomas.vidal@northfield-ltd.example",
+        "+44 20 7946 0918"
+      ],
+      "spokenValues": [
+        "tomas dot vidal at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine one eight"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "business/contract-edits.csv",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1524,
+              1535
+            ],
+            [
+              1539,
+              1573
+            ],
+            [
+              1577,
+              1593
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              287,
+              298
+            ],
+            [
+              300,
+              334
+            ],
+            [
+              336,
+              352
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              397,
+              408
+            ],
+            [
+              609,
+              620
+            ],
+            [
+              1402,
+              1413
+            ],
+            [
+              621,
+              655
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              675,
+              686
+            ],
+            [
+              705,
+              768
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              729,
+              740
+            ],
+            [
+              759,
+              822
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 14
+    },
+    {
+      "id": "person:ines-duarte",
+      "class": "person",
+      "values": [
+        "Ines Duarte",
+        "ines.duarte@northfield-ltd.example",
+        "+44 20 7946 0921"
+      ],
+      "spokenValues": [
+        "ines dot duarte at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine two one"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "business/contract-edits.csv",
+        "shared/kickoff-announcement.eml",
+        "shared/review-q3.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "email",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1709,
+              1720
+            ],
+            [
+              1724,
+              1758
+            ],
+            [
+              1762,
+              1778
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              333,
+              344
+            ],
+            [
+              675,
+              686
+            ],
+            [
+              345,
+              379
+            ],
+            [
+              687,
+              721
+            ],
+            [
+              380,
+              396
+            ],
+            [
+              722,
+              738
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              485,
+              496
+            ],
+            [
+              701,
+              712
+            ],
+            [
+              1499,
+              1510
+            ],
+            [
+              713,
+              747
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              597,
+              608
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              596,
+              607
+            ],
+            [
+              860,
+              876
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              536,
+              547
+            ],
+            [
+              549,
+              610
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              565,
+              576
+            ],
+            [
+              578,
+              639
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 20
+    },
+    {
+      "id": "person:elena-vance",
+      "class": "person",
+      "values": [
+        "Elena Vance",
+        "elena.vance@northfield-ltd.example",
+        "+44 20 7946 0924"
+      ],
+      "spokenValues": [
+        "elena dot vance at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine two four"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/contract-edits.csv",
+        "business/pricing-notes.txt",
+        "shared/kickoff-announcement.eml",
+        "shared/review-q3.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "email",
+        "transcript",
+        "captions",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1900,
+              1911
+            ],
+            [
+              3941,
+              3952
+            ],
+            [
+              1915,
+              1949
+            ],
+            [
+              4029,
+              4063
+            ],
+            [
+              1953,
+              1969
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              123,
+              134
+            ],
+            [
+              579,
+              590
+            ],
+            [
+              793,
+              804
+            ],
+            [
+              805,
+              839
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              40,
+              51
+            ],
+            [
+              53,
+              87
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              36,
+              70
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              812,
+              823
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              195,
+              206
+            ],
+            [
+              455,
+              466
+            ],
+            [
+              778,
+              789
+            ],
+            [
+              973,
+              984
+            ],
+            [
+              1027,
+              1038
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              175,
+              186
+            ],
+            [
+              485,
+              496
+            ],
+            [
+              858,
+              869
+            ],
+            [
+              1103,
+              1114
+            ],
+            [
+              1156,
+              1167
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 23
+    },
+    {
+      "id": "person:ravi-chandra",
+      "class": "person",
+      "values": [
+        "Ravi Chandra",
+        "ravi.chandra@northfield-ltd.example",
+        "+44 20 7946 0927"
+      ],
+      "spokenValues": [
+        "ravi dot chandra at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine two seven"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/contract-edits.csv",
+        "shared/review-q3.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              2084,
+              2096
+            ],
+            [
+              2100,
+              2135
+            ],
+            [
+              2139,
+              2155
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              127,
+              139
+            ],
+            [
+              141,
+              176
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              209,
+              221
+            ],
+            [
+              670,
+              682
+            ],
+            [
+              885,
+              897
+            ],
+            [
+              898,
+              933
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              58,
+              70
+            ],
+            [
+              486,
+              498
+            ],
+            [
+              72,
+              107
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              492,
+              504
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              521,
+              533
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 14
+    },
+    {
+      "id": "person:sarah-kwon",
+      "class": "person",
+      "values": [
+        "Sarah Kwon",
+        "sarah.kwon@northfield-ltd.example",
+        "+44 20 7946 0930"
+      ],
+      "spokenValues": [
+        "sarah dot kwon at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine three zero"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/accounts.csv",
+        "business/contract-edits.csv",
+        "shared/review-q3.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email",
+        "transcript",
+        "captions",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              2278,
+              2288
+            ],
+            [
+              2292,
+              2325
+            ],
+            [
+              2329,
+              2345
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              204,
+              214
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              438,
+              448
+            ],
+            [
+              449,
+              482
+            ],
+            [
+              483,
+              499
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              300,
+              310
+            ],
+            [
+              764,
+              774
+            ],
+            [
+              977,
+              987
+            ],
+            [
+              988,
+              1021
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              6,
+              16
+            ],
+            [
+              18,
+              51
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              921,
+              931
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              1025,
+              1035
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 15
+    },
+    {
+      "id": "person:daniel-petrov",
+      "class": "person",
+      "values": [
+        "Daniel Petrov",
+        "daniel.petrov@northfield-ltd.example",
+        "+44 20 7946 0933"
+      ],
+      "spokenValues": [
+        "daniel dot petrov at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine three three"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/contract-edits.csv",
+        "business/pricing-notes.txt",
+        "shared/review-q3.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "email",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              2461,
+              2474
+            ],
+            [
+              2478,
+              2514
+            ],
+            [
+              2518,
+              2534
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              383,
+              396
+            ],
+            [
+              853,
+              866
+            ],
+            [
+              1068,
+              1081
+            ],
+            [
+              1082,
+              1118
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              120,
+              133
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              500,
+              513
+            ],
+            [
+              171,
+              207
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              936,
+              949
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              1040,
+              1053
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 12
+    },
+    {
+      "id": "person:nadia-farouk",
+      "class": "person",
+      "values": [
+        "Nadia Farouk",
+        "nadia.farouk@northfield-ltd.example",
+        "+44 20 7946 0936"
+      ],
+      "spokenValues": [
+        "nadia dot farouk at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine three six"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "business/contract-edits.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              2656,
+              2668
+            ],
+            [
+              4195,
+              4207
+            ],
+            [
+              2672,
+              2707
+            ],
+            [
+              4281,
+              4316
+            ],
+            [
+              2711,
+              2727
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              540,
+              575
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              472,
+              484
+            ],
+            [
+              946,
+              958
+            ],
+            [
+              1160,
+              1172
+            ],
+            [
+              1173,
+              1208
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 10
+    },
+    {
+      "id": "person:victor-adeyemi",
+      "class": "person",
+      "values": [
+        "Victor Adeyemi",
+        "victor.adeyemi@northfield-ltd.example",
+        "+44 20 7946 0939"
+      ],
+      "spokenValues": [
+        "victor dot adeyemi at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine three nine"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/contract-edits.csv",
+        "business/pricing-notes.txt",
+        "shared/review-q3.eml"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "email"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              2842,
+              2856
+            ],
+            [
+              2860,
+              2897
+            ],
+            [
+              2901,
+              2917
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              564,
+              578
+            ],
+            [
+              1035,
+              1049
+            ],
+            [
+              1254,
+              1268
+            ],
+            [
+              1269,
+              1306
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              101,
+              115
+            ]
+          ]
+        },
+        {
+          "file": "shared/review-q3.eml",
+          "charSpans": [
+            [
+              110,
+              124
+            ],
+            [
+              126,
+              163
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 10
+    },
+    {
+      "id": "person:grace-okonkwo",
+      "class": "person",
+      "values": [
+        "Grace Okonkwo",
+        "grace.okonkwo@northfield-ltd.example",
+        "+44 20 7946 0942"
+      ],
+      "spokenValues": [
+        "grace dot okonkwo at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine four two"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/contract-edits.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              3040,
+              3053
+            ],
+            [
+              3057,
+              3093
+            ],
+            [
+              3097,
+              3113
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              240,
+              253
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              656,
+              669
+            ],
+            [
+              1128,
+              1141
+            ],
+            [
+              1351,
+              1364
+            ],
+            [
+              1365,
+              1401
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 8
+    },
+    {
+      "id": "person:felix-marchetti",
+      "class": "person",
+      "values": [
+        "Felix Marchetti",
+        "felix.marchetti@northfield-ltd.example",
+        "+44 20 7946 0945"
+      ],
+      "spokenValues": [
+        "felix dot marchetti at northfield-ltd dot example",
+        "plus four four two zero seven nine four six zero nine four five"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/contract-edits.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              3229,
+              3244
+            ],
+            [
+              3248,
+              3286
+            ],
+            [
+              3290,
+              3306
+            ]
+          ]
+        },
+        {
+          "file": "business/contract-edits.csv",
+          "charSpans": [
+            [
+              748,
+              763
+            ],
+            [
+              1220,
+              1235
+            ],
+            [
+              1444,
+              1459
+            ],
+            [
+              1460,
+              1498
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 7
+    },
+    {
+      "id": "org:org-2271",
+      "class": "org_id",
+      "values": [
+        "ORG-2271"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "shared/kickoff-announcement.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "email",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              3450,
+              3458
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              88,
+              96
+            ],
+            [
+              515,
+              523
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              443,
+              451
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              169,
+              177
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              123,
+              131
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 6
+    },
+    {
+      "id": "org:org-3174",
+      "class": "org_id",
+      "values": [
+        "ORG-3174"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/accounts.csv"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              3704,
+              3712
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              307,
+              315
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              196,
+              204
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 3
+    },
+    {
+      "id": "org:org-4402",
+      "class": "org_id",
+      "values": [
+        "ORG-4402"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "transcript",
+        "captions",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              3956,
+              3964
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              302,
+              310
+            ],
+            [
+              633,
+              641
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              246,
+              254
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              225,
+              233
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 5
+    },
+    {
+      "id": "org:org-8115",
+      "class": "org_id",
+      "values": [
+        "ORG-8115"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "business/pricing-notes.txt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              4211,
+              4219
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              410,
+              418
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              154,
+              162
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 3
+    },
+    {
+      "id": "project:amber",
+      "class": "project_code",
+      "values": [
+        "AMBER"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/runbook.txt",
+        "it/escalation-notes.txt",
+        "business/accounts.csv",
+        "shared/kickoff-announcement.eml",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "email",
+        "transcript",
+        "captions",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              479,
+              484
+            ],
+            [
+              1225,
+              1230
+            ],
+            [
+              1979,
+              1984
+            ],
+            [
+              2737,
+              2742
+            ],
+            [
+              3425,
+              3430
+            ]
+          ]
+        },
+        {
+          "file": "it/runbook.txt",
+          "charSpans": [
+            [
+              162,
+              167
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              351,
+              356
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              404,
+              409
+            ],
+            [
+              627,
+              632
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              352,
+              357
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              147,
+              152
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              101,
+              106
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 12
+    },
+    {
+      "id": "project:lantern",
+      "class": "project_code",
+      "values": [
+        "LANTERN"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "it/escalation-notes.txt",
+        "business/accounts.csv",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "text",
+        "csv",
+        "transcript",
+        "captions"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              669,
+              676
+            ],
+            [
+              1417,
+              1424
+            ],
+            [
+              2171,
+              2178
+            ],
+            [
+              2933,
+              2940
+            ],
+            [
+              3679,
+              3686
+            ]
+          ]
+        },
+        {
+          "file": "it/escalation-notes.txt",
+          "charSpans": [
+            [
+              284,
+              291
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              507,
+              514
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              837,
+              844
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              916,
+              923
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 9
+    },
+    {
+      "id": "project:pebble",
+      "class": "project_code",
+      "values": [
+        "PEBBLE"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "business/pricing-notes.txt",
+        "shared/kickoff-announcement.eml",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "shared"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "email",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              857,
+              863
+            ],
+            [
+              1603,
+              1609
+            ],
+            [
+              2355,
+              2361
+            ],
+            [
+              3123,
+              3129
+            ],
+            [
+              3931,
+              3937
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              189,
+              195
+            ],
+            [
+              746,
+              752
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              270,
+              276
+            ]
+          ]
+        },
+        {
+          "file": "shared/kickoff-announcement.eml",
+          "charSpans": [
+            [
+              499,
+              505
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 9
+    },
+    {
+      "id": "project:quarry",
+      "class": "project_code",
+      "values": [
+        "QUARRY"
+      ],
+      "files": [
+        "it/service-inventory.sql",
+        "business/accounts.csv",
+        "business/pricing-notes.txt",
+        "meetings/weekly-sync-transcript.txt",
+        "meetings/weekly-sync.vtt",
+        "business/board-proposal.pptx"
+      ],
+      "departments": [
+        "it",
+        "business",
+        "meetings"
+      ],
+      "modalities": [
+        "sql",
+        "csv",
+        "text",
+        "transcript",
+        "captions",
+        "deck"
+      ],
+      "occurrences": [
+        {
+          "file": "it/service-inventory.sql",
+          "charSpans": [
+            [
+              1042,
+              1048
+            ],
+            [
+              1794,
+              1800
+            ],
+            [
+              2550,
+              2556
+            ],
+            [
+              3322,
+              3328
+            ],
+            [
+              4185,
+              4191
+            ]
+          ]
+        },
+        {
+          "file": "business/accounts.csv",
+          "charSpans": [
+            [
+              295,
+              301
+            ]
+          ]
+        },
+        {
+          "file": "business/pricing-notes.txt",
+          "charSpans": [
+            [
+              222,
+              228
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync-transcript.txt",
+          "charSpans": [
+            [
+              284,
+              290
+            ]
+          ]
+        },
+        {
+          "file": "meetings/weekly-sync.vtt",
+          "charSpans": [
+            [
+              263,
+              269
+            ]
+          ]
+        }
+      ],
+      "occurrenceCount": 9
+    }
+  ]
+}

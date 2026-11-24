@@ -1,0 +1,4 @@
+Handover notes — incident bridge, week of 2026-11-16.
+Open incident INC-1043 is owned by Lena Weber (+44 20 7946 0912); deputy Ravi Chandra (ravi.chandra@northfield-ltd.example).
+Stakeholders to contact: Sarah Kwon for finance sign-off and Grace Okonkwo for comms.
+Linked workstream: LANTERN under supplier ORG-3174, with the same contact list as the AMBER bridge.

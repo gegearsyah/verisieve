@@ -1,0 +1,9 @@
+Meeting transcript — weekly sync, Northfield Ltd (IT + Business), 2026-11-19.
+[00:00] Priya Sharma: Welcome to the weekly sync. IT agenda: project AMBER rollout and the ORG-2271 renewal.
+[00:01] Elena Vance: Business confirms the board pack; the ORG-4402 counter-proposal for project QUARRY is attached.
+[00:03] Priya Sharma: Platform side is on track; I will send the checklist from priya dot sharma at northfield-ltd dot example this afternoon.
+[00:04] Elena Vance: Legal will co-sign with Ravi Chandra; the invoice run contact stays Ines Duarte, plus four four two zero seven nine four six zero nine two one.
+[00:06] Priya Sharma: Deployment approvals still route through Tomas Vidal; escalation phone plus four four two zero seven nine four six zero nine one eight.
+[00:08] Elena Vance: One risk: the notes bridge references project LANTERN, same stakeholders as today.
+[00:09] Priya Sharma: Finance sign-off goes to Sarah Kwon and Daniel Petrov before Friday.
+[00:10] Elena Vance: Close. Actions owned by Priya Sharma and Elena Vance.

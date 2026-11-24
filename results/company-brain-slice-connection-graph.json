@@ -1,0 +1,2219 @@
+{
+  "kind": "company-brain-connection-graph",
+  "stage": 10,
+  "seed": 20261124,
+  "note": "Engine-observable structure over the company estate: masked salted tokens only, no raw values, no GT. Nodes are departments, estate files, and salted entities; edges are file containment, per-file mentions, and cross-department shared-entity links measured in the P2 receipt. Rendered statically by department column in the Rtio sandbox (perception + visualization + export only).",
+  "departments": [
+    "business",
+    "it",
+    "meetings",
+    "shared"
+  ],
+  "nodes": [
+    {
+      "id": "dept:business",
+      "type": "department",
+      "label": "business"
+    },
+    {
+      "id": "dept:it",
+      "type": "department",
+      "label": "it"
+    },
+    {
+      "id": "dept:meetings",
+      "type": "department",
+      "label": "meetings"
+    },
+    {
+      "id": "dept:shared",
+      "type": "department",
+      "label": "shared"
+    },
+    {
+      "id": "file:it/service-inventory.sql",
+      "type": "file",
+      "label": "service-inventory.sql",
+      "departments": [
+        "it"
+      ],
+      "modality": "sql"
+    },
+    {
+      "id": "file:it/runbook.txt",
+      "type": "file",
+      "label": "runbook.txt",
+      "departments": [
+        "it"
+      ],
+      "modality": "text"
+    },
+    {
+      "id": "file:it/escalation-notes.txt",
+      "type": "file",
+      "label": "escalation-notes.txt",
+      "departments": [
+        "it"
+      ],
+      "modality": "text"
+    },
+    {
+      "id": "file:business/accounts.csv",
+      "type": "file",
+      "label": "accounts.csv",
+      "departments": [
+        "business"
+      ],
+      "modality": "csv"
+    },
+    {
+      "id": "file:business/contract-edits.csv",
+      "type": "file",
+      "label": "contract-edits.csv",
+      "departments": [
+        "business"
+      ],
+      "modality": "csv"
+    },
+    {
+      "id": "file:business/pricing-notes.txt",
+      "type": "file",
+      "label": "pricing-notes.txt",
+      "departments": [
+        "business"
+      ],
+      "modality": "text"
+    },
+    {
+      "id": "file:shared/kickoff-announcement.eml",
+      "type": "file",
+      "label": "kickoff-announcement.eml",
+      "departments": [
+        "shared"
+      ],
+      "modality": "email"
+    },
+    {
+      "id": "file:shared/review-q3.eml",
+      "type": "file",
+      "label": "review-q3.eml",
+      "departments": [
+        "shared"
+      ],
+      "modality": "email"
+    },
+    {
+      "id": "file:meetings/weekly-sync-transcript.txt",
+      "type": "file",
+      "label": "weekly-sync-transcript.txt",
+      "departments": [
+        "meetings"
+      ],
+      "modality": "transcript"
+    },
+    {
+      "id": "file:meetings/weekly-sync.vtt",
+      "type": "file",
+      "label": "weekly-sync.vtt",
+      "departments": [
+        "meetings"
+      ],
+      "modality": "captions"
+    },
+    {
+      "id": "file:meetings/weekly-sync.wav",
+      "type": "file",
+      "label": "weekly-sync.wav",
+      "departments": [
+        "meetings"
+      ],
+      "modality": "audio"
+    },
+    {
+      "id": "file:business/board-proposal.pptx",
+      "type": "file",
+      "label": "board-proposal.pptx",
+      "departments": [
+        "business"
+      ],
+      "modality": "deck"
+    },
+    {
+      "id": "ent:address:12f9c36d2eb6dab6",
+      "type": "entity",
+      "label": "<PII:ADDRESS_03>",
+      "piiKind": "ADDRESS",
+      "mentionCount": 1,
+      "departments": [
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:address:659099e6ad922114",
+      "type": "entity",
+      "label": "<PII:ADDRESS_02>",
+      "piiKind": "ADDRESS",
+      "mentionCount": 2,
+      "departments": [
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:dob:327a194cc79edecc",
+      "type": "entity",
+      "label": "<PII:DOB_07>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:48a76654662a1bd7",
+      "type": "entity",
+      "label": "<PII:DOB_12>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 1,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:609ac20755d7ea91",
+      "type": "entity",
+      "label": "<PII:DOB_09>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 1,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:62a0e2ee1bdcb49c",
+      "type": "entity",
+      "label": "<PII:DOB_06>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:787c33c0bf0aee4d",
+      "type": "entity",
+      "label": "<PII:DOB_05>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:78d6cb391fd1cabf",
+      "type": "entity",
+      "label": "<PII:DOB_03>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:9e924313344c6a25",
+      "type": "entity",
+      "label": "<PII:DOB_02>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:dob:aa638fbc79de5706",
+      "type": "entity",
+      "label": "<PII:DOB_04>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:d6aed68016b6dc45",
+      "type": "entity",
+      "label": "<PII:DOB_11>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:dob:daaf7cad936d91a2",
+      "type": "entity",
+      "label": "<PII:DOB_01>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:dob:de6a4c0ae8799a3a",
+      "type": "entity",
+      "label": "<PII:DOB_10>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 1,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:dob:f8fa6bbc52e12f2d",
+      "type": "entity",
+      "label": "<PII:DOB_08>",
+      "piiKind": "DATE_OF_BIRTH",
+      "mentionCount": 2,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:email:03bbea171c105450",
+      "type": "entity",
+      "label": "<PII:EMAIL_17>",
+      "piiKind": "EMAIL",
+      "mentionCount": 1,
+      "departments": [
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:15298f14ed5b565e",
+      "type": "entity",
+      "label": "<PII:EMAIL_14>",
+      "piiKind": "EMAIL",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:16a4b9481edaf349",
+      "type": "entity",
+      "label": "<PII:EMAIL_06>",
+      "piiKind": "EMAIL",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:1cc72bd1bca27bc2",
+      "type": "entity",
+      "label": "<PII:EMAIL_03>",
+      "piiKind": "EMAIL",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:25127f97c2b327bc",
+      "type": "entity",
+      "label": "<PII:EMAIL_16>",
+      "piiKind": "EMAIL",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:395259bdb0b9fda3",
+      "type": "entity",
+      "label": "<PII:EMAIL_04>",
+      "piiKind": "EMAIL",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:3ea2a8fc17183cf1",
+      "type": "entity",
+      "label": "<PII:EMAIL_12>",
+      "piiKind": "EMAIL",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:647a46510a4db47d",
+      "type": "entity",
+      "label": "<PII:EMAIL_02>",
+      "piiKind": "EMAIL",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:6e512898ed97474d",
+      "type": "entity",
+      "label": "<PII:EMAIL_05>",
+      "piiKind": "EMAIL",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:857b9d7cb86ca26d",
+      "type": "entity",
+      "label": "<PII:EMAIL_10>",
+      "piiKind": "EMAIL",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:af635dcf645ca2c2",
+      "type": "entity",
+      "label": "<PII:EMAIL_11>",
+      "piiKind": "EMAIL",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:cde9c50b71b560fa",
+      "type": "entity",
+      "label": "<PII:EMAIL_13>",
+      "piiKind": "EMAIL",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:da3217e2bebe16ee",
+      "type": "entity",
+      "label": "<PII:EMAIL_08>",
+      "piiKind": "EMAIL",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:db645701e5dcd53b",
+      "type": "entity",
+      "label": "<PII:EMAIL_15>",
+      "piiKind": "EMAIL",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:email:e28665cdc6502c38",
+      "type": "entity",
+      "label": "<PII:EMAIL_01>",
+      "piiKind": "EMAIL",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:e8583972267879f8",
+      "type": "entity",
+      "label": "<PII:EMAIL_09>",
+      "piiKind": "EMAIL",
+      "mentionCount": 6,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:ec4038efac89fd03",
+      "type": "entity",
+      "label": "<PII:EMAIL_18>",
+      "piiKind": "EMAIL",
+      "mentionCount": 1,
+      "departments": [
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:email:ff629f83c7d23451",
+      "type": "entity",
+      "label": "<PII:EMAIL_07>",
+      "piiKind": "EMAIL",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:01e30619778b4391",
+      "type": "entity",
+      "label": "<PII:PERSON_12>",
+      "piiKind": "PERSON",
+      "mentionCount": 9,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:048a7eb56adb0b8f",
+      "type": "entity",
+      "label": "<PII:PERSON_07>",
+      "piiKind": "PERSON",
+      "mentionCount": 19,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:16d6ada21103c5b8",
+      "type": "entity",
+      "label": "<PII:PERSON_17>",
+      "piiKind": "PERSON",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:20d69a9bb6254aa5",
+      "type": "entity",
+      "label": "<PII:PERSON_19>",
+      "piiKind": "PERSON",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:24078b625d892e8e",
+      "type": "entity",
+      "label": "<PII:PERSON_23>",
+      "piiKind": "PERSON",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:261e25cd76d10eaf",
+      "type": "entity",
+      "label": "<PII:PERSON_24>",
+      "piiKind": "PERSON",
+      "mentionCount": 3,
+      "departments": [
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:person:27e59aee111b4ec4",
+      "type": "entity",
+      "label": "<PII:PERSON_18>",
+      "piiKind": "PERSON",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:4734c5fe5e60fb4b",
+      "type": "entity",
+      "label": "<PII:PERSON_03>",
+      "piiKind": "PERSON",
+      "mentionCount": 7,
+      "departments": [
+        "business",
+        "it",
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:person:50e3e9b771d155ee",
+      "type": "entity",
+      "label": "<PII:PERSON_13>",
+      "piiKind": "PERSON",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:73d434b0fd924f21",
+      "type": "entity",
+      "label": "<PII:PERSON_10>",
+      "piiKind": "PERSON",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:7783aa74741924c3",
+      "type": "entity",
+      "label": "<PII:PERSON_05>",
+      "piiKind": "PERSON",
+      "mentionCount": 8,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:7c2789239d3d2935",
+      "type": "entity",
+      "label": "<PII:PERSON_04>",
+      "piiKind": "PERSON",
+      "mentionCount": 10,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:7c7adc80c4dfaa6e",
+      "type": "entity",
+      "label": "<PII:PERSON_20>",
+      "piiKind": "PERSON",
+      "mentionCount": 4,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:8023f2aba43ab7c3",
+      "type": "entity",
+      "label": "<PII:PERSON_02>",
+      "piiKind": "PERSON",
+      "mentionCount": 10,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:8303007ddf8d0b3b",
+      "type": "entity",
+      "label": "<PII:PERSON_25>",
+      "piiKind": "PERSON",
+      "mentionCount": 3,
+      "departments": [
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:person:9fc3aba4748fc811",
+      "type": "entity",
+      "label": "<PII:PERSON_15>",
+      "piiKind": "PERSON",
+      "mentionCount": 6,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:a037f4c4d787293c",
+      "type": "entity",
+      "label": "<PII:PERSON_09>",
+      "piiKind": "PERSON",
+      "mentionCount": 6,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:b49264db494428ac",
+      "type": "entity",
+      "label": "<PII:PERSON_21>",
+      "piiKind": "PERSON",
+      "mentionCount": 2,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:d4896fc37b9be358",
+      "type": "entity",
+      "label": "<PII:PERSON_01>",
+      "piiKind": "PERSON",
+      "mentionCount": 9,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:d4a0890a9d52108d",
+      "type": "entity",
+      "label": "<PII:PERSON_11>",
+      "piiKind": "PERSON",
+      "mentionCount": 6,
+      "departments": [
+        "business",
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:d78e78f9084244ed",
+      "type": "entity",
+      "label": "<PII:PERSON_14>",
+      "piiKind": "PERSON",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:ddfb3ab30e10ef15",
+      "type": "entity",
+      "label": "<PII:PERSON_06>",
+      "piiKind": "PERSON",
+      "mentionCount": 17,
+      "departments": [
+        "business",
+        "it",
+        "meetings",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:person:dfe3509f7ae097fd",
+      "type": "entity",
+      "label": "<PII:PERSON_16>",
+      "piiKind": "PERSON",
+      "mentionCount": 5,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:person:f1a41baa0c5189c4",
+      "type": "entity",
+      "label": "<PII:PERSON_22>",
+      "piiKind": "PERSON",
+      "mentionCount": 1,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:person:f9766b8287796a52",
+      "type": "entity",
+      "label": "<PII:PERSON_08>",
+      "piiKind": "PERSON",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it",
+        "meetings"
+      ]
+    },
+    {
+      "id": "ent:phone:027a0ec3acbb6bb0",
+      "type": "entity",
+      "label": "<PII:PHONE_03>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:06df0077f8950e91",
+      "type": "entity",
+      "label": "<PII:PHONE_14>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:19b99df3e62f1954",
+      "type": "entity",
+      "label": "<PII:PHONE_08>",
+      "piiKind": "PHONE",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:24872a4135690ceb",
+      "type": "entity",
+      "label": "<PII:PHONE_18>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "business"
+      ]
+    },
+    {
+      "id": "ent:phone:24d949d3457e3f5a",
+      "type": "entity",
+      "label": "<PII:PHONE_10>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:2506f99a98732030",
+      "type": "entity",
+      "label": "<PII:PHONE_04>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:2de792c5c9d6c88a",
+      "type": "entity",
+      "label": "<PII:PHONE_16>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:30dbedabbe78b7b2",
+      "type": "entity",
+      "label": "<PII:PHONE_11>",
+      "piiKind": "PHONE",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:36a474e43e4fb7b6",
+      "type": "entity",
+      "label": "<PII:PHONE_05>",
+      "piiKind": "PHONE",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:42ca8317da237dfd",
+      "type": "entity",
+      "label": "<PII:PHONE_01>",
+      "piiKind": "PHONE",
+      "mentionCount": 2,
+      "departments": [
+        "it",
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:phone:4c1563f0470b85cb",
+      "type": "entity",
+      "label": "<PII:PHONE_13>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:9e97f838b69b91b3",
+      "type": "entity",
+      "label": "<PII:PHONE_02>",
+      "piiKind": "PHONE",
+      "mentionCount": 3,
+      "departments": [
+        "business",
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:b4dff970106873b1",
+      "type": "entity",
+      "label": "<PII:PHONE_09>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:bc7a6407d66cd93f",
+      "type": "entity",
+      "label": "<PII:PHONE_07>",
+      "piiKind": "PHONE",
+      "mentionCount": 2,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:cb2232f0a3ddc0fe",
+      "type": "entity",
+      "label": "<PII:PHONE_17>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "shared"
+      ]
+    },
+    {
+      "id": "ent:phone:de7b2ed12e2b960b",
+      "type": "entity",
+      "label": "<PII:PHONE_12>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:e5cf143c26430ae0",
+      "type": "entity",
+      "label": "<PII:PHONE_06>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:phone:e68f3c09a248680f",
+      "type": "entity",
+      "label": "<PII:PHONE_15>",
+      "piiKind": "PHONE",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    },
+    {
+      "id": "ent:secret_github_pat:17ca6185759a6b07",
+      "type": "entity",
+      "label": "<SECRET:GITHUB_PAT_01>",
+      "piiKind": "GITHUB_PAT",
+      "mentionCount": 1,
+      "departments": [
+        "it"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "dept:it",
+      "target": "file:it/service-inventory.sql",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:it",
+      "target": "file:it/runbook.txt",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:it",
+      "target": "file:it/escalation-notes.txt",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:business",
+      "target": "file:business/accounts.csv",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:business",
+      "target": "file:business/contract-edits.csv",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:business",
+      "target": "file:business/pricing-notes.txt",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:shared",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:shared",
+      "target": "file:shared/review-q3.eml",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:meetings",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:meetings",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:meetings",
+      "target": "file:meetings/weekly-sync.wav",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "dept:business",
+      "target": "file:business/board-proposal.pptx",
+      "type": "CONTAINS_FILE",
+      "weight": 1
+    },
+    {
+      "source": "ent:address:12f9c36d2eb6dab6",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:address:659099e6ad922114",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:address:659099e6ad922114",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:327a194cc79edecc",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:48a76654662a1bd7",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:dob:609ac20755d7ea91",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:dob:62a0e2ee1bdcb49c",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:787c33c0bf0aee4d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:78d6cb391fd1cabf",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:9e924313344c6a25",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:9e924313344c6a25",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:aa638fbc79de5706",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:d6aed68016b6dc45",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:d6aed68016b6dc45",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:dob:daaf7cad936d91a2",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:dob:de6a4c0ae8799a3a",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:dob:f8fa6bbc52e12f2d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:03bbea171c105450",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:email:15298f14ed5b565e",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:15298f14ed5b565e",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:15298f14ed5b565e",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:16a4b9481edaf349",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:16a4b9481edaf349",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:1cc72bd1bca27bc2",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:1cc72bd1bca27bc2",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:1cc72bd1bca27bc2",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:25127f97c2b327bc",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:25127f97c2b327bc",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:395259bdb0b9fda3",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:395259bdb0b9fda3",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:3ea2a8fc17183cf1",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:3ea2a8fc17183cf1",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:647a46510a4db47d",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:647a46510a4db47d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:647a46510a4db47d",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:6e512898ed97474d",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:6e512898ed97474d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:6e512898ed97474d",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:857b9d7cb86ca26d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:857b9d7cb86ca26d",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:857b9d7cb86ca26d",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:857b9d7cb86ca26d",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:af635dcf645ca2c2",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:af635dcf645ca2c2",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:af635dcf645ca2c2",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:af635dcf645ca2c2",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:af635dcf645ca2c2",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:cde9c50b71b560fa",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:cde9c50b71b560fa",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:cde9c50b71b560fa",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:da3217e2bebe16ee",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:da3217e2bebe16ee",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:da3217e2bebe16ee",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:email:db645701e5dcd53b",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:db645701e5dcd53b",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:email:e28665cdc6502c38",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:e28665cdc6502c38",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:e28665cdc6502c38",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:e28665cdc6502c38",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:email:e8583972267879f8",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:email:e8583972267879f8",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:email:e8583972267879f8",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:email:e8583972267879f8",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:email:e8583972267879f8",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:email:ec4038efac89fd03",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:email:ff629f83c7d23451",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:ff629f83c7d23451",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:email:ff629f83c7d23451",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:01e30619778b4391",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:048a7eb56adb0b8f",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 19
+    },
+    {
+      "source": "ent:person:16d6ada21103c5b8",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:person:16d6ada21103c5b8",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:person:20d69a9bb6254aa5",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:person:20d69a9bb6254aa5",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:person:24078b625d892e8e",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:person:261e25cd76d10eaf",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:261e25cd76d10eaf",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:261e25cd76d10eaf",
+      "target": "file:meetings/weekly-sync.wav",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:27e59aee111b4ec4",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:27e59aee111b4ec4",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:4734c5fe5e60fb4b",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 7
+    },
+    {
+      "source": "ent:person:4734c5fe5e60fb4b",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 7
+    },
+    {
+      "source": "ent:person:4734c5fe5e60fb4b",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 7
+    },
+    {
+      "source": "ent:person:4734c5fe5e60fb4b",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 7
+    },
+    {
+      "source": "ent:person:4734c5fe5e60fb4b",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 7
+    },
+    {
+      "source": "ent:person:50e3e9b771d155ee",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:50e3e9b771d155ee",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:50e3e9b771d155ee",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:73d434b0fd924f21",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:73d434b0fd924f21",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:73d434b0fd924f21",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7783aa74741924c3",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 8
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c2789239d3d2935",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:7c7adc80c4dfaa6e",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:person:7c7adc80c4dfaa6e",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:person:7c7adc80c4dfaa6e",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 4
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8023f2aba43ab7c3",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 10
+    },
+    {
+      "source": "ent:person:8303007ddf8d0b3b",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:8303007ddf8d0b3b",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:8303007ddf8d0b3b",
+      "target": "file:meetings/weekly-sync.wav",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:9fc3aba4748fc811",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:9fc3aba4748fc811",
+      "target": "file:business/pricing-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:9fc3aba4748fc811",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:9fc3aba4748fc811",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:a037f4c4d787293c",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:a037f4c4d787293c",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:a037f4c4d787293c",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:b49264db494428ac",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:person:b49264db494428ac",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4896fc37b9be358",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 9
+    },
+    {
+      "source": "ent:person:d4a0890a9d52108d",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:d4a0890a9d52108d",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:d4a0890a9d52108d",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:d4a0890a9d52108d",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 6
+    },
+    {
+      "source": "ent:person:d78e78f9084244ed",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:d78e78f9084244ed",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:meetings/weekly-sync.vtt",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:ddfb3ab30e10ef15",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 17
+    },
+    {
+      "source": "ent:person:dfe3509f7ae097fd",
+      "target": "file:business/contract-edits.csv",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:dfe3509f7ae097fd",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:dfe3509f7ae097fd",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 5
+    },
+    {
+      "source": "ent:person:f1a41baa0c5189c4",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:person:f9766b8287796a52",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:f9766b8287796a52",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:person:f9766b8287796a52",
+      "target": "file:meetings/weekly-sync-transcript.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:027a0ec3acbb6bb0",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:06df0077f8950e91",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:19b99df3e62f1954",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:19b99df3e62f1954",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:24872a4135690ceb",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:24d949d3457e3f5a",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:2506f99a98732030",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:2de792c5c9d6c88a",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:30dbedabbe78b7b2",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:30dbedabbe78b7b2",
+      "target": "file:business/board-proposal.pptx",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:30dbedabbe78b7b2",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:36a474e43e4fb7b6",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:36a474e43e4fb7b6",
+      "target": "file:it/escalation-notes.txt",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:36a474e43e4fb7b6",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:42ca8317da237dfd",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:phone:42ca8317da237dfd",
+      "target": "file:shared/kickoff-announcement.eml",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:phone:4c1563f0470b85cb",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:9e97f838b69b91b3",
+      "target": "file:business/accounts.csv",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:9e97f838b69b91b3",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 3
+    },
+    {
+      "source": "ent:phone:b4dff970106873b1",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:bc7a6407d66cd93f",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:phone:bc7a6407d66cd93f",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 2
+    },
+    {
+      "source": "ent:phone:cb2232f0a3ddc0fe",
+      "target": "file:shared/review-q3.eml",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:de7b2ed12e2b960b",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:e5cf143c26430ae0",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:phone:e68f3c09a248680f",
+      "target": "file:it/service-inventory.sql",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "ent:secret_github_pat:17ca6185759a6b07",
+      "target": "file:it/runbook.txt",
+      "type": "MENTIONS_IN",
+      "weight": 1
+    },
+    {
+      "source": "dept:business",
+      "target": "dept:it",
+      "type": "SHARED_ENTITIES",
+      "weight": 42
+    },
+    {
+      "source": "dept:business",
+      "target": "dept:meetings",
+      "type": "SHARED_ENTITIES",
+      "weight": 9
+    },
+    {
+      "source": "dept:business",
+      "target": "dept:shared",
+      "type": "SHARED_ENTITIES",
+      "weight": 15
+    },
+    {
+      "source": "dept:it",
+      "target": "dept:meetings",
+      "type": "SHARED_ENTITIES",
+      "weight": 8
+    },
+    {
+      "source": "dept:it",
+      "target": "dept:shared",
+      "type": "SHARED_ENTITIES",
+      "weight": 16
+    },
+    {
+      "source": "dept:meetings",
+      "target": "dept:shared",
+      "type": "SHARED_ENTITIES",
+      "weight": 6
+    }
+  ]
+}

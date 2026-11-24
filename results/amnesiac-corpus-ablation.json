@@ -1,0 +1,351 @@
+{
+  "kind": "amnesiac-corpus-ablation",
+  "stage": 10,
+  "seed": 20261124,
+  "engine": "versieve-amnesiac-corpus-v1",
+  "anti_circularity_note": "Ground truth (entity list + per-file char spans) lives only in fixtures/company-estate-manifest.json, produced by scripts/gen-company-estate.mjs. The engine path receives only the estate files — the manifest is read here solely to score engine coverage and injected-PII counts, never in the corpus seam.",
+  "zero_egress_note": "The corpus build and erasure path performs no network I/O (src/amnesiac-corpus.js imports no network modules); this run is CPU-side only.",
+  "pending_gpu_note": "Adapter-retrain wall-clock vs full retrain, SISA head-to-head, and Carlini canary exposure pre/post retrain require the GPU recipe and are NOT executed here (a live GPU job owns the machine); the fields below stay \"pending-gpu\" until a later run backfills them.",
+  "estate": {
+    "dir": "fixtures/company-estate",
+    "fileCount": 12,
+    "departments": [
+      "it",
+      "business",
+      "shared",
+      "meetings"
+    ],
+    "modalities": [
+      "sql",
+      "csv",
+      "text",
+      "email",
+      "transcript",
+      "captions",
+      "audio",
+      "deck"
+    ],
+    "estateBytes": 406238,
+    "groundTruthEntityCount": 24,
+    "corpusIndexedEntityCount": 76,
+    "coverageNote": "GT entities are canonical (a person = name + email + phone as one GT entity); the corpus indexes each distinct detected value as its own salted engine entity. Org ids and project codenames have no engine class and are estate GT only, estate-wide by construction.",
+    "injectedEntityClassesWithEngineCoverage": [
+      "person"
+    ],
+    "engineClassesObservingInjectedPersonValues": [
+      "EMAIL",
+      "PERSON",
+      "PHONE"
+    ],
+    "injectedEntityClassesWithoutEngineClass": [
+      "org_id",
+      "project_code"
+    ]
+  },
+  "corpus": {
+    "receipt": {
+      "engine": "versieve-amnesiac-corpus-v1",
+      "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+      "corpusSha256": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
+      "sampleCount": 24,
+      "entityCount": 76,
+      "viewDigest": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    "sampleCount": 24,
+    "audioCapture": {
+      "wordTimestampsSource": "meetings/weekly-sync.vtt (estate caption track)",
+      "provider": "supplied_word_timestamps (no local ASR weights on this CPU box)",
+      "wordCount": 127
+    },
+    "buildWallclockMs": 179.26419999999996
+  },
+  "certificates": {
+    "statedConfidence": 0.95,
+    "calibrationMethod": "Clopper-Pearson binomial lower bound at stated confidence (fixed-sequence Learn-Then-Test inversion over binomCdf)",
+    "passRate": 0.958333,
+    "certifiedPassRateLowerBound": 0.817108,
+    "quarantinedSampleCount": 1,
+    "classes": {
+      "ADDRESS": {
+        "detectedCount": 3,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.368403
+      },
+      "DATE_OF_BIRTH": {
+        "detectedCount": 20,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.860892
+      },
+      "EMAIL": {
+        "detectedCount": 57,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.948801
+      },
+      "GITHUB_PAT": {
+        "detectedCount": 1,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.05
+      },
+      "PERSON": {
+        "detectedCount": 153,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.98061
+      },
+      "PHONE": {
+        "detectedCount": 28,
+        "missedCount": 0,
+        "certifiedRecallLowerBound": 0.898534
+      }
+    },
+    "injectedEntityCountByClass": {
+      "person": 16,
+      "org_id": 4,
+      "project_code": 4
+    }
+  },
+  "fractions": {
+    "0.01": {
+      "fraction": 0.01,
+      "entityIds": [
+        "ent:dob:aa638fbc79de5706"
+      ],
+      "selectedEntityCount": 1,
+      "indexedEntityCount": 76,
+      "byteDiff": {
+        "bytesBefore": 26054,
+        "bytesAfter": 26003,
+        "removedSpanBytes": 24,
+        "measuredDeltaBytes": -51,
+        "expectedShrinkBytes": 51,
+        "exact": true,
+        "changedSampleCount": 1,
+        "unchangedSampleCount": 23,
+        "corpusSha256Before": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
+        "corpusSha256After": "6d5a2bfc90eb49ab09750efaf08aec598bd404c926365acf52319eae4d9d69e3",
+        "diffVerified": true
+      },
+      "certificatePassRateBefore": 0.958333,
+      "certificatePassRateAfter": 0.958333,
+      "perErasedEntity": [
+        {
+          "entityId": "ent:dob:aa638fbc79de5706",
+          "removedSpanBytes": 24,
+          "entityListDeltaBytes": 27,
+          "diffReceiptSha256": "e822bd8b703631e6a8d845af368e8e017130408e404c85ed148bd324f6f45b24"
+        }
+      ],
+      "regenerationWallclockMs": 2.0429000000000315
+    },
+    "0.05": {
+      "fraction": 0.05,
+      "entityIds": [
+        "ent:phone:e68f3c09a248680f",
+        "ent:email:25127f97c2b327bc",
+        "ent:person:f1a41baa0c5189c4",
+        "ent:phone:4c1563f0470b85cb"
+      ],
+      "selectedEntityCount": 4,
+      "indexedEntityCount": 76,
+      "byteDiff": {
+        "bytesBefore": 26054,
+        "bytesAfter": 25837,
+        "removedSpanBytes": 71,
+        "measuredDeltaBytes": -217,
+        "expectedShrinkBytes": 217,
+        "exact": true,
+        "changedSampleCount": 3,
+        "unchangedSampleCount": 21,
+        "corpusSha256Before": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
+        "corpusSha256After": "81459e19df6eb192771b6e27a5baf7d4fc53df7dc12b382c010e07ffbaa290bd",
+        "diffVerified": true
+      },
+      "certificatePassRateBefore": 0.958333,
+      "certificatePassRateAfter": 0.958333,
+      "perErasedEntity": [
+        {
+          "entityId": "ent:phone:e68f3c09a248680f",
+          "removedSpanBytes": 14,
+          "entityListDeltaBytes": 29,
+          "diffReceiptSha256": "8bdf48ddc9f8231a4f2cc865e068a96ae0a83fe9398647325f66d6a62549265f"
+        },
+        {
+          "entityId": "ent:email:25127f97c2b327bc",
+          "removedSpanBytes": 28,
+          "entityListDeltaBytes": 58,
+          "diffReceiptSha256": "5a9da6ce1de5c85242601dc149769548ad2af7ce7251018e5652aa685b2502a2"
+        },
+        {
+          "entityId": "ent:person:f1a41baa0c5189c4",
+          "removedSpanBytes": 15,
+          "entityListDeltaBytes": 30,
+          "diffReceiptSha256": "bba597f6de76f9a44a4316aae5bb2a39b5ec080dda7814d298b02b8de440d575"
+        },
+        {
+          "entityId": "ent:phone:4c1563f0470b85cb",
+          "removedSpanBytes": 14,
+          "entityListDeltaBytes": 29,
+          "diffReceiptSha256": "f4e15043113bceaf8a2b4502720fc5997788dd99785426ad1d73528be7e71536"
+        }
+      ],
+      "regenerationWallclockMs": 11.006999999999948
+    },
+    "0.2": {
+      "fraction": 0.2,
+      "entityIds": [
+        "ent:dob:daaf7cad936d91a2",
+        "ent:person:261e25cd76d10eaf",
+        "ent:dob:62a0e2ee1bdcb49c",
+        "ent:person:ddfb3ab30e10ef15",
+        "ent:dob:78d6cb391fd1cabf",
+        "ent:email:ff629f83c7d23451",
+        "ent:person:048a7eb56adb0b8f",
+        "ent:phone:027a0ec3acbb6bb0",
+        "ent:dob:9e924313344c6a25",
+        "ent:dob:48a76654662a1bd7",
+        "ent:phone:2506f99a98732030",
+        "ent:phone:e5cf143c26430ae0",
+        "ent:person:9fc3aba4748fc811",
+        "ent:dob:d6aed68016b6dc45",
+        "ent:person:7783aa74741924c3"
+      ],
+      "selectedEntityCount": 15,
+      "indexedEntityCount": 76,
+      "byteDiff": {
+        "bytesBefore": 26054,
+        "bytesAfter": 23648,
+        "removedSpanBytes": 999,
+        "measuredDeltaBytes": -2406,
+        "expectedShrinkBytes": 2406,
+        "exact": true,
+        "changedSampleCount": 21,
+        "unchangedSampleCount": 3,
+        "corpusSha256Before": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
+        "corpusSha256After": "e9ca837cad48b66b997ad68aed71a917b79c1330930d9f9c2e01cfa232d4050d",
+        "diffVerified": true
+      },
+      "certificatePassRateBefore": 0.958333,
+      "certificatePassRateAfter": 0.958333,
+      "perErasedEntity": [
+        {
+          "entityId": "ent:dob:daaf7cad936d91a2",
+          "removedSpanBytes": 12,
+          "entityListDeltaBytes": 27,
+          "diffReceiptSha256": "b9a72cd41a0538a104613b808fd5e987745fac956a2c9c25aae1739b51c54e1a"
+        },
+        {
+          "entityId": "ent:person:261e25cd76d10eaf",
+          "removedSpanBytes": 45,
+          "entityListDeltaBytes": 90,
+          "diffReceiptSha256": "4e1d889aa176e7b43e2038ecdc68ab0d1e71e9ebcff225d13081eb7accd0d528"
+        },
+        {
+          "entityId": "ent:dob:62a0e2ee1bdcb49c",
+          "removedSpanBytes": 24,
+          "entityListDeltaBytes": 27,
+          "diffReceiptSha256": "bebe7db57aa68a5944629f4b17106e831026a05810db80111829ed7a46a8f6a6"
+        },
+        {
+          "entityId": "ent:person:ddfb3ab30e10ef15",
+          "removedSpanBytes": 255,
+          "entityListDeltaBytes": 299,
+          "diffReceiptSha256": "a4c91f1a41025c5508c7f585fb067e7625ca1100af88a611df20362d4a2b70ad"
+        },
+        {
+          "entityId": "ent:dob:78d6cb391fd1cabf",
+          "removedSpanBytes": 24,
+          "entityListDeltaBytes": 27,
+          "diffReceiptSha256": "1654bccf3916d39e77ec58de0f83a6bb728f2be4eb47cd622fc003b09dea5ab4"
+        },
+        {
+          "entityId": "ent:email:ff629f83c7d23451",
+          "removedSpanBytes": 42,
+          "entityListDeltaBytes": 87,
+          "diffReceiptSha256": "fe40090117265ea6b5f73841ba0d1db542794a84b52f833844a71ecd4606b003"
+        },
+        {
+          "entityId": "ent:person:048a7eb56adb0b8f",
+          "removedSpanBytes": 285,
+          "entityListDeltaBytes": 328,
+          "diffReceiptSha256": "8eb72ac0e6b460f4cb71837ffd2f5257db3ad42d9e9ffd5333bcdf512bbd6382"
+        },
+        {
+          "entityId": "ent:phone:027a0ec3acbb6bb0",
+          "removedSpanBytes": 14,
+          "entityListDeltaBytes": 29,
+          "diffReceiptSha256": "ecdf81b750fc7259d719ebd4187e2a3640b8c5c83ede35b3b93815c33b4423ce"
+        },
+        {
+          "entityId": "ent:dob:9e924313344c6a25",
+          "removedSpanBytes": 24,
+          "entityListDeltaBytes": 54,
+          "diffReceiptSha256": "3db257ba55b7751dc5cab1fd0bcadd77fd0b9da857008a8ee54f0fe6d55c92ab"
+        },
+        {
+          "entityId": "ent:dob:48a76654662a1bd7",
+          "removedSpanBytes": 12,
+          "entityListDeltaBytes": 27,
+          "diffReceiptSha256": "e85a5e6cdba44524dbca8bfc089d1968b110d32558dba9d215e16c9a7bbeee2e"
+        },
+        {
+          "entityId": "ent:phone:2506f99a98732030",
+          "removedSpanBytes": 14,
+          "entityListDeltaBytes": 29,
+          "diffReceiptSha256": "bdb6921ddab53445c714582cae33629175aaf4fea980c7ce13afe2f369fef27c"
+        },
+        {
+          "entityId": "ent:phone:e5cf143c26430ae0",
+          "removedSpanBytes": 14,
+          "entityListDeltaBytes": 29,
+          "diffReceiptSha256": "43ec95d37f0173a0916e1f159e187188847bd55f9eadb90349a3d0288bc4be4c"
+        },
+        {
+          "entityId": "ent:person:9fc3aba4748fc811",
+          "removedSpanBytes": 90,
+          "entityListDeltaBytes": 120,
+          "diffReceiptSha256": "f44ed99baec65e37ec1f63f6779ed6445a170aa3095c2ec43c9856e32d958315"
+        },
+        {
+          "entityId": "ent:dob:d6aed68016b6dc45",
+          "removedSpanBytes": 24,
+          "entityListDeltaBytes": 54,
+          "diffReceiptSha256": "e0ab2769c86bb8d265d8ba671262a8cc50b5aebee7fa415235028f1fda3730c6"
+        },
+        {
+          "entityId": "ent:person:7783aa74741924c3",
+          "removedSpanBytes": 120,
+          "entityListDeltaBytes": 180,
+          "diffReceiptSha256": "b97625230ed32928e9aeca290c9a7dd8068433e0194cf4de730d19e8f0af2628"
+        }
+      ],
+      "regenerationWallclockMs": 41.686199999999985
+    }
+  },
+  "gpuDependent": {
+    "adapterRetrainWallclockVsFullRetrain": {
+      "status": "pending-gpu",
+      "recipe": {
+        "family": "lora",
+        "seed": 42,
+        "placeholderMasking": "labels[-100] on <PII:...>/<SECRET:...> spans (PT-LM)",
+        "hyperparameters": {
+          "r": 16,
+          "alpha": 32,
+          "lr": 0.0002,
+          "steps": 80,
+          "batch": "2x4 grad-accum",
+          "maxLen": 768
+        }
+      },
+      "note": "Deterministic seeded LoRA retrain over the regenerated corpus vs full retrain; owned by the PT-LM GPU recipe, not this CPU-side run."
+    },
+    "sisaHeadToHead": {
+      "status": "pending-gpu",
+      "note": "Head-to-head comparison against SISA sharding; requires the GPU harness."
+    },
+    "carliniCanaryExposurePrePostRetrain": {
+      "status": "pending-gpu",
+      "target": "exposure at or below chance after the erased-entity retrain",
+      "note": "Carlini-style canary insertion and exposure measurement requires trained model states."
+    }
+  }
+}

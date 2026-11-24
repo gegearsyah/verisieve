@@ -1,0 +1,23 @@
+-- Northfield Ltd internal service inventory (text SQL dump, INSERT statements only)
+CREATE TABLE employees (emp_id INT, full_name TEXT, email TEXT, phone TEXT, department TEXT, project_code TEXT);
+CREATE TABLE tickets (ticket_id INT, project_code TEXT, assigned_name TEXT, org_id TEXT, summary TEXT);
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (100, 'Priya Sharma', 'priya.sharma@northfield-ltd.example', '+44 20 7946 0900', 'IT', 'AMBER');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (101, 'Marcus Bell', 'marcus.bell@northfield-ltd.example', '+44 20 7946 0903', 'BUSINESS', 'LANTERN');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (102, 'Ondrej Novak', 'ondrej.novak@northfield-ltd.example', '+44 20 7946 0906', 'IT', 'PEBBLE');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (103, 'Hana Ito', 'hana.ito@northfield-ltd.example', '+44 20 7946 0909', 'BUSINESS', 'QUARRY');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (104, 'Lena Weber', 'lena.weber@northfield-ltd.example', '+44 20 7946 0912', 'IT', 'AMBER');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (105, 'Kwame Asante', 'kwame.asante@northfield-ltd.example', '+44 20 7946 0915', 'BUSINESS', 'LANTERN');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (106, 'Tomas Vidal', 'tomas.vidal@northfield-ltd.example', '+44 20 7946 0918', 'IT', 'PEBBLE');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (107, 'Ines Duarte', 'ines.duarte@northfield-ltd.example', '+44 20 7946 0921', 'BUSINESS', 'QUARRY');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (108, 'Elena Vance', 'elena.vance@northfield-ltd.example', '+44 20 7946 0924', 'IT', 'AMBER');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (109, 'Ravi Chandra', 'ravi.chandra@northfield-ltd.example', '+44 20 7946 0927', 'BUSINESS', 'LANTERN');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (110, 'Sarah Kwon', 'sarah.kwon@northfield-ltd.example', '+44 20 7946 0930', 'IT', 'PEBBLE');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (111, 'Daniel Petrov', 'daniel.petrov@northfield-ltd.example', '+44 20 7946 0933', 'BUSINESS', 'QUARRY');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (112, 'Nadia Farouk', 'nadia.farouk@northfield-ltd.example', '+44 20 7946 0936', 'IT', 'AMBER');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (113, 'Victor Adeyemi', 'victor.adeyemi@northfield-ltd.example', '+44 20 7946 0939', 'BUSINESS', 'LANTERN');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (114, 'Grace Okonkwo', 'grace.okonkwo@northfield-ltd.example', '+44 20 7946 0942', 'IT', 'PEBBLE');
+INSERT INTO employees (emp_id, full_name, email, phone, department, project_code) VALUES (115, 'Felix Marchetti', 'felix.marchetti@northfield-ltd.example', '+44 20 7946 0945', 'BUSINESS', 'QUARRY');
+INSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7700, 'AMBER', 'Priya Sharma', 'ORG-2271', 'Rotate service credentials for Harrow Logistics Ltd contact priya.sharma@northfield-ltd.example before the next release.');
+INSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7701, 'LANTERN', 'Lena Weber', 'ORG-3174', 'Rotate service credentials for Calder Freight Group contact lena.weber@northfield-ltd.example before the next release.');
+INSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7702, 'PEBBLE', 'Elena Vance', 'ORG-4402', 'Rotate service credentials for Nuneaton Textiles plc contact elena.vance@northfield-ltd.example before the next release.');
+INSERT INTO tickets (ticket_id, project_code, assigned_name, org_id, summary) VALUES (7703, 'QUARRY', 'Nadia Farouk', 'ORG-8115', 'Rotate service credentials for Ardwick Tooling Co contact nadia.farouk@northfield-ltd.example before the next release.');
