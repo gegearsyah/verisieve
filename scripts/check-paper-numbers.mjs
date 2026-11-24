@@ -527,6 +527,8 @@ const CG = tex('verisieve-graph-grounded-enterprise-corpus.tex');
   if (er.gtEntitiesObserved !== er.gtPersonCount) { fails++; console.error('FAIL [corpus:link.personsObserved] gtEntitiesObserved != gtPersonCount'); }
   const cg = CBS.p4.connectionGraph;
   ok('corpus:graph.nodes', `${f0(cg.nodeCount)} nodes and ${f0(cg.edgeCount)} edges`, CG);
+  const RSB = j('reviewer-secrets-audio-pprl-benchmarks.json');
+  ok('corpus:pprl.falselink', P(f2(RSB.expR5_pprlRealityCheck.scale500CommonNamesCollision.pprlFalseLinkRateAtDevThrPct)), CG);
 
   for (const [frac, pct] of [['0.01', '1\\%'], ['0.05', '5\\%'], ['0.2', '20\\%']]) {
     const fr = ABL.fractions[frac];
