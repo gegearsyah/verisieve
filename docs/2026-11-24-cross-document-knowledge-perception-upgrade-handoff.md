@@ -493,3 +493,31 @@ fail: an exact-match baseline must score <90% pairwise recall and commit at leas
 merge, or the estate is regenerated with the failure documented. Audio/decks honestly out of
 scope for v1 (identity overlay on real speech is not honest, per the dataset hunt). Fixture
 build handed to a subagent against the spec; lead verification and wiring on completion.
+
+**2026-11-24 (K4/K5 prep executed — noisy-estate fixture built, gated, and committed):**
+Builder output lead-verified end-to-end before commit `99ba4f1`: all three source files read
+(`scripts/gen-noisy-estate.mjs`, `scripts/noisy-estate-baseline.mjs`,
+`test/noisy-estate.test.js`), spec constants checked against
+`docs/2026-11-24-noisy-estate-benchmark-spec.md`, math checked by hand, estate tree clean under
+`fixtures/`. **Receipts (2,368 mentions, 797 corrupted):** exact-match floor pairwise
+P 0.9183 / R 0.2427 / F1 0.3839; B-cubed P 0.9671 / R 0.3203 / F1 0.4812; **257 false merges,
+ALL on the designed N6 collision pairs**; false-split rate 0.7573 with miss histogram
+N4 4081 / none 2194 / N5 1399 / N3 1093 / N2 784 / N6 705 / N7 683 / N1 300 / N8 191;
+Q3 disambiguation accuracy 1/12 (exact matching genuinely fails the benchmark, not by
+construction of the scorer but by construction of the world). **Binding gate PASS** (recall
+<0.9, ≥1 collision false merge) — the benchmark can fail, and the trivial recipe does.
+Engine blindness test-asserted (generator imports only `node:` builtins, zero `src/`
+references); determinism test-asserted (seed 20261124, two generations byte-identical,
+manifest pins the estate SHA-256 with its recipe, no wallclock fields). Test wired into
+`test:ci`; full suite green; paper-number checks 794/0 with zero check-script edits.
+**Deviations recorded (implementer choices, lead-reviewed):** (a) email volume 190 messages
+across 40 threads (spec said ~160 — the N5 shared-inbox threads carry a 5th message);
+(b) N3 initials withheld from collision-pair members and N1 from initials-only surfaces (the
+spec's locally-unambiguous rule, so the collision stress case stays winnable); (c) fact
+statements canonical-forced on occurrence idx 0 and variant-forced on idx 1, so multi-doc
+facts join on genuinely different surfaces; (d) chat handles normalize onto canonical names
+under the trivial recipe (honest consequence for baseline recall, not smoothed); (e) the
+noise summary's N1 count is 35 name mentions at the spec's 6%-per-token rate (the rate is
+low by design; the histogram in the baseline artifact carries the per-noise-type miss load).
+K5's floor is now a committed artifact (`results/noisy-estate-baseline.json`); K4's
+open-world variant builds on this estate next.
