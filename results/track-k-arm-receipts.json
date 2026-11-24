@@ -1,0 +1,82 @@
+{
+  "kind": "track-k-arm-build-receipt",
+  "stage": "K3",
+  "seed": 20261124,
+  "engine": "versieve-amnesiac-corpus-v1",
+  "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+  "pairsPolicy": "pairs-v1",
+  "compositionPolicy": "composed-v1",
+  "workspaceSalt": "versieve-amnesiac-v1",
+  "estate": {
+    "dir": "fixtures/noisy-estate",
+    "documentCount": 115,
+    "estateSha256": "d1f20abc455a6ba3c5e3b3fe53ab82370e11908676b6d3eefe1286b36daae605",
+    "manifestSha256": "37a70233bf5b91ad11d83bcbe72913c56b7a914e037564fa22a1128d0944d1f1"
+  },
+  "anti_circularity_note": "Training corpora are built ONLY from fixtures/noisy-estate/ documents. The 60 eval questions and expectedValues live in fixtures/noisy-estate-manifest.json and are read scorer-side by run-track-k-composition-head-to-head.py only; nothing GT-shaped enters any corpus.",
+  "zero_egress_note": "The builder performs no network I/O: perception, corpus seam, pair compiler, graph index and PPR retrieval are all local file + wasm computation.",
+  "arms": {
+    "flat": {
+      "file": "track-k-corpus-flat.jsonl",
+      "sha256": "5b2546a7dd2edac6ff79e7609f123afb0ab695afc0d63d21002254b9da608439",
+      "bytes": 212487,
+      "note": "positional 800-char windows over the estate in document order",
+      "samples": 178,
+      "estimatedTokensCharsOver4": 44395
+    },
+    "per_block": {
+      "file": "track-k-corpus-per-block.jsonl",
+      "sha256": "2a9cefb8cee6fc59d422f557f325b36260c5db3dc84f409166690c33eb64a16e",
+      "bytes": 221496,
+      "note": "readable per-block corpus",
+      "samples": 216,
+      "estimatedTokensCharsOver4": 46658
+    },
+    "composed": {
+      "file": "track-k-corpus-composed.jsonl",
+      "sha256": "32fa477f6c583ce4486f2e8387f7914d3aa0460123c36a30bd47abf3bd83b3fb",
+      "bytes": 4679292,
+      "note": "readable composed corpus (join is the training unit)",
+      "samples": 1106,
+      "estimatedTokensCharsOver4": 1160474
+    },
+    "composed_pairs": {
+      "file": "track-k-corpus-composed-pairs.jsonl",
+      "sha256": "b306654445993ba4c8e3dc8f6cf3862da669ce645cad74dcd096eafe53a95411",
+      "bytes": 9462822,
+      "note": "composed corpus + identity-contrastive pairs merged into ONE file in deterministic hash-id order (pair ids are sha256), so equal-budget truncation never removes a whole part",
+      "samples": 3322,
+      "estimatedTokensCharsOver4": 2355060
+    },
+    "per_block_vaulted": {
+      "file": "track-k-corpus-per-block-vaulted.jsonl",
+      "sha256": "32f9eddf26e3baaa6e42869566d69c2566641b210b89e7186b84611e611d7cfc",
+      "bytes": 234745,
+      "note": "vaulted per-block corpus (the privacy-cost ablation)",
+      "samples": 216,
+      "estimatedTokensCharsOver4": 49970
+    }
+  },
+  "canaries": {
+    "file": "../Rtio/experiments/lora-e2e/data/canaries.json",
+    "canaryCount": 12,
+    "rows": 104,
+    "embedding": "identical chat rows appended after the estate rows in EVERY training-arm corpus at build time; the runner keeps them outside the capped estate budget so per-arm canary exposure is measured on an identical canary input at parity"
+  },
+  "pprContexts": {
+    "file": "track-k-arm-ppr-contexts.json",
+    "questions": 60,
+    "retrievalPath": "track-C Graph-PPR (PortableDocumentGraph.pprRetrieve topK 6), contexts mapped back to raw estate text by passage lineIndex for parity with the readable training arms"
+  },
+  "flatChunker": {
+    "windowChars": 800,
+    "order": "manifest document order, then byte position",
+    "minChunkChars": 40
+  },
+  "notes": [
+    "composed_pairs is the composed corpus plus the identity-contrastive pairs JSONL merged into one training file in deterministic hash-id order.",
+    "The equal token budget is computed training-side (Qwen tokenizer, assistant-target tokens); the per-char token estimates here are provenance only.",
+    "Vaulted composed is not implemented (loud TypeError by design) so the readable-vs-vaulted ablation rides the per-block arm; recorded as the deviation it is.",
+    "The fluent readable per-block seam is also the pair compiler input, so arm composed_pairs carries pairs compiled from the same per-block state (no rebuilding)."
+  ]
+}

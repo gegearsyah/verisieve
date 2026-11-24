@@ -562,3 +562,34 @@ anything NC or fee-gated stays out per the hunt note's rejection ledger), and co
 + exact-match baseline only — model arms on that estate stay on THIS queue's GPU after K3.
 The main queue is unaffected: K3 six-arm runs on the synthetic noisy estate; K6 model
 comparisons are queued here after K3 and consume the parallel agent's estate artifact.
+
+**2026-11-24 (Stage K3 executed — the six-arm head-to-head, full run):**
+The decisive experiment ran to completion on the noisy estate (115 docs, 60 manifest
+questions, Q1/Q2/Q3 = 24/24/12) at an equal training-token budget of 25,755 tokens per
+arm, recipe sealed from the sweep combo `qwen15b-160steps-lr2e-4` (Qwen2.5-1.5B-Instruct,
+LoRA r16/alpha32, 160 steps, lr 2e-4, canary batch appended identically to every arm).
+Closed-book exact match, all 60 questions: Graph-PPR retrieval (no fine-tuning, track-C
+topK 6) 53.3% with Q2 cross-document at 83.3%; composed 11.7%; per-block 10.0%; flat
+6.7%; composed+pairs 1.7% (= base); per-block vaulted 1.7% (= base); base 1.7%. Every
+trained arm shows the same canary exposure (8.5 bits vs base 4.3), so format choice did
+not move memorization at this scale. Honest reading, recorded as it ran: (1) the graph
+pays off as a retrieval index, not as a training format, at 1.5B/160-step scale —
+retrieval beats the best trained arm by 4.6x overall and 6.7x on cross-document facts;
+(2) among training formats the composed > per-block > flat ordering holds on every
+stratum but the margins are small (11.7 vs 10.0 vs 6.7); (3) the composed+pairs arm
+failed by the budget mechanism, not by the pair idea — pair rows displaced composed rows
+down to 50 rows / 9,947 learnable tokens (vs 41 rows / 23,608 for composed alone), a
+negative result reported with its mechanism; (4) vaulted identity scores exactly base on
+closed-book identity questions — the privacy cost quantified (1.7 vs 10.0 readable
+per-block). Judge agreement between the strict qwen2.5:7b judge and the cross-family
+generous llama3.2:3b judge is low (6.7-41.7% row agreement across arms); both judges'
+scores and the agreement rates are in the artifact and no judge is cherry-picked.
+Deviations: the DeepSeek third judge did not run (no OpenRouter key on the machine;
+votes backfill on re-run once a key exists — recorded in the artifact's `deepseek`
+section); one HF-hub metadata hang during the earlier smoke run was an environment fault
+(network-saturated hub check), resolved with HF_HUB_OFFLINE=1, not a code change; the
+runner rewrites `results/track-k-composition-head-to-head.json` after every phase, so
+the artifact is a complete run record with all per-row answers, canary exposures
+(12 canaries x repetition 1/5/20), and held-out perplexity per arm. Corpora for all six
+training arms are committed with SHA-256 receipts (`results/track-k-arm-receipts.json`)
+and PPR contexts for the retrieval arm (`results/track-k-arm-ppr-contexts.json`).
