@@ -310,3 +310,15 @@ ongoing behavior, recorded: every no-env baseline regeneration (including the es
 test inside `test:ci`) rewrites the `enron` section to `omitted` and dirties the file; the
 house restore pattern (`git checkout -- results/open-estate-baseline.json`) keeps the
 committed Enron aggregates at HEAD. Papers cite the committed artifact.
+
+**2026-11-24 (lead fix 2 — the no-env rewrite behavior removed, not just documented):**
+The earlier fix restored the committed Enron aggregates but left the documented behavior in
+place: every no-env baseline regeneration (including the estate suite inside `test:ci`)
+rewrote the committed `results/open-estate-baseline.json` to the `omitted` form. That became
+untenable once Paper 4 needles the Enron aggregates: a plain `test:ci` run clobbered the
+artifact ahead of the checker and failed it. The scorer now honors an output override
+(`OPEN_ESTATE_BASELINE_OUT`); the estate suite scores into a temp copy, and the committed
+artifact is written only by an explicit scorer run (with `OPEN_ESTATE_ENRON_SLICE` set on
+this machine it carries the Enron aggregates; a fresh-clone regeneration without the slice
+records the conditional omission loudly). Full `test:ci` green with the committed artifact
+untouched by the suite; 955 paper-number checks, 0 failures.

@@ -25,9 +25,14 @@ function runGenerator(extraArgs = []) {
   return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 }
 
+// the scorer writes to a temp copy so a no-env suite run never rewrites the committed
+// artifact (its conditional Enron aggregates exist only where the external slice does)
+const BASELINE_TMP = path.join(fs.mkdtempSync(path.join(fs.realpathSync(process.env.TEMP || '/tmp'), 'open-estate-baseline-')), 'open-estate-baseline.json');
 function runBaseline() {
-  execFileSync(process.execPath, [BASELINE_SCRIPT], { cwd: ROOT, stdio: 'pipe' });
-  return JSON.parse(fs.readFileSync(BASELINE_OUT, 'utf8'));
+  execFileSync(process.execPath, [BASELINE_SCRIPT], {
+    cwd: ROOT, stdio: 'pipe', env: { ...process.env, OPEN_ESTATE_BASELINE_OUT: BASELINE_TMP },
+  });
+  return JSON.parse(fs.readFileSync(BASELINE_TMP, 'utf8'));
 }
 
 // Text fixtures only (the audio files are excluded from the estate digest; they are
@@ -273,11 +278,12 @@ test('K6 6 (conditional): Enron slice: generated only outside the repository and
   assert.ok(slice.mentions.length > 200, 'the slice carries a real mention volume');
   assert.ok(!outDir.startsWith(ROOT) && !outDir.includes('fixtures'), `the Enron slice must be written outside the repository, got ${outDir}`);
   // aggregator-side: scoring the slice works and stays aggregate
+  const tmpOut = path.join(outDir, 'baseline.json');
   execFileSync(process.execPath, [BASELINE_SCRIPT], {
     cwd: ROOT, stdio: 'pipe',
-    env: { ...cleanEnv, OPEN_ESTATE_ENRON_SLICE: outDir },
+    env: { ...cleanEnv, OPEN_ESTATE_ENRON_SLICE: outDir, OPEN_ESTATE_BASELINE_OUT: tmpOut },
   });
-  const baseline = JSON.parse(fs.readFileSync(BASELINE_OUT, 'utf8'));
+  const baseline = JSON.parse(fs.readFileSync(tmpOut, 'utf8'));
   assert.ok(baseline.enron && typeof baseline.enron.scores.pairwise.recall === 'number', 'the conditional enron section records aggregate scores only');
   fs.rmSync(outDir, { recursive: true, force: true });
 });

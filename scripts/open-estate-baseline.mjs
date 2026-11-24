@@ -32,7 +32,12 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'fixtures/open-estate-manifest.json');
-const OUT_PATH = path.join(ROOT, 'results/open-estate-baseline.json');
+// tests score into a temp copy (OPEN_ESTATE_BASELINE_OUT) so a no-env suite run never
+// rewrites the committed artifact, whose Enron aggregates exist only where the external
+// slice does (founder ruling; the artifact records the conditional status either way)
+const OUT_PATH = process.env.OPEN_ESTATE_BASELINE_OUT
+  ? path.resolve(process.env.OPEN_ESTATE_BASELINE_OUT)
+  : path.join(ROOT, 'results/open-estate-baseline.json');
 
 const normalize = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 

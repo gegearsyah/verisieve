@@ -596,6 +596,93 @@ const CG = tex('verisieve-graph-grounded-enterprise-corpus.tex');
   ok('corpus:argon.w6', `${f0(w6.crossModalEntityLinkPct.baseline)} / ${f0(w6.multiHopQaParityPct.baseline)} & ${f0(w6.crossModalEntityLinkPct.versieve)} / ${f0(w6.multiHopQaParityPct.versieve)}`, CG);
 }
 
+/* ---------------- Paper 4: K3 head-to-head, K4 failure modes, K6 open estate ---------------- */
+const KH = j('track-k-composition-head-to-head.json');
+const FM = j('composed-corpus-failure-modes.json');
+const OE = j('open-estate-baseline.json');
+const NB = j('noisy-estate-baseline.json');
+const NMAN = JSON.parse(readFileSync(new URL('fixtures/noisy-estate-manifest.json', ROOT), 'utf8'));
+{
+  // K3 estate + budget
+  const K3E = KH.estate;
+  ok('k3:estate.docs', `$${comma(K3E.documentCount)}$ documents over five text modalities`, CG);
+  ok('k3:estate.people', `$${comma(NB.counts.people)}$ people, $${comma(NB.counts.mentions)}$ person mentions`, CG);
+  ok('k3:estate.collisions', `${comma(NMAN.world.collisionPairs.length)} same-name collision pairs`, CG);
+  ok('k3:floor.recall', `recall $${f2(NB.pairwise.recall * 100)}\\%$`, CG);
+  ok('k3:floor.prec', `precision $${f2(NB.pairwise.precision * 100)}\\%$ with $${comma(NB.falseMerges.count)}$ false merges`, CG);
+  ok('k3:estate.strata', `$${comma(K3E.strata.Q1)}$ single-document (Q1), $${comma(K3E.strata.Q2)}$ cross-document (Q2), and $${comma(K3E.strata.Q3)}$ disambiguation`, CG);
+  checks++;
+  if (K3E.questions !== 60) { fails++; console.error(`FAIL [k3:estate.q] expected 60 questions, got ${K3E.questions}`); }
+  ok('k3:estate.q.prose', 'Sixty eval questions live only in the manifest', CG);
+  ok('k3:budget', `budget of $${comma(KH.budget.budget)}$ training tokens`, CG);
+  const CAN = KH.buildReceipts.canaries;
+  ok('k3:canaries', `a ${comma(CAN.rows)}-row canary batch (${comma(CAN.canaryCount)} canaries at 1, 5, and 20 repetitions)`, CG);
+
+  // K3 table: every cell recomputed from per-row answers
+  const emOf = (arm, stratum) => 100 * arm.rows.filter(r => r.exact_match && (!stratum || r.stratum === stratum)).length / arm.rows.filter(r => !stratum || r.stratum === stratum).length;
+  const judge = arm => arm.rows.reduce((s, r) => s + r.judge_score, 0) / arm.rows.length;
+  const llama = arm => arm.rows.reduce((s, r) => s + r.llama_judge_score, 0) / arm.rows.length;
+  const K3_ROWS = [
+    ['flat', 'Flat 800-char chunks'],
+    ['per_block', 'Per-block (readable)'],
+    ['composed', 'Composed'],
+    ['composed_pairs', 'Composed + pairs'],
+    ['per_block_vaulted', 'Per-block (vaulted)'],
+    ['retrieval', 'Graph-PPR retrieval'],
+    ['base', 'Base (no fine-tune)'],
+  ];
+  for (const [key, label] of K3_ROWS) {
+    const a = KH.arms[key];
+    ok(`k3:row.${key}`, `${label} & ${f1(emOf(a, 'Q1'))} & ${f1(emOf(a, 'Q2'))} & ${f1(emOf(a, 'Q3'))} & ${f1(emOf(a))} & ${f2(judge(a))} & ${f2(llama(a))}`, CG);
+  }
+  const agr = Object.values(KH.judgeAgreement).map(v => v.rowAgreementPct);
+  ok('k3:judge.agreement', `($${f1(Math.min(...agr))}$ to $${f1(Math.max(...agr))}\\%$ across arms)`, CG);
+
+  // K3 reading paragraph
+  const ratio = emOf(KH.arms.retrieval) / emOf(KH.arms.composed);
+  ok('k3:ratio', `$${f1(ratio)}$ times the best trained arm`, CG);
+  ok('k3:retrieval.q2', `and $${P(f1(emOf(KH.arms.retrieval, 'Q2')))}$ on the cross-document stratum`, CG);
+  const PA = KH.budget.perArm;
+  ok('k3:pairs.displaced', `only $${comma(PA.composed_pairs.post.rows)}$ rows with $${comma(PA.composed_pairs.post.learnableTokens)}$ learnable tokens survived (against $${comma(PA.composed.post.rows)}$ rows and $${comma(PA.composed.post.learnableTokens)}$ learnable tokens for composed alone)`, CG);
+  ok('k3:vaulted.masked', `masks $${f2(PA.per_block_vaulted.pre.masked_subword_pct)}\\%$ of subwords`, CG);
+  const TRAINED = ['flat', 'per_block', 'composed', 'composed_pairs', 'per_block_vaulted'];
+  const bits = TRAINED.map(k => KH.arms[k].canaryExposure.all_12_bits);
+  ok('k3:canary.range', `($${f2(Math.min(...bits))}$ to $${f2(Math.max(...bits))}$ bits over the ${comma(CAN.canaryCount)} canaries`, CG);
+  ok('k3:canary.base', `against $${f2(KH.arms.base.canaryExposure.all_12_bits)}$ bits for the untrained base`, CG);
+  ok('k3:ppl.composed', `composed at $${f1(KH.arms.composed.fluency.perplexity)}$ against base at $${f1(KH.arms.base.fluency.perplexity)}$`, CG);
+  ok('k3:ppl.vaulted', `worst for vaulted ($${f1(KH.arms.per_block_vaulted.fluency.perplexity)}$)`, CG);
+
+  // K4 failure modes
+  const FR = FM.falseMergeAmplification.rates;
+  const at = r => FR.find(x => x.rate === r);
+  ok('k4:amp.25', `$${f4(at(0.25).composed.corruptionRate)}$ of its world-mappable occurrences against $${f4(at(0.25).perBlock.corruptionRate)}$ for per-block, an amplification factor of $${f2(at(0.25).amplificationFactor)}$`, CG);
+  ok('k4:amp.50', `the rates are $${f4(at(0.5).composed.corruptionRate)}$ against $${f4(at(0.5).perBlock.corruptionRate)}$, a factor of $${f2(at(0.5).amplificationFactor)}$`, CG);
+  ok('k4:amp.low', `composed already sits at $${f4(at(0.05).composed.corruptionRate)}$ and $${f4(at(0.1).composed.corruptionRate)}$`, CG);
+  const occ = FR.filter(x => x.rate > 0).map(x => x.perBlock.falseIdentityOccurrences);
+  ok('k4:falseId.range', `($${comma(Math.min(...occ))}$ to $${comma(Math.max(...occ))}$ occurrences across the ladder)`, CG);
+  const HD = FM.hubDuplication;
+  ok('k4:hub.samples', `($${comma(HD.analyzedSamples)}$ samples`, CG);
+  ok('k4:hub.pairs', `$${comma(HD.overall.nearDuplicatePairs)}$ near-duplicate pairs of which $${comma(HD.overall.exactDuplicatePairs)}$ are exact duplicates`, CG);
+  ok('k4:hub.fraction', `(fraction $${f1(HD.overall.nearDuplicateSampleFraction)}$)`, CG);
+  ok('k4:hub.cap.prose', 'samples truncated by the hub cap are the near-duplicate-free ones', CG);
+  checks++;
+  if (HD.hub.hubSamples !== 6) { fails++; console.error(`FAIL [k4:hub.cap] expected 6 cap-truncated samples, got ${HD.hub.hubSamples}`); }
+
+  // K6 open estate
+  const OL = OE.layers.layerO, RL = OE.layers.layerR;
+  ok('k6:layerR.docs', `${f0(RL.scoring.documents)} meeting transcripts from AMI and ICSI`, CG);
+  ok('k6:layerR.people', `whose ${f0(RL.scoring.people)} corpus-labeled people`, CG);
+  ok('k6:layerO.cast', `a ${f0(OL.scoring.people)}-person overlay cast`, CG);
+  ok('k6:layerO.floor', `pairwise recall $${f2(OL.pairwise.recall * 100)}\\%$, precision $${f2(OL.pairwise.precision * 100)}\\%$, and $${comma(OL.falseMerges.count)}$ false merges`, CG);
+  ok('k6:layerO.collisions', `on the ${f0(OL.scoring.collisionPairs)} designed collision pairs`, CG);
+  ok('k6:layerR.ungated', `recall $${f0(RL.pairwise.recall * 100)}\\%$ at precision $${f2(RL.pairwise.precision * 100)}\\%$`, CG);
+  const EN = OE.enron.scores;
+  ok('k6:enron.floor', `pairwise recall $${f2(EN.pairwise.recall * 100)}\\%$ and precision $${f2(EN.pairwise.precision * 100)}\\%$`, CG);
+  ok('k6:enron.merges', `with $${comma(EN.falseMerges.count)}$ false merges of which $${comma(EN.falseMerges.onCollisionPairs)}$ fall on designed collision pairs`, CG);
+  checks++;
+  if (!OE.enron.archiveSha256 || !OE.enron.sliceDir.startsWith('external')) { fails++; console.error('FAIL [k6:enron.pin] the committed artifact must carry the external Enron aggregates and archive pin'); }
+}
+
 /* ---------------- Word bans (founder rule, all three papers) ---------------- */
 for (const [name, body] of [['M', M], ['L', L], ['E', E], ['CG', CG]]) {
   for (const [label, re] of [
