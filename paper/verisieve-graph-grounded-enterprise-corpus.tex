@@ -20,23 +20,23 @@
 \makeatother
 
 \hypersetup{
-  pdftitle={How Training Data Should Look: From Stitched Chunks to Records That Know What They Describe},
+  pdftitle={Records That Know What They Describe: A Deterministic Entity-Indexed Enterprise Corpus with Byte-Verified Erasure},
   pdfauthor={Gege Ardiyansyah},
   pdfsubject={Systems for Machine Learning}
 }
 
-\mlsystitlerunning{How Training Data Should Look}
+\mlsystitlerunning{Records That Know What They Describe}
 
 \begin{document}
 
 \twocolumn[
-\mlsystitle{How Training Data Should Look: From Stitched Chunks to Records That Know What They Describe}
+\mlsystitle{Records That Know What They Describe: A Deterministic Entity-Indexed Enterprise Corpus with Byte-Verified Erasure}
 
 \begin{mlsysauthorlist}
 \textbf{Gege Ardiyansyah}
 \end{mlsysauthorlist}
 
-\mlsystitlerunning{How Training Data Should Look}
+\mlsystitlerunning{Records That Know What They Describe}
 \mlsyskeywords{training-data curation, sample composition, entity resolution, knowledge-graph grounding, WebAssembly, zero-egress perception, conformal certificates, GDPR Article 17}
 
 \vskip 0.3in
@@ -274,7 +274,7 @@ Whether erasure under GDPR Article~17~\cite{gdpr_art17} must extend to models tr
 \section{Conclusion}
 \label{sec:conclusion}
 
-The artifact this paper reports takes a stand on what training data should look like: not windows of positions, but records that know which entities they describe, where their bytes came from, that they are bounded for residual detectable PII at a stated confidence, and that they can be removed exactly when the person they describe asks. At a 1.5B-parameter, capacity-starved scale, the entity graph pays off as a retrieval index ($53.3\%$ closed-book exact match against $11.7\%$ for the best trained format, $83.3\%$ on the 24-question cross-document stratum) and, in the strongest measured arm, as a router ($81.7\%$ when each question's cache is prefilled from the asked person's own records, given a correctly resolved identity rather than doing retrieval, against $60.0\%$ for the lexical control). Among the trained formats, composed is never behind per-block on any stratum and leads only on the 12-question disambiguation stratum by one question, a margin within noise at $n{=}60$. The composed corpus carries measured costs alongside the benefit: false merges amplify by a factor of $14.32$, and co-mention reuse makes near-duplicates of the whole corpus. Records that know what they describe are worth building for erasure, provenance, and retrieval. The corpus half of erasure is measured and byte-verified; the adapter half is a sealed recipe whose three GPU measurements are pending. The training-format benefit is one measurement at one starved scale, and the failure modes travel with the claim.
+The artifact this paper reports is a training corpus whose records know which entities they describe, where their bytes came from, that they are bounded for residual detectable PII at a stated confidence, and that they can be removed exactly when the person they describe asks. At a 1.5B-parameter, capacity-starved scale, the entity graph pays off as a retrieval index ($53.3\%$ closed-book exact match against $11.7\%$ for the best trained format, $83.3\%$ on the 24-question cross-document stratum) and, in the strongest measured arm, as a router ($81.7\%$ when each question's cache is prefilled from the asked person's own records, given a correctly resolved identity rather than doing retrieval, against $60.0\%$ for the lexical control). Among the trained formats, composed is never behind per-block on any stratum and leads only on the 12-question disambiguation stratum by one question, a margin within noise at $n{=}60$. The composed corpus carries measured costs alongside the benefit: false merges amplify by a factor of $14.32$, and co-mention reuse makes near-duplicates of the whole corpus. Records that know what they describe are worth building for erasure, provenance, and retrieval. The corpus half of erasure is measured and byte-verified; the adapter half is a sealed recipe whose three GPU measurements are pending. The training-format benefit is one measurement at one starved scale, and the failure modes travel with the claim.
 
 \bibliographystyle{mlsys2025}
 \bibliography{verisieve-graph-grounded-enterprise-corpus}
