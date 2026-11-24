@@ -28,3 +28,16 @@ __pycache__/
 
 # Rust build target
 rust/**/target/
+
+# LaTeX build residue
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.log
+.cursor/
+
+# Figure build previews
+paper/figs/_preview_*.png

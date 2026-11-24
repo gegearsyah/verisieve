@@ -19,6 +19,19 @@
 
 ---
 
+## 🆕 What Is New: Training Data That Knows What It Describes
+
+Document-to-training-data pipelines chunk by position and the chunk inherits meaning from where it sits. Versieve replaces that substrate with a resolved entity graph, and four properties follow that positional chunking does not have:
+
+1. **One graph, every consumer.** The per-block, composed, and identity-pair training corpora, Graph-PPR retrieval (RAG), and CAG key-value cache prefill all traverse the same resolved entity graph: identity is resolved once, and every consumer inherits it. GraphGen generates new synthetic samples from a graph and in-context pretraining reorders by similarity; to our knowledge no prior artifact grounds the actual source bytes of multiple heterogeneous documents in resolved identity with per-sample provenance.
+2. **Erasure as a byte-verified property of the data.** `eraseEntity` regenerates the corpus minus one entity, and the diff receipt fails loudly unless the byte-diff is exactly that entity's spans. Machine unlearning (SISA, approximate methods) modifies models after the fact; we are not aware of a prior corpus that makes erasure a property of the training data itself.
+3. **Binary-level zero egress, receipted per run.** Five standalone `#![no_std]` Rust→WASM kernels with zero host imports, trap-armed network surfaces, and a 0 B egress receipt for every build.
+4. **Per-sample conformal certificates.** Learn-Then-Test gatekeeping with certified recall bounds over the shipped binomial CDF kernel, detector-closed and stated as such.
+
+Every number in the four papers in `paper/` is derived through the CI check chain from committed artifacts (1044 checks, 0 failures); the round-1 panel review and revision response are in `docs/review/paper4-round1/`.
+
+---
+
 ## 🧠 Core Concept: What is `GC-CRC`?
 
 In traditional de-identification and document parsing pipelines, every text chunk, slide, or 30-second audio transcript turn is evaluated **independently** ($s_{\text{local}}(m)$):
@@ -104,7 +117,7 @@ npm run test:ci
 
 ## 📚 Research Papers (Included in `paper/`)
 
-All three MLSys-formatted benchmark papers, along with their LaTeX sources, BibTeX references, vector figure builders (`paper/figs/`), and raw JSON benchmark outputs (`results/`), are checked into this repository:
+All four MLSys-formatted benchmark papers, along with their LaTeX sources, BibTeX references, vector figure builders (`paper/figs/`), and raw JSON benchmark outputs (`results/`), are checked into this repository:
 
 1. **[Paper 1 — Deterministic Document Extraction, Data Redaction, and Conformal Gatekeeping](paper/verisieve-extraction-redaction-benchmark.pdf)** ([`.tex`](paper/verisieve-extraction-redaction-benchmark.tex))  
    *Evaluates native PDF CMap/kerning extraction, 2D overlapping tiling on 199 ICDAR-2019 FUNSD forms (`30,595` word boxes), deterministic PII disambiguation across `ai4privacy-200k` and `PubMedQA`, finite-sample LTT conformal calibration, and 7-trial interleaved runtime substrates (`C99` vs. `Node+WASM` vs. `Python+NumPy` vs. `PyTorch+DuckDB`).*
@@ -112,6 +125,8 @@ All three MLSys-formatted benchmark papers, along with their LaTeX sources, BibT
    *Evaluates `verisieve_media.wasm`, Stage 3B `gliner-pii-edge`, and `GC-CRC` against external tools and human-annotated corpora: the Text Anonymization Benchmark (`TAB`, $N=1,268$ ECHR court rulings) vs. Microsoft Presidio (`en_core_web_lg` + custom recognizers), non-circular Ground-Truth LTT across three gate architectures, enterprise secrets vs. `Gitleaks v8.30.1` and Yelp `detect-secrets v1.5.0`, Unicode anti-evasion vs. Python `NFKC`, end-to-end TTS→Whisper (`base.en` / `small.en`) audio waveform redaction, 128-bit salted Bloom+Soundex PPRL across `124,750` candidate pairs, `<1 ms` GDPR Art. 17 erasure, and $O(1)$ multi-GB MP4 container scrubbing.*
 3. **[Paper 3 — Benchmarking Sanitized Data for Local Open-Weight Model Training and Retrieval](paper/verisieve-local-training-benchmark.pdf)** ([`.tex`](paper/verisieve-local-training-benchmark.tex))  
    *Evaluates six open-weight models on an 8 GB RTX 4070 Laptop GPU (`Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, `LFM3-1.7B-Base` trained as matched Raw vs. Versieve-Safe assistant-only `T2-Chat` LoRA pairs, plus `lfm3:latest`, `llama3.2:3b`, `qwen2.5:7b` Ollama comparators): Carlini $20\times$-canary weight exposure, adversarial context extraction, `1,050` blinded LLM-judge evaluations (`T0+Graph-PPR` vs. `T2-Chat` LoRA on held-out and seen documents), and the VRAM crossover between Native KV-Cached CAG and Dual-CSR Graph-PPR.*
+4. **[Paper 4 — A Graph-Grounded Enterprise Corpus: Deterministic Entity-Indexed Training Data with Provable Erasure](paper/verisieve-graph-grounded-enterprise-corpus.pdf)** ([`.tex`](paper/verisieve-graph-grounded-enterprise-corpus.tex))  
+   *Describes the entity-indexed training corpus built by the zero-egress pipeline (every detected value vaulted behind a salted placeholder and resolved onto a stable entity identifier, with per-sample provenance and conformal certificates), a ten-arm head-to-head across trained formats, question-time Graph-PPR retrieval, and CAG cache prefill on a synthetic noisy estate, and exact corpus regeneration minus one entity with byte-diff erasure receipts and a sealed LoRA retrain recipe.*
 
 ---
 
@@ -140,6 +155,12 @@ Versieve runs the **exact same byte-identical WASM binaries** in the browser and
 | **Stage 3A PII & Secrets** | Live in-browser `verisieve_media.wasm` (`maskTextContextAware`) + `SaltedPseudonymVault` + forensic hidden-channel badges in `CleanTab`. | Identical `verisieve_media.wasm` Stage 3A + optional Stage 3B local ONNX `gliner-pii-edge` (`63.5 MB` INT8, `src/neural-pii-onnx.js`) + `GC-CRC` anchor propagation (`src/perceive.js`). |
 | **Audio & Video Transcription + Redaction** | Off-main-thread ONNX Runtime Web proxy Worker (`/ort/ort-wasm-simd-threaded.*.wasm`) running multilingual `whisper-tiny` (`40.8 MB` `q8`, 99 languages, cached in browser CacheStorage) over DSP VAD-selected 30s active speech windows (up to **30 min / ~350 MB** per browser tab WebAudio RAM limit) + Spoken ITN + timestamp-agnostic speech dedup + 1080p dark-mode contrast-inverted keyframe slide OCR (`/ocr/*` Tesseract WASM with readability filtering) + interactive `MediaRedactionStudio` (`.wav` mute/beep, `.mp4` `O(1)` `Blob.slice()` atom scrub, `.png`/`.jpg` bounding-box pixel blackout/blur). | **No browser tab RAM limit (supports 3-hour+ multi-GB recordings):** `O(1)` `4 KB` file-descriptor seeking (`inspectMp4StreamMetadata` / `scrubMp4FileMetadata`), streaming local `ffmpeg` demuxing (`src/video-redactor.js`), native local `whisper.cpp` / `faster-whisper` (`src/audio-redactor.js`), and sample-accurate WAV & keyframe pixel redaction via `verisieve_media.wasm`. |
 | **Retrieval & Training** | In-browser Dual-CSR `verisieve_graph.wasm` PPR + lexical/cosine hybrid retrieval (`Chat`), in-browser `verisieve_dl.wasm` VeRA adapter training (`Train`), and one-click sanitized SFT JSONL + LoRA script export. | Full `verisieve_graph.wasm` indexing, Native KV-Cached CAG dossier builder (`src/cag-dossier.js`) with `<1 ms` GDPR Art. 17 KV-slot eviction, and local RTX GPU LoRA training/evaluation harness. |
+
+### 3. Data Architecture: Documents → Resolved Graph → Every Consumer
+
+![Versieve data architecture](docs/verisieve-architecture.gif)
+
+The animation shows the full path: estate documents (SQL, CSV, email, transcripts, audio, decks) are perceived by the five zero-import WASM kernels with zero egress; every detected value is vaulted behind a salted placeholder and derives a stable HMAC entity identifier, building one resolved entity graph with per-sample provenance and conformal certificates; the graph is exported as deterministic corpus seams (per-block JSONL, composed per-entity records, identity-contrastive pairs) in a vaulted or readable view; and the same graph then grounds four consumers with no identity rebuilt anywhere: LoRA SFT training, Graph-PPR retrieval (RAG), CAG key-value cache prefill (fixed set-cover or per-question identity-keyed), and `eraseEntity`, which regenerates the corpus minus one entity with a byte-diff receipt because the graph names exactly the spans an entity owns. Positional chunking gives none of these consumers an identity to share, which is why erasure, provenance, and cross-document grounding all ride on the graph.
 
 ---
 
@@ -271,7 +292,7 @@ versieve/
 │   └── mcp-server.js                 # 18-tool JSON-RPC Model Context Protocol server
 ├── scripts/                          # Reproducible benchmark runners (Paper 1, Paper 2, Paper 3, GC-CRC)
 ├── results/                          # Deterministic JSON benchmark artifacts & SHA-256 receipts
-├── paper/                            # Three MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
+├── paper/                            # Four MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
 └── test/                             # 108 portable CI tests + scale & multimodal regression suites
 ```
 
