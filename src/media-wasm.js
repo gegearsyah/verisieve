@@ -234,6 +234,30 @@ export function buildMediaEngineFromInstance(instance) {
       };
     },
 
+    // Prosody kernel v1 per VAD segment (F0/RMS/ZCR/tilt/wpm) + speaker-clustering-lite.
+    // WAV bytes only; optional spoken-word spans for wpm; ground-truth labels are never an input.
+    prosodyAnalyze(wavBytes, options = {}) {
+      writeIn1(wavBytes);
+      const spans = options.wordSpansMs ?? [];
+      const packed = new Uint32Array(spans.length * 2);
+      for (let i = 0; i < spans.length; i++) {
+        packed[i * 2] = Math.max(0, Math.round(Number(spans[i].startMs ?? spans[i][0] ?? 0))) >>> 0;
+        packed[i * 2 + 1] = Math.max(0, Math.round(Number(spans[i].endMs ?? spans[i][1] ?? 0))) >>> 0;
+      }
+      writeIn2(new Uint8Array(packed.buffer));
+      const maxClusters = Math.max(1, Math.min(8, Math.round(Number(options.maxClusters ?? 8)))) >>> 0;
+      const vadWindowMs = Math.max(10, Math.round(Number(options.vadWindowMs ?? 50))) >>> 0;
+      const vadRmsThreshold = Number(options.vadRmsThreshold ?? 0);
+      const vadRmsThresholdX1000 = Math.max(0, Math.min(1000, Math.round(vadRmsThreshold * 1000))) >>> 0;
+      const clusterCount = ex.vs_media_prosody_analyze(
+        maxClusters,
+        vadWindowMs,
+        vadRmsThresholdX1000
+      );
+      if (clusterCount < 0) throw new Error(readLastError());
+      return { clusterCount, meta: readMetaJson() };
+    },
+
     redactPixels(pixels, width, height, channels = 3, boxes = [], options = {}) {
       writeIn1(pixels);
       const packed = new Int32Array(boxes.length * 4);

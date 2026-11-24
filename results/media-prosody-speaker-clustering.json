@@ -1,0 +1,324 @@
+{
+  "kind": "media-prosody-speaker-clustering",
+  "stage": 9,
+  "own_experiment_note": "Own experiment on synthetic dialogues. Reference points such as pyannote 3.1 reference DERs (AMI ~18.8% etc.) come from different protocols and datasets; no classical-benchmark comparison is implied and no purity target is asserted here — the purity number is measured and reported as-is for the founder to judge.",
+  "anti_circularity_note": "Ground truth lives ONLY in this generator (turn/speaker assignment). The wasm kernel receives the PCM16 WAV bytes and word-span timing pairs; it never receives speaker labels or turn boundaries. Purity is computed here, outside the engine.",
+  "seed": 1447383635,
+  "generator": {
+    "sampleRate": 16000,
+    "turnCount": 12,
+    "turns": [
+      {
+        "index": 0,
+        "speaker": "A",
+        "startMs": 0,
+        "endMs": 1262
+      },
+      {
+        "index": 1,
+        "speaker": "B",
+        "startMs": 1546,
+        "endMs": 3111
+      },
+      {
+        "index": 2,
+        "speaker": "A",
+        "startMs": 3517,
+        "endMs": 5129
+      },
+      {
+        "index": 3,
+        "speaker": "B",
+        "startMs": 5410,
+        "endMs": 7363
+      },
+      {
+        "index": 4,
+        "speaker": "A",
+        "startMs": 7723,
+        "endMs": 9006
+      },
+      {
+        "index": 5,
+        "speaker": "B",
+        "startMs": 9331,
+        "endMs": 11729
+      },
+      {
+        "index": 6,
+        "speaker": "A",
+        "startMs": 12154,
+        "endMs": 14478
+      },
+      {
+        "index": 7,
+        "speaker": "B",
+        "startMs": 14821,
+        "endMs": 16413
+      },
+      {
+        "index": 8,
+        "speaker": "A",
+        "startMs": 16823,
+        "endMs": 18206
+      },
+      {
+        "index": 9,
+        "speaker": "B",
+        "startMs": 18626,
+        "endMs": 20455
+      },
+      {
+        "index": 10,
+        "speaker": "A",
+        "startMs": 20890,
+        "endMs": 23097
+      },
+      {
+        "index": 11,
+        "speaker": "B",
+        "startMs": 23403,
+        "endMs": 25371
+      }
+    ],
+    "pseudoWordCount": 64,
+    "wpmSource": "word_spans_from_generator"
+  },
+  "wasm": {
+    "path": "vendor/wasm/verisieve_media.wasm",
+    "sizeBytes": 204031,
+    "abiVersion": 1
+  },
+  "engineResult": {
+    "clusterCount": 2,
+    "segmentCount": 12,
+    "truncatedToMax": false,
+    "vadWindowMs": 50,
+    "vadRmsThreshold": 0.015
+  },
+  "purity": {
+    "value": 1,
+    "definition": "For each engine cluster, take the majority ground-truth speaker among its segments; purity = (segments counted under the cluster majority speaker) / (all segments with GT). Known turn boundaries define GT per segment via its time midpoint.",
+    "matchedSegments": 12,
+    "purityInputs": {
+      "cluster 0": {
+        "A": 6
+      },
+      "cluster 1": {
+        "B": 6
+      }
+    }
+  },
+  "perSpeakerSummary": {
+    "A": {
+      "segments": 6,
+      "meanF0Hz": 124.36,
+      "meanRmsDb": -16.83,
+      "meanZcr": 0.0234,
+      "meanTiltDb": -27.75,
+      "meanWpm": 176.67
+    },
+    "B": {
+      "segments": 6,
+      "meanF0Hz": 210.53,
+      "meanRmsDb": -18.07,
+      "meanZcr": 0.0513,
+      "meanTiltDb": -19.99,
+      "meanWpm": 177.15
+    }
+  },
+  "segments": [
+    {
+      "index": 0,
+      "startMs": 0,
+      "endMs": 1300,
+      "gtSpeaker": "A",
+      "f0Hz": 125.49,
+      "f0StdHz": 2.1,
+      "rmsDb": -16.81,
+      "zcr": 0.0234,
+      "tiltDb": -27.47,
+      "wpm": 184.62,
+      "wpmWordCount": 4,
+      "cluster": 0,
+      "voicedFrames": 57,
+      "totalFrames": 64
+    },
+    {
+      "index": 1,
+      "startMs": 1500,
+      "endMs": 3100,
+      "gtSpeaker": "B",
+      "f0Hz": 211.92,
+      "f0StdHz": 2.15,
+      "rmsDb": -18.1,
+      "zcr": 0.0495,
+      "tiltDb": -19.89,
+      "wpm": 187.5,
+      "wpmWordCount": 5,
+      "cluster": 1,
+      "voicedFrames": 75,
+      "totalFrames": 79
+    },
+    {
+      "index": 2,
+      "startMs": 3500,
+      "endMs": 5100,
+      "gtSpeaker": "A",
+      "f0Hz": 123.55,
+      "f0StdHz": 1.95,
+      "rmsDb": -16.75,
+      "zcr": 0.0229,
+      "tiltDb": -27.86,
+      "wpm": 187.5,
+      "wpmWordCount": 5,
+      "cluster": 0,
+      "voicedFrames": 70,
+      "totalFrames": 79
+    },
+    {
+      "index": 3,
+      "startMs": 5400,
+      "endMs": 7400,
+      "gtSpeaker": "B",
+      "f0Hz": 211.92,
+      "f0StdHz": 2.07,
+      "rmsDb": -17.99,
+      "zcr": 0.051,
+      "tiltDb": -19.96,
+      "wpm": 180,
+      "wpmWordCount": 6,
+      "cluster": 1,
+      "voicedFrames": 93,
+      "totalFrames": 99
+    },
+    {
+      "index": 4,
+      "startMs": 7700,
+      "endMs": 9050,
+      "gtSpeaker": "A",
+      "f0Hz": 124.51,
+      "f0StdHz": 2.27,
+      "rmsDb": -16.82,
+      "zcr": 0.0222,
+      "tiltDb": -27.79,
+      "wpm": 177.78,
+      "wpmWordCount": 4,
+      "cluster": 0,
+      "voicedFrames": 59,
+      "totalFrames": 66
+    },
+    {
+      "index": 5,
+      "startMs": 9300,
+      "endMs": 11750,
+      "gtSpeaker": "B",
+      "f0Hz": 209.15,
+      "f0StdHz": 1.78,
+      "rmsDb": -18.07,
+      "zcr": 0.0519,
+      "tiltDb": -20.06,
+      "wpm": 171.43,
+      "wpmWordCount": 7,
+      "cluster": 1,
+      "voicedFrames": 114,
+      "totalFrames": 121
+    },
+    {
+      "index": 6,
+      "startMs": 12150,
+      "endMs": 14500,
+      "gtSpeaker": "A",
+      "f0Hz": 123.55,
+      "f0StdHz": 2.04,
+      "rmsDb": -16.86,
+      "zcr": 0.0237,
+      "tiltDb": -27.85,
+      "wpm": 178.72,
+      "wpmWordCount": 7,
+      "cluster": 0,
+      "voicedFrames": 102,
+      "totalFrames": 116
+    },
+    {
+      "index": 7,
+      "startMs": 14800,
+      "endMs": 16450,
+      "gtSpeaker": "B",
+      "f0Hz": 209.15,
+      "f0StdHz": 1.77,
+      "rmsDb": -18.23,
+      "zcr": 0.0509,
+      "tiltDb": -20.05,
+      "wpm": 181.82,
+      "wpmWordCount": 5,
+      "cluster": 1,
+      "voicedFrames": 75,
+      "totalFrames": 81
+    },
+    {
+      "index": 8,
+      "startMs": 16800,
+      "endMs": 18200,
+      "gtSpeaker": "A",
+      "f0Hz": 125.49,
+      "f0StdHz": 2.14,
+      "rmsDb": -16.84,
+      "zcr": 0.0242,
+      "tiltDb": -27.74,
+      "wpm": 171.43,
+      "wpmWordCount": 4,
+      "cluster": 0,
+      "voicedFrames": 62,
+      "totalFrames": 69
+    },
+    {
+      "index": 9,
+      "startMs": 18600,
+      "endMs": 20450,
+      "gtSpeaker": "B",
+      "f0Hz": 209.15,
+      "f0StdHz": 2,
+      "rmsDb": -18.11,
+      "zcr": 0.0535,
+      "tiltDb": -20.06,
+      "wpm": 162.16,
+      "wpmWordCount": 5,
+      "cluster": 1,
+      "voicedFrames": 87,
+      "totalFrames": 91
+    },
+    {
+      "index": 10,
+      "startMs": 20850,
+      "endMs": 23100,
+      "gtSpeaker": "A",
+      "f0Hz": 123.55,
+      "f0StdHz": 2.12,
+      "rmsDb": -16.87,
+      "zcr": 0.0239,
+      "tiltDb": -27.77,
+      "wpm": 160,
+      "wpmWordCount": 6,
+      "cluster": 0,
+      "voicedFrames": 98,
+      "totalFrames": 111
+    },
+    {
+      "index": 11,
+      "startMs": 23400,
+      "endMs": 25400,
+      "gtSpeaker": "B",
+      "f0Hz": 211.92,
+      "f0StdHz": 1.53,
+      "rmsDb": -17.95,
+      "zcr": 0.0511,
+      "tiltDb": -19.9,
+      "wpm": 180,
+      "wpmWordCount": 6,
+      "cluster": 1,
+      "voicedFrames": 94,
+      "totalFrames": 99
+    }
+  ]
+}

@@ -6,7 +6,7 @@
 - **Sibling GPU Training Repository:** `c:\Users\GEYE ARDIANSYAH\Downloads\Innovation Hub\MLE`
 - **Foundation Completed in Phase I (`951f25a`):**
   - [docs/2026-11-24-perceive-everything-theoretical-framework.md](file:///c:/Users/GEYE%20ARDIANSYAH/Downloads/Innovation%20Hub/matilda-portable/docs/2026-11-24-perceive-everything-theoretical-framework.md) (`HC-CRC`, `E-LTT`, `SR-MP`, `PT-LM` formal proofs)
-  - Zero-import `verisieve_media.wasm` (`191,715 B`, `28` exports, `512`-slot `SR-MP` Salted Reference Sketch Ring)
+  - Zero-import `verisieve_media.wasm` (`204,031 B`, `29` exports, `512`-slot `SR-MP` Salted Reference Sketch Ring)
   - All three MLSys benchmark papers compiled and verified (`108/108` CI tests passing, `0` WASM host imports)
 
 ---

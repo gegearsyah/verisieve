@@ -618,6 +618,120 @@ pub extern "C" fn vs_media_wav_redact(
 }
 
 // ---------------------------------------------------------------------------
+// 5b. Prosody + speaker-clustering-lite over already-decoded PCM (own experiment)
+// ---------------------------------------------------------------------------
+
+/// Input1: WAV bytes. Input2: optional packed u32 pairs of spoken-word/ITN spans
+/// [startMs, endMs, ...] used ONLY for wpm. Meta: JSON per-segment prosody +
+/// cluster ids. Returns the cluster count (1..=8). Ground-truth labels are never
+/// an input to this kernel.
+#[no_mangle]
+pub extern "C" fn vs_media_prosody_analyze(
+    max_clusters: u32,
+    vad_window_ms: u32,
+    vad_rms_threshold_x1000: u32,
+) -> i32 {
+    STATE.with(|cell| {
+        let mut st = cell.borrow_mut();
+        st.last_error.clear();
+
+        let wav = match audio_dsp::decode_wav(&st.in_buf) {
+            Ok(w) => w,
+            Err(err) => return set_error(&mut st, err),
+        };
+        let mut word_spans: Vec<(u32, u32)> = Vec::new();
+        let mut p = 0usize;
+        while p + 8 <= st.in_buf2.len() {
+            let s = u32::from_le_bytes([
+                st.in_buf2[p],
+                st.in_buf2[p + 1],
+                st.in_buf2[p + 2],
+                st.in_buf2[p + 3],
+            ]);
+            let e = u32::from_le_bytes([
+                st.in_buf2[p + 4],
+                st.in_buf2[p + 5],
+                st.in_buf2[p + 6],
+                st.in_buf2[p + 7],
+            ]);
+            if e > s {
+                word_spans.push((s, e));
+            }
+            p += 8;
+        }
+
+        let window_ms = if vad_window_ms < 10 { 50 } else { vad_window_ms };
+        let threshold = (vad_rms_threshold_x1000.min(1000) as f32) / 1000.0;
+        let vad = audio_dsp::analyze_wav_vad(
+            &wav.samples,
+            wav.sample_rate,
+            wav.channels,
+            window_ms,
+            if threshold > 0.0 { threshold } else { 0.015 },
+        );
+
+        // Truncate to the first PROSODY_MAX_SEGMENTS VAD segments (chronological;
+        // deliberately prefix truncation, no sort: keeps the kernel lean)
+        let truncated = vad.len() > audio_dsp::PROSODY_MAX_SEGMENTS;
+        let vad_kept: Vec<audio_dsp::VadSegment> = vad
+            .iter()
+            .take(audio_dsp::PROSODY_MAX_SEGMENTS)
+            .cloned()
+            .collect();
+
+        let mut segs = audio_dsp::analyze_prosody(
+            &wav.samples,
+            wav.sample_rate,
+            wav.channels,
+            &vad_kept,
+            &word_spans,
+        );
+        let max_k = max_clusters.clamp(1, 8) as usize;
+        let cluster_count =
+            audio_dsp::assign_speaker_clusters(&mut segs, max_k);
+
+        let mut segs_json = String::from("[");
+        for (i, s) in segs.iter().enumerate() {
+            if i > 0 {
+                segs_json.push(',');
+            }
+            segs_json.push_str(&format!(
+                "{{\"index\":{},\"startMs\":{},\"endMs\":{},\"f0Hz\":{:.2},\"f0StdHz\":{:.2},\"rmsDb\":{:.2},\"zcr\":{:.4},\"tiltDb\":{:.2},\"wpm\":{:.2},\"wpmWordCount\":{},\"wpmSource\":{},\"cluster\":{},\"voicedFrames\":{},\"totalFrames\":{}}}",
+                i,
+                s.start_ms,
+                s.end_ms,
+                s.f0_hz,
+                s.f0_std_hz,
+                s.rms_db,
+                s.zcr,
+                s.tilt_db,
+                s.wpm,
+                s.wpm_word_count,
+                s.wpm_source,
+                s.cluster,
+                s.f0_frames_voiced,
+                s.f0_frames_total
+            ));
+        }
+        segs_json.push(']');
+
+        let json = format!(
+            "{{\"sampleRate\":{},\"channels\":{},\"segmentCount\":{},\"clusterCount\":{},\"truncatedToMax\":{},\"vadWindowMs\":{},\"vadRmsThreshold\":{:.4},\"segments\":{}}}",
+            wav.sample_rate,
+            wav.channels,
+            segs.len(),
+            cluster_count,
+            truncated,
+            window_ms,
+            if threshold > 0.0 { threshold } else { 0.015 },
+            segs_json
+        );
+        st.meta_json = json.into_bytes();
+        cluster_count as i32
+    })
+}
+
+// ---------------------------------------------------------------------------
 // 6. Media Forensic Metadata Scrubber + Pixel Redactor + Video Scene/Tracking
 // ---------------------------------------------------------------------------
 
@@ -815,6 +929,7 @@ pub extern "C" fn vs_media_track_boxes(query_time_ms: u32, hold_ms: u32, pad_pct
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::f32::consts::PI;
 
     #[test]
     fn test_zip_slip_rejection() {
@@ -1011,6 +1126,136 @@ mod tests {
             }
         }
         assert_eq!(media_visual::compute_dhash64(&px2, 18, 16, 3), h);
+    }
+
+    fn prosody_fixture(
+        tone_a_hz: f32,
+        tone_b_hz: f32,
+        sr: u32,
+        turns: usize,
+        turn_ms: usize,
+        gap_ms: usize,
+    ) -> (Vec<f32>, Vec<audio_dsp::VadSegment>, u32) {
+        // Alternating synthesized timbres with 4 harmonics; deterministic, no external audio.
+        let mut samples: Vec<f32> = Vec::new();
+        for t in 0..turns {
+            let f0 = if t % 2 == 0 { tone_a_hz } else { tone_b_hz };
+            for i in 0..(turn_ms * sr as usize / 1000) {
+                let x = i as f32 / sr as f32;
+                let w = 2.0 * PI * f0 * x + t as f32 * 0.7;
+                let s = 0.16 * w.sin()
+                    + 0.09 * (2.0 * w).sin()
+                    + 0.05 * (3.0 * w).sin()
+                    + 0.03 * (4.0 * w).sin();
+                samples.push(s);
+            }
+            for _ in 0..(gap_ms * sr as usize / 1000) {
+                samples.push(0.0);
+            }
+        }
+        let vad =
+            audio_dsp::analyze_wav_vad(&samples, sr, 1, 50, 0.015);
+        (samples, vad, sr)
+    }
+
+    /// A pure 200 Hz sinusoid at a known sample rate must be detected near 200 Hz.
+    #[test]
+    fn test_f0_detection_known_sine() {
+        let sr = 8000u32;
+        let samples: Vec<f32> = (0..sr as usize)
+            .map(|i| (2.0 * PI * 200.0 * (i as f32) / sr as f32).sin() * 0.3)
+            .collect();
+        let vad = audio_dsp::analyze_wav_vad(&samples, sr, 1, 50, 0.015);
+        assert!(!vad.is_empty(), "tone must trigger the VAD");
+        let segs = audio_dsp::analyze_prosody(&samples, sr, 1, &vad, &[]);
+        assert!(!segs.is_empty());
+        for s in &segs {
+            assert!(
+                (s.f0_hz - 200.0).abs() <= 12.0 && s.f0_hz > 0.0,
+                "F0 {} outside 200 Hz tolerance",
+                s.f0_hz
+            );
+        }
+        // Silence-only segments (VAD gap case) must report F0 = 0, never a hallucinated pitch.
+        let quiet = vec![0.0f32; 8000];
+        let none = audio_dsp::analyze_prosody(&quiet, sr, 1, &[], &[]);
+        assert!(none.is_empty());
+    }
+
+    /// RMS and ZCR against hand-derived values: a 0.5 sine has RMS 0.3536 (-9.03 dB) and a
+    /// 1 kHz tone at 8 kHz yields ZCR fraction 2*1000/8000 = 0.25.
+    #[test]
+    fn test_rms_and_zcr_known_values() {
+        let sr = 8000u32;
+        let samples: Vec<f32> = (0..sr as usize)
+            .map(|i| (2.0 * PI * 1000.0 * (i as f32) / sr as f32).sin() * 0.5)
+            .collect();
+        let vad = audio_dsp::analyze_wav_vad(&samples, sr, 1, 50, 0.015);
+        let segs = audio_dsp::analyze_prosody(&samples, sr, 1, &vad, &[]);
+        assert!(!segs.is_empty());
+        let rms_db = segs[0].rms_db;
+        assert!(
+            (rms_db - (-9.03)).abs() <= 0.5,
+            "rms_db {} not near -9.03",
+            rms_db
+        );
+        assert!(
+            (segs[0].zcr - 0.25).abs() <= 0.02,
+            "zcr {} not near 0.25",
+            segs[0].zcr
+        );
+    }
+
+    /// Alternating two-timbre VAD segments must split into exactly 2 clusters, and every
+    /// segment must cluster with the other segments of the same timbre.
+    #[test]
+    fn test_alternating_two_timbre_two_clusters() {
+        let (mut samples, mut vad, sr) = prosody_fixture(110.0, 220.0, 16000, 8, 1400, 300);
+        let _ = &mut samples;
+        assert!(vad.len() >= 7, "expected one VAD segment per turn, got {}", vad.len());
+        let mut segs = audio_dsp::analyze_prosody(&samples, sr, 1, &mut vad, &[]);
+        let clusters = audio_dsp::assign_speaker_clusters(&mut segs, 8);
+        assert_eq!(clusters, 2, "two timbres must form two clusters");
+        // Segments whose F0 is near 110 must share a cluster; same for F0 near 220.
+        let cluster_of = |hz: f32| -> i32 {
+            segs.iter()
+                .find(|s| (s.f0_hz - hz).abs() < 40.0)
+                .map(|s| s.cluster)
+                .unwrap_or(-99)
+        };
+        let low = cluster_of(110.0);
+        let high = cluster_of(220.0);
+        assert!(low >= 0 && high >= 0 && low != high);
+        for s in &segs {
+            let want = if (s.f0_hz - 110.0).abs() < 40.0 { low } else { high };
+            assert_eq!(s.cluster, want, "F0 {} mis-clustered", s.f0_hz);
+        }
+    }
+
+    /// wpm from spoken-word spans: a 5.0 s segment containing 10 words is exactly 120 wpm;
+    /// with no spans supplied the engine reports wpmSource = NONE rather than pretending.
+    #[test]
+    fn test_wpm_from_word_spans() {
+        let sr = 8000u32;
+        let samples: Vec<f32> = (0..(5 * sr as usize))
+            .map(|i| (2.0 * PI * 180.0 * (i as f32) / sr as f32).sin() * 0.3)
+            .collect();
+        let vad = audio_dsp::analyze_wav_vad(&samples, sr, 1, 50, 0.015);
+        let segs = audio_dsp::analyze_prosody(&samples, sr, 1, &vad, &[]);
+        assert_eq!(segs.len(), 1);
+        assert_eq!(segs[0].wpm, 0.0);
+        assert_eq!(segs[0].wpm_source, audio_dsp::WPM_SOURCE_NONE);
+
+        let spans: Vec<(u32, u32)> =
+            (0..10).map(|w| (w * 500, w * 500 + 400)).collect();
+        let segs2 = audio_dsp::analyze_prosody(&samples, sr, 1, &vad, &spans);
+        assert_eq!(segs2[0].wpm_word_count, 10);
+        assert!(
+            (segs2[0].wpm - 120.0).abs() < 0.01,
+            "wpm {} not 120",
+            segs2[0].wpm
+        );
+        assert_eq!(segs2[0].wpm_source, audio_dsp::WPM_SOURCE_WORD_SPANS);
     }
 
     #[test]

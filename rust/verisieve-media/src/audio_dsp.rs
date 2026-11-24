@@ -400,3 +400,362 @@ pub fn analyze_wav_vad(
 
     segments
 }
+
+// ---------------------------------------------------------------------------
+// Prosody kernel v1 (own experiment): per-VAD-segment F0 (YIN-style integer
+// autocorrelation), RMS/ZCR/tilt stats, wpm from spoken-word spans, and
+// speaker-clustering-lite (agglomerative + cosine distance with a BIC-style
+// merge criterion). Operates on already-decoded PCM only; ground-truth labels
+// are never an input.
+// ---------------------------------------------------------------------------
+
+pub const WPM_SOURCE_NONE: u8 = 0;
+pub const WPM_SOURCE_WORD_SPANS: u8 = 1;
+pub const PROSODY_MAX_SEGMENTS: usize = 64;
+pub const PROSODY_MAX_CLUSTERS: usize = 8;
+
+#[derive(Clone, Debug)]
+pub struct ProsodySegment {
+    pub start_ms: u32,
+    pub end_ms: u32,
+    pub f0_hz: f32,     // median voiced-frame F0 (0.0 = unvoiced/none)
+    pub f0_std_hz: f32, // std of voiced-frame F0 within the segment
+    pub rms_db: f32,
+    pub zcr: f32,    // sign-change fraction in [0, 1]
+    pub tilt_db: f32, // energy of first difference vs total (HF proxy), dB
+    pub wpm: f32,
+    pub wpm_word_count: u32,
+    pub wpm_source: u8,
+    pub cluster: i32, // filled by assign_speaker_clusters, -1 before
+    pub f0_frames_voiced: usize,
+    pub f0_frames_total: usize,
+}
+
+/// YIN-style integer F0 on one mono frame: i16-quantized samples, i64 accumulation.
+/// Returns refined F0 in Hz, or 0.0 when the frame is judged unvoiced/aperiodic.
+pub fn f0_frame_yin(mono: &[f32], sample_rate: u32, min_hz: f32, max_hz: f32) -> f32 {
+    let n = mono.len();
+    let lag_min = (sample_rate as f32 / max_hz).max(2.0) as usize;
+    let lag_max = ((sample_rate as f32 / min_hz) as usize).min(n - 1);
+    if n < 64 || lag_min >= lag_max {
+        return 0.0;
+    }
+    // Integer autocorrelation domain: quantize to i16 once, accumulate in i64.
+    let q: Vec<i32> = mono.iter().map(|&v| (v.clamp(-1.0, 1.0) * 32767.0) as i32).collect();
+
+    let mut cum = 0i64; // running sum of d(j), j = 1..tau
+    let mut best_tau = 0usize;
+    let mut best_cmnd = f64::MAX;
+    let mut first_below: Option<usize> = None;
+    for tau in 1..lag_max + 1 {
+        let mut d = 0i64;
+        for i in 0..n - tau {
+            let diff = q[i] - q[i + tau];
+            d += (diff * diff) as i64;
+        }
+        let d_f = d as f64 / (n - tau) as f64;
+        cum += (d_f * 1e6) as i64;
+        // Cumulative mean normalized difference (CMND)
+        let cmnd = if cum > 0 && tau > 0 {
+            d_f * tau as f64 / (cum as f64 / 1e6)
+        } else {
+            f64::MAX
+        };
+        if cmnd < best_cmnd {
+            best_cmnd = cmnd;
+            best_tau = tau;
+        }
+        if first_below.is_none() && tau >= lag_min && cmnd < 0.10 {
+            first_below = Some(tau);
+        }
+        if first_below.is_some() && cmnd > 1.0 && tau >= lag_min {
+            break; // passed the first clear dip: stop scanning
+        }
+    }
+    let tau = match first_below {
+        Some(t) if best_cmnd < 0.25 => t,
+        _ => {
+            if best_cmnd < 0.25 && best_tau >= lag_min && best_tau <= lag_max {
+                best_tau
+            } else {
+                return 0.0;
+            }
+        }
+    };
+    if best_tau == 0 || best_cmnd >= 0.25 {
+        return 0.0;
+    }
+    // Parabolic refinement around the dip on d(tau) (recompute local 3 points).
+    let dfun = |t: usize| -> f64 {
+        if t < lag_min.saturating_sub(1).max(1) || t > lag_max {
+            return f64::MAX;
+        }
+        let mut acc = 0i64;
+        for i in 0..n - t.min(n - 1) {
+            let diff = q[i] - q[i + t.min(n - 1)];
+            acc += (diff * diff) as i64;
+        }
+        acc as f64 / (n - t.min(n - 1)) as f64
+    };
+    let t0 = tau.saturating_sub(1).max(1);
+    let d0 = dfun(t0);
+    let d1 = dfun(tau);
+    let d2 = dfun((tau + 1).min(lag_max));
+    let denom = d0 + d2 - 2.0 * d1;
+    let shift = if denom.abs() > f64::EPSILON {
+        (0.5 * (d0 - d2) / denom).clamp(-0.5, 0.5)
+    } else {
+        0.0
+    };
+    let refined = sample_rate as f64 / (tau as f64 + shift);
+    let f0 = refined as f32;
+    // Requantized PCM16 quantization noise widens the dip slightly; clamp to scan range.
+    if f0 < min_hz * 0.9 || f0 > max_hz * 1.1 || f0 <= 0.0 {
+        return 0.0;
+    }
+    f0
+}
+
+/// Per-VAD-segment prosody over already-decoded PCM. `word_spans` are optional
+/// (startMs, endMs) spoken-word/ITN spans; when absent wpm is NOT estimated.
+pub fn analyze_prosody(
+    samples: &[f32],
+    sample_rate: u32,
+    channels: u16,
+    vad: &[VadSegment],
+    word_spans: &[(u32, u32)],
+) -> Vec<ProsodySegment> {
+    let ch = (channels as usize).max(1);
+    let total_frames = samples.len() / ch;
+    let mut out = Vec::with_capacity(vad.len().min(PROSODY_MAX_SEGMENTS));
+
+    for seg in vad.iter().take(PROSODY_MAX_SEGMENTS) {
+        let sf = (((seg.start_ms as u64) * (sample_rate as u64)) / 1000) as usize;
+        let ef = (((seg.end_ms as u64) * (sample_rate as u64)) / 1000).min(total_frames as u64)
+            as usize;
+        let ef = ef.max(sf).min(total_frames);
+        let dur_ms = seg.end_ms.saturating_sub(seg.start_ms);
+        if ef <= sf || dur_ms == 0 {
+            continue;
+        }
+
+        // Downmix to mono scratch
+        let mut mono: Vec<f32> = Vec::with_capacity(ef - sf);
+        let mut sq_sum = 0.0f64;
+        let mut diff_sq = 0.0f64;
+        let mut prev = 0.0f32;
+        let mut zcr_count = 0u64;
+        for f in sf..ef {
+            let m = if ch >= 2 {
+                0.5 * (samples[f * ch] + samples[f * ch + 1])
+            } else {
+                samples[f]
+            };
+            sq_sum += (m * m) as f64;
+            diff_sq += ((m - prev) * (m - prev)) as f64;
+            if (m < 0.0) != (prev < 0.0) {
+                zcr_count += 1;
+            }
+            prev = m;
+            mono.push(m);
+        }
+        let n = mono.len() as f64;
+        let rms = (sq_sum / n).sqrt() as f32;
+        let rms_db = 20.0 * rms.max(1e-6).log10();
+        let zcr = zcr_count as f64 / n;
+        let tilt_db = (10.0
+            * (diff_sq.max(1e-9) / (2.0 * sq_sum.max(1e-9)))
+                .min(1_000_000.0)
+                .log10()) as f32;
+
+        // Frame-wise F0 sweep: 40 ms frames, 20 ms hop
+        let frame_len = (frame_us_len(sample_rate, 40)) as usize;
+        let hop = (frame_us_len(sample_rate, 20)) as usize;
+        let mut voiced: Vec<f32> = Vec::new();
+        let mut frames_total = 0usize;
+        let mut start = 0usize;
+        while start + frame_len <= mono.len() {
+            frames_total += 1;
+            let f = f0_frame_yin(&mono[start..start + frame_len], sample_rate, 60.0, 400.0);
+            if f > 0.0 {
+                voiced.push(f);
+            }
+            start += hop;
+        }
+        // Insertion sort (small arrays; avoids a generic slice-sort instantiation)
+        // so the median voiced F0 is robust to octave skips.
+        for i in 1..voiced.len() {
+            let mut j = i;
+            while j > 0 && voiced[j] < voiced[j - 1] {
+                voiced.swap(j, j - 1);
+                j -= 1;
+            }
+        }
+        let (f0_hz, f0_std) = if voiced.is_empty() {
+            (0.0f32, 0.0f32)
+        } else {
+            let med = voiced[voiced.len() / 2];
+            let mean = voiced.iter().sum::<f32>() / voiced.len() as f32;
+            let var = voiced.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>()
+                / voiced.len() as f32;
+            (med, var.sqrt())
+        };
+
+        // wpm strictly from provided spoken-word spans (overlap midpoint rule)
+        let mut wpm_word_count = 0u32;
+        for &(ws, we) in word_spans {
+            let mid = (ws as u64 + we as u64) / 2;
+            if mid >= seg.start_ms as u64 && mid <= seg.end_ms as u64 {
+                wpm_word_count += 1;
+            }
+        }
+        let have_spans = !word_spans.is_empty();
+        let wpm = if have_spans {
+            (wpm_word_count as f64 * 60000.0 / dur_ms as f64) as f32
+        } else {
+            0.0
+        };
+
+        out.push(ProsodySegment {
+            start_ms: seg.start_ms,
+            end_ms: seg.end_ms,
+            f0_hz,
+            f0_std_hz: f0_std,
+            rms_db,
+            zcr: zcr as f32,
+            tilt_db,
+            wpm,
+            wpm_word_count,
+            wpm_source: if have_spans {
+                WPM_SOURCE_WORD_SPANS
+            } else {
+                WPM_SOURCE_NONE
+            },
+            cluster: -1,
+            f0_frames_voiced: voiced.len(),
+            f0_frames_total: frames_total,
+        });
+    }
+    out
+}
+
+fn frame_us_len(sample_rate: u32, ms: u64) -> u64 {
+    ((ms * sample_rate as u64) / 1000).max(1)
+}
+
+/// Cosine linkage threshold on z-scored features; the merge loop stops at the
+/// first pair whose centroid distance is at or above this value.
+pub const PROSODY_LINKAGE_THRESHOLD: f64 = 0.5;
+
+/// Speaker-clustering-lite: agglomerative merging on cosine distance of the
+/// z-scored segment feature vector, stopped when the closest pair of cluster
+/// centroids reaches the linkage threshold (k capped at max_clusters, <= 8).
+/// Returns the number of clusters (1..=max_clusters).
+pub fn assign_speaker_clusters(segs: &mut [ProsodySegment], max_clusters: usize) -> usize {
+    for s in segs.iter_mut() {
+        s.cluster = -1;
+    }
+    let n = segs.len();
+    if n == 0 {
+        return 0;
+    }
+    // Feature dims: [f0, f0 jitter (coefficient of variation, floored at 5%
+    // to treat sub-jitter values as noise), tilt_db, zcr, rms_db]
+    const DIMS: usize = 5;
+    let mut feats = vec![vec![0.0f64; DIMS]; n];
+    for (i, s) in segs.iter().enumerate() {
+        let f0 = s.f0_hz as f64;
+        let cv = if f0 > 0.0 { s.f0_std_hz as f64 / f0 } else { 0.0 };
+        feats[i][0] = f0;
+        feats[i][1] = if cv < 0.05 { 0.0 } else { cv.min(2.0) };
+        feats[i][2] = s.tilt_db as f64;
+        feats[i][3] = s.zcr as f64;
+        feats[i][4] = s.rms_db as f64;
+    }
+    // z-score each dim; constant dims become zeros (no weight in cosine space)
+    for d in 0..DIMS {
+        let mean = feats.iter().map(|f| f[d]).sum::<f64>() / n as f64;
+        let var = feats.iter().map(|f| (f[d] - mean) * (f[d] - mean)).sum::<f64>() / n as f64;
+        let sd = if var.sqrt() < 1e-9 { 0.0 } else { var.sqrt() };
+        for f in feats.iter_mut() {
+            f[d] = if sd > 0.0 { (f[d] - mean) / sd } else { 0.0 };
+        }
+    }
+    let cos_dist = |a: &[f64], b: &[f64]| -> f64 {
+        let na = a.iter().map(|v| v * v).sum::<f64>().sqrt();
+        let nb = b.iter().map(|v| v * v).sum::<f64>().sqrt();
+        if na < 1e-12 || nb < 1e-12 {
+            return 1.0;
+        }
+        let dot = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum::<f64>() / (na * nb);
+        1.0 - dot.clamp(-1.0, 1.0)
+    };
+
+    let max_k = max_clusters.min(PROSODY_MAX_CLUSTERS).max(1);
+    let mut assignment: Vec<usize> = (0..n).collect();
+    let mut k = n;
+    debug_assert!(k <= PROSODY_MAX_SEGMENTS, "caller must pre-truncate segments");
+    for _cycle in 0..2 * n {
+        if k <= 1 {
+            break;
+        }
+        // Build centroids
+        let mut sum = vec![vec![0.0f64; DIMS]; k];
+        let mut cnt = vec![0usize; k];
+        for (i, a) in assignment.iter().enumerate() {
+            for d in 0..DIMS {
+                sum[*a][d] += feats[i][d];
+            }
+            cnt[*a] += 1;
+        }
+        let mut centroids = vec![vec![0.0f64; DIMS]; k];
+        for c in 0..k {
+            if cnt[c] > 0 {
+                for d in 0..DIMS {
+                    centroids[c][d] = sum[c][d] / cnt[c] as f64;
+                }
+            }
+        }
+        let mut best: Option<(f64, usize, usize)> = None;
+        for a in 0..k {
+            for b in (a + 1)..k {
+                let d = cos_dist(&centroids[a], &centroids[b]);
+                // merge the closest pair first; stop when even that pair is beyond threshold
+                // unless k still exceeds the caller's cap (then merge closest regardless)
+                if best.is_none() || d < best.unwrap().0 {
+                    best = Some((d, a, b));
+                }
+            }
+        }
+        let (min_dist, _, _) = best.unwrap_or((1.0, 0, 1));
+        if min_dist >= PROSODY_LINKAGE_THRESHOLD && k <= max_k {
+            break;
+        }
+        match best {
+            Some((_, a, b)) => {
+                for x in assignment.iter_mut() {
+                    if *x == b {
+                        *x = a;
+                    }
+                }
+                // contiguous re-label
+                let mut next_id = 0usize;
+                let mut seen: Vec<Option<usize>> = vec![None; k];
+                for x in assignment.iter_mut() {
+                    let slot = &mut seen[*x];
+                    if slot.is_none() {
+                        *slot = Some(next_id);
+                        next_id += 1;
+                    }
+                    *x = slot.unwrap();
+                }
+                k = next_id;
+            }
+            None => break,
+        }
+    }
+    for (i, s) in segs.iter_mut().enumerate() {
+        s.cluster = assignment[i] as i32;
+    }
+    k
+}
