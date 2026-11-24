@@ -1,0 +1,27 @@
+# Northwind consolidated directory export — shard 1 of 10 (2026-02-27)
+full_name,email,phone,department,project
+Marcus Maes,marcus.maes@corp.example,+1 555 017 6126,Support,
+Thomas Mensah,thomas.mensah@corp.example,555-085-3309,Sales,
+Margaret Alvi,margaret.alvi@corp.example,555-007-2908,Legal,
+Katherine Oiu,katherine.liu@corp.example,555-080-7950,Engineering,
+Fe1ix Marchetti,felix.marchetti@corp.example,555-072-7777,Support,
+Omar Weber,omar.weber@corp.example,(555) 017-4498,Operations,
+William Kovacs,william.kovacs@corp.example,+1 555 045 6597,Engineering,
+Sarah Varga,sarah.varga@corp.example,555-010-3799,Sales,GRANITE
+Michael Farrell,m.farrell@corp.example,555-000-5828,Engineering,AMBER
+Michael Salazar,michael.salazar@corp.example,555-024-5991,Sales,
+Yuki Duarte,yuki.duarte@corp.example,555-068-1321,Operations,EMBER
+Chidi Banda,chidi.banda@corp.example,(555) 058-3998,Operations,
+Barbara Horvath,barbara.horvath@corp.example,+1 555 067 1667,Legal,
+Freya Weber,freya.weber@corp.example,555-082-0338,Support,
+Andrei Bell,andrei.bell@corp.example,555-018-3236,Finance,
+Patricia Cortez,patricia.cortez@corp.example,555-001-6711,Finance,
+Zara Petrov,zara.petrov@corp.example,555-085-2464,Research,DELTIC
+Noor Nielsen,noor.nielsen@corp.example,555-021-8914,Legal,
+Margaret Popescu,margaret.popescu@corp.example,(555) 034-7926,Engineering,
+James Whitfield,james.whitfield@corp.example,+1 555 019 7775,Finance,
+Diego Esposito,diego.esposito@corp.example,+1 555 038 3561,Legal,LANTERN
+Yuki Khalil,yuki.khalil@corp.example,+1 555 090 1030,Engineering,JUNIPER
+Stefn Kwon,stefan.kwon@corp.example,555-001-6087,Operations,
+Hana Rojas,hana.rojas@corp.example,(555) 000-1824,Engineering,
+Margaret Duarte,margaret.duarte@corp.example,555-092-2122,Research,

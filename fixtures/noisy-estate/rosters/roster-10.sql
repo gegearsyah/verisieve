@@ -1,0 +1,27 @@
+# Northwind consolidated directory export — shard 10 of 10 (2026-04-16)
+CREATE TABLE roster (full_name TEXT, email TEXT, phone TEXT, department TEXT, project TEXT);
+INSERT INTO roster VALUES ('Noor Salazar', noor.salazar@corp.example, 555-017-1644, 'Research', 'GRANITE');
+INSERT INTO roster VALUES ('Bruno Popescu', bruno.popescu@corp.example, 555-078-5531, 'Finance', NULL);
+INSERT INTO roster VALUES ('Elizabeth Wang', elizabeth.wang@corp.example, 555-084-2680, 'Legal', NULL);
+INSERT INTO roster VALUES ('Petra Liy', petra.liu@corp.example, (555) 063-9801, 'Operations', 'BASALT');
+INSERT INTO roster VALUES ('Robert Chen', robert.chen@corp.example, (555) 073-8239, 'Research', NULL);
+INSERT INTO roster VALUES ('Grace Okonnkwo', grace.okonkwo@corp.example, 555-010-7525, 'Sales', NULL);
+INSERT INTO roster VALUES ('Katherine Weber', katherine.weber@corp.example, 555-078-8286, 'People', NULL);
+INSERT INTO roster VALUES ('Diego Okoro', diego.okoro@corp.example, 555-035-4384, 'Engineering', NULL);
+INSERT INTO roster VALUES ('Sofia Farkas', sofia.farkas@corp.example, +1 555 034 0347, 'Operations', NULL);
+INSERT INTO roster VALUES ('Zara Farkas', zara.farkas@corp.example, 555-029-4611, 'Finance', NULL);
+INSERT INTO roster VALUES ('Grace Fontana', grace.fontana@corp.example, 555-003-4325, 'Sales', NULL);
+INSERT INTO roster VALUES ('Bruno Bianchi', bruno.bianchi@corp.example, +1 555 083 3940, 'Engineering', NULL);
+INSERT INTO roster VALUES ('Jennifer Odell', jennifer.odell@corp.example, 555-091-6764, 'Finance', NULL);
+INSERT INTO roster VALUES ('Jonah Bianchi', jonah.bianchi@corp.example, 555-085-0519, 'Engineering', NULL);
+INSERT INTO roster VALUES ('Sofia Banda', sofia.banda@corp.example, 555-007-9075, 'Legal', 'GRANITE');
+INSERT INTO roster VALUES ('Roshan Bianchi', roshan.bianchi@corp.example, (555) 076-0129, 'People', 'AMBER');
+INSERT INTO roster VALUES ('Lena Paredes', lena.paredes@corp.example, 555-023-8944, 'Sales', NULL);
+INSERT INTO roster VALUES ('Kenji Kim', kenji.kim@corp.example, (555) 047-1954, 'Finance', NULL);
+INSERT INTO roster VALUES ('David Haddad', david.haddad@corp.example, 555-052-1771, 'Legal', NULL);
+INSERT INTO roster VALUES ('Thonas Beringer', t.beringer@corp.example, 555-089-2552, 'People', 'FALLOW');
+INSERT INTO roster VALUES ('David Dumitru', david.dumitru@corp.example, 555-015-0912, 'Sales', NULL);
+INSERT INTO roster VALUES ('Callum Dumitru', callum.dumitru@corp.example, (555) 011-9707, 'Research', NULL);
+INSERT INTO roster VALUES ('Elena Nowak', elena.nowak@corp.example, 555-064-5713, 'Sales', NULL);
+INSERT INTO roster VALUES ('Roshan Sorensen', roshan.sorensen@corp.example, +1 555 006 4497, 'Engineering', NULL);
+INSERT INTO roster VALUES ('Callum Sibanda', callum.sibanda@corp.example, 555-065-7649, 'Finance', NULL);

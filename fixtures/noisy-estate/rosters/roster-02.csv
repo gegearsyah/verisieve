@@ -1,0 +1,27 @@
+# Northwind consolidated directory export — shard 2 of 10 (2026-04-13)
+full_name,email,phone,department,project
+Daniel Vidal,daniel.vidal@corp.example,555-050-0088,Operations,
+Ines Ito,ines.ito@corp.example,555-045-1168,Engineering,
+Margaret Mensah,margaret.mensah@corp.example,555-086-7661,Sales,
+Felix Eriksen,felix.eriksen@corp.example,555-042-8765,Research,
+Sarah Okafor,s.okafor@corp.example,(555) 019-2203,Finance,
+Nadia Farouk,n.farouk@corp.example,+1 555 033 8207,Support,
+Ines Haddad,ines.haddad@corp.example,555-044-2421,Operations,
+Daniel Horvath,daniel.horvath@corp.example,555-036-5435,Operations,
+William Osei,william.osei@corp.example,555-048-0499,Legal,
+Elizabeth Chandra,elizabeth.chandra@corp.example,+1 555 082 1450,Legal,
+Stefan Bakker,stefan.bakker@corp.example,555-062-3729,Sales,
+Milan Park,milan.park@corp.example,555-036-6720,Research,
+Kenji Kimani,kenji.kimani@corp.example,555-052-0363,Engineering,DELTIC
+Kwame Duarte,kwame.duarte@corp.example,555-095-8473,Research,
+Emil Greco,emil.greco@corp.example,555-083-0392,Sales,
+Yuki Dumitru,yuki.dumitru@corp.example,555-091-0655,Operations,
+Omar Farkas,omar.farkas@corp.example,555-095-2502,Research,
+Hana Zulu,hana.zulu@corp.example,555-088-4508,Legal,JUNIPER
+Petra Lindgren,petra.lindgren@corp.example,555-027-1312,Research,EMBER
+Victor Adeyemi,victor.adeyemi@corp.example,(555) 069-7078,Finance,KESTREL
+Ingrid Ivanov,ingrid.ivanov@corp.example,555-097-8468,Sales,
+Daniel Kovacs,daniel.kovacs@corp.example,555-023-0250,Engineering,
+Jennifer Odell,j.odell@corp.example,(555) 080-9396,Sales,
+Kwame Holm,kwame.holm@corp.example,(555) 059-0941,Engineering,FALLOW
+Aisha Fontaine,aisha.fontaine@corp.example,555-045-8473,Research,

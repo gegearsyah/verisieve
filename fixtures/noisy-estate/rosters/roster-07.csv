@@ -1,0 +1,27 @@
+# Northwind consolidated directory export — shard 7 of 10 (2026-03-22)
+full_name,email,phone,department,project
+Barbara Phiri,barbara.phiri@corp.example,555-066-4091,Sales,
+Margaret Alvi,m.alvi@corp.example,555-047-7566,Engineering,
+Milan Nielsen,milan.nielsen@corp.example,555-018-4351,Engineering,
+Thomas Dumitru,thomas.dumitru@corp.example,(555) 087-5661,Engineering,
+Ines Vidal,ines.vidal@corp.example,555-066-6877,Sales,
+Amara Kimani,amara.kimani@corp.example,+1 555 091 1271,Operations,
+Anya Dubois,anya.dubois@corp.example,555-012-5010,Sales,
+Felix Keller,felix.keller@corp.example,555-063-8346,Support,
+Elif Sato,elif.sato@corp.example,555-068-4236,Finance,
+Ravi Psrk,ravi.park@corp.example,555-064-5374,Finance,
+Felix Duarte,felix.duarte@corp.example,555-025-0544,People,HARVEST
+Anya Dumitru,anya.dumitru@corp.example,(555) 001-3034,People,
+Thomas Beringer,thomas.beringer@corp.example,555-010-5501,Research,HARVEST
+William Vance,william.vance@corp.example,555-018-9507,Operations,
+Lena Weber,l.weber@corp.example,555-001-0296,Finance,
+RRoshan Korhonen,roshan.korhonen@corp.example,555-094-1403,Engineering,
+Callum Moreau,callum.moreau@corp.example,555-031-2186,Operations,LANTERN
+Zara Paredes,zara.paredes@corp.example,555-047-9457,Finance,
+Alexandra Dumitru,alexandra.dumitru@corp.example,+1 555 043 3314,Engineering,INDIGO
+Susan Dubois,susan.dubois@corp.example,555-085-2376,People,CINDER
+Callum Tanaka,callum.tanaka@corp.example,555-021-8323,Support,
+Aisha Zhang,aisha.zhang@corp.example,555-042-1502,Finance,
+Katherine Ito,k.ito@corp.example,555-074-4946,Engineering,
+Joseph Phiri,joseph.phiri@corp.example,555-006-5516,Support,
+Elizabeth Salazar,elizabeth.salazar@corp.example,555-077-4529,Legal,KESTREL
