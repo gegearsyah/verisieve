@@ -1,0 +1,609 @@
+{
+  "kind": "track-k7-timing-log",
+  "note": "Wallclock measurements, machine dependent. NOT part of results/track-k7-cag-vs-rag-vs-bm25.json.",
+  "device": "cuda",
+  "cacheBuildSeconds": 0.47,
+  "modelLoadSeconds": 1.7,
+  "perQuestion": [
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-01",
+      "latencyMs": 760.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-02",
+      "latencyMs": 364.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-03",
+      "latencyMs": 3376.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-04",
+      "latencyMs": 2782.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-05",
+      "latencyMs": 1148.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-06",
+      "latencyMs": 1494.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-07",
+      "latencyMs": 446.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-08",
+      "latencyMs": 250.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-09",
+      "latencyMs": 242.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-10",
+      "latencyMs": 657.1
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-11",
+      "latencyMs": 247.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-12",
+      "latencyMs": 279.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-13",
+      "latencyMs": 330.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-14",
+      "latencyMs": 362.0
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-15",
+      "latencyMs": 363.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-16",
+      "latencyMs": 339.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-17",
+      "latencyMs": 408.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-18",
+      "latencyMs": 114.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-19",
+      "latencyMs": 479.0
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-20",
+      "latencyMs": 604.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-21",
+      "latencyMs": 627.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-22",
+      "latencyMs": 453.2
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-23",
+      "latencyMs": 260.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-24",
+      "latencyMs": 507.9
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-25",
+      "latencyMs": 259.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-26",
+      "latencyMs": 274.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-27",
+      "latencyMs": 478.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-28",
+      "latencyMs": 254.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-29",
+      "latencyMs": 544.1
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-30",
+      "latencyMs": 253.2
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-31",
+      "latencyMs": 2198.1
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-32",
+      "latencyMs": 357.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-33",
+      "latencyMs": 293.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-34",
+      "latencyMs": 558.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-35",
+      "latencyMs": 125.9
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-36",
+      "latencyMs": 279.9
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-37",
+      "latencyMs": 423.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-38",
+      "latencyMs": 2596.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-39",
+      "latencyMs": 245.2
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-40",
+      "latencyMs": 281.2
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-41",
+      "latencyMs": 346.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-42",
+      "latencyMs": 226.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-43",
+      "latencyMs": 167.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-44",
+      "latencyMs": 421.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-45",
+      "latencyMs": 391.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-46",
+      "latencyMs": 415.7
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-47",
+      "latencyMs": 413.2
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-48",
+      "latencyMs": 487.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-49",
+      "latencyMs": 415.9
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-50",
+      "latencyMs": 332.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-51",
+      "latencyMs": 373.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-52",
+      "latencyMs": 1783.0
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-53",
+      "latencyMs": 370.6
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-54",
+      "latencyMs": 500.3
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-55",
+      "latencyMs": 139.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-56",
+      "latencyMs": 138.8
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-57",
+      "latencyMs": 591.4
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-58",
+      "latencyMs": 394.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-59",
+      "latencyMs": 2344.5
+    },
+    {
+      "arm": "bm25_retrieval",
+      "qid": "q-60",
+      "latencyMs": 555.9
+    },
+    {
+      "arm": "cag",
+      "qid": "q-01",
+      "latencyMs": 511.6
+    },
+    {
+      "arm": "cag",
+      "qid": "q-02",
+      "latencyMs": 502.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-03",
+      "latencyMs": 457.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-04",
+      "latencyMs": 546.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-05",
+      "latencyMs": 456.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-06",
+      "latencyMs": 508.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-07",
+      "latencyMs": 499.6
+    },
+    {
+      "arm": "cag",
+      "qid": "q-08",
+      "latencyMs": 506.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-09",
+      "latencyMs": 499.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-10",
+      "latencyMs": 543.3
+    },
+    {
+      "arm": "cag",
+      "qid": "q-11",
+      "latencyMs": 1118.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-12",
+      "latencyMs": 592.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-13",
+      "latencyMs": 591.7
+    },
+    {
+      "arm": "cag",
+      "qid": "q-14",
+      "latencyMs": 507.0
+    },
+    {
+      "arm": "cag",
+      "qid": "q-15",
+      "latencyMs": 553.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-16",
+      "latencyMs": 591.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-17",
+      "latencyMs": 552.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-18",
+      "latencyMs": 465.3
+    },
+    {
+      "arm": "cag",
+      "qid": "q-19",
+      "latencyMs": 676.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-20",
+      "latencyMs": 674.3
+    },
+    {
+      "arm": "cag",
+      "qid": "q-21",
+      "latencyMs": 715.7
+    },
+    {
+      "arm": "cag",
+      "qid": "q-22",
+      "latencyMs": 714.6
+    },
+    {
+      "arm": "cag",
+      "qid": "q-23",
+      "latencyMs": 587.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-24",
+      "latencyMs": 765.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-25",
+      "latencyMs": 718.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-26",
+      "latencyMs": 765.0
+    },
+    {
+      "arm": "cag",
+      "qid": "q-27",
+      "latencyMs": 677.7
+    },
+    {
+      "arm": "cag",
+      "qid": "q-28",
+      "latencyMs": 719.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-29",
+      "latencyMs": 761.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-30",
+      "latencyMs": 715.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-31",
+      "latencyMs": 415.0
+    },
+    {
+      "arm": "cag",
+      "qid": "q-32",
+      "latencyMs": 456.6
+    },
+    {
+      "arm": "cag",
+      "qid": "q-33",
+      "latencyMs": 501.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-34",
+      "latencyMs": 541.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-35",
+      "latencyMs": 461.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-36",
+      "latencyMs": 457.9
+    },
+    {
+      "arm": "cag",
+      "qid": "q-37",
+      "latencyMs": 546.9
+    },
+    {
+      "arm": "cag",
+      "qid": "q-38",
+      "latencyMs": 498.6
+    },
+    {
+      "arm": "cag",
+      "qid": "q-39",
+      "latencyMs": 460.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-40",
+      "latencyMs": 586.0
+    },
+    {
+      "arm": "cag",
+      "qid": "q-41",
+      "latencyMs": 591.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-42",
+      "latencyMs": 635.0
+    },
+    {
+      "arm": "cag",
+      "qid": "q-43",
+      "latencyMs": 542.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-44",
+      "latencyMs": 588.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-45",
+      "latencyMs": 587.2
+    },
+    {
+      "arm": "cag",
+      "qid": "q-46",
+      "latencyMs": 674.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-47",
+      "latencyMs": 458.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-48",
+      "latencyMs": 584.5
+    },
+    {
+      "arm": "cag",
+      "qid": "q-49",
+      "latencyMs": 499.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-50",
+      "latencyMs": 454.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-51",
+      "latencyMs": 495.7
+    },
+    {
+      "arm": "cag",
+      "qid": "q-52",
+      "latencyMs": 493.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-53",
+      "latencyMs": 749.9
+    },
+    {
+      "arm": "cag",
+      "qid": "q-54",
+      "latencyMs": 450.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-55",
+      "latencyMs": 408.4
+    },
+    {
+      "arm": "cag",
+      "qid": "q-56",
+      "latencyMs": 410.1
+    },
+    {
+      "arm": "cag",
+      "qid": "q-57",
+      "latencyMs": 498.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-58",
+      "latencyMs": 552.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-59",
+      "latencyMs": 507.8
+    },
+    {
+      "arm": "cag",
+      "qid": "q-60",
+      "latencyMs": 508.6
+    }
+  ]
+}
