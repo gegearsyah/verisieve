@@ -1,9 +1,9 @@
 # Parked Follow-ups Handoff (CPU-side, no GPU)
 
-Two recorded follow-ups from the novelty-and-remediation handoff's run record, parked until
-the main queue (GPU ablation backfill, then the K3 six-arm head-to-head) drains. They are
-safe to execute concurrently with the main queue because they touch neither the GPU nor
-`results/track-d-*` nor the amnesiac line.
+Three recorded follow-ups from the novelty-and-remediation and cross-document handoffs,
+parked until the main queue (GPU ablation backfill, then the K3 six-arm head-to-head)
+drains. They are safe to execute concurrently with the main queue because they touch
+neither the GPU nor `results/track-d-*` nor the amnesiac line.
 
 ## Binding constraints (read first)
 
@@ -68,6 +68,51 @@ Work:
   change — update `vendor/wasm/verisieve_sql.wasm`, the `<400 KB` total claim if it moves,
   BOTH papers' size receipts, and the checker `statSync` needle (currently 54,105) in one
   commit. `build.sh` regenerates provenance; never hand-write the JSON.
+
+## Item 3: open-estate benchmark construction from available online enterprise data (large, CPU-side)
+
+Context: the founder opened the K6 estate-source line to a parallel agent. The verified
+dataset inventory lives in `docs/research-notes/2026-11-24-open-estate-dataset-hunt.md`
+(primary-source-verified licenses, plus a rejection ledger of what may NOT be used —
+OpenSanctions is CC BY-NC, Fisher is LDC fee-gated; do not revisit those). The synthetic
+noisy estate (commit `99ba4f1`) is the in-repo reference for construction discipline:
+read its spec (`docs/2026-11-24-noisy-estate-benchmark-spec.md`), generator
+(`scripts/gen-noisy-estate.mjs`), scorer (`scripts/noisy-estate-baseline.mjs`), and floor
+(`results/noisy-estate-baseline.json`) before building.
+
+Goal: a second, external-validity estate assembled from real and/or openly licensed
+enterprise-like data available online (synthetic overlay is acceptable and, for identity,
+preferred), scored by the same person-level machinery (pairwise + B-cubed + false-merge/
+false-split + miss attribution), with the same anti-circularity rules: the generator/
+builder imports only `node:` builtins and nothing from `src/`; the engine never sees the
+answer key; the trivial exact-match baseline must be able to fail (and is recorded as the
+floor, per the noisy-estate gate pattern).
+
+Layered design from the hunt note (binding on honesty):
+- **Real-identity audio (AMI, CC BY 4.0; ICSI, CC BY 4.0 at the AMI host):** real speech,
+  real participants. Identity overlay on real speech is NOT honest — use these as-is for
+  cross-modality identity resolution, never relabel who is speaking.
+- **Text modalities:** overlay-synthesized identities are preferred and acceptable
+  (plant synthetic people/facts over real documents). Enron (1.7 GB email) has no stated
+  license — **founder gate before it enters the repo or any redistribution path; ask,
+  do not assume**. MeetingBank text is CC BY 4.0 but its HF audio is CC BY-NC-SA — the
+  audio may not enter the redistribution path. Stack Exchange (CC BY-SA) is fine for
+  artifact/text modalities. Anything NC or fee-gated stays out (rejection ledger).
+- Nothing leaves the machine during construction; downloads go into a new empty
+  directory outside the repo tree until licensing is confirmed, then fixtures are
+  checked in as data, not as scripts.
+
+Scope boundary: **estate construction + exact-match baseline + scorer only — CPU-side.**
+Any arm that trains or queries a model (the K3-style comparisons on this estate) stays on
+the main queue's GPU; do not train anything for this item. The main queue's K3 six-arm
+head-to-head runs on the synthetic noisy estate, so this item does not block or collide
+with it.
+
+Deliverables: estate fixtures + manifest (frozen answer key, versioned, deterministic,
+no wallclock fields, estate SHA pinned with its recipe), exact-match baseline artifact
+under `results/`, external-behavior tests wired into `test:ci` (determinism, coverage,
+trivial-baseline gate, engine blindness, noise/span completeness — mirror
+`test/noisy-estate.test.js`), and a dated run-record entry with every deviation recorded.
 
 ## Reporting
 

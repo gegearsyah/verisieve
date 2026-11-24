@@ -550,3 +550,15 @@ the ranges, value-vs-value baseline-reproduction and leak guards) — **911 chec
 failures**. No em-dashes in the new text; en-dash compounds avoided per the founder
 ruling (numeric `--` ranges kept, matching this paper's committed convention). Zero WASM
 bytes; no engine changes.
+
+**2026-11-24 (founder delegation — K6 estate construction handed to a parallel agent):**
+The founder assigned the open-estate benchmark construction (the K6 external-validity line,
+source-choice gate) to a separate agent via
+`docs/2026-11-24-parked-followups-handoff.md` (Item 3), alongside the two parked engine
+follow-ups (chartSeries graph wiring; cross-table JOIN host bridge). Binding constraints
+exported to that handoff: worktree off this branch, no GPU, needle discipline, word bans,
+no push, licensing gates (Enron license and MeetingBank audio are ask-first founder gates;
+anything NC or fee-gated stays out per the hunt note's rejection ledger), and construction
++ exact-match baseline only — model arms on that estate stay on THIS queue's GPU after K3.
+The main queue is unaffected: K3 six-arm runs on the synthetic noisy estate; K6 model
+comparisons are queued here after K3 and consume the parallel agent's estate artifact.
