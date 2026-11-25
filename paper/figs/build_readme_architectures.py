@@ -1,11 +1,15 @@
-"""README architecture GIFs for Papers 1-3 in the hand-drawn register.
+"""README architecture GIFs in the hand-drawn register.
+
+Papers 1-3: the measured pipeline plus, under each stage, the module or
+function that actually runs, so the animation shows where the work happens
+rather than a single "extraction" container.
+
+Data architecture: the repository premise, a four-layer stack from scattered
+company data to one model, kept distinct from Paper 4's pipeline scene.
 
 Paper 4's animation is build_k7_architecture.build_gif(). This module reuses
-that file's primitives so all four read as one set: same canvas width, same
-wobbly stroke, same dash-march loop. Seeded, reproducible.
-
-Each scene is a pipeline plus a receipts row of measured values, so the canvas
-height is per-scene and hugs the content instead of leaving empty space.
+that file's primitives so all of them read as one set: same wobbly stroke,
+same dash-march loop. Seeded, reproducible.
 """
 from pathlib import Path
 import random
@@ -14,7 +18,7 @@ import shutil
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, Polygon
+from matplotlib.patches import FancyBboxPatch
 
 import build_k7_architecture as k7
 from build_k7_architecture import (
@@ -82,6 +86,20 @@ def _link_pts(ax, pts, dash_off, badge=None, badge_at=None):
         _badge(ax, badge_at[0], badge_at[1], badge)
 
 
+def _vlink(ax, x, from_bottom, to_top, dash_off):
+    """Vertical drop: from the bottom edge of one row to the top of the next.
+
+    Extends the upper end by the dash phase so a dash always lands flush on the
+    border instead of shimmering with the march (same trick as k7's fan-out).
+    """
+    mpl_border = k7.GIF_H - from_bottom
+    tip = (x, k7.GIF_H - to_top)
+    base_len = mpl_border - tip[1]
+    e = -((base_len + dash_off) % DASH_PERIOD) % DASH_PERIOD
+    _dashed(ax, [tip, (x, mpl_border + 3 + e)], dash_off, z=1.5)
+    _arrow_head(ax, tip, (0, -1))
+
+
 def _pipeline(ax, nodes, dash_off):
     xs = [X0 + i * (NODE_W + NODE_GAP) for i in range(len(nodes))]
     boxes = []
@@ -93,26 +111,24 @@ def _pipeline(ax, nodes, dash_off):
     return boxes
 
 
-def _card(ax, x, y_top, value, label, fc=FILL, w=NODE_W):
-    """Receipt card: one measured value over its caption."""
-    pad = 12
-    n_lines = len(label) if isinstance(label, list) else label.count("\n") + 1
-    h = pad + 22 + 7 + 15.5 * n_lines + pad
+def _detail(ax, x, y_top, title, body, fc=FILL, w=NODE_W):
+    """Small card naming the module or function behind a pipeline stage."""
+    pad = 11
+    h = pad + 13.2 * len(title) + 4 + 12.5 * len(body) + pad
     y = k7.GIF_H - y_top - h
     ax.add_patch(FancyBboxPatch((x, y), w, h,
-                                boxstyle="round,pad=0,rounding_size=9",
+                                boxstyle="round,pad=0,rounding_size=8",
                                 facecolor=fc, edgecolor="none", zorder=2))
-    k7._stroke(ax, k7._rrect_pts(x, y, w, h, 9), lw=1.6, close=True)
-    _txt(ax, x + w / 2, y + h - pad, value, 14.0, bold=True, va="top")
-    _txt(ax, x + w / 2, y + pad - 1,
-         label if isinstance(label, str) else "\n".join(label), 8.6, va="bottom")
-    return y + h, y_top, y_top + h, h
+    k7._stroke(ax, k7._rrect_pts(x, y, w, h, 8), lw=1.4, close=True)
+    _txt(ax, x + w / 2, y + h - pad, "\n".join(title), 8.9, bold=True, va="top", ls=1.15)
+    _txt(ax, x + w / 2, y + pad - 1, "\n".join(body), 8.0, va="bottom", ls=1.2)
+    return y + h
 
 
-def _receipts(ax, y_top, cards):
+def _details(ax, y_top, cards):
     xs = [X0 + i * (NODE_W + NODE_GAP) for i in range(len(cards))]
-    for x, (value, label) in zip(xs, cards):
-        _card(ax, x, y_top, value, label)
+    for x, (title, body) in zip(xs, cards):
+        _detail(ax, x, y_top, title, body)
 
 
 # --- Paper 1: what data should lose ----------------------------------------
@@ -128,12 +144,12 @@ def draw_paper1(seed, dash_off):
         (_icon_lock, ["LTT gate"], ["certified risk,", "fails closed"], FILL),
         (_icon_plates, ["Clean", "handoff"], ["Markdown,", "SFT JSONL"], FILL),
     ], dash_off)
-    _receipts(ax, 352, [
-        ("1,207 docs", "FUNSD, PMC,\nPubMedQA, ai4privacy"),
-        ("8/8 PDFs", "209.02 ms,\nno raster OCR"),
-        ("2.72x", "fewer Title-Case\nfalse positives"),
-        ("0.0%", "conditional FPR\n(14.63% before)"),
-        ("0 B", "network egress\nper run"),
+    _details(ax, 352, [
+        (["enterprise-", "parsers.js"], ["OOXML, .eml,", "RIFF, ISOBMFF"]),
+        (["structure-", "extractor.js"], ["CMap tiles,", "cactus.wasm OCR"]),
+        (["media.wasm"], ["NFKC, TR39,", "Luhn/IBAN/SSN"]),
+        (["gatekeeper.js"], ["520-d logistic,", "BinomCDF gate"]),
+        (["markdown +", "sftJsonl"], ["chunks, receipt"]),
     ])
     return fig
 
@@ -151,12 +167,12 @@ def draw_paper2(seed, dash_off):
         (_icon_graph, ["HC-CRC gate"], ["cluster-robust", "risk bound"], SIDE),
         (_icon_plates, ["Release", "decision"], ["redacted media,", "certificate"], FILL),
     ], dash_off)
-    _receipts(ax, 352, [
-        ("TAB", "127 ECHR\nrulings"),
-        ("204,031 B", "29 exports,\n0 imports"),
-        ("16 KB", "512 salted\nslots"),
-        ("8.19%", "held-out FPR,\nα = 10%"),
-        ("8.25%", "audio leak,\nwas 94.85%"),
+    _details(ax, 352, [
+        (["enterprise-", "parsers.js"], [".msg, .pptx,", ".xlsx, ISOBMFF"]),
+        (["media.wasm"], ["DEFLATE, Zip-Slip,", "PPRL signature"]),
+        (["srmp_seed_", "anchor"], ["512 slots,", "128-bit sketch"]),
+        (["gatekeeper.js"], ["Kish DEFF,", "Ville E-LTT"]),
+        (["release or", "ABSTAIN"], ["certificate +", "forensic counts"]),
     ])
     return fig
 
@@ -186,7 +202,7 @@ def draw_paper3(seed, dash_off):
               badge_at=(806, (_center(boxes[2]) + _center(qa)) / 2))
 
     ret = _node(ax, xs[2], 350, NODE_W, _icon_magnifier,
-                ["Graph-PPR", "retrieval"], ["no training,", "stronger default"], fc=SIDE)
+                ["Graph-PPR", "retrieval"], ["pprRetrieve,", "15 iterations"], fc=SIDE)
     _link_pts(ax, [(xs[2] + NODE_W + 4, _center(ret)),
                    (950, _center(ret)),
                    (950, k7.GIF_H - qa[2])], dash_off, badge=4,
@@ -196,34 +212,82 @@ def draw_paper3(seed, dash_off):
                    (xs[0] + NODE_W / 2, k7.GIF_H - 325),
                    (xs[2] + NODE_W / 2, k7.GIF_H - 325),
                    (xs[2] + NODE_W / 2, k7.GIF_H - 350)], dash_off)
-    _receipts(ax, 520, [
-        ("0/210", "placeholder echoes\nafter PT-LM"),
-        ("+0.194", "seen-doc F1,\nQwen 0.5B"),
-        ("p=0.0005", "Graph-PPR beats\nevery LoRA arm"),
+    _details(ax, 520, [
+        (["matched pairs"], ["assistant-only", "loss"]),
+        (["computePtlm", "MaskedSpans"], ["labels[t] = -100", "+ surrogates"]),
+        (["PEFT LoRA"], ["80 steps,", "seed 42"]),
     ])
     return fig
 
 
+# --- The premise: scattered data to one model ------------------------------
+def draw_data(seed, dash_off):
+    _seed(seed)
+    k7.GIF_H = 600
+    fig, ax = _canvas()
+    _sidebar(ax, "Versieve", "scattered data,\none model")
+
+    def chip(x, y_top, w, h, title, sub=None, fc=FILL):
+        y = k7.GIF_H - y_top - h
+        ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                    boxstyle="round,pad=0,rounding_size=9",
+                                    facecolor=fc, edgecolor="none", zorder=2))
+        k7._stroke(ax, k7._rrect_pts(x, y, w, h, 9), lw=1.9, close=True)
+        if sub:
+            _txt(ax, x + w / 2, y + h - 13, title, 10.6, bold=True, va="top")
+            _txt(ax, x + w / 2, y + 11, sub, 8.8, va="bottom")
+        else:
+            _txt(ax, x + w / 2, y + h / 2, title, 10.4, bold=True)
+
+    src = ["SQL", "CSV", "Email", "Transcripts", "Audio", "Decks"]
+    sw, sg = 133, 18
+    for i, name in enumerate(src):
+        chip(X0 + i * (sw + sg), 84, sw, 64, name)
+
+    bar_x, bar_w = X0, 888
+    chip(bar_x, 210, bar_w, 86, "Perceive: 5 zero-import WASM kernels",
+         "clean · media · graph · dl · sql")
+    chip(bar_x, 330, bar_w, 86, "Vault and resolve identity",
+         "salted placeholders · HMAC entity ids · per-sample provenance")
+
+    _vlink(ax, bar_x + bar_w / 2, 148, 210, dash_off)
+    _vlink(ax, bar_x + bar_w / 2, 296, 330, dash_off)
+
+    cw, cg = 196, 36
+    outs = [
+        ("SFT corpora", "PT-LM JSONL", FILL),
+        ("Graph-PPR", "pprRetrieve", FILL),
+        ("CAG caches", "KV prefill", FILL),
+        ("eraseEntity", "minus one entity", SIDE),
+    ]
+    for j, (title, sub, fc) in enumerate(outs):
+        x = X0 + j * (cw + cg)
+        chip(x, 460, cw, 78, title, sub, fc=fc)
+        _vlink(ax, x + cw / 2, 416, 460, dash_off)
+    return fig
+
+
 SCENES = [
-    ("architecture-a-extraction.gif", draw_paper1),
-    ("architecture-d-multimodal.gif", draw_paper2),
-    ("architecture-c-training.gif", draw_paper3),
+    ("architecture-a-extraction.gif", draw_paper1, True),
+    ("architecture-d-multimodal.gif", draw_paper2, True),
+    ("architecture-c-training.gif", draw_paper3, True),
+    ("verisieve-data-architecture.gif", draw_data, False),
 ]
 
 
-def _check(fig):
+def _check(fig, strict_width=True):
     fig.canvas.draw()
     rend = fig.canvas.get_renderer()
     for t in fig.axes[0].texts:
         bb = t.get_window_extent(rend)
         assert bb.x0 >= 0 and bb.x1 <= k7.GIF_W, f"text off canvas: {t.get_text()!r}"
         assert bb.y0 >= 0 and bb.y1 <= k7.GIF_H, f"text off canvas: {t.get_text()!r}"
-        if t.get_fontsize() <= 10.9:
+        if strict_width and t.get_fontsize() <= 10.9:
             assert bb.width <= TEXT_MAX, \
                 f"text wider than node: {t.get_text()!r} {bb.width:.1f}px"
 
 
-def build(name, draw):
+def build(name, draw, strict_width):
     from PIL import Image
 
     frames_dir = OUT_DIR / "_gif_frames"
@@ -231,7 +295,7 @@ def build(name, draw):
     paths = []
     for f in range(FRAMES):
         fig = draw(20251125 + f, DASH_PERIOD * f / FRAMES)
-        _check(fig)
+        _check(fig, strict_width)
         p = frames_dir / f"{name}_{f}.png"
         fig.savefig(p, dpi=100)
         plt.close(fig)
@@ -248,5 +312,5 @@ def build(name, draw):
 
 if __name__ == "__main__":
     DOCS_DIR.mkdir(exist_ok=True)
-    for name, draw in SCENES:
-        build(name, draw)
+    for name, draw, strict in SCENES:
+        build(name, draw, strict)

@@ -5,6 +5,8 @@
 **One-Shot Zero-Egress Multimodal Perception, Redaction & Tokenization for AI Training and RAG.**  
 *Perceive any document, spreadsheet, presentation, image, email, audio recording, or video into structured, PII- and secret-free training tokens, synchronized omnimodal scene timelines, and knowledge graphs—100% locally in WebAssembly with zero server uploads.*
 
+**The premise.** A company's knowledge is scattered across drives, mailboxes, wikis, ticket queues, call recordings, and slide decks. Versieve takes all of it, perceives every format locally, resolves the people and organizations across documents into one entity graph, and emits corpora, retrieval indexes, and cache contexts built on that identity. The goal is a model that understands the whole company because the data under it was understood and connected before training started.
+
 ---
 
 ## 🔥 Highlights
@@ -60,7 +62,7 @@ Three boundaries belong next to those numbers. At `τ=0.50` the ring trades `0.9
 
 ## 🗺️ Architecture, One GIF per Paper
 
-Each animation follows the path its paper measures. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow. All four share the same hand-drawn register and run as a seamless dash-march loop.
+Each animation follows the path its paper measures. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, and the cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
 
 **Paper 1: what data should lose.** Source files become deterministic extraction, regex and lexicon redaction, an LTT gate that fails closed, and a clean training handoff.
 
@@ -208,9 +210,9 @@ Versieve runs the **exact same byte-identical WASM binaries** in the browser and
 
 ### 3. Data Architecture: Documents → Resolved Graph → Every Consumer
 
-![Versieve data architecture](docs/verisieve-architecture.gif)
+![Versieve data architecture](docs/verisieve-data-architecture.gif)
 
-The animation shows the full path: estate documents (SQL, CSV, email, transcripts, audio, decks) are perceived by the five zero-import WASM kernels with zero egress; every detected value is vaulted behind a salted placeholder and derives a stable HMAC entity identifier, building one resolved entity graph with per-sample provenance and conformal certificates; the graph is exported as deterministic corpus seams (per-block JSONL, composed per-entity records, identity-contrastive pairs) in a vaulted or readable view; and the same graph then grounds four consumers with no identity rebuilt anywhere: LoRA SFT training, Graph-PPR retrieval (RAG), CAG key-value cache prefill (fixed set-cover or per-question identity-keyed), and `eraseEntity`, which regenerates the corpus minus one entity with a byte-diff receipt because the graph names exactly the spans an entity owns. Positional chunking gives none of these consumers an identity to share, which is why erasure, provenance, and cross-document grounding all ride on the graph.
+The stack runs in four layers. Scattered estate documents (SQL, CSV, email, transcripts, audio, decks) enter the five zero-import WASM kernels with zero egress. Every detected value is vaulted behind a salted placeholder and derives a stable HMAC entity identifier, so one resolved entity graph carries per-sample provenance and conformal certificates. That graph is exported as deterministic corpus seams (per-block JSONL, composed per-entity records, identity-contrastive pairs) in a vaulted or readable view. The same graph then grounds four consumers with no identity rebuilt anywhere: LoRA SFT training, Graph-PPR retrieval (RAG), CAG key-value cache prefill (fixed set-cover or per-question identity-keyed), and `eraseEntity`, which regenerates the corpus minus one entity with a byte-diff receipt because the graph names exactly the spans an entity owns. Positional chunking gives none of these consumers an identity to share, which is why erasure, provenance, and cross-document grounding all ride on the graph.
 
 ---
 
