@@ -113,11 +113,11 @@ export async function createLocalNeuralPiiRunner(options = {}) {
     };
   }
 
-  const modelPath = options.modelPath || process.env.VERISIEVE_GLINER_ONNX_PATH || '';
+  const modelPath = options.modelPath || process.env.VERSIEVE_GLINER_ONNX_PATH || '';
   if (!modelPath || !fs.existsSync(modelPath)) {
     if (options.failClosed !== false) {
       throw new Error(
-        `NER_WEIGHTS_REQUIRED: Local Apache-2.0 GLiNER ONNX weights not found (tier=${tierKey}, set VERISIEVE_GLINER_ONNX_PATH). Zero remote download enforced.`
+        `NER_WEIGHTS_REQUIRED: Local Apache-2.0 GLiNER ONNX weights not found (tier=${tierKey}, set VERSIEVE_GLINER_ONNX_PATH). Zero remote download enforced.`
       );
     }
     return {

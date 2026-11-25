@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 scripts/duckdb-query.py
-In-process DuckDB 1.5.5 SQL runner for VeriSieve UI & CLI.
+In-process DuckDB 1.5.5 SQL runner for Versieve UI & CLI.
 Reads JSON payload from stdin: { "sql": str, "dataset": str }
 Outputs JSON with columns, rows, and execution metrics.
 """
@@ -41,15 +41,15 @@ def main():
                 SELECT * FROM funsd_ocr_data;
             """)
             con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
-            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
+            con.execute("CREATE VIEW versieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
         elif has_pmc:
             con.execute("CREATE TABLE raw_extracted_documents AS SELECT * FROM pmc_pdf_data;")
             con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
-            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
+            con.execute("CREATE VIEW versieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
         elif has_funsd:
             con.execute("CREATE TABLE raw_extracted_documents AS SELECT * FROM funsd_ocr_data;")
             con.execute("CREATE VIEW documents AS SELECT * FROM raw_extracted_documents;")
-            con.execute("CREATE VIEW verisieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
+            con.execute("CREATE VIEW versieve_certified_tokens AS SELECT * FROM raw_extracted_documents WHERE gatekeeper_action = 'KEEP_SAFE';")
 
         t0 = time.perf_counter()
         rel = con.execute(sql)

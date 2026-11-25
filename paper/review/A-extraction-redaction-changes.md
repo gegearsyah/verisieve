@@ -1,4 +1,4 @@
-# Change log: Paper A (verisieve-extraction-redaction-benchmark)
+# Change log: Paper A (versieve-extraction-redaction-benchmark)
 
 Revision agent for Paper A. Sources: `review/EDITOR-RULINGS.md` (binding) and `review/A-extraction-redaction-review.md`. Build verified with two `latexmk -pdf -interaction=nonstopmode -f` runs: exit 0, 9 pages, 0 undefined references or citations, 0 bibtex warnings, 0 overfull boxes.
 
@@ -49,7 +49,7 @@ Revision agent for Paper A. Sources: `review/EDITOR-RULINGS.md` (binding) and `r
 
 ## 8. Artifact availability (review R3, coordinator-fixed scope)
 
-- New paragraph at the end of Section 3: every table is emitted by a checked-in runner at `https://github.com/gegearsyah/verisieve`; benchmark manifests, prompts, and result JSON are included with the submission; the eight PMC identifiers are listed in the benchmark manifest; the Table 1 PMC citation is representative and the manifest carries each of the eight identifiers. No commit hash, DOI, or license invented.
+- New paragraph at the end of Section 3: every table is emitted by a checked-in runner at `https://github.com/gegearsyah/versieve`; benchmark manifests, prompts, and result JSON are included with the submission; the eight PMC identifiers are listed in the benchmark manifest; the Table 1 PMC citation is representative and the manifest carries each of the eight identifiers. No commit hash, DOI, or license invented.
 
 ## 9. Em-dashes (ruling 2; ruling 5 overturns the review's count of 14)
 

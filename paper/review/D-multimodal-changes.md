@@ -50,7 +50,7 @@ Also (ME-6): caption adds one clause — rows sharing an identical numeric quadr
 
 - Abstract contribution (2): "(2) HC-CRC and E-LTT, which this paper **formulates and evaluates** (the gatekeeper formulation is shared with the companion extraction study, \cite{ardiyansyah2026extraction}) ..." (was "makes three contributions: ... HC-CRC ..." implying novel mechanism).
 - Scope of Novelty item (2): "Versieve-MM introduces ..." -> "Versieve-MM contributes ... which this paper formulates and evaluates ...; the gatekeeper formulation is shared with the companion extraction study \cite{ardiyansyah2026extraction}, and the empirical validation on human-annotated TAB rulings, including the measured design effect and the naive-i.i.d. overshoot correction, is new to this paper."
-- Bib: added the four companion entries from rulings section 4 (`ardiyansyah2026extraction`, `ardiyansyah2026graphcorpus`, `ardiyansyah2026localtraining`, `ardiyansyah2026multimodal`). `ardiyansyah2026verisieve` key kept; its title replaced with Paper A's title and `howpublished` set to "Companion manuscript" (was "Technical Report, Versieve Project"). No fine-tuning comparison exists in D, so `\cite{ardiyansyah2026localtraining}` is not cited in text.
+- Bib: added the four companion entries from rulings section 4 (`ardiyansyah2026extraction`, `ardiyansyah2026graphcorpus`, `ardiyansyah2026localtraining`, `ardiyansyah2026multimodal`). `ardiyansyah2026versieve` key kept; its title replaced with Paper A's title and `howpublished` set to "Companion manuscript" (was "Technical Report, Versieve Project"). No fine-tuning comparison exists in D, so `\cite{ardiyansyah2026localtraining}` is not cited in text.
 
 ## 8. Markdown leak
 
@@ -71,8 +71,8 @@ Also (ME-6): caption adds one clause — rows sharing an identical numeric quadr
 
 - Abstract: "+28.65 F1 over Paper 1 regex" -> "+28.65 F1 over the companion regex baseline"; abstract also drops "0% clean FP" (the 0/375 clean-FP fact stays in Exp. 3 with its corpus caveat, DO-3).
 - Lesson (iv): "over Paper 1 regex" -> "over the companion regex baseline".
-- Table 1 row: "Paper 1 Regex+Lexicon" -> "Companion Regex+Lexicon \cite{ardiyansyah2026verisieve}".
-- Sec. 2.2: "fuses Paper 1 regexes" -> "fuses the companion text pipeline's regexes \cite{ardiyansyah2026verisieve}".
+- Table 1 row: "Paper 1 Regex+Lexicon" -> "Companion Regex+Lexicon \cite{ardiyansyah2026versieve}".
+- Sec. 2.2: "fuses Paper 1 regexes" -> "fuses the companion text pipeline's regexes \cite{ardiyansyah2026versieve}".
 
 ## 11. Em-dashes (JF-3) — all `---` removed (18 occurrences in 14 lines), `--` kept
 
@@ -95,7 +95,7 @@ Also (ME-6): caption adds one clause — rows sharing an identical numeric quadr
 
 ## 13. Accuracy ranking and fixture wording (DO-3)
 
-- Exp. 3 now states the F1 ranking supported by Table 3: "By F1, Yelp detect-secrets leads (86.27%), verisieve_media.wasm sits between (72.25%), and Gitleaks trails (66.36%)". The 0/375 clean-FP rate is reported with its corpus caveat (all three scanners; MBPP short scripts), and the abstract no longer headlines it.
+- Exp. 3 now states the F1 ranking supported by Table 3: "By F1, Yelp detect-secrets leads (86.27%), versieve_media.wasm sits between (72.25%), and Gitleaks trails (66.36%)". The 0/375 clean-FP rate is reported with its corpus caveat (all three scanners; MBPP short scripts), and the abstract no longer headlines it.
 - "fixture quirk" -> "likewise concentrated in our fixtures' single-line PEM headers (0/35)" (fixture-set attribution).
 
 ## 14. Citations for named baselines (DO-7)
@@ -104,7 +104,7 @@ Also (ME-6): caption adds one clause — rows sharing an identical numeric quadr
 
 ## 15. Reproducibility statement (ME-8, partial)
 
-- Sec. 3 adds: "Every number printed in the tables below is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/verisieve}), whose result JSON files record the corpus identifiers and run outputs behind this paper; per-experiment random seeds are not yet recorded in those files, so exact resampling re-runs are pending."
+- Sec. 3 adds: "Every number printed in the tables below is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/versieve}), whose result JSON files record the corpus identifiers and run outputs behind this paper; per-experiment random seeds are not yet recorded in those files, so exact resampling re-runs are pending."
 
 ## 16. Overfull box
 

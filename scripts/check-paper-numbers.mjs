@@ -26,9 +26,9 @@ const TE = j('track-e-paper-benchmarks.json');
 const GC = j('gccrc-cross-modal-benchmark.json');
 const TRAINER = readFileSync(new URL('scripts/run-track-d-fair-lora.py', ROOT), 'utf8');
 
-const M = tex('verisieve-multimodal-sanitization-benchmark.tex');
-const L = tex('verisieve-local-training-benchmark.tex');
-const E = tex('verisieve-extraction-redaction-benchmark.tex');
+const M = tex('versieve-multimodal-sanitization-benchmark.tex');
+const L = tex('versieve-local-training-benchmark.tex');
+const E = tex('versieve-extraction-redaction-benchmark.tex');
 
 let fails = 0;
 let checks = 0;
@@ -46,7 +46,7 @@ const comma = v => f0(v).replace(/\B(?=(\d{3})+(?!\d))/g, '{,}');
 const P = s => s + '\\%'; // tex percent form
 
 /* ---------------- Paper 3 (multimodal): WASM binaries ---------------- */
-for (const mod of ['verisieve_clean', 'verisieve_sql', 'verisieve_graph', 'verisieve_dl', 'verisieve_media']) {
+for (const mod of ['versieve_clean', 'versieve_sql', 'versieve_graph', 'versieve_dl', 'versieve_media']) {
   ok(`wasm:${mod}`, comma(statSync(new URL(`vendor/wasm/${mod}.wasm`, ROOT)).size), M);
 }
 ok('wasm:media.caption', '$204{,}031$\\,B', M);
@@ -61,14 +61,14 @@ for (const [k, row] of Object.entries(R3)) {
   ok(`secrets:${k}.mbps`, f2(row.steadyStateMBps), M);
 }
 ok('secrets:yelp.steady', f1(R3.yelp_detect_secrets.steadyState1xMs), M);
-ok('secrets:wasm.steady', f1(R3.verisieve_media_wasm.steadyStateCliWithIoMs), M);
+ok('secrets:wasm.steady', f1(R3.versieve_media_wasm.steadyStateCliWithIoMs), M);
 ok('secrets:gitleaks.steady', f1(R3.gitleaks_v8_30_1.steadyState1xMs), M);
 ok('secrets:posFiles', String(R3.positiveFiles), M);
 ok('secrets:negFiles', String(R3.negativeFiles), M);
 ok('secrets:totalKB', f1(R3.totalBytes1x / 1000), M); // "78.1 KB"
 // derived speedups from the artifact's own steady-state MB/s
-ok('secrets:vsYelp', f1(R3.verisieve_media_wasm.steadyStateMBps / R3.yelp_detect_secrets.steadyStateMBps), M);
-ok('secrets:vsGitleaksCold', f1(R3.gitleaks_v8_30_1.cold1xWallMs / R3.verisieve_media_wasm.cold1xWallMs), M);
+ok('secrets:vsYelp', f1(R3.versieve_media_wasm.steadyStateMBps / R3.yelp_detect_secrets.steadyStateMBps), M);
+ok('secrets:vsGitleaksCold', f1(R3.gitleaks_v8_30_1.cold1xWallMs / R3.versieve_media_wasm.cold1xWallMs), M);
 
 /* ---------------- Paper 3: Exp.4 audio (expR4, Stage 2 honest self-seeded re-run) ---------------- */
 const R4 = SECRETS.expR4_endToEndWhisperAudio;
@@ -432,7 +432,7 @@ ok('r2:excluded', String(PQ.excluded_words_count), E);
 // tex prints the lookalike guard as "4/5 to 1/5", not percentages
 const LG = PQ.lookalike_guard_eval;
 ok('r2:lookalikeNaive', `${Math.round(LG.lookalikeLinesTested * LG.naive_regex_fp_pct / 100)}/${LG.lookalikeLinesTested}`, E);
-ok('r2:lookalikeCtx', `${Math.round(LG.lookalikeLinesTested * LG.verisieve_context_fp_pct / 100)}/${LG.lookalikeLinesTested}`, E);
+ok('r2:lookalikeCtx', `${Math.round(LG.lookalikeLinesTested * LG.versieve_context_fp_pct / 100)}/${LG.lookalikeLinesTested}`, E);
 
 /* ---------------- Paper 2: corpus + tab:ltt + tab:multiaxis (race_3) ---------------- */
 const R3C = SC.race_3_ltt_conformal_calibration;
@@ -501,10 +501,10 @@ ok('sub:memReduction', f1(SC.summary_findings.memory_reduction_factor_vs_pytorch
 // tex trims trailing zeros on BCE values (0.189, not 0.1890)
 const fz4 = v => f(v, 4).replace(/(\.\d*?)0+$/, '$1');
 for (const [k, e] of Object.entries(R4S.downstreamAblation)) {
-  ok(`abl:${k}.gateBce`, fz4(e.verisieve_conformal.heldOutGateBceLoss), E);
-  ok(`abl:${k}.gateAcc`, P(f0(e.verisieve_conformal.heldOutGateAccPct)), E);
-  ok(`abl:${k}.veraBce`, fz4(e.verisieve_conformal.wasmVeraBceLoss), E);
-  ok(`abl:${k}.leak`, P(f2(e.verisieve_conformal.contactPiiHighConfLeakPct)), E);
+  ok(`abl:${k}.gateBce`, fz4(e.versieve_conformal.heldOutGateBceLoss), E);
+  ok(`abl:${k}.gateAcc`, P(f0(e.versieve_conformal.heldOutGateAccPct)), E);
+  ok(`abl:${k}.veraBce`, fz4(e.versieve_conformal.wasmVeraBceLoss), E);
+  ok(`abl:${k}.leak`, P(f2(e.versieve_conformal.contactPiiHighConfLeakPct)), E);
   ok(`abl:${k}.regexBce`, fz4(e.naive_regex.heldOutBceLoss), E);
   ok(`abl:${k}.regexAcc`, P(f1(e.naive_regex.heldOutAccPct)), E);
   ok(`abl:${k}.rawAcc`, P(f1(e.raw_unfiltered.heldOutAccPct)), E);
@@ -514,17 +514,17 @@ ok('abl:bceReduction', P(f1(SC.summary_findings.post_training_gate_bce_loss_redu
 const ND = R4S.needleBenchmark;
 ok('needle:rawR5', P(f1(ND.raw_unmasked.recallAt5Pct)), E);
 ok('needle:rawR1', P(f1(ND.raw_unmasked.recallAt1Pct)), E);
-ok('needle:maskedR5', P(f1(ND.verisieve_masked.recallAt5Pct)), E);
-ok('needle:maskedR1', P(f1(ND.verisieve_masked.recallAt1Pct)), E);
+ok('needle:maskedR5', P(f1(ND.versieve_masked.recallAt5Pct)), E);
+ok('needle:maskedR1', P(f1(ND.versieve_masked.recallAt1Pct)), E);
 ok('needle:regexR5', P(f1(ND.naive_regex_corrupted.recallAt5Pct)), E);
 
 /* ---------------- Paper 4 (graph-grounded corpus): artifacts ---------------- */
 const ABL = j('amnesiac-corpus-ablation.json');
 const CBS = j('company-brain-slice.json');
 const APB = j('argon-parity-benchmark.json');
-const CG = tex('verisieve-graph-grounded-enterprise-corpus.tex');
+const CG = tex('versieve-graph-grounded-enterprise-corpus.tex');
 {
-  const wasmTotal = ['verisieve_clean', 'verisieve_sql', 'verisieve_graph', 'verisieve_dl', 'verisieve_media']
+  const wasmTotal = ['versieve_clean', 'versieve_sql', 'versieve_graph', 'versieve_dl', 'versieve_media']
     .reduce((n, m) => n + statSync(new URL(`vendor/wasm/${m}.wasm`, ROOT)).size, 0);
   ok('corpus:wasm.total', `$${comma(wasmTotal)}$\\,B`, CG);
   ok('corpus:egress', '$0$\\,B', CG);

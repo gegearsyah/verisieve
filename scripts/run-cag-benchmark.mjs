@@ -4,7 +4,7 @@
  * Native CAG (Cache-Augmented Generation) vs Graph-PPR Benchmark Harness (Track C4)
  *
  * Strictly zero data egress & zero hardcoded machine paths:
- * accepts corpus path via --corpus <path> or VERISIEVE_CORPUS_DIR.
+ * accepts corpus path via --corpus <path> or VERSIEVE_CORPUS_DIR.
  *
  * Usage:
  *   node scripts/run-cag-benchmark.mjs --corpus fixtures/clinical-study-sample.pdf --backend dry-run
@@ -100,9 +100,9 @@ function loadStructuredDocuments(corpusPath) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const corpusPath = args.corpus || process.env.VERISIEVE_CORPUS_DIR;
+  const corpusPath = args.corpus || process.env.VERSIEVE_CORPUS_DIR;
   if (!corpusPath) {
-    console.error('Error: pass --corpus <file-or-dir> or set VERISIEVE_CORPUS_DIR.');
+    console.error('Error: pass --corpus <file-or-dir> or set VERSIEVE_CORPUS_DIR.');
     process.exit(1);
   }
   if (!fs.existsSync(path.resolve(corpusPath))) {

@@ -8,7 +8,7 @@ Founder word the same evening: these systems stay open as methods. The pair scor
 
 ## What the sandbox does today
 
-There is no reranker in `Rtio/frontend/lib/verisieve`. `retrieveRedactedContext` sorts once. The score is `0.55 * cosine + 0.45 * lexical` when `verisieve_dl.wasm` loads, otherwise lexical only. Cosine is the dot product of two 64-dimensional Needle vectors (`searchNeedleWasm`). Lexical is the share of query tokens that occur in the masked chunk. The top 6 chunks, up to 12,000 characters, go to the answer model. There is no minimum score.
+There is no reranker in `Rtio/frontend/lib/versieve`. `retrieveRedactedContext` sorts once. The score is `0.55 * cosine + 0.45 * lexical` when `versieve_dl.wasm` loads, otherwise lexical only. Cosine is the dot product of two 64-dimensional Needle vectors (`searchNeedleWasm`). Lexical is the share of query tokens that occur in the masked chunk. The top 6 chunks, up to 12,000 characters, go to the answer model. There is no minimum score.
 
 Needle is that first ranker. It embeds the question and each chunk separately. A second call on the same six chunks produces the same six dots. It cannot look at the question and the chunk in one forward pass, which is what a reranker does.
 
@@ -34,14 +34,14 @@ TypeSafe's rerank cookbook does the second pass with a `Noul`: one yes/no questi
 
 A second cookbook, Classifying RAG passages, uses the same hosted call to drop noisy or contradictory chunks before generation. That page also embeds the corpus with OpenAI. ([Classifying RAG passages](https://docs.typesafe.ai/cookbooks/classifying_rag_passages))
 
-Jev can be the reranker. It is not a file we can put next to `verisieve_dl.wasm`. The sandbox already sends the six masked chunks to Ollama or a bring-your-own key when the user asks a question. A Jev rerank would send those chunks to `api.typesafe.ai` as well, before that.
+Jev can be the reranker. It is not a file we can put next to `versieve_dl.wasm`. The sandbox already sends the six masked chunks to Ollama or a bring-your-own key when the user asks a question. A Jev rerank would send those chunks to `api.typesafe.ai` as well, before that.
 
 ## What is worth measuring, and what is not
 
-The local probe, on the same 125 PubMedQA questions, trains the VeRA head already in `verisieve_dl.wasm` to reorder a shortlist from the current blend. It does not download TinyBERT or MiniLM. Those cards stay here as the shape of the job other people solve with a cross-encoder: one score for the question and the passage together.
+The local probe, on the same 125 PubMedQA questions, trains the VeRA head already in `versieve_dl.wasm` to reorder a shortlist from the current blend. It does not download TinyBERT or MiniLM. Those cards stay here as the shape of the job other people solve with a cross-encoder: one score for the question and the passage together.
 
 Not worth a probe as a "Needle reranker." The vectors are already in the score.
 
 Not a local upgrade: Jev's Noul sort. The CLERC jump is real on their page and it is a legal-citation task with the answer already in the top 30. It does not transfer as a number onto PubMedQA, and it does not run air-gapped.
 
-A score floor on the blend was measured in `results/rag-retrieval-probe.json` and written up in `docs/2026-11-16-rag-redaction-verdict.md`. On the 125 held-out questions, 0 hybrid top scores are below 0.15 and 1 is below 0.30. The local VeRA head, trained inside `verisieve_dl.wasm` with no checkpoint loaded, reorders the blend's top 30 and then keeps 6. Gold in that top 6 falls from 121/125 to 39/125. The blend stays the ranker. The floor count is not an abstention cutoff: every query's passage is in the 125.
+A score floor on the blend was measured in `results/rag-retrieval-probe.json` and written up in `docs/2026-11-16-rag-redaction-verdict.md`. On the 125 held-out questions, 0 hybrid top scores are below 0.15 and 1 is below 0.30. The local VeRA head, trained inside `versieve_dl.wasm` with no checkpoint loaded, reorders the blend's top 30 and then keeps 6. Gold in that top 6 falls from 121/125 to 39/125. The blend stays the ranker. The floor count is not an abstention cutoff: every query's passage is in the 125.

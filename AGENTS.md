@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues and specs are tracked in GitHub Issues for `gegearsyah/verisieve` via `gh`. See `docs/agents/issue-tracker.md`.
+Issues and specs are tracked in GitHub Issues for `gegearsyah/versieve` via `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

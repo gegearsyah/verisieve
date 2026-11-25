@@ -1,6 +1,6 @@
 /**
  * Batch Node.js helper for reviewer-hardening benchmarks:
- * Runs REAL VeriSieve Node/WASM engines (Paper 1 Regex, Stage 3A WASM, Ground-Truth LTT Gatekeeper,
+ * Runs REAL Versieve Node/WASM engines (Paper 1 Regex, Stage 3A WASM, Ground-Truth LTT Gatekeeper,
  * and Zero-Import PPRL Noisy Cross-Modal Linkage) over JSON stdin -> JSON stdout.
  */
 import fs from 'node:fs';
@@ -329,7 +329,7 @@ if (mode === 'scan-docs') {
   }
   fs.writeFileSync(outPath, JSON.stringify(out), 'utf8');
 } else if (mode === 'srmp-tab-couple') {
-  // Pillar 2A: Real TAB ECHR Multi-Paragraph Court Ruling SR-MP Coupling via verisieve_media.wasm
+  // Pillar 2A: Real TAB ECHR Multi-Paragraph Court Ruling SR-MP Coupling via versieve_media.wasm
   // payload = { docs: [{ doc_id, text, allSpans: [{start, end, label, score}] }], anchorThr, lowThr }
   const wasm = loadMediaWasmSync();
   const anchorThr = payload.anchorThr ?? 0.50;

@@ -157,8 +157,8 @@ function main() {
       wpmSource: 'word_spans_from_generator',
     },
     wasm: {
-      path: 'vendor/wasm/verisieve_media.wasm',
-      sizeBytes: fs.statSync(path.join(ROOT, 'vendor/wasm/verisieve_media.wasm')).size,
+      path: 'vendor/wasm/versieve_media.wasm',
+      sizeBytes: fs.statSync(path.join(ROOT, 'vendor/wasm/versieve_media.wasm')).size,
       abiVersion: engine.abiVersion,
     },
     engineResult: {

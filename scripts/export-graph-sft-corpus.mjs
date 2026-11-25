@@ -5,11 +5,11 @@
  *
  * Guarantees 100% unique records across 3 layers:
  *   Layer 1: Exact file-level SHA-256 deduplication (skips identical copies)
- *   Layer 2: Passage/block-level exact SHA-256 + verisieve_clean.wasm 64-lane MinHash near-dedup (>= 0.85 Jaccard)
+ *   Layer 2: Passage/block-level exact SHA-256 + versieve_clean.wasm 64-lane MinHash near-dedup (>= 0.85 Jaccard)
  *   Layer 3: Output record-level SHA-256 deduplication across rtio-graph-sft.jsonl & triples.jsonl
  *
  * Strictly zero data egress & zero hardcoded machine paths:
- * accepts corpus via --corpus <dir-or-file> or VERISIEVE_CORPUS_DIR.
+ * accepts corpus via --corpus <dir-or-file> or VERSIEVE_CORPUS_DIR.
  */
 
 import crypto from 'node:crypto';
@@ -86,9 +86,9 @@ function isBoilerplateChunk(text, cleanWasm) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const corpusPath = args.corpus || process.env.VERISIEVE_CORPUS_DIR;
+  const corpusPath = args.corpus || process.env.VERSIEVE_CORPUS_DIR;
   if (!corpusPath) {
-    console.error('Error: pass --corpus <dir-or-file> or set VERISIEVE_CORPUS_DIR.');
+    console.error('Error: pass --corpus <dir-or-file> or set VERSIEVE_CORPUS_DIR.');
     process.exit(1);
   }
   const resolvedCorpus = path.resolve(corpusPath);
@@ -233,7 +233,7 @@ async function main() {
           continue;
         }
 
-        // Layer 2B: verisieve_clean.wasm 64-lane MinHash near-duplicate dedup
+        // Layer 2B: versieve_clean.wasm 64-lane MinHash near-duplicate dedup
         const checkSlice = norm.length > 16000 ? norm.slice(0, 16000) : norm;
         const dRes = cleanWasm.dedupCheck(checkSlice, dedupThreshold);
         if (dRes.action === 'exact_duplicate') {

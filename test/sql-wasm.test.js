@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { executeJsSql, trainWasmSmallModel } from '../src/wasm-needle-dl.js';
-import { auditVerisieveSqlWasm, executeSqlWasm, executeSqlSubsetFallback } from '../src/sql-wasm.js';
+import { auditVersieveSqlWasm, executeSqlWasm, executeSqlSubsetFallback } from '../src/sql-wasm.js';
 
 function buildSqlTestTables() {
   const rows = [
@@ -58,27 +58,27 @@ function buildSqlTestTables() {
   return {
     raw_extracted_documents: rows,
     documents: rows,
-    verisieve_certified_tokens: rows.filter((r) => r.gatekeeper_action === 'KEEP_SAFE'),
+    versieve_certified_tokens: rows.filter((r) => r.gatekeeper_action === 'KEEP_SAFE'),
     pmc_pdf_data: rows.filter((r) => r.source_mode === 'pdf_text'),
     funsd_ocr_data: rows.filter((r) => r.source_mode === 'ocr_scan'),
   };
 }
 
-test('T7: verisieve_sql.wasm artifact verifies 0 imports, <500 KB, ABI v1, provenance, and CLI audit-wasm', async () => {
-  const audit = await auditVerisieveSqlWasm();
+test('T7: versieve_sql.wasm artifact verifies 0 imports, <500 KB, ABI v1, provenance, and CLI audit-wasm', async () => {
+  const audit = await auditVersieveSqlWasm();
   assert.equal(audit.ok, true);
   assert.equal(audit.zeroEgressVerified, true);
   assert.equal(audit.importCount, 0);
   assert.equal(audit.abiVersion, 1);
   assert.ok(audit.byteLength > 1000 && audit.byteLength < 500_000, `Expected < 500 KB, got ${audit.byteLength}`);
-  assert.ok(fs.existsSync(path.resolve('rust/verisieve-sql/src/lib.rs')));
-  assert.equal(audit.provenance?.sourceCrate, 'rust/verisieve-sql');
+  assert.ok(fs.existsSync(path.resolve('rust/versieve-sql/src/lib.rs')));
+  assert.equal(audit.provenance?.sourceCrate, 'rust/versieve-sql');
   assert.equal(audit.provenance?.sourceSha256Verified, true);
 
-  const cliOut = execFileSync(process.execPath, [path.resolve('bin/verisieve.mjs'), 'audit-wasm'], { encoding: 'utf8' });
+  const cliOut = execFileSync(process.execPath, [path.resolve('bin/versieve.mjs'), 'audit-wasm'], { encoding: 'utf8' });
   const parsed = JSON.parse(cliOut);
   assert.equal(parsed.allVerified, true);
-  assert.equal(parsed.binaries?.verisieve_sql?.zeroEgressVerified, true);
+  assert.equal(parsed.binaries?.versieve_sql?.zeroEgressVerified, true);
 });
 
 test('T7: executeSqlWasm executes SELECT, compound WHERE, GROUP BY, aggregates, ORDER BY, LIMIT and avoids misleading DuckDB v1.5.5 label', () => {
@@ -107,7 +107,7 @@ test('T7: executeSqlWasm executes SELECT, compound WHERE, GROUP BY, aggregates, 
   ]);
 
   const aggRes = executeSqlWasm(
-    'SELECT count(*) AS total, min(pred_prob) AS min_p, max(pred_prob) AS max_p FROM verisieve_certified_tokens;',
+    'SELECT count(*) AS total, min(pred_prob) AS min_p, max(pred_prob) AS max_p FROM versieve_certified_tokens;',
     { tables }
   );
   assert.deepEqual(aggRes.rows, [[3, 0.85, 0.95]]);
@@ -247,7 +247,7 @@ test('T7: host Python DuckDB helper uses parameterized read_csv_auto(?) queries 
   assert.match(pyTrain, /read_csv_auto\(\?\)/);
   assert.doesNotMatch(pyTrain, /read_csv_auto\(['"]\{/);
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "verisieve-duckdb'test-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "versieve-duckdb'test-"));
   try {
     const csvPath = path.join(tmpDir, 'pmc.csv');
     fs.writeFileSync(

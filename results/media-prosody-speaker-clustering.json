@@ -85,7 +85,7 @@
     "wpmSource": "word_spans_from_generator"
   },
   "wasm": {
-    "path": "vendor/wasm/verisieve_media.wasm",
+    "path": "vendor/wasm/versieve_media.wasm",
     "sizeBytes": 204031,
     "abiVersion": 1
   },

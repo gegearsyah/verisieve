@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "pipeline": "VeriSieve Pure-WASM Small Model & Needle Semantic Engine (verisieve_dl.wasm + cactus.wasm)",
+  "pipeline": "Versieve Pure-WASM Small Model & Needle Semantic Engine (versieve_dl.wasm + cactus.wasm)",
   "timestamp": "2026-11-16T01:14:16.263Z",
   "duckdb_audit": {
     "version": "1.5.5",
@@ -55,13 +55,13 @@
     ]
   },
   "model_training": {
-    "architecture": "WASM Small Model: 1.58-Bit BitNet + VeRA & Self-Attention Transformer (verisieve_dl.wasm)",
-    "wasm_engine": "verisieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)",
+    "architecture": "WASM Small Model: 1.58-Bit BitNet + VeRA & Self-Attention Transformer (versieve_dl.wasm)",
+    "wasm_engine": "versieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)",
     "needle_engine": "Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)",
     "device": "WebAssembly (Zero Python)",
     "executionScope": "wasm_gatekeeper_only_no_llm_backprop",
     "canFineTuneLlmInWasm": false,
-    "recommendedUvCommand": "uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct",
+    "recommendedUvCommand": "uv run skills/versieve-local-train/scripts/versieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct",
     "seed": 42,
     "user_seed": 42,
     "local_weight_audit": null,
@@ -97,7 +97,7 @@
       0.4534,
       0.3891
     ],
-    "lossHistoryVerisieve": [
+    "lossHistoryVersieve": [
       0.6183,
       0.4533,
       0.3388,
@@ -125,14 +125,14 @@
       0.0001
     ],
     "valLossRaw": 2.407936,
-    "valLossVerisieve": 0.000075,
+    "valLossVersieve": 0.000075,
     "valPerplexityRaw": 11.111,
-    "valPerplexityVerisieve": 1.0001,
+    "valPerplexityVersieve": 1.0001,
     "needleRetrievalPurityPctRaw": 33.3,
-    "needleRetrievalPurityPctVerisieve": 100,
+    "needleRetrievalPurityPctVersieve": 100,
     "needleRetrievalPurityPct": 100,
     "piiExposureRatePctRaw": 100,
-    "piiExposureRatePctVerisieve": 0,
+    "piiExposureRatePctVersieve": 0,
     "testedPiiEntities": [
       "Pui Shan",
       "Wong Tai",

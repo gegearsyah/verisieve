@@ -1,4 +1,4 @@
-# Track E Handoff — Broadening VeriSieve & RTIO Sandbox to Full Enterprise Multimodal Unstructured Data
+# Track E Handoff — Broadening Versieve & RTIO Sandbox to Full Enterprise Multimodal Unstructured Data
 
 **Date:** 2026-11-23  
 **Scope:** Both `matilda-portable` (portable Node.js CLI / MCP / WASM / C99 core) and sibling `Rtio/frontend` (browser Sandbox UI + Web Workers + WebGPU/WASM)  
@@ -48,7 +48,7 @@ Real corporate data leaks happen disproportionately in **hidden sub-streams** in
 
 ## 3. Unified Multimodal Architecture (Shared Contract Across Both Repos)
 
-Every new modality normalizes into one canonical intermediate block schema (`NormalizedMediaBlock`) so **Stages 2–4 (`verisieve_clean.wasm` → Redaction → LTT Conformal Gate → `verisieve_graph.wasm` Dual-CSR)** work identically without rewriting downstream code:
+Every new modality normalizes into one canonical intermediate block schema (`NormalizedMediaBlock`) so **Stages 2–4 (`versieve_clean.wasm` → Redaction → LTT Conformal Gate → `versieve_graph.wasm` Dual-CSR)** work identically without rewriting downstream code:
 
 ```ts
 export interface NormalizedMediaBlock {
@@ -64,7 +64,7 @@ export interface NormalizedMediaBlock {
   frameTimeMs?: number;
   ocrBoxes?: Array<{ text: string; x: number; y: number; w: number; h: number }>;
   // Provenance for attachments / archives / threads:
-  parentSource?: string;             // links attachment -> parent email/zip via DERIVED_FROM edge in verisieve_graph.wasm
+  parentSource?: string;             // links attachment -> parent email/zip via DERIVED_FROM edge in versieve_graph.wasm
   threadId?: string;
   contentHash?: string;
 }
@@ -74,13 +74,13 @@ export interface NormalizedMediaBlock {
 
 | Capability | `matilda-portable` (Node.js CLI / MCP / WASM) | `Rtio/frontend` (Browser Sandbox) | Shared Determinism |
 |---|---|---|---|
-| **`.eml` / `.mbox` / `.vtt` / `.srt` / `.ics` / Slack JSON** | Pure ESM JS zero-dep parsers (`src/enterprise-parsers.js`) | Exact TS mirror (`lib/verisieve/enterprise-parsers.ts`) | Byte-identical block output & hashes |
+| **`.eml` / `.mbox` / `.vtt` / `.srt` / `.ics` / Slack JSON** | Pure ESM JS zero-dep parsers (`src/enterprise-parsers.js`) | Exact TS mirror (`lib/versieve/enterprise-parsers.ts`) | Byte-identical block output & hashes |
 | **`.pptx` / `.xlsx` / `.zip` Container Unpacking** | Reuse existing ZIP central-directory + `zlib.inflateRawSync` + bomb guard (`src/ingestor.js`) | Reuse existing ZIP parser + native `DecompressionStream('deflate-raw')` (`browser-engine.ts`) | Identical XML extraction & table header binding |
 | **Audio Decoding & Redacted `.wav` Synthesis** | Pure JS RIFF/WAV PCM16/Float32 codec + optional local `ffmpeg` for MP3/M4A | Native `AudioContext.decodeAudioData()` → 16 kHz mono PCM → pure TS WAV encoder (`Download Redacted WAV`) | Identical `[startMs, endMs]` mute/1 kHz beep algorithm (±40 ms padding) |
 | **Word-Timestamped Local ASR** | Local `whisper.cpp` CLI or `@huggingface/transformers` ONNX (`whisper-base_timestamped`) | Web Worker running `@huggingface/transformers` v3 (`onnx-community/whisper-base_timestamped`, WebGPU + WASM fallback) or `whisper.cpp` WASM | Same `{ word, startMs, endMs }` contract; fail-closed if weights absent |
 | **Video Keyframe Extraction & Visual Blur** | Optional local `ffmpeg` scene-change frames → existing `ocr-engine.js` + RGB box redactor | Web Worker running native **WebCodecs `VideoDecoder`** (or `<video>` seek + `OffscreenCanvas`) → `browser-ocr.ts` → Canvas Gaussian/solid box redaction | Same RGB bounding-box redaction receipt |
 | **Stage 3B Contextual Neural PII (Apache-2.0 GLiNER)** | `onnxruntime-node` running quantized `gliner_pii_small` ONNX (~150–190 MB local cache) | Web Worker running `onnxruntime-web` (`executionProviders: ['webgpu', 'wasm']`, IndexedDB cache) | Exact same span union + `SaltedPseudonymVault` + LTT conformal gate |
-| **Enterprise Secret Scanner** | Regex + Shannon entropy verifier (`src/secret-scanner.js`) | Exact TS mirror (`lib/verisieve/secret-scanner.ts`) | Same `<SECRET:TYPE_ID>` vault tokens |
+| **Enterprise Secret Scanner** | Regex + Shannon entropy verifier (`src/secret-scanner.js`) | Exact TS mirror (`lib/versieve/secret-scanner.ts`) | Same `<SECRET:TYPE_ID>` vault tokens |
 
 ---
 
@@ -98,8 +98,8 @@ export interface NormalizedMediaBlock {
     - `parseSlackExportJson(source, rawText, usersMap)` & `parseIcsCalendar(source, rawText)`: Thread-window aggregation (`thread_ts`), `<@U...>` user-ID resolution through `SaltedPseudonymVault`, and `.ics` attendee/PIN extraction.
   - Wire into `src/pdf-image-pipeline.js` (`ingestFromUrlOrPath`), `scripts/export-graph-sft-corpus.mjs`, and `src/mcp-server.js`.
 - **`Rtio/frontend` files:**
-  - `lib/verisieve/enterprise-parsers.ts` (exact TS mirror using native `DecompressionStream('deflate-raw')` and `DOMParser`).
-  - Wire into `ingestBrowserFilesDetailed` in `lib/verisieve/browser-engine.ts` and dropzone `accept` list in `components/sandbox/`.
+  - `lib/versieve/enterprise-parsers.ts` (exact TS mirror using native `DecompressionStream('deflate-raw')` and `DOMParser`).
+  - Wire into `ingestBrowserFilesDetailed` in `lib/versieve/browser-engine.ts` and dropzone `accept` list in `components/sandbox/`.
 - **Acceptance test (`test/track-e-enterprise-parsers.test.js` + `Rtio` mirror):**
   - Fixture `.eml` with base64 PDF attachment + quoted reply chain: verifies headers redacted, duplicate quoted block stripped, attachment recursively parsed and linked via `DERIVED_FROM`.
   - Fixture `.pptx` with PII in speaker notes + `.xlsx` with PII in cell comment: verifies zero raw PII escapes while preserving table column headers.
@@ -110,9 +110,9 @@ export interface NormalizedMediaBlock {
 ### Task E2 — Enterprise Secret & Credential Scanner + Safe Recursive `.zip` Unpacking
 **Why:** Company files regularly contain API keys, JWTs, `.har` auth cookies, and database URIs that human-PII regexes miss.
 
-- **`matilda-portable` & `Rtio` mirror (`src/secret-scanner.js` / `lib/verisieve/secret-scanner.ts`):**
+- **`matilda-portable` & `Rtio` mirror (`src/secret-scanner.js` / `lib/versieve/secret-scanner.ts`):**
   - High-precision prefix + Shannon entropy detectors for: AWS Access/Secret Keys (`AKIA...`), OpenAI/Anthropic/Stripe/Slack tokens (`sk-...`, `xoxb-...`), GitHub PATs (`ghp_...`, `github_pat_...`), JWTs (`eyJ...` 3-segment base64url), PEM private keys (`-----BEGIN ... PRIVATE KEY-----`), DB connection URIs (`postgres://user:pass@...`), and `.har` JSON `Authorization`/`Cookie` header stripping.
-  - Maps all hits into `SaltedPseudonymVault` (`<SECRET:API_KEY_01>`, `<SECRET:JWT_01>`) and updates `verisieve-train.py` pre-flight audit so secrets can never leak into SFT datasets.
+  - Maps all hits into `SaltedPseudonymVault` (`<SECRET:API_KEY_01>`, `<SECRET:JWT_01>`) and updates `versieve-train.py` pre-flight audit so secrets can never leak into SFT datasets.
   - Safe recursive `.zip` unpacker (max nesting depth `2`, max decompression ratio `25×`, max entry `50 MB`) dispatching each child file through the unified format router.
 - **Acceptance test:** Synthetic `.har`, `.env`, and nested `.zip` fixtures achieve 100% secret removal with zero false positives on SHA-256 hex receipts and UUIDs.
 
@@ -121,18 +121,18 @@ export interface NormalizedMediaBlock {
 ### Task E3 — Client-Side Audio Call Ingestion, Word-Timestamped ASR & Sample-Accurate Waveform Redaction
 **Why:** Directly solves the *"redact a meeting/call recording when someone speaks a name, phone number, or email"* requirement with **true audio-level redaction** (not just text-only transcript masking!).
 
-- **Shared PCM Audio Redactor (`src/audio-redactor.js` / `lib/verisieve/audio-redactor.ts`):**
+- **Shared PCM Audio Redactor (`src/audio-redactor.js` / `lib/versieve/audio-redactor.ts`):**
   - Pure JS/TS RIFF WAV decoder/encoder (`16-bit PCM` and `32-bit Float`, mono/stereo).
   - `redactAudioBuffer(pcmFloat32, sampleRate, redactedWordSpans, { mode: 'beep' | 'silence', padMs: 40, beepHz: 1000, beepGain: 0.12 })`:
     - Converts each detected PII/secret span's `[startMs - padMs, endMs + padMs]` into exact sample indices `Math.floor(ms * sampleRate / 1000)`.
     - Applies 5 ms cosine fade-in/fade-out ramps at boundaries (prevents audible clicks!) and overwrites the sensitive audio window with either pure silence or a clean 1 kHz censor tone.
     - Returns `{ redactedPcm, redactedWavBytes, redactionLog: [{ entityId, type, startMs, endMs }], sha256 }`.
 - **Local Word-Timestamped ASR Adapters (Fail-Closed):**
-  - **Browser (`Rtio/frontend/lib/verisieve/browser-asr-worker.ts`):** Dedicated Web Worker using `@huggingface/transformers` v3 (`onnx-community/whisper-base_timestamped`, `device: 'webgpu'` with automatic `'wasm'` fallback, cached in Browser Cache API / IndexedDB) returning `{ text, chunks: [{ text, timestamp: [startSec, endSec] }] }`. Note: requires COOP/COEP headers (`same-origin` / `require-corp`) for multi-threaded WASM SIMD.
+  - **Browser (`Rtio/frontend/lib/versieve/browser-asr-worker.ts`):** Dedicated Web Worker using `@huggingface/transformers` v3 (`onnx-community/whisper-base_timestamped`, `device: 'webgpu'` with automatic `'wasm'` fallback, cached in Browser Cache API / IndexedDB) returning `{ text, chunks: [{ text, timestamp: [startSec, endSec] }] }`. Note: requires COOP/COEP headers (`same-origin` / `require-corp`) for multi-threaded WASM SIMD.
   - **Node/CLI (`matilda-portable/src/local-asr.js`):** Pluggable local provider supporting `whisper.cpp` JSON (`--output-json-full` word timestamps) or local `@huggingface/transformers` ONNX cache; fails closed with `ASR_WEIGHTS_REQUIRED` when no local ASR model is configured (never calls a remote API!).
 - **Sandbox UI (`Rtio`):**
   - Interactive audio player showing **before/after redacted waveform timeline** with highlighted `<PII:PERSON_01>` mute/beep markers, clickable timestamp jumps, and one-click **"Download Redacted WAV + Transcript (.vtt/.jsonl)"**.
-- **Acceptance test:** Synthetic WAV audio fixture + mock/deterministic word-timestamp provider verifying: (a) RMS energy inside redacted PII spans equals `0.0` (silence mode) or pure 1 kHz tone (beep mode), (b) non-PII speech outside spans is bit-exact preserved, and (c) transcript + `verisieve_graph.wasm` store only `<PII:...>` tokens.
+- **Acceptance test:** Synthetic WAV audio fixture + mock/deterministic word-timestamp provider verifying: (a) RMS energy inside redacted PII spans equals `0.0` (silence mode) or pure 1 kHz tone (beep mode), (b) non-PII speech outside spans is bit-exact preserved, and (c) transcript + `versieve_graph.wasm` store only `<PII:...>` tokens.
 
 ---
 
@@ -141,7 +141,7 @@ export interface NormalizedMediaBlock {
 1. Format-validated regex misses **50.4% of bare person names** (`118/238` recall on `ai4privacy-200k`)—and misses **even more** in lowercase spoken call transcripts (`"tell sarah vance..."`).
 2. Regex Title-Case heuristics over-mask legal/clinical headings (`APP Privacy Policy` → `APP <PII:PERSON_04>`, causing the `-0.062` F1 tax).
 
-- **Architecture (`src/neural-pii-onnx.js` + `Rtio/frontend/lib/verisieve/browser-gliner-worker.ts`):**
+- **Architecture (`src/neural-pii-onnx.js` + `Rtio/frontend/lib/versieve/browser-gliner-worker.ts`):**
   - Runs Apache-2.0 quantized **GLiNER-small PII ONNX** (`int8`, ~150–190 MB) via `onnxruntime-node` (`matilda-portable`) and `onnxruntime-web` (`['webgpu', 'wasm']` in `Rtio` Web Worker).
   - Open-vocabulary enterprise entity labels: `["person", "organization", "email", "phone_number", "street_address", "date_of_birth", "account_number", "medical_condition", "government_id"]`.
   - **Hybrid Fusion Engine:**
@@ -163,16 +163,16 @@ export interface NormalizedMediaBlock {
   2. **Visual stream:**
      - **Browser (`Rtio`):** Web Worker using **WebCodecs `VideoDecoder`** (with `<video>` + `OffscreenCanvas` fallback) extracts scene-change keyframes (pixel-histogram L1 delta $> 0.15$ or every 5 seconds).
      - **Node/CLI (`matilda-portable`):** Optional local `ffmpeg` scene-filter frame extractor (`select='gt(scene,0.15)'`), failing closed cleanly if `ffmpeg` is absent.
-  3. **OCR + Pixel Box Redaction:** Each keyframe passes through existing 2D-tiled OCR (`ocr-engine.js` / `browser-ocr.ts`), runs Stage 3A+3B PII detection on OCR word boxes, draws solid/blurred privacy masks over PII bounding boxes (reusing our existing RGB box redactor), and indexes redacted slide text + `frameTimeMs` into `verisieve_graph.wasm`!
+  3. **OCR + Pixel Box Redaction:** Each keyframe passes through existing 2D-tiled OCR (`ocr-engine.js` / `browser-ocr.ts`), runs Stage 3A+3B PII detection on OCR word boxes, draws solid/blurred privacy masks over PII bounding boxes (reusing our existing RGB box redactor), and indexes redacted slide text + `frameTimeMs` into `versieve_graph.wasm`!
 - **Acceptance test:** Synthetic multi-frame video/slide fixture with planted email/SSN on frame 2 verifies: (a) keyframe detected, (b) RGB pixels inside the PII bounding box are 100% masked, (c) redacted slide text is searchable via `ppr_retrieve` with timestamp citation `[meeting.mp4 > 00:00:05]`.
 
 ---
 
 ### Task E6 — Unified Cross-Modal Knowledge Graph, GDPR Art. 17 Blast Radius & MCP Tools
-**Why:** This is where VeriSieve becomes genuinely differentiated over generic ETL tools like Unstructured.io or LlamaParse.
+**Why:** This is where Versieve becomes genuinely differentiated over generic ETL tools like Unstructured.io or LlamaParse.
 
-- **Cross-Modal Entity Linking (`verisieve_graph.wasm`):**
-  - Because `SaltedPseudonymVault` uses one workspace salt across **all** modalities, `"Elena Vance"` mentioned in an **email** (`.eml`), a **Zoom call transcript** (`.mp4`), a **Slide 4 speaker note** (`.pptx`), and an **Excel tracker** (`.xlsx`) maps to the **EXACT SAME entity node `<PII:PERSON_03>`** in `verisieve_graph.wasm`!
+- **Cross-Modal Entity Linking (`versieve_graph.wasm`):**
+  - Because `SaltedPseudonymVault` uses one workspace salt across **all** modalities, `"Elena Vance"` mentioned in an **email** (`.eml`), a **Zoom call transcript** (`.mp4`), a **Slide 4 speaker note** (`.pptx`), and an **Excel tracker** (`.xlsx`) maps to the **EXACT SAME entity node `<PII:PERSON_03>`** in `versieve_graph.wasm`!
   - **One-Click Cross-Modal GDPR Art. 17 Erasure (`blast_radius`):** Calling `blast_radius("<PII:PERSON_03>")` in `< 1 ms` returns **every single email, audio segment timestamp, video keyframe, spreadsheet row, slide note, CAG KV cache slot, and SFT dataset shard** derived from that individual!
 - **New MCP Tools (`src/mcp-server.js`):**
   - `ingest_enterprise_bundle` (auto-routes `.eml`, `.mbox`, `.pptx`, `.xlsx`, `.vtt`, `.srt`, `.ics`, Slack JSON, `.zip`, `.wav`, `.mp4`).
@@ -184,10 +184,10 @@ export interface NormalizedMediaBlock {
 
 1. **Do E1 + E2 first (1–2 days, zero external weights, zero risk):** Ships `.eml`, `.mbox`, `.pptx` (+ speaker notes), `.xlsx` (+ comments), `.vtt`/`.srt`, `.ics`, Slack/Jira JSON, `.zip`, and API-key/JWT secret scanning in **both** `matilda-portable` and `Rtio` Sandbox with 100% pure JS/TS parity.
 2. **Do E3 + E4 second (2–3 days, biggest "wow" factor for local-first AI interviews):** Ships **real browser + CLI audio waveform redaction** (Whisper word timestamps → sample-accurate beep/mute WAV download) + **Apache-2.0 GLiNER ONNX WebGPU/Node** to shatter the 49.6% bare-name & spoken-lowercase-name ceiling.
-3. **Do E5 + E6 third (2 days):** Adds WebCodecs video keyframe OCR/pixel redaction and unifies all modalities into `verisieve_graph.wasm` cross-modal GDPR Art. 17 `blast_radius`.
+3. **Do E5 + E6 third (2 days):** Adds WebCodecs video keyframe OCR/pixel redaction and unifies all modalities into `versieve_graph.wasm` cross-modal GDPR Art. 17 `blast_radius`.
 
 ### Non-Negotiable Security & Repo Hygiene Checks
 - **Zero data egress:** Never call remote ASR, remote NER, or remote OCR APIs. Every local model loader must fail closed cleanly with an explicit error code (`ASR_WEIGHTS_REQUIRED`, `NER_WEIGHTS_REQUIRED`, `MIRAGE_WEIGHTS_REQUIRED`).
 - **Zip-bomb & SSRF guards:** Reuse existing entry-count, expansion-ratio, and private-IP guards across `.pptx`, `.xlsx`, `.zip`, and `.eml` HTML bodies.
 - **No hardcoded machine paths:** Keep `test/t9-portable-benchmarks.test.js` 100% green across `src/`, `scripts/`, `test/`, `bin/`, and `demo/`.
-- **Keep `Rtio` parity green:** Every new parser added to `matilda-portable/src/` gets a matching TypeScript module and unit test in `Rtio/frontend/lib/verisieve/`.
+- **Keep `Rtio` parity green:** Every new parser added to `matilda-portable/src/` gets a matching TypeScript module and unit test in `Rtio/frontend/lib/versieve/`.

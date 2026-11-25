@@ -264,7 +264,7 @@ explicit paths. K0–K2 are CPU and can run while the GPU queue drains; K3 needs
 - `mattpocock-skills:research` / `grilling` — before any new claim enters a paper; the three notes
   above are the current prior-art baseline; re-run the citing-literature check the week of
   submission (EmbGen watch).
-- Issue tracker — any K-stage spec too large for a bullet goes to `gegearsyah/verisieve` issues
+- Issue tracker — any K-stage spec too large for a bullet goes to `gegearsyah/versieve` issues
   with `ready-for-agent`, linked from the run record.
 
 ## 6. Known Traps (remediation-handoff 1–12 all remain; additions)

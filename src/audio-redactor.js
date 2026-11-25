@@ -1,6 +1,6 @@
 /**
  * Task E3 — Client-Side Audio Call Ingestion, Spoken ITN, Sample-Accurate Waveform Redaction
- * & Fail-Closed Local ASR Adapter (powered by `verisieve_media.wasm`).
+ * & Fail-Closed Local ASR Adapter (powered by `versieve_media.wasm`).
  *
  * Zero Data Egress Invariant:
  * - Never calls remote ASR endpoints.
@@ -194,8 +194,8 @@ export async function transcribeAudioLocally(wavBytes, options = {}) {
     };
   }
 
-  const whisperBin = options.whisperBin || process.env.VERISIEVE_WHISPER_BIN;
-  const whisperModel = options.whisperModelPath || process.env.VERISIEVE_WHISPER_MODEL;
+  const whisperBin = options.whisperBin || process.env.VERSIEVE_WHISPER_BIN;
+  const whisperModel = options.whisperModelPath || process.env.VERSIEVE_WHISPER_MODEL;
   if (whisperBin && whisperModel && fs.existsSync(whisperModel)) {
     if (!options.audioFilePath || !fs.existsSync(options.audioFilePath)) {
       throw new Error('ASR_FILE_PATH_REQUIRED: whisper.cpp CLI requires a local file path.');
@@ -224,7 +224,7 @@ export async function transcribeAudioLocally(wavBytes, options = {}) {
   }
 
   throw new Error(
-    'ASR_WEIGHTS_REQUIRED: Local word-timestamped ASR requires an injected local provider or VERISIEVE_WHISPER_BIN + VERISIEVE_WHISPER_MODEL (zero remote egress enforced).'
+    'ASR_WEIGHTS_REQUIRED: Local word-timestamped ASR requires an injected local provider or VERSIEVE_WHISPER_BIN + VERSIEVE_WHISPER_MODEL (zero remote egress enforced).'
   );
 }
 
@@ -239,7 +239,7 @@ export async function transcribeAudioLocally(wavBytes, options = {}) {
  */
 export async function redactAudioCall(source, wavBytes, options = {}) {
   const engine = loadMediaWasmSync();
-  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'verisieve-enterprise-v1');
+  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'versieve-enterprise-v1');
 
   let words = Array.isArray(options.wordTimestamps) ? options.wordTimestamps : null;
   let provider = 'supplied_word_timestamps';
@@ -300,7 +300,7 @@ export async function redactAudioCall(source, wavBytes, options = {}) {
     beepGain: options.beepGain ?? 0.14,
   });
 
-  // Step 6: Build redacted WebVTT + NormalizedMediaBlock for verisieve_graph.wasm
+  // Step 6: Build redacted WebVTT + NormalizedMediaBlock for versieve_graph.wasm
   const totalStartMs = words.length > 0 ? Number(words[0].startMs ?? 0) : 0;
   const totalEndMs = words.length > 0 ? Number(words[words.length - 1].endMs ?? wavResult.meta.durationMs) : wavResult.meta.durationMs;
   const speakerLabel = options.speakerId || (wavResult.meta.channels >= 2 ? 'DualChannel_Call' : 'Speaker_01');

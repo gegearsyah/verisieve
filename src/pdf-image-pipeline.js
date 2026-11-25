@@ -42,7 +42,7 @@ import { isEnterpriseFile, parseEnterpriseBuffer } from './enterprise-parsers.js
 export { extractPdfDetailed } from './pdf-parser.js';
 
 function resolveDefaultPmcPaths() {
-  const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
+  const envDir = process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null;
   return [
     envDir ? path.join(envDir, 'miu_2017_PMC5773420.pdf') : null,
     path.resolve('results/untrusted-benchmarks/pmc/miu_2017_PMC5773420.pdf'),
@@ -110,7 +110,7 @@ export async function fetchOrLoadFunsdBenchmark(outDir = 'results/untrusted-benc
 
   if (!data || !data.rows) {
     // Fallback: extract real archival lines from local portable fixtures or sibling reference PDFs
-    const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
+    const envDir = process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null;
     const candidates = [
       envDir ? path.join(envDir, 'goubar_2021_PMC7611209.pdf') : null,
       envDir ? path.join(envDir, 'miu_2017_PMC5773420.pdf') : null,
@@ -706,7 +706,7 @@ export function getRealPmcDocumentLines(pdfDir, options = {}) {
       throw new Error(`PMC_PDF_SOURCE_NOT_FOUND: Real PMC directory does not exist at ${targetDir}`);
     }
   } else {
-    const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
+    const envDir = process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null;
     const candidates = [
       envDir,
       path.resolve('results/untrusted-benchmarks/pmc'),
@@ -1427,7 +1427,7 @@ export function exportTrainingArtifacts(rows, outDir, options = {}) {
       text: `<|im_start|>user\n${userPrompt}<|im_end|>\n<|im_start|>assistant\n${text}<|im_end|>`,
       raw_clean_text: text,
       messages: [
-        { role: 'system', content: 'Verified domain assistant (PII redacted by VeriSieve).' },
+        { role: 'system', content: 'Verified domain assistant (PII redacted by Versieve).' },
         { role: 'user', content: userPrompt },
         { role: 'assistant', content: text }
       ],
@@ -1768,7 +1768,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
     }
   }
 
-  // 3. Extract & Clean Blocks via verisieve_clean.wasm (fail closed on empty inputs)
+  // 3. Extract & Clean Blocks via versieve_clean.wasm (fail closed on empty inputs)
   const cleanWasm = loadCleanWasmSync();
   const useTokenWindowChunking =
     options.chunkMode === 'token_window' ||
@@ -1782,7 +1782,7 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
   const isGenuineBoilerplate = (rawText) => {
     const trimmed = String(rawText || '').trim();
     if (!trimmed) return true;
-    // Delegate chrome removal to verisieve_clean.wasm (preserves "privacy policy", GFM tables, $3,000,000 metrics, and URLs)
+    // Delegate chrome removal to versieve_clean.wasm (preserves "privacy policy", GFM tables, $3,000,000 metrics, and URLs)
     const stripped = cleanWasm.stripBoilerplate(trimmed, { html: false, chrome: true }).trim();
     if (!stripped || stripped.length < trimmed.length * 0.4) {
       return true;
@@ -1833,9 +1833,9 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
         });
         continue;
       }
-      // Chunk long section blocks via verisieve_clean.wasm token-window chunker
+      // Chunk long section blocks via versieve_clean.wasm token-window chunker
       // Mask first if salted pseudonyms are active? We keep raw text per chunk for accurate
-      // boilerplate detection while ensuring verisieve_clean.wasm snaps cleanly on sentences.
+      // boilerplate detection while ensuring versieve_clean.wasm snaps cleanly on sentences.
       const chunks = cleanWasm.chunkByTokenWindow(text, {
         maxTokens: chunkMaxTokens,
         overlapTokens: chunkOverlapTokens,

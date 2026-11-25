@@ -1,6 +1,6 @@
-# Contributing to VeriSieve
+# Contributing to Versieve
 
-Thank you for contributing to **VeriSieve**! VeriSieve is an open-source, zero-dependency data sieve, dual PII redactor, and client-side conformal gatekeeper.
+Thank you for contributing to **Versieve**! Versieve is an open-source, zero-dependency data sieve, dual PII redactor, and client-side conformal gatekeeper.
 
 ## Core Development Principles
 
@@ -19,7 +19,7 @@ Thank you for contributing to **VeriSieve**! VeriSieve is an open-source, zero-d
    - Never rely on heuristic confidence scores without statistical error bounds.
 
 4. **Multi-Target Parity**:
-   - Any mathematical logic introduced in the TypeScript/JavaScript runtime must maintain bit-for-bit or float32 parity with the single-header C99 implementation in `include/verisieve.h`.
+   - Any mathematical logic introduced in the TypeScript/JavaScript runtime must maintain bit-for-bit or float32 parity with the single-header C99 implementation in `include/versieve.h`.
 
 ---
 
@@ -32,8 +32,8 @@ Requirements:
 Clone and verify local installation:
 
 ```bash
-git clone https://github.com/gegearsyah/verisieve.git
-cd verisieve
+git clone https://github.com/gegearsyah/versieve.git
+cd versieve
 ```
 
 No `npm install` is required for dependencies!
@@ -50,7 +50,7 @@ Executes all unit tests across the multi-font layout synthesizer, OCR engine, PI
 
 ### 2. Run CLI Self-Test
 ```bash
-node bin/verisieve.mjs selftest
+node bin/versieve.mjs selftest
 ```
 
 ### 3. Verify Zero-Egress WASM Audit
@@ -82,6 +82,6 @@ Spins up the zero-dependency UI server at `http://localhost:3333` with live file
 ## Submitting Pull Requests
 
 - Ensure all existing tests pass (`npm test`).
-- Ensure `node bin/verisieve.mjs selftest` passes.
+- Ensure `node bin/versieve.mjs selftest` passes.
 - Ensure backward compatibility shims (`bin/rtio-portable.mjs`, `bin/matilda-portable.mjs`, `include/rtio_gatekeeper.h`, `include/matilda_gatekeeper.h`) remain functional.
 - Maintain documentation integrity and clean commit messages.

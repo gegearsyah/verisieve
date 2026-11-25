@@ -2,8 +2,8 @@
 /**
  * scripts/run-open-model-training.mjs
  * End-to-end runner for Pure-WASM Small Model Training & Needle Semantic Benchmark:
- * 1. Executes 100% in Node.js + WebAssembly (verisieve_dl.wasm + cactus.wasm) — ZERO Python required!
- * 2. Compares Model A (Raw Unfiltered) vs. Model B (VeriSieve Certified)
+ * 1. Executes 100% in Node.js + WebAssembly (versieve_dl.wasm + cactus.wasm) — ZERO Python required!
+ * 2. Compares Model A (Raw Unfiltered) vs. Model B (Versieve Certified)
  * 3. Verifies byte-identical SVG determinism across two independent passes
  * 4. Prints comprehensive audit report
  */
@@ -12,23 +12,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {
-  auditVerisieveDlWasm,
+  auditVersieveDlWasm,
   trainWasmSmallModel,
   searchNeedleWasm,
   loadExtractedDatasets
 } from '../src/wasm-needle-dl.js';
 
 console.log('========================================================================');
-console.log('   VERISIEVE — PURE-WASM SMALL MODEL & NEEDLE SEMANTIC BENCHMARK        ');
-console.log('   verisieve_dl.wasm (60,096 B) • 1.58-Bit BitNet + VeRA • Zero Python  ');
+console.log('   VERSIEVE — PURE-WASM SMALL MODEL & NEEDLE SEMANTIC BENCHMARK        ');
+console.log('   versieve_dl.wasm (60,096 B) • 1.58-Bit BitNet + VeRA • Zero Python  ');
 console.log('========================================================================\n');
 
 const svgPath = path.resolve('docs/open-model-training-comparison.svg');
 const jsonPath = path.resolve('results/open-model-training-results.json');
 
 // Step 0: Audit WASM Binary
-console.log('0. Auditing verisieve_dl.wasm Binary (Zero-Egress Security Check)...');
-const wasmAudit = await auditVerisieveDlWasm();
+console.log('0. Auditing versieve_dl.wasm Binary (Zero-Egress Security Check)...');
+const wasmAudit = await auditVersieveDlWasm();
 console.log(`   - File Size:       ${wasmAudit.byteLength.toLocaleString()} bytes`);
 console.log(`   - SHA-256:         ${wasmAudit.sha256}`);
 console.log(`   - WASM Imports:    ${wasmAudit.importCount} (100% Air-Gapped Pure WASM)`);
@@ -72,7 +72,7 @@ const model = report.model_training;
 console.log('\n3. Live Needle Semantic Retrieval Benchmark (embedNeedleWasm)...');
 const tables = loadExtractedDatasets();
 const rawDocs = tables.raw_extracted_documents.map(r => r.raw_excerpt || r.text || '');
-const safeDocs = tables.verisieve_certified_tokens.map(r => r.masked_text || r.text || '');
+const safeDocs = tables.versieve_certified_tokens.map(r => r.masked_text || r.text || '');
 const testQuery = 'transmission cover sheet elderly patient recovery status';
 
 console.log(`   Query: "${testQuery}"`);
@@ -82,7 +82,7 @@ rawHits.forEach((hit, idx) => {
   console.log(`   [Raw Rank #${idx + 1}] [Score: ${hit.score.toFixed(4)} | Latency: ${hit.latencyMs}ms]: "${hit.text.slice(0, 68)}..."`);
 });
 
-console.log('   --- Model B (VeriSieve KEEP_SAFE Certified: 100% Clean Clinical Sentences) ---');
+console.log('   --- Model B (Versieve KEEP_SAFE Certified: 100% Clean Clinical Sentences) ---');
 const safeHits = searchNeedleWasm(testQuery, safeDocs, { topK: 3 });
 safeHits.forEach((hit, idx) => {
   console.log(`   [Safe Rank #${idx + 1}] [Score: ${hit.score.toFixed(4)} | Latency: ${hit.latencyMs}ms]: "${hit.text.slice(0, 68)}..."`);
@@ -91,7 +91,7 @@ safeHits.forEach((hit, idx) => {
 console.log('\n========================================================================');
 console.log('               PURE-WASM SMALL MODEL & NEEDLE AUDIT REPORT               ');
 console.log('========================================================================');
-console.log(` In-Process SQL Engine:        ${duck.engine || duck.version || 'VeriSieve WASM SQL Subset v1'}`);
+console.log(` In-Process SQL Engine:        ${duck.engine || duck.version || 'Versieve WASM SQL Subset v1'}`);
 console.log(` Total Unstructured Rows:      ${duck.total_rows_ingested.toString().padEnd(6)} (PMC PDFs + FUNSD Scanned Forms)`);
 console.log(` Dual PII Quarantined:         ${duck.pii_detected_rows.toString().padEnd(6)} (Author Emails, Faxes, Names)`);
 console.log(` KEEP_SAFE Training Shard:     ${duck.keep_safe_rows.toString().padEnd(6)} (Filtered via Conformal LTT)`);
@@ -102,25 +102,25 @@ console.log(` Model Architecture:           ${model.architecture}`);
 console.log(` WASM Engine / Device:         ${model.wasm_engine} (${model.device})`);
 console.log(` Training Latency / Epochs:    ${model.wasmTrainMs} ms (${model.training_steps} epochs, lr=${model.learning_rate})`);
 console.log(` Model A (Raw Data) Loss:      ${model.lossHistoryRaw[0]} -> ${model.lossHistoryRaw[model.lossHistoryRaw.length - 1]}`);
-console.log(` Model B (VeriSieve) Loss:     ${model.lossHistoryVerisieve[0]} -> ${model.lossHistoryVerisieve[model.lossHistoryVerisieve.length - 1]}`);
+console.log(` Model B (Versieve) Loss:     ${model.lossHistoryVersieve[0]} -> ${model.lossHistoryVersieve[model.lossHistoryVersieve.length - 1]}`);
 console.log('------------------------------------------------------------------------');
 console.log(` Clean Clinical Perplexity:`);
 console.log(`   - Model A (Unfiltered Raw): ${model.valPerplexityRaw.toString().padEnd(6)} (Degraded by noisy OCR garbage)`);
-console.log(`   - Model B (VeriSieve Safe): ${model.valPerplexityVerisieve.toString().padEnd(6)} (Superior generalization!)`);
+console.log(`   - Model B (Versieve Safe): ${model.valPerplexityVersieve.toString().padEnd(6)} (Superior generalization!)`);
 console.log('------------------------------------------------------------------------');
 console.log(` Needle Top-3 Semantic Retrieval Purity:`);
 console.log(`   - Raw Shard:                ${model.needleRetrievalPurityPctRaw}% (Polluted by fax covers & bad scans)`);
-console.log(`   - VeriSieve Safe Shard:     ${model.needleRetrievalPurityPctVerisieve}% PURE (<2ms cosine match)`);
+console.log(`   - Versieve Safe Shard:     ${model.needleRetrievalPurityPctVersieve}% PURE (<2ms cosine match)`);
 console.log('------------------------------------------------------------------------');
 console.log(` PII Secret Exposure Rate:`);
 console.log(`   - Model A (Unfiltered Raw): ${model.piiExposureRatePctRaw}% (EXPOSED author emails & faxes)`);
-console.log(`   - Model B (VeriSieve Safe): ${model.piiExposureRatePctVerisieve}% (ZERO LEAKAGE — <PII:...> tokens)`);
+console.log(`   - Model B (Versieve Safe): ${model.piiExposureRatePctVersieve}% (ZERO LEAKAGE — <PII:...> tokens)`);
 console.log('------------------------------------------------------------------------');
 console.log(' Artifacts Verified:');
-console.log('   - vendor/wasm/verisieve_dl.wasm (60,096 bytes Pure WASM)');
+console.log('   - vendor/wasm/versieve_dl.wasm (60,096 bytes Pure WASM)');
 console.log('   - results/open-model-training-results.json (Full Benchmark Telemetry)');
 console.log('   - docs/open-model-training-comparison.svg (Deterministic 3-Panel Visual)');
-console.log('   - results/verisieve_audit.duckdb (DuckDB v1.5.5 Database)');
+console.log('   - results/versieve_audit.duckdb (DuckDB v1.5.5 Database)');
 console.log('   - results/train-qwen-llama-sft.jsonl (Ready-to-Train SFT Dataset)');
 console.log('   - results/train-tokens.bin (Flat Uint32 Packed Shard)');
 console.log('========================================================================\n');

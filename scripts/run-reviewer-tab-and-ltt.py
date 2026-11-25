@@ -325,7 +325,7 @@ def main() -> None:
         for r in node_dev
     ]
 
-    # Add explicit ECHR case-number regex spans (identical regex given to BOTH Presidio and VeriSieve for fair fight!)
+    # Add explicit ECHR case-number regex spans (identical regex given to BOTH Presidio and Versieve for fair fight!)
     case_code_test = [
         [{"start": m.start(), "end": m.end(), "type": "ECHR_CASE_CODE", "score": 0.95, "source": "stage3a"} for m in ECHR_CASE_RX.finditer(d["text"])]
         for d in test_docs
@@ -426,8 +426,8 @@ def main() -> None:
         "stage3aPlusEchrCode": [s3 + cc for s3, cc in zip(stage3a_test, case_code_test)],
         "vanillaGlinerAtOptThr": [[s for s in sp if s["score"] >= thr_all] for sp in gl_test],
         "devFilteredGlinerAtOptThr": [[s for s in sp if s["score"] >= thr_all] for sp in gl_test_filt],
-        "verisieveHybridDevFiltered": [s3 + cc + [s for s in sp if s["score"] >= thr_all] for s3, cc, sp in zip(stage3a_struct_test, case_code_test, gl_test_filt)],
-        "verisieveHybridSrmpWasm": [s3 + cc + g for s3, cc, g in zip(stage3a_struct_test, case_code_test, srmp_by_thr[thr_all])],
+        "versieveHybridDevFiltered": [s3 + cc + [s for s in sp if s["score"] >= thr_all] for s3, cc, sp in zip(stage3a_struct_test, case_code_test, gl_test_filt)],
+        "versieveHybridSrmpWasm": [s3 + cc + g for s3, cc, g in zip(stage3a_struct_test, case_code_test, srmp_by_thr[thr_all])],
         "presidioDefault": pres_def_test,
         "presidioPlusCustomEchrCode": pres_fair_test,
     }
@@ -468,7 +468,7 @@ def main() -> None:
     # 5. Three Non-Circular Ground-Truth LTT Gates on TAB (echr_dev -> held-out echr_test, 1,999 paragraphs)
     print("Running 3 Non-Circular Ground-Truth LTT Gates (Text-Only vs NER-MaxConf vs Detector-Informed Hybrid)...")
     dev_redactor = [s3 + cc + [s for s in sp if s["score"] >= thr_all] for s3, cc, sp in zip(stage3a_struct_dev, case_code_dev, gl_dev_filt)]
-    test_redactor = ablation_preds["verisieveHybridDevFiltered"]
+    test_redactor = ablation_preds["versieveHybridDevFiltered"]
 
     train_paras = extract_tab_paragraphs_with_detector(dev_docs[:60], gl_dev_filt[:60], dev_redactor[:60])
     cal_paras = extract_tab_paragraphs_with_detector(dev_docs[60:], gl_dev_filt[60:], dev_redactor[60:])
@@ -493,8 +493,8 @@ def main() -> None:
         "optThresholds": {"allMaskable": thr_all, "person": thr_per},
         "allMaskableAblation": ablation_scores,
         "allMaskableSignificance": {
-            "hybridDevFilteredVsPresidioFairP": paired_permutation_pvalue(ablation_doc_f1["verisieveHybridDevFiltered"], ablation_doc_f1["presidioPlusCustomEchrCode"]),
-            "hybridDevFilteredVsVanillaGlinerP": paired_permutation_pvalue(ablation_doc_f1["verisieveHybridDevFiltered"], ablation_doc_f1["vanillaGlinerAtOptThr"]),
+            "hybridDevFilteredVsPresidioFairP": paired_permutation_pvalue(ablation_doc_f1["versieveHybridDevFiltered"], ablation_doc_f1["presidioPlusCustomEchrCode"]),
+            "hybridDevFilteredVsVanillaGlinerP": paired_permutation_pvalue(ablation_doc_f1["versieveHybridDevFiltered"], ablation_doc_f1["vanillaGlinerAtOptThr"]),
         },
         "personComparison": per_scores,
         "personSignificance": {

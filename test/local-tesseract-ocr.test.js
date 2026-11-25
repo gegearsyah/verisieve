@@ -71,7 +71,7 @@ test('full-image OCR providers avoid noisy 2D tiling for page-sized images', asy
 });
 
 test('directory ingestion recursively OCRs local images through the configured provider', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-local-ocr-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-local-ocr-'));
   const nested = path.join(root, 'nested');
   fs.mkdirSync(nested);
   fs.writeFileSync(

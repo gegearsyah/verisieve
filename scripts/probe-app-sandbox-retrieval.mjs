@@ -1,7 +1,7 @@
 /**
  * Faithful APP retrieval isolation dump:
  * - extract via matilda-portable extractPdfDetailed (same text-layer path as portable/Rtio)
- * - chunk via verisieve_clean.wasm chunkByTokenWindow (256/24)
+ * - chunk via versieve_clean.wasm chunkByTokenWindow (256/24)
  * - rank via Needle 0.55/0.45 hybrid (sandbox-chat formula, no diversity)
  * - compare full APP folder vs Chapter B only
  */
@@ -24,7 +24,7 @@ const APP_DIR = path.resolve(
 );
 // Founder path is under Downloads, not Innovation Hub sibling
 const APP_DIR_ALT =
-  process.env.VERISIEVE_APP_CORPUS_DIR ||
+  process.env.VERSIEVE_APP_CORPUS_DIR ||
   path.resolve(ROOT, '..', '..', 'Compliance Research', 'APP');
 const OUT_DIR = path.resolve(
   ROOT,
@@ -282,7 +282,7 @@ function main() {
   const payload = {
     task: 'Faithful APP sandbox-ranker isolation (matilda-portable extract + clean.wasm chunk)',
     extractor: 'matilda-portable/src/pdf-parser.js#extractPdfDetailed',
-    chunker: 'verisieve_clean.wasm chunkByTokenWindow maxTokens=256 overlap=24',
+    chunker: 'versieve_clean.wasm chunkByTokenWindow maxTokens=256 overlap=24',
     ranker: '0.55*Needle cosine + 0.45*lexical hit-rate (no diversity)',
     appDir,
     skippedNonPdf: skipped,

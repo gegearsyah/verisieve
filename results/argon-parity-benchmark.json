@@ -19,13 +19,13 @@
     "note": "Ground truth lives only in the fixture generator and scorer; there are no external model calls in this run."
   },
   "pareto": {
-    "totalWasmBytes": 387267,
+    "totalWasmBytes": 388797,
     "perWasmBytes": {
-      "verisieve_clean.wasm": 14633,
-      "verisieve_dl.wasm": 60096,
-      "verisieve_graph.wasm": 54402,
-      "verisieve_media.wasm": 204031,
-      "verisieve_sql.wasm": 54105
+      "versieve_clean.wasm": 14633,
+      "versieve_dl.wasm": 60096,
+      "versieve_graph.wasm": 54402,
+      "versieve_media.wasm": 204031,
+      "versieve_sql.wasm": 55635
     },
     "cloudEgressBytes": 0,
     "egressNote": "Zero network calls by construction: the benchmark, its perception layers and its OCR all run on local assets."
@@ -33,27 +33,27 @@
   "timingMs": {
     "W1": {
       "baselineMs": 0,
-      "versieveMs": 8.9
+      "versieveMs": 6
     },
     "W2": {
       "baselineMs": 0,
-      "versieveMs": 1316.7
+      "versieveMs": 1075.2
     },
     "W3": {
       "baselineMs": 0,
-      "versieveMs": 75.9
+      "versieveMs": 63.3
     },
     "W4": {
       "baselineMs": 0,
-      "versieveMs": 820.1
+      "versieveMs": 657.3
     },
     "W5": {
       "baselineMs": 0,
-      "versieveMs": 12.3
+      "versieveMs": 10.5
     },
     "W6": {
       "baselineMs": 0,
-      "versieveMs": 637.7
+      "versieveMs": 515.1
     }
   },
   "antiCircularity": {
@@ -521,7 +521,7 @@
       }
     },
     "W5": {
-      "title": "Cross-document SQL join (xlsx sheet + PDF vector table) in verisieve_sql.wasm",
+      "title": "Cross-document SQL join (xlsx sheet + PDF vector table) in versieve_sql.wasm",
       "inputs": [
         {
           "name": "sheets/shipments.xlsx",
@@ -636,7 +636,7 @@
             "error": null
           }
         ],
-        "kernelNote": "verisieve_sql.wasm loads a single table; the perceived sheet and PDF rows are unioned into one kernel table and joined via aliased INNER equi-join inside the kernel."
+        "kernelNote": "versieve_sql.wasm loads a single table; the perceived sheet and PDF rows are unioned into one kernel table and joined via aliased INNER equi-join inside the kernel."
       },
       "antiCircularity": {
         "present": true,
@@ -834,8 +834,8 @@
     }
   ],
   "deviations": [
-    "vs_media_invert_chart_series / vs_media_segment_layout_regions are not compiled into verisieve_media.wasm yet; W2 pixel inversion and diagram detection run as deterministic JS perception layers in the harness (measured, published as-is).",
-    "verisieve_sql.wasm loads a single table (cross-table JOIN fails closed); W5 unions the perceived xlsx + PDF rows into one kernel table and uses an aliased INNER equi-join inside the kernel.",
+    "vs_media_invert_chart_series / vs_media_segment_layout_regions are not compiled into versieve_media.wasm yet; W2 pixel inversion and diagram detection run as deterministic JS perception layers in the harness (measured, published as-is).",
+    "versieve_sql.wasm loads a single table (cross-table JOIN fails closed); W5 unions the perceived xlsx + PDF rows into one kernel table and uses an aliased INNER equi-join inside the kernel.",
     "W4 representation is keyframes (PNG) + WAV + VTT only; there is no mp4-decode claim anywhere.",
     "ASR is a fail-closed external, so the WAV perception paths receive word-timestamp lists generated from the same transcript text the engine is given (never from GT labels).",
     "The Flat-Text/OCR baseline cannot express chart RelErr, diagram F1, SQL aggregations, diarization or multi-hop bindings; those baseline cells use the documented convention values 0 or 100 recorded beside each metric.",

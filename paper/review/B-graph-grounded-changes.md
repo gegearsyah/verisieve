@@ -1,4 +1,4 @@
-# Change log: Paper B (verisieve-graph-grounded-enterprise-corpus)
+# Change log: Paper B (versieve-graph-grounded-enterprise-corpus)
 
 Major Revision, executed per `review/EDITOR-RULINGS.md` section 9 (B1-B12). Build verified: `latexmk -pdf -interaction=nonstopmode -f` exits 0 on two consecutive runs, no undefined references or citations, no overfull hboxes. Page count: 11 (unchanged). All `---` removed from the .tex and the .bib (grep returns zero), including the GDPR entry, which now reads `Article 17: Right to Erasure`.
 
@@ -53,7 +53,7 @@ New: "The recipe is sealed, meaning fixed before the head-to-head ran, from a pr
 
 ## 7. Artifact availability (B6, M3)
 
-New paragraph appended to the measurement setup (Section 5), verbatim per ruling, with the repository URL `https://github.com/gegearsyah/verisieve`. No commit hash, kernel hash, or identifier is invented; see Unresolved.
+New paragraph appended to the measurement setup (Section 5), verbatim per ruling, with the repository URL `https://github.com/gegearsyah/versieve`. No commit hash, kernel hash, or identifier is invented; see Unresolved.
 
 ## 8. Bound convention (B7, M4)
 

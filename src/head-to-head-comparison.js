@@ -1,12 +1,12 @@
 /**
  * src/head-to-head-comparison.js
  * 
- * VeriSieve 5-Test Head-to-Head Baseline Comparison Suite
+ * Versieve 5-Test Head-to-Head Baseline Comparison Suite
  * Compares 4 concrete pipelines on 100% real clinical & technical data:
- *   - Pipeline A: raw_no_verisieve ("Without VeriSieve / Raw pdftotext + OCR Dump")
+ *   - Pipeline A: raw_no_versieve ("Without Versieve / Raw pdftotext + OCR Dump")
  *   - Pipeline B: naive_regex_only ("Standard Regex Scrubber / Presidio-Lite Baseline")
  *   - Pipeline C: uncalibrated_heuristic ("Fixed 0.5 Threshold Classifier without LTT")
- *   - Pipeline D: verisieve_full ("Full VeriSieve: Context-Aware Dual PII + 2D-Tiled OCR + LTT Conformal Gate + 60KB WASM BitNet/VeRA")
+ *   - Pipeline D: versieve_full ("Full Versieve: Context-Aware Dual PII + 2D-Tiled OCR + LTT Conformal Gate + 60KB WASM BitNet/VeRA")
  */
 
 import fs from 'node:fs';
@@ -29,7 +29,7 @@ import {
   searchNeedleWasm,
   embedNeedleWasm,
   loadExtractedDatasets,
-  getVerisieveDlInstanceSync
+  getVersieveDlInstanceSync
 } from './wasm-needle-dl.js';
 import { generateMultiFontDocument } from './multi-font-fixture.js';
 
@@ -130,7 +130,7 @@ export function runTest1ScientificCorruption() {
   const totalSafe = TEST1_DOMAIN_SENTENCES.length;
   const totalNames = TEST1_REAL_NAME_SENTENCES.length;
 
-  // Pipeline A: raw_no_verisieve
+  // Pipeline A: raw_no_versieve
   const pipeA_corrupted = 0;
   const pipeA_namesCaught = 0;
 
@@ -166,7 +166,7 @@ export function runTest1ScientificCorruption() {
     }
   }
 
-  // Pipeline D: verisieve_full (Context-Aware PII + Exclusions + LTT)
+  // Pipeline D: versieve_full (Context-Aware PII + Exclusions + LTT)
   let pipeD_corrupted = 0;
   for (const s of TEST1_DOMAIN_SENTENCES) {
     const hits = scanRecordsForPII(s);
@@ -187,7 +187,7 @@ export function runTest1ScientificCorruption() {
     total_safe_sentences: totalSafe,
     total_person_name_sentences: totalNames,
     results: {
-      raw_no_verisieve: {
+      raw_no_versieve: {
         false_positive_corrupted_count: pipeA_corrupted,
         false_positive_corruption_rate_pct: 0.0,
         real_names_caught_count: pipeA_namesCaught,
@@ -208,7 +208,7 @@ export function runTest1ScientificCorruption() {
         real_name_recall_pct: Number(((pipeC_namesCaught / totalNames) * 100).toFixed(1)),
         summary: "0.0% false corruption with context-aware scanner, but lacks conformal error bounds"
       },
-      verisieve_full: {
+      versieve_full: {
         false_positive_corrupted_count: pipeD_corrupted,
         false_positive_corruption_rate_pct: Number(((pipeD_corrupted / totalSafe) * 100).toFixed(1)),
         real_names_caught_count: pipeD_namesCaught,
@@ -334,7 +334,7 @@ export function runTest2NoisyOcrHazardLeakage() {
     test_name: "Test 2 — Noisy OCR / Garbled Scan Hazard Leakage Rate (%)",
     total_noisy_chunks: total,
     results: {
-      raw_no_verisieve: {
+      raw_no_versieve: {
         hazardous_leaked_count: pipeA_leaked,
         hazard_leakage_rate_pct: 100.0,
         summary: "100.0% hazard leak: All garbled OCR scans, faxes, and noisy headers enter training corpus"
@@ -349,7 +349,7 @@ export function runTest2NoisyOcrHazardLeakage() {
         hazard_leakage_rate_pct: pipeC_rate,
         summary: `${pipeC_rate}% hazard leak: Fixed 0.5 threshold lacks conformal calibration, letting borderline noisy scans slip into KEEP_SAFE`
       },
-      verisieve_full: {
+      versieve_full: {
         hazardous_leaked_count: pipeD_leaked,
         hazard_leakage_rate_pct: pipeD_rate,
         ltt_certified: lttBundle.calibration.certified,
@@ -417,7 +417,7 @@ export function runTest3MultimodalPixelExposure() {
     test_name: "Test 3 — Multimodal VLM Image Pixel PII Exposure Rate (%)",
     total_visual_pii_boxes: totalBboxes,
     results: {
-      raw_no_verisieve: {
+      raw_no_versieve: {
         exposed_pixel_boxes_count: exposedRaw,
         pixel_exposure_rate_pct: rawRate,
         summary: `${rawRate}% pixel exposure: Verified ${exposedRaw}/${totalBboxes} raw image PII regions readable by VLM`
@@ -432,7 +432,7 @@ export function runTest3MultimodalPixelExposure() {
         pixel_exposure_rate_pct: rawRate,
         summary: `${rawRate}% pixel exposure: Without synchronized bounding-box RGB blackout, VLM sees raw pixels`
       },
-      verisieve_full: {
+      versieve_full: {
         exposed_pixel_boxes_count: exposedAfterDual,
         pixel_exposure_rate_pct: dualRate,
         summary: `${dualRate}% pixel exposure: Real RGB [18, 18, 22] bounding-box blackout verified across all ${totalBboxes} regions`
@@ -540,7 +540,7 @@ export function runTest4HeldOutFalseAlarmRate() {
     total_heldout_negatives: n0,
     target_alpha_budget_pct: 5.0,
     results: {
-      raw_no_verisieve: {
+      raw_no_versieve: {
         false_alarms_count: pipeA_fp,
         empirical_fpr_pct: pipeA_fpr,
         satisfies_alpha_budget: false,
@@ -558,7 +558,7 @@ export function runTest4HeldOutFalseAlarmRate() {
         satisfies_alpha_budget: false,
         summary: `${pipeC_fpr}% false alarm rate: Fixed 0.5 threshold lacks conformal guarantee`
       },
-      verisieve_full: {
+      versieve_full: {
         false_alarms_count: pipeD_fp,
         empirical_fpr_pct: pipeD_fpr,
         satisfies_alpha_budget: satisfies,
@@ -576,7 +576,7 @@ export function runTest4HeldOutFalseAlarmRate() {
 export function runTest5WasmRetrievalPurityAndLoss() {
   const tables = loadExtractedDatasets();
   const allRows = tables.raw_extracted_documents;
-  const safeRows = tables.verisieve_certified_tokens;
+  const safeRows = tables.versieve_certified_tokens;
 
   // Build real Naive Regex shard & real Uncalibrated 0.5 threshold shard
   const rawDocs = allRows.map(r => r.raw_excerpt || r.masked_text || r.text || '');
@@ -603,7 +603,7 @@ export function runTest5WasmRetrievalPurityAndLoss() {
   const safePurityPct = purityOf(safeHits);
 
   // Pure WASM VeRA validation loss on REAL embedNeedleWasm embeddings of each pipeline's shard
-  const inst = getVerisieveDlInstanceSync();
+  const inst = getVersieveDlInstanceSync();
   const exp = inst.exports;
   const dim = 64, dModel = 16, nLayers = 2, rank = 4;
 
@@ -680,7 +680,7 @@ export function runTest5WasmRetrievalPurityAndLoss() {
     test_name: "Test 5 — Downstream WASM Needle Retrieval Purity (%) & WASM BitNet/VeRA Loss",
     benchmark_query: query,
     results: {
-      raw_no_verisieve: {
+      raw_no_versieve: {
         top3_retrieval_purity_pct: rawPurityPct,
         wasm_val_loss: lossA.valLoss,
         wasm_val_perplexity: lossA.perplexity,
@@ -699,7 +699,7 @@ export function runTest5WasmRetrievalPurityAndLoss() {
         wasm_val_perplexity: lossC.perplexity,
         summary: `Purity ${uncalPurityPct}%; Perplexity ${lossC.perplexity}`
       },
-      verisieve_full: {
+      versieve_full: {
         top3_retrieval_purity_pct: safePurityPct,
         wasm_val_loss: lossD.valLoss,
         wasm_val_perplexity: lossD.perplexity,
@@ -725,11 +725,11 @@ export function runHeadToHeadComparison(options = {}) {
 
   const report = {
     schema_version: "1.0",
-    pipeline_comparison: "With VeriSieve vs. What Is Currently Available Without VeriSieve",
+    pipeline_comparison: "With Versieve vs. What Is Currently Available Without Versieve",
     timestamp,
     pipelines: {
-      raw_no_verisieve: {
-        name: "Without VeriSieve (Raw pdftotext / OCR Dump)",
+      raw_no_versieve: {
+        name: "Without Versieve (Raw pdftotext / OCR Dump)",
         description: "Zero PII scrubbing, no OCR confidence gating, no LTT calibration, no pixel redaction"
       },
       naive_regex_only: {
@@ -740,8 +740,8 @@ export function runHeadToHeadComparison(options = {}) {
         name: "Uncalibrated 0.5 Threshold Classifier",
         description: "Fixed 0.5 probability cutoff without LTT finite-sample guarantees, no abstention zone"
       },
-      verisieve_full: {
-        name: "Full VeriSieve Pipeline",
+      versieve_full: {
+        name: "Full Versieve Pipeline",
         description: "Context-aware PII + 2D-tiled OCR + LTT 3-way Conformal Gate + 60KB WASM BitNet/VeRA"
       }
     },
@@ -761,13 +761,13 @@ export function runHeadToHeadComparison(options = {}) {
         "WASM Retrieval Purity (%)",
         "WASM Validation Perplexity"
       ],
-      raw_no_verisieve: [
-        test1.results.raw_no_verisieve.false_positive_corruption_rate_pct,
-        test2.results.raw_no_verisieve.hazard_leakage_rate_pct,
-        test3.results.raw_no_verisieve.pixel_exposure_rate_pct,
-        test4.results.raw_no_verisieve.empirical_fpr_pct,
-        test5.results.raw_no_verisieve.top3_retrieval_purity_pct,
-        test5.results.raw_no_verisieve.wasm_val_perplexity
+      raw_no_versieve: [
+        test1.results.raw_no_versieve.false_positive_corruption_rate_pct,
+        test2.results.raw_no_versieve.hazard_leakage_rate_pct,
+        test3.results.raw_no_versieve.pixel_exposure_rate_pct,
+        test4.results.raw_no_versieve.empirical_fpr_pct,
+        test5.results.raw_no_versieve.top3_retrieval_purity_pct,
+        test5.results.raw_no_versieve.wasm_val_perplexity
       ],
       naive_regex_only: [
         test1.results.naive_regex_only.false_positive_corruption_rate_pct,
@@ -785,13 +785,13 @@ export function runHeadToHeadComparison(options = {}) {
         test5.results.uncalibrated_heuristic.top3_retrieval_purity_pct,
         test5.results.uncalibrated_heuristic.wasm_val_perplexity
       ],
-      verisieve_full: [
-        test1.results.verisieve_full.false_positive_corruption_rate_pct,
-        test2.results.verisieve_full.hazard_leakage_rate_pct,
-        test3.results.verisieve_full.pixel_exposure_rate_pct,
-        test4.results.verisieve_full.empirical_fpr_pct,
-        test5.results.verisieve_full.top3_retrieval_purity_pct,
-        test5.results.verisieve_full.wasm_val_perplexity
+      versieve_full: [
+        test1.results.versieve_full.false_positive_corruption_rate_pct,
+        test2.results.versieve_full.hazard_leakage_rate_pct,
+        test3.results.versieve_full.pixel_exposure_rate_pct,
+        test4.results.versieve_full.empirical_fpr_pct,
+        test5.results.versieve_full.top3_retrieval_purity_pct,
+        test5.results.versieve_full.wasm_val_perplexity
       ]
     }
   };
@@ -840,8 +840,8 @@ export function generateHeadToHeadComparisonSvg(report) {
 
   const body = [];
   body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
-  body.push(txt(32, 28, "VeriSieve Head-to-Head Comparison Suite (Measured Empirical Audit)", { size: 13, weight: 'bold', fill: INK }));
-  body.push(txt(32, 44, "Raw Unfiltered vs. Naive Regex Scrubber vs. Uncalibrated Gatekeeper vs. VeriSieve Full", { size: 10, fill: MUT }));
+  body.push(txt(32, 28, "Versieve Head-to-Head Comparison Suite (Measured Empirical Audit)", { size: 13, weight: 'bold', fill: INK }));
+  body.push(txt(32, 44, "Raw Unfiltered vs. Naive Regex Scrubber vs. Uncalibrated Gatekeeper vs. Versieve Full", { size: 10, fill: MUT }));
 
   // Panel 1: Scientific FP Corruption Rate (%) (x: 50..340, y: 70..240)
   {
@@ -857,10 +857,10 @@ export function generateHeadToHeadComparisonSvg(report) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const bars = [
-      ['Raw', t1.raw_no_verisieve.false_positive_corruption_rate_pct, GRAY],
+      ['Raw', t1.raw_no_versieve.false_positive_corruption_rate_pct, GRAY],
       ['Naive Regex', t1.naive_regex_only.false_positive_corruption_rate_pct, ORANGE],
       ['Uncalibrated', t1.uncalibrated_heuristic.false_positive_corruption_rate_pct, GRAY],
-      ['VeriSieve', t1.verisieve_full.false_positive_corruption_rate_pct, BLUE]
+      ['Versieve', t1.versieve_full.false_positive_corruption_rate_pct, BLUE]
     ];
     const bw = 24, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {
@@ -886,10 +886,10 @@ export function generateHeadToHeadComparisonSvg(report) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const bars = [
-      ['Raw', t2.raw_no_verisieve.hazard_leakage_rate_pct, ORANGE],
+      ['Raw', t2.raw_no_versieve.hazard_leakage_rate_pct, ORANGE],
       ['Naive Regex', t2.naive_regex_only.hazard_leakage_rate_pct, ORANGE],
       ['Uncalibrated', t2.uncalibrated_heuristic.hazard_leakage_rate_pct, GRAY],
-      ['VeriSieve', t2.verisieve_full.hazard_leakage_rate_pct, BLUE]
+      ['Versieve', t2.versieve_full.hazard_leakage_rate_pct, BLUE]
     ];
     const bw = 24, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {
@@ -915,10 +915,10 @@ export function generateHeadToHeadComparisonSvg(report) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const bars = [
-      ['Raw', t3.raw_no_verisieve.pixel_exposure_rate_pct, ORANGE],
+      ['Raw', t3.raw_no_versieve.pixel_exposure_rate_pct, ORANGE],
       ['Text-Only', t3.naive_regex_only.pixel_exposure_rate_pct, ORANGE],
       ['Uncalibrated', t3.uncalibrated_heuristic.pixel_exposure_rate_pct, ORANGE],
-      ['Dual Redact', t3.verisieve_full.pixel_exposure_rate_pct, BLUE]
+      ['Dual Redact', t3.versieve_full.pixel_exposure_rate_pct, BLUE]
     ];
     const bw = 24, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {
@@ -944,10 +944,10 @@ export function generateHeadToHeadComparisonSvg(report) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const bars = [
-      ['Raw (No Gate)', t4.raw_no_verisieve.empirical_fpr_pct, ORANGE],
+      ['Raw (No Gate)', t4.raw_no_versieve.empirical_fpr_pct, ORANGE],
       ['Naive Regex', t4.naive_regex_only.empirical_fpr_pct, ORANGE],
       ['Uncal (τ=0.50)', t4.uncalibrated_heuristic.empirical_fpr_pct, ORANGE],
-      ['LTT (α=0.05)', t4.verisieve_full.empirical_fpr_pct, BLUE]
+      ['LTT (α=0.05)', t4.versieve_full.empirical_fpr_pct, BLUE]
     ];
     const bw = 24, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {

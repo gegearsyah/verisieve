@@ -1,0 +1,16 @@
+[package]
+name = "versieve-sql"
+version = "0.1.0"
+edition = "2021"
+description = "Compact zero-import no_std Rust WebAssembly tabular SQL subset engine (SELECT, WHERE, GROUP BY, aggregates, ORDER BY, LIMIT)."
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

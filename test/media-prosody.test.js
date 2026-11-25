@@ -1,5 +1,5 @@
 /**
- * External-behavior tests for the verisieve_media prosody kernel (Stage 9):
+ * External-behavior tests for the versieve_media prosody kernel (Stage 9):
  * per-VAD-segment F0/RMS/ZCR/wpm + speaker-clustering-lite, over the shipped wasm.
  * The wasm sees only WAV bytes; speaker labels exist only in these fixtures.
  */
@@ -100,7 +100,7 @@ test('prosody: invalid WAV surfaces a kernel error through the wrapper', () => {
 test('media wasm invariants hold (zero imports, ABI 1, prosody export present)', async () => {
   const fs = await import('node:fs');
   const path = await import('node:path');
-  const wasmPath = path.resolve('vendor/wasm/verisieve_media.wasm');
+  const wasmPath = path.resolve('vendor/wasm/versieve_media.wasm');
   const mod = new WebAssembly.Module(fs.readFileSync(wasmPath));
   assert.equal(WebAssembly.Module.imports(mod).length, 0);
   const names = WebAssembly.Module.exports(mod).map((e) => e.name);

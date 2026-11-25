@@ -1,5 +1,5 @@
 /**
- * Zero-dependency Deep Enterprise Multimodal Parsers powered by `verisieve_media.wasm` (ABI v1).
+ * Zero-dependency Deep Enterprise Multimodal Parsers powered by `versieve_media.wasm` (ABI v1).
  *
  * Covers every enterprise unstructured data family + hidden forensic leak vectors:
  * - Email & Contacts: `.eml`, `.mbox`, `.msg` (CFBF/OLE2 via WASM), `.vcf`
@@ -499,7 +499,7 @@ export function parseMsgBuffer(source, buf, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Hardened Office & OpenDocument Suite (via `verisieve_media.wasm` ZIP CD)
+// 2. Hardened Office & OpenDocument Suite (via `versieve_media.wasm` ZIP CD)
 // ---------------------------------------------------------------------------
 
 function readZipXmlMap(buf, options = {}) {

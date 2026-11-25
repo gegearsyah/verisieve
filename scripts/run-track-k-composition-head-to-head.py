@@ -63,7 +63,7 @@ RECEIPTS_PATH = RESULTS_DIR / "track-k-arm-receipts.json"
 PPR_CONTEXTS_PATH = RESULTS_DIR / "track-k-arm-ppr-contexts.json"
 CANARIES_PATH = Path(
     os.environ.get(
-        "VERISIEVE_CANARIES_JSON",
+        "VERSIEVE_CANARIES_JSON",
         str(REPO.parent / "Rtio" / "experiments" / "lora-e2e" / "data" / "canaries.json"),
     )
 )

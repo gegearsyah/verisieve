@@ -1,10 +1,10 @@
-import { getVerisieveDlInstanceSync } from '../src/wasm-needle-dl.js';
+import { getVersieveDlInstanceSync } from '../src/wasm-needle-dl.js';
 
 const n = parseInt(process.argv[2] || '1207', 10);
 const passes = parseInt(process.argv[3] || '200', 10);
 
 const t0 = performance.now();
-const inst = getVerisieveDlInstanceSync();
+const inst = getVersieveDlInstanceSync();
 const exp = inst.exports;
 const inProcessWasmInitMs = Number((performance.now() - t0).toFixed(3));
 

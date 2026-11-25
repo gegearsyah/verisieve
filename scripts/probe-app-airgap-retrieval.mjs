@@ -2,7 +2,7 @@
  * Follow-up research probe (no LLM):
  * 1) Shortlist-K sweep: at what K does gold enter under sandbox hybrid?
  * 2) Air-gap expansions: legal synonym multi-query, BM25, RRF fuse, light RM3-style
- * Uses matilda-portable extractPdfDetailed + verisieve_clean.wasm chunking.
+ * Uses matilda-portable extractPdfDetailed + versieve_clean.wasm chunking.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,7 +16,7 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APP_DIR =
-  process.env.VERISIEVE_APP_CORPUS_DIR ||
+  process.env.VERSIEVE_APP_CORPUS_DIR ||
   path.resolve(ROOT, '..', '..', 'Compliance Research', 'APP');
 const OUT_DIR = path.resolve(
   ROOT,
@@ -411,7 +411,7 @@ function main() {
 
   const payload = {
     task: 'APP air-gap expansion + shortlist-K sweep (no LLM calls)',
-    stack: 'extractPdfDetailed + verisieve_clean chunkByTokenWindow + Needle hybrid/BM25/RRF/RM3-lite',
+    stack: 'extractPdfDetailed + versieve_clean chunkByTokenWindow + Needle hybrid/BM25/RRF/RM3-lite',
     originalQuery: ORIGINAL,
     full,
     chapter,
@@ -424,7 +424,7 @@ function main() {
   const md = [];
   md.push('# APP air-gap retrieval + shortlist-K probe (no LLM)');
   md.push('');
-  md.push('Stack: `extractPdfDetailed` + `verisieve_clean.wasm` chunk + Needle/BM25/RRF/RM3-lite.');
+  md.push('Stack: `extractPdfDetailed` + `versieve_clean.wasm` chunk + Needle/BM25/RRF/RM3-lite.');
   md.push('');
   for (const run of [full, chapter]) {
     md.push(`## ${run.label} (${run.chunkCount} chunks, ${run.goldChunkCount} gold)`);

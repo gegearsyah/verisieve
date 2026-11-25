@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "pipeline_comparison": "With VeriSieve vs. What Is Currently Available Without VeriSieve",
+  "pipeline_comparison": "With Versieve vs. What Is Currently Available Without Versieve",
   "timestamp": "2026-11-15T00:00:00.000Z",
   "pipelines": {
-    "raw_no_verisieve": {
-      "name": "Without VeriSieve (Raw pdftotext / OCR Dump)",
+    "raw_no_versieve": {
+      "name": "Without Versieve (Raw pdftotext / OCR Dump)",
       "description": "Zero PII scrubbing, no OCR confidence gating, no LTT calibration, no pixel redaction"
     },
     "naive_regex_only": {
@@ -15,8 +15,8 @@
       "name": "Uncalibrated 0.5 Threshold Classifier",
       "description": "Fixed 0.5 probability cutoff without LTT finite-sample guarantees, no abstention zone"
     },
-    "verisieve_full": {
-      "name": "Full VeriSieve Pipeline",
+    "versieve_full": {
+      "name": "Full Versieve Pipeline",
       "description": "Context-aware PII + 2D-tiled OCR + LTT 3-way Conformal Gate + 60KB WASM BitNet/VeRA"
     }
   },
@@ -26,7 +26,7 @@
       "total_safe_sentences": 25,
       "total_person_name_sentences": 10,
       "results": {
-        "raw_no_verisieve": {
+        "raw_no_versieve": {
           "false_positive_corrupted_count": 0,
           "false_positive_corruption_rate_pct": 0,
           "real_names_caught_count": 0,
@@ -47,7 +47,7 @@
           "real_name_recall_pct": 100,
           "summary": "0.0% false corruption with context-aware scanner, but lacks conformal error bounds"
         },
-        "verisieve_full": {
+        "versieve_full": {
           "false_positive_corrupted_count": 0,
           "false_positive_corruption_rate_pct": 0,
           "real_names_caught_count": 10,
@@ -60,7 +60,7 @@
       "test_name": "Test 2 — Noisy OCR / Garbled Scan Hazard Leakage Rate (%)",
       "total_noisy_chunks": 12,
       "results": {
-        "raw_no_verisieve": {
+        "raw_no_versieve": {
           "hazardous_leaked_count": 12,
           "hazard_leakage_rate_pct": 100,
           "summary": "100.0% hazard leak: All garbled OCR scans, faxes, and noisy headers enter training corpus"
@@ -75,7 +75,7 @@
           "hazard_leakage_rate_pct": 25,
           "summary": "25% hazard leak: Fixed 0.5 threshold lacks conformal calibration, letting borderline noisy scans slip into KEEP_SAFE"
         },
-        "verisieve_full": {
+        "versieve_full": {
           "hazardous_leaked_count": 0,
           "hazard_leakage_rate_pct": 0,
           "ltt_certified": true,
@@ -88,7 +88,7 @@
       "test_name": "Test 3 — Multimodal VLM Image Pixel PII Exposure Rate (%)",
       "total_visual_pii_boxes": 10,
       "results": {
-        "raw_no_verisieve": {
+        "raw_no_versieve": {
           "exposed_pixel_boxes_count": 10,
           "pixel_exposure_rate_pct": 100,
           "summary": "100% pixel exposure: Verified 10/10 raw image PII regions readable by VLM"
@@ -103,7 +103,7 @@
           "pixel_exposure_rate_pct": 100,
           "summary": "100% pixel exposure: Without synchronized bounding-box RGB blackout, VLM sees raw pixels"
         },
-        "verisieve_full": {
+        "versieve_full": {
           "exposed_pixel_boxes_count": 0,
           "pixel_exposure_rate_pct": 0,
           "summary": "0% pixel exposure: Real RGB [18, 18, 22] bounding-box blackout verified across all 10 regions"
@@ -115,7 +115,7 @@
       "total_heldout_negatives": 60,
       "target_alpha_budget_pct": 5,
       "results": {
-        "raw_no_verisieve": {
+        "raw_no_versieve": {
           "false_alarms_count": 60,
           "empirical_fpr_pct": 100,
           "satisfies_alpha_budget": false,
@@ -133,7 +133,7 @@
           "satisfies_alpha_budget": false,
           "summary": "58.3% false alarm rate: Fixed 0.5 threshold lacks conformal guarantee"
         },
-        "verisieve_full": {
+        "versieve_full": {
           "false_alarms_count": 0,
           "empirical_fpr_pct": 0,
           "satisfies_alpha_budget": true,
@@ -146,7 +146,7 @@
       "test_name": "Test 5 — Downstream WASM Needle Retrieval Purity (%) & WASM BitNet/VeRA Loss",
       "benchmark_query": "transmission cover sheet elderly patient recovery status",
       "results": {
-        "raw_no_verisieve": {
+        "raw_no_versieve": {
           "top3_retrieval_purity_pct": 33.3,
           "wasm_val_loss": 1.5319,
           "wasm_val_perplexity": 4.63,
@@ -178,7 +178,7 @@
           "wasm_val_perplexity": 1.82,
           "summary": "Purity 66.7%; Perplexity 1.82"
         },
-        "verisieve_full": {
+        "versieve_full": {
           "top3_retrieval_purity_pct": 100,
           "wasm_val_loss": 0.0064,
           "wasm_val_perplexity": 1.01,
@@ -210,7 +210,7 @@
       "WASM Retrieval Purity (%)",
       "WASM Validation Perplexity"
     ],
-    "raw_no_verisieve": [
+    "raw_no_versieve": [
       0,
       100,
       100,
@@ -234,7 +234,7 @@
       66.7,
       1.82
     ],
-    "verisieve_full": [
+    "versieve_full": [
       0,
       0,
       0,

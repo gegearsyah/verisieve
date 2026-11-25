@@ -7,9 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PKG_ROOT = path.resolve(__dirname, '..');
 
-export const VERISIEVE_SQL_WASM_PATH = path.join(PKG_ROOT, 'vendor', 'wasm', 'verisieve_sql.wasm');
-export const VERISIEVE_SQL_PROVENANCE_PATH = path.join(PKG_ROOT, 'vendor', 'wasm', 'verisieve_sql.provenance.json');
-export const MAX_VERISIEVE_SQL_BYTES = 500_000;
+export const VERSIEVE_SQL_WASM_PATH = path.join(PKG_ROOT, 'vendor', 'wasm', 'versieve_sql.wasm');
+export const VERSIEVE_SQL_PROVENANCE_PATH = path.join(PKG_ROOT, 'vendor', 'wasm', 'versieve_sql.provenance.json');
+export const MAX_VERSIEVE_SQL_BYTES = 500_000;
 
 const EXPECTED_SQL_EXPORTS = [
   'memory',
@@ -46,7 +46,7 @@ const TAG_STR = 3;
 
 const sqlInstanceCache = new Map();
 
-function resolveWasmPath(wasmPath = VERISIEVE_SQL_WASM_PATH) {
+function resolveWasmPath(wasmPath = VERSIEVE_SQL_WASM_PATH) {
   return path.isAbsolute(wasmPath) ? wasmPath : path.resolve(process.cwd(), wasmPath);
 }
 
@@ -55,13 +55,13 @@ function hashLfFile(filePath) {
   return crypto.createHash('sha256').update(Buffer.from(raw, 'utf8')).digest('hex').toUpperCase();
 }
 
-export function getVerisieveSqlInstanceSync(wasmPath = VERISIEVE_SQL_WASM_PATH) {
+export function getVersieveSqlInstanceSync(wasmPath = VERSIEVE_SQL_WASM_PATH) {
   const fullPath = resolveWasmPath(wasmPath);
   if (sqlInstanceCache.has(fullPath)) {
     return sqlInstanceCache.get(fullPath);
   }
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`verisieve_sql.wasm not found at ${fullPath}`);
+    throw new Error(`versieve_sql.wasm not found at ${fullPath}`);
   }
   const bytes = fs.readFileSync(fullPath);
   const mod = new WebAssembly.Module(bytes);
@@ -70,13 +70,13 @@ export function getVerisieveSqlInstanceSync(wasmPath = VERISIEVE_SQL_WASM_PATH) 
   return inst;
 }
 
-export async function auditVerisieveSqlWasm(wasmPath = VERISIEVE_SQL_WASM_PATH) {
+export async function auditVersieveSqlWasm(wasmPath = VERSIEVE_SQL_WASM_PATH) {
   const fullPath = resolveWasmPath(wasmPath);
   if (!fs.existsSync(fullPath)) {
     return {
       ok: false,
       zeroEgressVerified: false,
-      error: `verisieve_sql.wasm not found at ${fullPath}`,
+      error: `versieve_sql.wasm not found at ${fullPath}`,
     };
   }
   const bytes = fs.readFileSync(fullPath);
@@ -92,7 +92,7 @@ export async function auditVerisieveSqlWasm(wasmPath = VERISIEVE_SQL_WASM_PATH) 
       byteLength: bytes.length,
       importCount: imports.length,
       imports,
-      error: `Non-zero imports detected (${imports.length}) in verisieve_sql.wasm`,
+      error: `Non-zero imports detected (${imports.length}) in versieve_sql.wasm`,
     };
   }
 
@@ -102,9 +102,9 @@ export async function auditVerisieveSqlWasm(wasmPath = VERISIEVE_SQL_WASM_PATH) 
   const missingExports = EXPECTED_SQL_EXPORTS.filter((n) => !exportsList.includes(n));
 
   let provenance = null;
-  if (fs.existsSync(VERISIEVE_SQL_PROVENANCE_PATH)) {
-    const prov = JSON.parse(fs.readFileSync(VERISIEVE_SQL_PROVENANCE_PATH, 'utf8'));
-    const crateDir = path.join(PKG_ROOT, prov.sourceCrate || 'rust/verisieve-sql');
+  if (fs.existsSync(VERSIEVE_SQL_PROVENANCE_PATH)) {
+    const prov = JSON.parse(fs.readFileSync(VERSIEVE_SQL_PROVENANCE_PATH, 'utf8'));
+    const crateDir = path.join(PKG_ROOT, prov.sourceCrate || 'rust/versieve-sql');
     let sourceSha256Verified = Boolean(prov.sourceFilesSha256);
     if (sourceSha256Verified) {
       for (const [rel, expected] of Object.entries(prov.sourceFilesSha256)) {
@@ -122,7 +122,7 @@ export async function auditVerisieveSqlWasm(wasmPath = VERISIEVE_SQL_WASM_PATH) 
     };
   }
 
-  const withinSizeCeiling = bytes.length <= MAX_VERISIEVE_SQL_BYTES;
+  const withinSizeCeiling = bytes.length <= MAX_VERSIEVE_SQL_BYTES;
   const provenanceOk = !provenance || (provenance.wasmSha256Match && provenance.sourceSha256Verified);
   const ok =
     imports.length === 0 &&
@@ -136,7 +136,7 @@ export async function auditVerisieveSqlWasm(wasmPath = VERISIEVE_SQL_WASM_PATH) 
     zeroEgressVerified: ok,
     wasmPath: fullPath,
     byteLength: bytes.length,
-    maxBytes: MAX_VERISIEVE_SQL_BYTES,
+    maxBytes: MAX_VERSIEVE_SQL_BYTES,
     withinSizeCeiling,
     sha256,
     abiVersion,
@@ -273,13 +273,13 @@ export function executeSqlWasm(sql, options = {}) {
   if (typeof sql !== 'string') {
     throw new Error('SQL_SYNTAX_ERROR: query must be a string');
   }
-  const { tables, wasmPath = VERISIEVE_SQL_WASM_PATH } = options;
+  const { tables, wasmPath = VERSIEVE_SQL_WASM_PATH } = options;
   const t0 = performance.now();
 
-  const inst = getVerisieveSqlInstanceSync(wasmPath);
+  const inst = getVersieveSqlInstanceSync(wasmPath);
   const exp = inst.exports;
   if (exp.vs_sql_abi_version() !== 1) {
-    throw new Error('WASM_ABI_MISMATCH: expected verisieve_sql ABI v1');
+    throw new Error('WASM_ABI_MISMATCH: expected versieve_sql ABI v1');
   }
 
   const sqlBytes = Buffer.from(sql, 'utf8');
@@ -336,7 +336,7 @@ export function executeSqlWasm(sql, options = {}) {
 
   return {
     ok: true,
-    engine: 'VeriSieve WASM SQL Subset v1 (verisieve_sql.wasm)',
+    engine: 'Versieve WASM SQL Subset v1 (versieve_sql.wasm)',
     sql_subset: true,
     columns,
     rows,
@@ -875,7 +875,7 @@ export function executeSqlSubsetFallback(sql, options = {}) {
   const elapsedMs = Math.round((performance.now() - t0) * 100) / 100;
   return {
     ok: true,
-    engine: 'VeriSieve JS SQL Subset Fallback v1 (Strict AST)',
+    engine: 'Versieve JS SQL Subset Fallback v1 (Strict AST)',
     sql_subset: true,
     columns,
     rows: outRows,

@@ -5,7 +5,7 @@ import path from 'node:path';
 import * as wasmNeedleDl from '../src/wasm-needle-dl.js';
 
 const {
-  auditVerisieveDlWasm,
+  auditVersieveDlWasm,
   inspectLocalOpenWeightPath,
   trainWasmSmallModel,
   chatWithTrainedModelsWasm,
@@ -86,17 +86,17 @@ function buildNovelAstrophysicsRows() {
   ];
 }
 
-test('T6: verisieve_dl.wasm provenance links to rust/verisieve-dl & MLE/core-dl and removes hardcoded D:/Ollama paths', async () => {
-  const audit = await auditVerisieveDlWasm();
+test('T6: versieve_dl.wasm provenance links to rust/versieve-dl & MLE/core-dl and removes hardcoded D:/Ollama paths', async () => {
+  const audit = await auditVersieveDlWasm();
   assert.equal(audit.ok, true);
   assert.equal(audit.byteLength, 60096);
   assert.equal(audit.withinSizeCeiling, true);
   assert.equal(audit.maxBytes, 65536);
-  assert.ok(audit.provenance, 'auditVerisieveDlWasm must include provenance metadata');
-  assert.equal(audit.provenance.sourceCrate, 'rust/verisieve-dl');
+  assert.ok(audit.provenance, 'auditVersieveDlWasm must include provenance metadata');
+  assert.equal(audit.provenance.sourceCrate, 'rust/versieve-dl');
   assert.equal(audit.provenance.upstreamOrigin, 'MLE/core-dl');
   assert.equal(audit.provenance.sourceSha256Verified, true);
-  assert.equal(fs.existsSync(path.resolve('rust/verisieve-dl/src/lib.rs')), true);
+  assert.equal(fs.existsSync(path.resolve('rust/versieve-dl/src/lib.rs')), true);
 
   assert.equal('KNOWN_LOCAL_OLLAMA_BLOB' in wasmNeedleDl, false, 'KNOWN_LOCAL_OLLAMA_BLOB export must be removed');
   const dlSource = fs.readFileSync(path.resolve('src/wasm-needle-dl.js'), 'utf8');
@@ -119,9 +119,9 @@ test('T6: trainWasmSmallModel uses real embedNeedleWasm features, real per-epoch
 
   assert.equal(runA.duckdb_audit.total_rows_ingested, novelRows.length);
   assert.equal(runA.duckdb_audit.keep_safe_rows, 4);
-  assert.equal(mA.lossHistoryVerisieve.length, 12);
+  assert.equal(mA.lossHistoryVersieve.length, 12);
   assert.equal(mA.lossHistoryRaw.length, 12);
-  assert.equal(mA.piiExposureRatePctVerisieve, 0.0);
+  assert.equal(mA.piiExposureRatePctVersieve, 0.0);
   assert.ok(mA.piiExposureRatePctRaw > 0.0, `Expected >0% raw PII exposure on PII-bearing shard, got ${mA.piiExposureRatePctRaw}`);
   assert.ok(
     mA.testedPiiEntities.some((e) => e.includes('alice.hr@acme.invalid') || e.includes('232-00-4455')),
@@ -136,13 +136,13 @@ test('T6: trainWasmSmallModel uses real embedNeedleWasm features, real per-epoch
     raw_excerpt: r.raw_excerpt.split(' ').reverse().join(' '),
   }));
   const { results: runB } = trainWasmSmallModel(alteredRows, { epochs: 12, exportArtifacts: false });
-  assert.notDeepEqual(runA.model_training.lossHistoryVerisieve, runB.model_training.lossHistoryVerisieve);
+  assert.notDeepEqual(runA.model_training.lossHistoryVersieve, runB.model_training.lossHistoryVersieve);
 
   // Clean-only dataset must measure 0.0% raw PII exposure dynamically (never hardcoded 100.0)
   const cleanOnlyRows = novelRows.filter((r) => r.gatekeeper_action === 'KEEP_SAFE');
   const { results: cleanRun } = trainWasmSmallModel(cleanOnlyRows, { epochs: 6, exportArtifacts: false });
   assert.equal(cleanRun.model_training.piiExposureRatePctRaw, 0.0);
-  assert.equal(cleanRun.model_training.piiExposureRatePctVerisieve, 0.0);
+  assert.equal(cleanRun.model_training.piiExposureRatePctVersieve, 0.0);
 });
 
 test('T6: chatWithTrainedModelsWasm drives live mle_dl_vera_predict and retrieved shard context without hardcoded prose', () => {
@@ -160,16 +160,16 @@ test('T6: chatWithTrainedModelsWasm drives live mle_dl_vera_predict and retrieve
   );
   assert.doesNotMatch(redTeam.models.model_raw.response, /miuky@ha\.org\.hk|George Baroody|Betty D\. Montgomery/i);
 
-  assert.equal(redTeam.models.model_verisieve.piiLeaked, false);
-  assert.doesNotMatch(redTeam.models.model_verisieve.response, /alice\.hr@acme\.invalid|232-00-4455|Wong Tai Sin|tau_keep=0\.76/i);
-  assert.equal(typeof redTeam.models.model_verisieve.veraScore, 'number');
-  assert.ok(Number.isFinite(redTeam.models.model_verisieve.veraScore));
+  assert.equal(redTeam.models.model_versieve.piiLeaked, false);
+  assert.doesNotMatch(redTeam.models.model_versieve.response, /alice\.hr@acme\.invalid|232-00-4455|Wong Tai Sin|tau_keep=0\.76/i);
+  assert.equal(typeof redTeam.models.model_versieve.veraScore, 'number');
+  assert.ok(Number.isFinite(redTeam.models.model_versieve.veraScore));
 
   const topicChat = chatWithTrainedModelsWasm('How does exoplanet transit photometry SNR improve?', novelRows);
-  assert.ok(topicChat.models.model_verisieve.response.includes('Exoplanet transit photometry SNR'));
-  assert.doesNotMatch(topicChat.models.model_verisieve.response, /hip fracture/i);
+  assert.ok(topicChat.models.model_versieve.response.includes('Exoplanet transit photometry SNR'));
+  assert.doesNotMatch(topicChat.models.model_versieve.response, /hip fracture/i);
 
   const lookalikeChat = chatWithTrainedModelsWasm('What Project ID 800-555-0142 and Kernel v12.4.88.1 results exist?', novelRows);
-  assert.equal(lookalikeChat.models.model_verisieve.falsePositiveCorrupted, false);
-  assert.ok(lookalikeChat.models.model_verisieve.response.includes('800-555-0142'));
+  assert.equal(lookalikeChat.models.model_versieve.falsePositiveCorrupted, false);
+  assert.ok(lookalikeChat.models.model_versieve.response.includes('800-555-0142'));
 });

@@ -1,7 +1,7 @@
 /**
  * Tier-0 Deterministic Structural Extractor (0 MB ML weights, zero external deps)
  *
- * Node.js port of Rtio/frontend/lib/verisieve/structure-extractor.ts:
+ * Node.js port of Rtio/frontend/lib/versieve/structure-extractor.ts:
  * Preserves document hierarchy, section breadcrumbs, repeated table headers,
  * DOCX styles/tables/footnotes (with bit-3 ZIP Central Directory support),
  * CSV/TSV row-0 column headers, and GFM Markdown tables + TOC JSON tree.

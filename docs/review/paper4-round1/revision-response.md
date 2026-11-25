@@ -1,7 +1,7 @@
 # Response to Reviewer Comments — Paper 4, Round 1
 
 ## Manuscript Information
-- **Title**: A Graph-Grounded Enterprise Corpus (working title; source: `paper/verisieve-graph-grounded-enterprise-corpus.tex`)
+- **Title**: A Graph-Grounded Enterprise Corpus (working title; source: `paper/versieve-graph-grounded-enterprise-corpus.tex`)
 - **Manuscript ID**: paper4-round1 (pre-submission panel review, academic-paper-reviewer v1.11.1)
 - **Original Submission Date**: 2026-11-25
 - **Revision Submission Date**: 2026-11-25

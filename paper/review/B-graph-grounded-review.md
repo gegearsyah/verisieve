@@ -2,14 +2,14 @@
 
 Panel: five role-separated seats (academic-paper-reviewer, academic-research-skills v1.11.1), one manuscript, MLSys main-track standard. Role separation is a division of reading labor, not an independent error process: one reviewer read everything, five voices wrote up what they found, and the editorial seats reconciled them. Claims of inter-seat independence in this document are not claims of independent sampling.
 
-Manuscript: `paper/verisieve-graph-grounded-enterprise-corpus.tex` (282 lines, 11 sections, 3 tables, 1 figure)
-Bibliography: `paper/verisieve-graph-grounded-enterprise-corpus.bib` (22 entries)
+Manuscript: `paper/versieve-graph-grounded-enterprise-corpus.tex` (282 lines, 11 sections, 3 tables, 1 figure)
+Bibliography: `paper/versieve-graph-grounded-enterprise-corpus.bib` (22 entries)
 
 Binding author style rulings applied as review criteria: (a) no em-dashes; (b) title must hit the training-data question first; (c) each stated boundary stated once, plainly; (d) no arguing with past drafts or a prior scaffold.
 
 ## Coverage (what was read, what was not)
 
-Read in full: the manuscript, the .bib, the .aux (all 22 citations resolved, no undefined references or citations), the LaTeX log (three overfull hboxes, no errors), the .blg (BibTeX clean, 22 entries used), and the abstracts of the three sibling papers in the same directory (`verisieve-extraction-redaction-benchmark.tex`, `verisieve-local-training-benchmark.tex`, `verisieve-multimodal-sanitization-benchmark.tex`) to adjudicate companion-paper distinctness.
+Read in full: the manuscript, the .bib, the .aux (all 22 citations resolved, no undefined references or citations), the LaTeX log (three overfull hboxes, no errors), the .blg (BibTeX clean, 22 entries used), and the abstracts of the three sibling papers in the same directory (`versieve-extraction-redaction-benchmark.tex`, `versieve-local-training-benchmark.tex`, `versieve-multimodal-sanitization-benchmark.tex`) to adjudicate companion-paper distinctness.
 
 Arithmetic recomputed independently: every exact-match percentage reachable from the table (n=60: 32, 36, 31, 49, 7, 6, 4, 1, 2, 3, 20 correct), all eight Clopper-Pearson 95% intervals printed in Section 7, the certificate pass rate 23/24 = 95.8333%, the certified lower bound (81.7108% reproduces exactly as a one-sided 95% Clopper-Pearson lower bound on 23/24), all six per-class lower bounds (98.06, 94.88, 89.85, 86.09, 36.84, 5.00 all reproduce as 0.05^(1/n), i.e., one-sided with x = n), the composed/per-block/flat keep fractions (41/1106 = 3.7%), the 53.3/11.7 = 4.6x ratio, and the 50%-rate amplification factor 0.5512/0.0431 = 12.79.
 

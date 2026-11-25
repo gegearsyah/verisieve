@@ -22,9 +22,9 @@ neither the GPU nor `results/track-d-*` nor the amnesiac line.
    en-dashes (`--`) only in name pairs (e.g., Clopper--Pearson) and numeric ranges already
    in committed text.
 5. **Verification bar for every item:** `npm run test:ci` green end-to-end (it ends with
-   the paper-number check), `node bin/verisieve.mjs audit-wasm` allVerified, no new
-   WASM binary exceeding its committed cap (`verisieve_media.wasm` < 215,000 B;
-   `verisieve_sql.wasm` < 400 KB total-wasm claim must keep holding), `git status` clean
+   the paper-number check), `node bin/versieve.mjs audit-wasm` allVerified, no new
+   WASM binary exceeding its committed cap (`versieve_media.wasm` < 215,000 B;
+   `versieve_sql.wasm` < 400 KB total-wasm claim must keep holding), `git status` clean
    of unintended `results/*.json` dirt (restore wallclock-dirtied artifacts with explicit
    `git checkout -- <paths>`, never `git add --A`; the live `results/track-d-ptlm-sweep.json`
    and any GPU artifact are untouchable).
@@ -65,7 +65,7 @@ Work:
 - The JS fallback (`executeSqlSubsetFallback`) keeps rejecting JOINs (recorded deviation —
   parity is blocked by the same ownership boundary; do not fake it).
 - Rust side: `cargo test` in WSL green including the existing JOIN tests; binary size will
-  change — update `vendor/wasm/verisieve_sql.wasm`, the `<400 KB` total claim if it moves,
+  change — update `vendor/wasm/versieve_sql.wasm`, the `<400 KB` total claim if it moves,
   BOTH papers' size receipts, and the checker `statSync` needle (currently 54,105) in one
   commit. `build.sh` regenerates provenance; never hand-write the JSON.
 

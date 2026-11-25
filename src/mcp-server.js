@@ -75,7 +75,7 @@ function buildPlanPayload(args = {}) {
   const modelIdOrPath = String(args.modelIdOrPath || args.modelPath || 'Qwen/Qwen2.5-0.5B-Instruct').trim();
   const backend = args.backend === 'mlx' ? 'mlx' : 'trl';
   const datasetFilename = String(args.datasetFilename || 'rtio-train.jsonl').trim();
-  const outputDir = String(args.outputDir || './verisieve-lora-out').trim();
+  const outputDir = String(args.outputDir || './versieve-lora-out').trim();
   const bridgePort = Number.isFinite(args.bridgePort) ? Number(args.bridgePort) : 8765;
   const epochs = Number.isFinite(args.epochs) ? Math.max(1, Number(args.epochs)) : 1;
 
@@ -84,7 +84,7 @@ function buildPlanPayload(args = {}) {
   const uvCommand =
     backend === 'mlx'
       ? `uvx --from mlx-lm mlx_lm.lora --model ${resolvedModel} --train --data . --iters 200 --adapter-path ${outputDir}`
-      : `uv run skills/verisieve-local-train/scripts/verisieve-train.py --data ${datasetFilename} --model ${resolvedModel} --output ${outputDir} --epochs ${epochs} --bridge-port ${bridgePort}`;
+      : `uv run skills/versieve-local-train/scripts/versieve-train.py --data ${datasetFilename} --model ${resolvedModel} --output ${outputDir} --epochs ${epochs} --bridge-port ${bridgePort}`;
 
   return {
     canFineTuneInWasm: false,
@@ -95,7 +95,7 @@ function buildPlanPayload(args = {}) {
     outputDir,
     uvCommand,
     bridgeUrl: `http://127.0.0.1:${bridgePort}/status`,
-    skillPath: 'skills/verisieve-local-train/SKILL.md',
+    skillPath: 'skills/versieve-local-train/SKILL.md',
     inspection: inspection?.exists ? inspection : null,
   };
 }
@@ -252,7 +252,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'ingest_url_or_links',
-              description: 'Captures inline HTML, link lists, or URLs and cleans them through verisieve_clean.wasm + PII redaction.',
+              description: 'Captures inline HTML, link lists, or URLs and cleans them through versieve_clean.wasm + PII redaction.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -265,7 +265,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'index_document_graph',
-              description: 'Builds a strictly redacted Document Knowledge Graph (DOCUMENT/SECTION/PASSAGE/ENTITY/ARTIFACT) in verisieve_graph.wasm Dual-CSR with salted pseudonyms.',
+              description: 'Builds a strictly redacted Document Knowledge Graph (DOCUMENT/SECTION/PASSAGE/ENTITY/ARTIFACT) in versieve_graph.wasm Dual-CSR with salted pseudonyms.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -277,7 +277,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'blast_radius',
-              description: 'Runs bidirectional k-hop PII Blast Radius / W3C PROV-O taint traversal over verisieve_graph.wasm.',
+              description: 'Runs bidirectional k-hop PII Blast Radius / W3C PROV-O taint traversal over versieve_graph.wasm.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -290,7 +290,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'ppr_retrieve',
-              description: 'Runs HippoRAG-2 Personalized PageRank over verisieve_graph.wasm to retrieve multi-hop redacted passages.',
+              description: 'Runs HippoRAG-2 Personalized PageRank over versieve_graph.wasm to retrieve multi-hop redacted passages.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -304,7 +304,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'trace_path',
-              description: 'Finds shortest path between two graph nodes in verisieve_graph.wasm (BFS or weighted Dijkstra).',
+              description: 'Finds shortest path between two graph nodes in versieve_graph.wasm (BFS or weighted Dijkstra).',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -339,7 +339,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'ingest_enterprise_bundle',
-              description: 'Auto-routes enterprise multimodal files (.eml, .mbox, .msg, .pptx, .xlsx, .odt/.ods/.odp, .epub, .vtt, .srt, .ics, .vcf, Slack/Jira JSON, .ipynb, .har, .env, K8s YAML, .zip, .tar.gz), redacts PII & secrets with shared workspace-salted pseudonyms, and indexes them into verisieve_graph.wasm for cross-modal GDPR Art. 17 blast_radius.',
+              description: 'Auto-routes enterprise multimodal files (.eml, .mbox, .msg, .pptx, .xlsx, .odt/.ods/.odp, .epub, .vtt, .srt, .ics, .vcf, Slack/Jira JSON, .ipynb, .har, .env, K8s YAML, .zip, .tar.gz), redacts PII & secrets with shared workspace-salted pseudonyms, and indexes them into versieve_graph.wasm for cross-modal GDPR Art. 17 blast_radius.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -351,7 +351,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'scan_enterprise_secrets',
-              description: 'Runs zero-import verisieve_media.wasm Unicode anti-evasion, international checksum PII (IBAN, AU TFN/Medicare/ABN, UK NHS/NINO, Aadhaar, Luhn), and 30+ enterprise secret detectors (JWT, PEM, AWS/OpenAI/Anthropic/GitHub/Stripe/Slack/DB URIs) returning privacy-safe redacted tokens.',
+              description: 'Runs zero-import versieve_media.wasm Unicode anti-evasion, international checksum PII (IBAN, AU TFN/Medicare/ABN, UK NHS/NINO, Aadhaar, Luhn), and 30+ enterprise secret detectors (JWT, PEM, AWS/OpenAI/Anthropic/GitHub/Stripe/Slack/DB URIs) returning privacy-safe redacted tokens.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -377,7 +377,7 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'audit_forensic_leaks',
-              description: 'Audits and scrubs binary EXIF/XMP/IPTC/PNG/ISOBMFF MP4 metadata or hidden Office/Email forensic sub-streams via verisieve_media.wasm.',
+              description: 'Audits and scrubs binary EXIF/XMP/IPTC/PNG/ISOBMFF MP4 metadata or hidden Office/Email forensic sub-streams via versieve_media.wasm.',
               inputSchema: {
                 type: 'object',
                 properties: {
@@ -700,7 +700,7 @@ export function handleJsonRpcRequest(request) {
           };
         } else if (toolName === 'ingest_enterprise_bundle') {
           const files = Array.isArray(args.files) ? args.files : [];
-          const salt = args.workspaceSalt || 'verisieve-enterprise-v1';
+          const salt = args.workspaceSalt || 'versieve-enterprise-v1';
           const vault = new SaltedPseudonymVault(salt);
           const graphDocs = [];
           const forensicFindings = [];

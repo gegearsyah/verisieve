@@ -5,9 +5,9 @@ Real Open-Weight Model Training & Benchmark Pipeline:
 1. DuckDB 1.5.5 SQL Stage: Direct in-process analytics & filtering on extracted CSV artifacts
 2. PyTorch 2.10 + HuggingFace Transformers (Qwen2Config / Qwen2ForCausalLM) A/B Training:
    - Model A: Raw Unfiltered Extracted Data (with raw PII, fax covers, OCR noise)
-   - Model B: VeriSieve Certified Data (LTT Conformal KEEP_SAFE + PII Redacted)
+   - Model B: Versieve Certified Data (LTT Conformal KEEP_SAFE + PII Redacted)
 3. Quantitative Evaluation: Step-by-step loss curve, held-out clean clinical validation perplexity,
-   and PII Memorization / Secret Exposure Rate (0.0% on VeriSieve).
+   and PII Memorization / Secret Exposure Rate (0.0% on Versieve).
 4. Deterministic 3-Panel SVG Visualization: docs/open-model-training-comparison.svg
 """
 
@@ -27,7 +27,7 @@ def inspect_local_model_path(model_path):
     if not model_path:
         return None
     resolved = str(model_path).strip()
-    env_override = os.environ.get("VERISIEVE_MODEL_PATH")
+    env_override = os.environ.get("VERSIEVE_MODEL_PATH")
     if resolved in ("llama3.2:3b", "ollama:llama3.2:3b", "llama3.2") and env_override and os.path.exists(env_override):
         resolved = env_override
     if resolved.startswith("ollama:") and not os.path.exists(resolved):
@@ -174,7 +174,7 @@ def inspect_local_model_path(model_path):
 # Set deterministic default seeds
 torch.manual_seed(42)
 
-# --- 1. Tokenizer Helpers (Byte-BPE Compatible with VeriSieve JS) ---
+# --- 1. Tokenizer Helpers (Byte-BPE Compatible with Versieve JS) ---
 PII_MAP = {
     '<PII:EMAIL>': 4,
     '<PII:PHONE>': 5,
@@ -231,7 +231,7 @@ def run_training_experiment(export_artifacts=True, model_path=None):
         subprocess.run(['node', 'scripts/run-real-data-benchmark.mjs'], check=True)
 
     # --- DuckDB 1.5.5 SQL Stage ---
-    duckdb_file = os.path.join(results_dir, 'verisieve_audit.duckdb')
+    duckdb_file = os.path.join(results_dir, 'versieve_audit.duckdb')
     con = duckdb.connect(duckdb_file if export_artifacts else ':memory:')
 
     pmc_csv_sql = pmc_csv.replace('\\', '/')
@@ -266,9 +266,9 @@ def run_training_experiment(export_artifacts=True, model_path=None):
         FROM raw_extracted_documents;
     """).fetchall()
 
-    # Query 3: VeriSieve conformal KEEP_SAFE rows (Model B)
+    # Query 3: Versieve conformal KEEP_SAFE rows (Model B)
     con.execute("""
-        CREATE OR REPLACE TABLE verisieve_certified_tokens AS
+        CREATE OR REPLACE TABLE versieve_certified_tokens AS
         SELECT line_index, source_mode, masked_text, token_count, first_8_token_ids, pred_prob, gatekeeper_action
         FROM raw_extracted_documents
         WHERE gatekeeper_action = 'KEEP_SAFE';
@@ -276,7 +276,7 @@ def run_training_experiment(export_artifacts=True, model_path=None):
 
     certified_rows = con.execute("""
         SELECT line_index, source_mode, masked_text, token_count, first_8_token_ids, pred_prob, gatekeeper_action
-        FROM verisieve_certified_tokens;
+        FROM versieve_certified_tokens;
     """).fetchall()
 
     total_rows = len(raw_all_rows)
@@ -339,7 +339,7 @@ def run_training_experiment(export_artifacts=True, model_path=None):
         opt_raw.step()
         loss_history_raw.append(round(loss.item(), 4))
 
-    # --- Model B: VeriSieve Certified Training ---
+    # --- Model B: Versieve Certified Training ---
     torch.manual_seed(effective_seed)  # identical initial weights
     model_cert = Qwen2ForCausalLM(qwen_config)
     opt_cert = torch.optim.AdamW(model_cert.parameters(), lr=lr)
@@ -431,7 +431,7 @@ def run_training_experiment(export_artifacts=True, model_path=None):
     # --- Structured Results Object ---
     results_obj = {
         "schema_version": "1.0",
-        "pipeline": "VeriSieve Open-Weight Model Training (Qwen2 / PyTorch 2.10 / DuckDB 1.5.5)",
+        "pipeline": "Versieve Open-Weight Model Training (Qwen2 / PyTorch 2.10 / DuckDB 1.5.5)",
         "timestamp": "2026-11-15T00:00:00.000Z",
         "duckdb_audit": {
             "version": duckdb.__version__,
@@ -455,11 +455,11 @@ def run_training_experiment(export_artifacts=True, model_path=None):
             "training_steps": training_steps,
             "learning_rate": lr,
             "lossHistoryRaw": loss_history_raw,
-            "lossHistoryVerisieve": loss_history_cert,
+            "lossHistoryVersieve": loss_history_cert,
             "valPerplexityRaw": val_ppl_raw,
-            "valPerplexityVerisieve": val_ppl_cert,
+            "valPerplexityVersieve": val_ppl_cert,
             "piiExposureRatePctRaw": pii_leak_rate_raw,
-            "piiExposureRatePctVerisieve": pii_leak_rate_cert,
+            "piiExposureRatePctVersieve": pii_leak_rate_cert,
             "testedPiiEntities": [p["secret"] for p in pii_entities]
         }
     }
@@ -494,7 +494,7 @@ def generate_open_model_comparison_svg(data):
     height = 620
 
     raw_losses = model["lossHistoryRaw"]
-    cert_losses = model["lossHistoryVerisieve"]
+    cert_losses = model["lossHistoryVersieve"]
 
     # Normalize loss plot coordinates (x: 420..710, y: 150..370)
     min_loss = min(min(raw_losses), min(cert_losses)) - 0.2
@@ -540,7 +540,7 @@ def generate_open_model_comparison_svg(data):
   <rect width="{width}" height="{height}" fill="url(#bgGrad)" />
 
   <!-- Header -->
-  <text x="550" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc" text-anchor="middle">VeriSieve Open-Weight Model Training &amp; DuckDB Audit Benchmark</text>
+  <text x="550" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc" text-anchor="middle">Versieve Open-Weight Model Training &amp; DuckDB Audit Benchmark</text>
   <text x="550" y="64" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">DuckDB v{duck["version"]} SQL Engine • PyTorch v{model["pytorch_version"]} • HuggingFace Qwen2ForCausalLM (CPU Training)</text>
 
   <!-- PANEL A: DuckDB Pipeline Funnel -->
@@ -594,7 +594,7 @@ def generate_open_model_comparison_svg(data):
     <text x="75" y="319" font-family="system-ui, sans-serif" font-size="11" fill="#e2e8f0">Model A: Raw Unfiltered</text>
 
     <line x1="195" y1="315" x2="220" y2="315" stroke="#10b981" stroke-width="2.5" />
-    <text x="225" y="319" font-family="system-ui, sans-serif" font-size="11" fill="#10b981" font-weight="bold">Model B: VeriSieve Safe</text>
+    <text x="225" y="319" font-family="system-ui, sans-serif" font-size="11" fill="#10b981" font-weight="bold">Model B: Versieve Safe</text>
   </g>
 
   <!-- PANEL C: Perplexity & PII Exposure Leak Rate -->
@@ -607,14 +607,14 @@ def generate_open_model_comparison_svg(data):
     <rect x="20" y="70" width="270" height="95" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
     <text x="35" y="92" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">HELD-OUT CLINICAL PERPLEXITY</text>
     <text x="35" y="117" font-family="system-ui, sans-serif" font-size="13" fill="#f43f5e">Raw Model A: <tspan font-weight="bold" font-size="16">{model["valPerplexityRaw"]}</tspan></text>
-    <text x="35" y="142" font-family="system-ui, sans-serif" font-size="13" fill="#10b981">VeriSieve Model B: <tspan font-weight="bold" font-size="16">{model["valPerplexityVerisieve"]}</tspan> (Superior)</text>
+    <text x="35" y="142" font-family="system-ui, sans-serif" font-size="13" fill="#10b981">Versieve Model B: <tspan font-weight="bold" font-size="16">{model["valPerplexityVersieve"]}</tspan> (Superior)</text>
     <text x="35" y="157" font-family="system-ui, sans-serif" font-size="9" fill="#64748b">Lower perplexity on clean clinical domain test</text>
 
     <!-- PII Memorization Leak Rate -->
     <rect x="20" y="180" width="270" height="95" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1" />
     <text x="35" y="202" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">PII MEMORIZATION / LEAK RATE</text>
     <text x="35" y="227" font-family="system-ui, sans-serif" font-size="13" fill="#f43f5e">Raw Model A: <tspan font-weight="bold" font-size="16">{model["piiExposureRatePctRaw"]}% Exposed</tspan></text>
-    <text x="35" y="252" font-family="system-ui, sans-serif" font-size="13" fill="#10b981">VeriSieve Model B: <tspan font-weight="bold" font-size="16">{model["piiExposureRatePctVerisieve"]}% LEAKAGE</tspan></text>
+    <text x="35" y="252" font-family="system-ui, sans-serif" font-size="13" fill="#10b981">Versieve Model B: <tspan font-weight="bold" font-size="16">{model["piiExposureRatePctVersieve"]}% LEAKAGE</tspan></text>
     <text x="35" y="267" font-family="system-ui, sans-serif" font-size="9" fill="#10b981">Zero raw emails, phones, or author names exposed</text>
 
     <!-- Conformal Safety Guarantee -->
@@ -652,7 +652,7 @@ if __name__ == '__main__':
         a = m["local_weight_audit"]
         print(f"Verified Local Model: {a.get('format')} | Architecture: {a.get('architecture')} | Tensors: {a.get('tensorCount')} | Size: {a.get('fileSizeMb')} MB | Seed: {m.get('seed')}")
     print(f"DuckDB Rows Processed: {d['total_rows_ingested']} (KEEP_SAFE: {d['keep_safe_rows']}, PII: {d['pii_detected_rows']})")
-    print(f"Qwen2 Training Loss (Step 1 -> 25): Raw {m['lossHistoryRaw'][0]} -> {m['lossHistoryRaw'][-1]} | VeriSieve {m['lossHistoryVerisieve'][0]} -> {m['lossHistoryVerisieve'][-1]}")
-    print(f"Clean Clinical Validation Perplexity: Raw {m['valPerplexityRaw']} vs. VeriSieve {m['valPerplexityVerisieve']} (Superior)")
-    print(f"PII Secret Exposure Rate: Raw {m['piiExposureRatePctRaw']}% vs. VeriSieve {m['piiExposureRatePctVerisieve']}%")
+    print(f"Qwen2 Training Loss (Step 1 -> 25): Raw {m['lossHistoryRaw'][0]} -> {m['lossHistoryRaw'][-1]} | Versieve {m['lossHistoryVersieve'][0]} -> {m['lossHistoryVersieve'][-1]}")
+    print(f"Clean Clinical Validation Perplexity: Raw {m['valPerplexityRaw']} vs. Versieve {m['valPerplexityVersieve']} (Superior)")
+    print(f"PII Secret Exposure Rate: Raw {m['piiExposureRatePctRaw']}% vs. Versieve {m['piiExposureRatePctVersieve']}%")
     print("Done!")

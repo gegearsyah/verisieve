@@ -9,17 +9,17 @@ Versieve is engineered specifically for privacy-critical and sovereign AI enviro
    - The separate RTIO app still depends on `tesseract.js` `^7.0.0` and `@tesseract.js-data/eng`. This repository does not contain that app, and its CI does not inspect it.
 
 2. **WebAssembly Zero-Network-Import Static Census**:
-   - All four shipped WebAssembly binaries (`vendor/wasm/verisieve_clean.wasm`, `vendor/wasm/verisieve_dl.wasm`, `vendor/wasm/verisieve_sql.wasm`, and `vendor/cactus/cactus.wasm`) are audited via `npm run audit-wasm`.
+   - All four shipped WebAssembly binaries (`vendor/wasm/versieve_clean.wasm`, `vendor/wasm/versieve_dl.wasm`, `vendor/wasm/versieve_sql.wasm`, and `vendor/cactus/cactus.wasm`) are audited via `npm run audit-wasm`.
    - Native WebAssembly reflection (`WebAssembly.Module.imports`) confirms:
-     - `verisieve_clean.wasm` (`13,757 B`): **0 imports**
-     - `verisieve_dl.wasm` (`60,096 B`, 23 exports): **0 imports**
-     - `verisieve_sql.wasm` (`49,642 B`, ABI v1): **0 imports**
+     - `versieve_clean.wasm` (`13,757 B`): **0 imports**
+     - `versieve_dl.wasm` (`60,096 B`, 23 exports): **0 imports**
+     - `versieve_sql.wasm` (`49,642 B`, ABI v1): **0 imports**
      - `cactus.wasm` (`1,240,671 B`, 21 exports): **16 internal `module "a"` WASI/memory stubs**, **0 network imports**, and **0 host filesystem imports** inside our pure-memory VFS runtime (`hostDiskAccesses === 0`, `networkCalls === 0`).
 
 3. **SSRF, Loopback & Path Traversal Guards**:
    - `scripts/ui-server.mjs` binds strictly to `127.0.0.1` without wildcard `*` CORS headers and enforces `path.relative` traversal containment with explicit `404` responses.
    - `src/ingestor.js` and `ingestFromUrlOrPath` validate schemes and pin resolved DNS addresses against loopback, link-local, RFC1918 private ranges, and cloud metadata IPs prior to HTTP fetch, with redirect re-validation and response byte caps.
-   - `verisieve_sql.wasm` and `scripts/duckdb-query.py` enforce strict query/parameter validation (`read_csv_auto(?)`).
+   - `versieve_sql.wasm` and `scripts/duckdb-query.py` enforce strict query/parameter validation (`read_csv_auto(?)`).
 
 4. **Cryptographic Provenance with PII Payload Stripping**:
    - `AuditChain` implements an append-only SHA-256 tamper-evident provenance log.

@@ -1,18 +1,18 @@
 """Reviewer-Hardening v2 — Benchmarks R3, R4, R5 & R6:
 Addresses every Round-2 peer-review critique:
   R3 (External Secrets — Fair Steady-State Timing):
-      Compares Gitleaks v8.30.1, Yelp detect-secrets, and verisieve_media.wasm on 520 external files
+      Compares Gitleaks v8.30.1, Yelp detect-secrets, and versieve_media.wasm on 520 external files
       AND measures steady-state 10x batch (5,200 files) throughput (files/s and MB/s) alongside cold CLI spawn
       so process startup is separated cleanly from scan speed.
   R4 (End-to-End Audio — Consistent Denominators + Stronger Cross-Model Attacker):
       25 offline SAPI TTS calls -> Pass 1 faster-whisper base.en (word timestamps) ->
-      verisieve_media.wasm Spoken ITN + GLiNER -> WAV silence -> Pass 2 STRONGER attacker faster-whisper small.en!
+      versieve_media.wasm Spoken ITN + GLiNER -> WAV silence -> Pass 2 STRONGER attacker faster-whisper small.en!
       Uses ONE consistent denominator (all planted PII tokens) for Pre-Exposure and Post-Leakage + 95% Wilson CI.
   R5 (PPRL Reality Check — Disjoint Dev/Test Split + Plaintext Jaro-Winkler/Levenshtein Ceiling + 500-Name Scale Test):
       Tunes threshold on disjoint Dev pairs, evaluates on held-out Test pairs against plaintext Jaro-Winkler &
       Levenshtein ceilings, AND tests 500 common full names all-pairs (124,750 distinct negative pairs!) for scale FPR.
   R6 (Unicode Evasion vs. Standard NFKC Baseline):
-      Compares Unnormalized Regex vs. Python unicodedata.normalize('NFKC') + Regex vs. verisieve_media.wasm.
+      Compares Unnormalized Regex vs. Python unicodedata.normalize('NFKC') + Regex vs. versieve_media.wasm.
 """
 
 from __future__ import annotations
@@ -204,7 +204,7 @@ def run_external_secrets_benchmark() -> dict:
         ds_10x_ms = (time.perf_counter() - t0) * 1000.0
         ds_steady_ms_per_1x = max(1.0, (ds_10x_ms - ds_1x_ms) / 9.0)
 
-        # 3. verisieve_media.wasm (1x cold Node CLI + 1x warm in-process + 10x steady-state)
+        # 3. versieve_media.wasm (1x cold Node CLI + 1x warm in-process + 10x steady-state)
         in_1x = td_p / "w1.json"; out_1x = td_p / "wo1.json"
         in_10x = td_p / "w10.json"; out_10x = td_p / "wo10.json"
         in_1x.write_text(json.dumps([{"id": f["id"], "content": f["content"]} for f in all_files]), encoding="utf-8")
@@ -248,7 +248,7 @@ def run_external_secrets_benchmark() -> dict:
         "totalBytes1x": total_bytes_1x,
         "gitleaks_v8_30_1": eval_tool(gl_flagged, gl_1x_ms, gl_steady_ms_per_1x),
         "yelp_detect_secrets": eval_tool(ds_flagged, ds_1x_ms, ds_steady_ms_per_1x),
-        "verisieve_media_wasm": eval_tool(
+        "versieve_media_wasm": eval_tool(
             wasm_flagged,
             wasm_cold_cli_1x_ms,
             wasm_steady_inproc_ms_per_1x,

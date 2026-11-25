@@ -276,7 +276,7 @@ export function decideGatekeeper(bundle, featureRow) {
   const weights = bundle.weights;
   const bias = bundle.bias;
 
-  // Match C99 verisieve_predict_prob float32 step-by-step arithmetic
+  // Match C99 versieve_predict_prob float32 step-by-step arithmetic
   let z = Math.fround(bias);
   for (let j = 0; j < dim; j++) {
     const prod = Math.fround(Math.fround(weights[j]) * Math.fround(featureRow[j] || 0));

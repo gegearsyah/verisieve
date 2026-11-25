@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/ui-server.mjs
- * Loopback-locked zero-dependency HTTP UI server for VeriSieve.
+ * Loopback-locked zero-dependency HTTP UI server for Versieve.
  * Serves demo/, results/, docs/, and exposes hardened /api/* endpoints.
  */
 
@@ -148,8 +148,8 @@ function validateModelProbePath(modelPath) {
   }
 
   const resolved = path.resolve(ROOT_DIR, trimmed);
-  const envModelsDir = process.env.VERISIEVE_MODELS_DIR ? path.resolve(process.env.VERISIEVE_MODELS_DIR) : null;
-  const envModelPath = process.env.VERISIEVE_MODEL_PATH ? path.resolve(process.env.VERISIEVE_MODEL_PATH) : null;
+  const envModelsDir = process.env.VERSIEVE_MODELS_DIR ? path.resolve(process.env.VERSIEVE_MODELS_DIR) : null;
+  const envModelPath = process.env.VERSIEVE_MODEL_PATH ? path.resolve(process.env.VERSIEVE_MODEL_PATH) : null;
 
   const contained =
     isContainedPath(ROOT_DIR, resolved) ||
@@ -220,7 +220,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         const ext = extFromDataUrl(matches[1], filename);
-        tempFilePath = path.join(os.tmpdir(), `verisieve-upload-${crypto.randomUUID()}${ext}`);
+        tempFilePath = path.join(os.tmpdir(), `versieve-upload-${crypto.randomUUID()}${ext}`);
         fs.writeFileSync(tempFilePath, Buffer.from(matches[2], 'base64'));
         target = tempFilePath;
       } else if (/^(?:https?:\/\/|arxiv:)/i.test(trimmed)) {
@@ -239,7 +239,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         const ext = extFromDataUrl('text/plain', filename);
         const safeExt = ext === '.html' || ext === '.htm' || ext === '.csv' || ext === '.json' ? ext : '.txt';
-        tempFilePath = path.join(os.tmpdir(), `verisieve-text-${crypto.randomUUID()}${safeExt}`);
+        tempFilePath = path.join(os.tmpdir(), `versieve-text-${crypto.randomUUID()}${safeExt}`);
         fs.writeFileSync(tempFilePath, input, 'utf8');
         target = tempFilePath;
       }
@@ -293,7 +293,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API 4: POST /api/duckdb (VeriSieve WASM SQL Subset Endpoint — Zero-Import verisieve_sql.wasm)
+  // API 4: POST /api/duckdb (Versieve WASM SQL Subset Endpoint — Zero-Import versieve_sql.wasm)
   if (req.method === 'POST' && pathname === '/api/duckdb') {
     try {
       const raw = await readBody(req);
@@ -303,7 +303,7 @@ const server = http.createServer(async (req, res) => {
       const result = executeJsSql(sql || 'SELECT * FROM documents LIMIT 10;', dataset || 'all');
       sendJson(res, 200, result);
     } catch (err) {
-      sendJson(res, 400, { ok: false, error: err.message, engine: 'VeriSieve WASM SQL Subset v1' });
+      sendJson(res, 400, { ok: false, error: err.message, engine: 'Versieve WASM SQL Subset v1' });
     }
     return;
   }
@@ -367,7 +367,7 @@ const server = http.createServer(async (req, res) => {
         targetPath = payload.modelPath;
       }
       if (!targetPath) {
-        targetPath = process.env.VERISIEVE_MODEL_PATH || null;
+        targetPath = process.env.VERSIEVE_MODEL_PATH || null;
       }
       const validated = validateModelProbePath(targetPath);
       const audit = inspectLocalOpenWeightPath(validated);
@@ -394,7 +394,7 @@ const server = http.createServer(async (req, res) => {
       const topK = payload.topK ? Math.max(1, Math.min(20, parseInt(payload.topK, 10))) : 3;
 
       const tables = loadExtractedDatasets();
-      const safeRows = tables.verisieve_certified_tokens || [];
+      const safeRows = tables.versieve_certified_tokens || [];
       const safeTexts = safeRows.map((r) => String(r.masked_text || r.text || ''));
       const tSearch = performance.now();
       const hits = safeTexts.length > 0 ? searchNeedleWasm(query, safeTexts, { topK }) : [];
@@ -410,7 +410,7 @@ const server = http.createServer(async (req, res) => {
         topK,
         results,
         piiExposureRatePct: 0.0,
-        engine: 'verisieve_dl.wasm (embedNeedleWasm)',
+        engine: 'versieve_dl.wasm (embedNeedleWasm)',
         latencyMs: searchMs,
       });
     } catch (err) {
@@ -489,7 +489,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`========================================================================`);
-  console.log(`  VERISIEVE — LOOPBACK UI & MCP SERVER READY (${HOST}:${PORT})         `);
+  console.log(`  VERSIEVE — LOOPBACK UI & MCP SERVER READY (${HOST}:${PORT})         `);
   console.log(`========================================================================`);
   console.log(`  Local UI URL:        http://${HOST}:${PORT}`);
   console.log(`  Run Pipeline API:    POST http://${HOST}:${PORT}/api/run`);

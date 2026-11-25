@@ -1,7 +1,7 @@
 # Handoff: the four experiment gaps after the review round
 
 Date: 2026-11-25
-Repository: `gegearsyah/verisieve`, commit `1e35603` plus the uncommitted paper revisions in `paper/`
+Repository: `gegearsyah/versieve`, commit `1e35603` plus the uncommitted paper revisions in `paper/`
 Scope: produce the four missing measurements, then update the papers and change logs. No redesign, no new claims.
 
 ## State

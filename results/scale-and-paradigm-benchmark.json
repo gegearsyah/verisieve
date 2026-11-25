@@ -1,5 +1,5 @@
 {
-  "benchmark_suite": "VeriSieve Public Benchmark Measurement Study (N = 1,207 Documents)",
+  "benchmark_suite": "Versieve Public Benchmark Measurement Study (N = 1,207 Documents)",
   "timestamp": "2026-11-15T00:00:00.000Z",
   "corpus_metadata": {
     "total_documents": 1207,
@@ -218,7 +218,7 @@
       "lookalike_guard_eval": {
         "lookalikeLinesTested": 5,
         "naive_regex_fp_pct": 80,
-        "verisieve_context_fp_pct": 20
+        "versieve_context_fp_pct": 20
       },
       "generalization_note": "Pre-committed 334-word functional/biomedical lexicon cuts unprefixed Title-Case false positives on blind test abstracts from 5.46 to 2.01 hits / 1k words (45.2% -> 26% of docs), while achieving 20% FP on Grant ID / Kernel / Markov lookalikes (naive 80%)."
     }
@@ -442,7 +442,7 @@
           13.6
         ],
         "artifactBytes": 2129,
-        "artifactLabel": "verisieve.h (2,129 B source; gcc -O3 bench exe is separate)",
+        "artifactLabel": "versieve.h (2,129 B source; gcc -O3 bench exe is separate)",
         "compiled": true
       },
       "pure_wasm_js": {
@@ -461,7 +461,7 @@
           108.2
         ],
         "artifactBytes": 60096,
-        "artifactLabel": "verisieve_dl.wasm (60.1 KB) + Node V8"
+        "artifactLabel": "versieve_dl.wasm (60.1 KB) + Node V8"
       },
       "python_numpy": {
         "processSpawnColdStartMs": 388.79,
@@ -507,7 +507,7 @@
       "ablation_100": {
         "nTrain": 100,
         "nTest": 299,
-        "verisieve_conformal": {
+        "versieve_conformal": {
           "heldOutGateBceLoss": 0.2577,
           "heldOutGateAccPct": 92,
           "wasmVeraBceLoss": 0.9432,
@@ -525,7 +525,7 @@
       "ablation_300": {
         "nTrain": 300,
         "nTest": 299,
-        "verisieve_conformal": {
+        "versieve_conformal": {
           "heldOutGateBceLoss": 0.2244,
           "heldOutGateAccPct": 93,
           "wasmVeraBceLoss": 0.6698,
@@ -543,7 +543,7 @@
       "ablation_full_train": {
         "nTrain": 607,
         "nTest": 299,
-        "verisieve_conformal": {
+        "versieve_conformal": {
           "heldOutGateBceLoss": 0.189,
           "heldOutGateAccPct": 94,
           "wasmVeraBceLoss": 0.6141,
@@ -571,7 +571,7 @@
         "recallAt1Pct": 32,
         "recallAt5Pct": 60.8
       },
-      "verisieve_masked": {
+      "versieve_masked": {
         "queriesTested": 125,
         "recallAt1Pct": 31.2,
         "recallAt5Pct": 60
@@ -583,7 +583,7 @@
     "memory_reduction_factor_vs_pytorch": 7.7,
     "post_training_gate_bce_loss_reduction_pct": 26.7,
     "post_training_gate_acc_full_train": 94,
-    "needle_recall_at_5_verisieve": 60,
+    "needle_recall_at_5_versieve": 60,
     "c99_hot_loop_speedup_vs_js": 9.56,
     "numpy_hot_loop_ms": 0.2072,
     "honest_nulls_and_boundaries_reported": [

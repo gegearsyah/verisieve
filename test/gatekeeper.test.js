@@ -193,10 +193,10 @@ test('T3: live C99 parity compilation verifying UTF-8 fnv1a and float32 Math.fro
     const biasNum = Math.fround(liveBundle.bias);
     const biasStr = Number.isInteger(biasNum) ? `${biasNum}.0f` : `${biasNum}f`;
     const src = `#include <stdio.h>
-#include "verisieve.h"
+#include "versieve.h"
 int main(void) {
-  unsigned int h = verisieve_fnv1a_32("caf\\xc3\\xa9-\\xf0\\x9f\\xa7\\xac");
-  verisieve_gatekeeper_t gk;
+  unsigned int h = versieve_fnv1a_32("caf\\xc3\\xa9-\\xf0\\x9f\\xa7\\xac");
+  versieve_gatekeeper_t gk;
   gk.dim = 520;
   gk.bias = ${biasStr};
   gk.tau_keep = ${liveBundle.calibration.tauKeep}f;
@@ -206,7 +206,7 @@ int main(void) {
   for (int i = 0; i < 520; i++) gk.weights[i] = w[i];
   float x1[520] = { ${fmtF32(xSafe)} };
   float x2[520] = { ${fmtF32(xUnsafe)} };
-  printf("%08x %.9f %d %.9f %d\\n", h, verisieve_predict_prob(&gk, x1), verisieve_decide(&gk, x1), verisieve_predict_prob(&gk, x2), verisieve_decide(&gk, x2));
+  printf("%08x %.9f %d %.9f %d\\n", h, versieve_predict_prob(&gk, x1), versieve_decide(&gk, x1), versieve_predict_prob(&gk, x2), versieve_decide(&gk, x2));
   return 0;
 }
 `;

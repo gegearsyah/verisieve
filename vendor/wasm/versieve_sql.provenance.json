@@ -1,0 +1,21 @@
+{
+  "artifact": "vendor/wasm/versieve_sql.wasm",
+  "crateName": "versieve_sql",
+  "sourceCrate": "rust/versieve-sql",
+  "cargoTarget": "wasm32-unknown-unknown",
+  "profile": {
+    "optLevel": "z",
+    "lto": true,
+    "codegenUnits": 1,
+    "panic": "abort",
+    "strip": "symbols"
+  },
+  "abiVersion": 1,
+  "maxBytes": 500000,
+  "wasmBytes": 55635,
+  "wasmSha256": "45CDEAD846E35B00DD93E9674C6DEAFD3C37F0B702C58624139FEC82092609BD",
+  "sourceFilesSha256": {
+    "Cargo.toml": "D1442B252439C8F5A013545F0F046FE8372A9F6DE8D10D536364D9AD951764B9",
+    "src/lib.rs": "1EEEAAD8AABF6191F72497777CB46CCB00D3981F3B4B9242A5F81EF63F9374AD"
+  }
+}

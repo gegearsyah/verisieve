@@ -19,7 +19,7 @@ import {
 } from '../src/pdf-image-pipeline.js';
 import { scanRecordsForPII, maskValue, runCleanAndTokenizePipeline } from '../src/clean-and-tokenize.js';
 import {
-  auditVerisieveDlWasm,
+  auditVersieveDlWasm,
   embedNeedleWasm,
   searchNeedleWasm,
   trainWasmSmallModel,
@@ -33,12 +33,12 @@ import {
 // PMC_EXTRACTION_EMPTY. Mirror its real-PDF candidates and skip loudly when none exist.
 const PMC_PDF_NAME = 'miu_2017_PMC5773420.pdf';
 const PMC_SKIP = [
-  process.env.VERISIEVE_PAPERS_DIR ? path.join(path.resolve(process.env.VERISIEVE_PAPERS_DIR), PMC_PDF_NAME) : null,
+  process.env.VERSIEVE_PAPERS_DIR ? path.join(path.resolve(process.env.VERSIEVE_PAPERS_DIR), PMC_PDF_NAME) : null,
   path.resolve('results/untrusted-benchmarks/pmc', PMC_PDF_NAME),
   path.resolve('fixtures/pmc', PMC_PDF_NAME)
 ].filter(Boolean).some((p) => fs.existsSync(p))
   ? false
-  : 'real PMC reference PDF not present on this machine (results/untrusted-benchmarks/pmc/ missing) - skipping loudly; run: node scripts/fetch-public-benchmarks.mjs, or set VERISIEVE_PAPERS_DIR';
+  : 'real PMC reference PDF not present on this machine (results/untrusted-benchmarks/pmc/ missing) - skipping loudly; run: node scripts/fetch-public-benchmarks.mjs, or set VERSIEVE_PAPERS_DIR';
 
 
 test('1. Generated PDF 1.4 binary starts with %PDF-1.4 and ends with %%EOF', { skip: PMC_SKIP }, () => {
@@ -379,9 +379,9 @@ test('12. UI server endpoints /api/duckdb and /api/train-model process SQL and t
     const trainData = await trainResp.json();
     assert.strictEqual(trainData.ok, true);
     assert.ok(trainData.model_training, 'Must contain model_training');
-    assert.strictEqual(trainData.model_training.piiExposureRatePctVerisieve, 0.0, 'VeriSieve PII leak rate must be 0.0%');
+    assert.strictEqual(trainData.model_training.piiExposureRatePctVersieve, 0.0, 'Versieve PII leak rate must be 0.0%');
     assert.strictEqual(trainData.model_training.piiExposureRatePctRaw, 100.0, 'Raw model PII leak rate must be 100%');
-    assert.ok(trainData.model_training.valPerplexityVerisieve <= trainData.model_training.valPerplexityRaw, 'VeriSieve validation perplexity must be superior');
+    assert.ok(trainData.model_training.valPerplexityVersieve <= trainData.model_training.valPerplexityRaw, 'Versieve validation perplexity must be superior');
     assert.ok(Array.isArray(trainData.sftPreview), 'Must return sftPreview array');
 
     // 3. Test /api/needle-search
@@ -400,8 +400,8 @@ test('12. UI server endpoints /api/duckdb and /api/train-model process SQL and t
   }
 });
 
-test('13. auditVerisieveDlWasm verifies 100% air-gapped pure WASM (0 imports, 60,096 bytes, 23 DL kernel exports)', async () => {
-  const audit = await auditVerisieveDlWasm();
+test('13. auditVersieveDlWasm verifies 100% air-gapped pure WASM (0 imports, 60,096 bytes, 23 DL kernel exports)', async () => {
+  const audit = await auditVersieveDlWasm();
   assert.strictEqual(audit.ok, true);
   assert.strictEqual(audit.byteLength, 60096);
   assert.strictEqual(audit.importCount, 0, 'Must have zero WASM imports (100% air-gapped pure WASM)');
@@ -447,7 +447,7 @@ test('14. embedNeedleWasm and searchNeedleWasm return deterministic 64-dim embed
   assert.ok(results[0].score > results[2].score);
 });
 
-test('15. trainWasmSmallModel completes in <100 ms in pure WASM with decreasing loss and 0.0% PII exposure on VeriSieve shard', () => {
+test('15. trainWasmSmallModel completes in <100 ms in pure WASM with decreasing loss and 0.0% PII exposure on Versieve shard', () => {
   const t0 = performance.now();
   const { results } = trainWasmSmallModel(null, { epochs: 25, exportArtifacts: false });
   const duration = performance.now() - t0;
@@ -455,15 +455,15 @@ test('15. trainWasmSmallModel completes in <100 ms in pure WASM with decreasing 
   // Budget accommodates parallel node:test worker contention (measured ~70-190 ms)
   assert.ok(duration < 500, `Training must complete in <500 ms in pure WASM, took ${duration.toFixed(2)} ms`);
   const m = results.model_training;
-  assert.ok(m.lossHistoryVerisieve.length === 25, 'Must record 25 epochs of loss');
+  assert.ok(m.lossHistoryVersieve.length === 25, 'Must record 25 epochs of loss');
   assert.ok(
-    m.lossHistoryVerisieve[m.lossHistoryVerisieve.length - 1] <= m.lossHistoryVerisieve[0],
+    m.lossHistoryVersieve[m.lossHistoryVersieve.length - 1] <= m.lossHistoryVersieve[0],
     'Training loss must decrease or converge'
   );
-  assert.strictEqual(m.piiExposureRatePctVerisieve, 0.0, 'PII exposure rate on VeriSieve shard must be 0.0%');
+  assert.strictEqual(m.piiExposureRatePctVersieve, 0.0, 'PII exposure rate on Versieve shard must be 0.0%');
   assert.strictEqual(m.piiExposureRatePctRaw, 100.0, 'PII exposure rate on raw shard must be 100%');
-  assert.ok(m.valPerplexityVerisieve <= m.valPerplexityRaw, 'Validation perplexity must be superior on VeriSieve shard');
-  assert.strictEqual(m.needleRetrievalPurityPctVerisieve, 100.0, 'Needle retrieval purity must be 100% on certified shard');
+  assert.ok(m.valPerplexityVersieve <= m.valPerplexityRaw, 'Validation perplexity must be superior on Versieve shard');
+  assert.strictEqual(m.needleRetrievalPurityPctVersieve, 100.0, 'Needle retrieval purity must be 100% on certified shard');
 });
 
 test('16. inspectLocalOpenWeightPath inspects local GGUF/Ollama/SafeTensors in <1 ms with 4KB header read', () => {
@@ -529,6 +529,6 @@ test('17. trainWasmSmallModel and chatWithTrainedModelsWasm accept modelPath and
     modelPath: 'llama3.2:3b'
   });
   assert.ok(chat.telemetry.localWeightAudit, 'Chat telemetry must include localWeightAudit');
-  assert.ok(chat.models.model_verisieve.localWeightAudit, 'VeriSieve model must include localWeightAudit');
+  assert.ok(chat.models.model_versieve.localWeightAudit, 'Versieve model must include localWeightAudit');
 });
 

@@ -2,7 +2,7 @@
  * Task E5 — Client-Side Video Meeting Keyframe Extraction, Scene-Change Detection,
  * Visual Screen-Share OCR + Face Detection + Temporal Box Tracking & Pixel Redaction.
  *
- * Powered by zero-import `verisieve_media.wasm`:
+ * Powered by zero-import `versieve_media.wasm`:
  * - 64-bin RGB histogram scene-change detector (L1 delta > 0.12)
  * - Temporal bounding-box hold & linear interpolation (+ 15% spatial padding) preventing 1-frame PII flicker
  * - Fast RGB/RGBA pixel blackout [18,18,22], pixelate mosaic, and 3-pass separable Gaussian blur
@@ -98,7 +98,7 @@ export function filterReadableOcrSlideLines(lines, confidence) {
  */
 export async function redactVideoKeyframes(source, frames = [], options = {}) {
   const engine = loadMediaWasmSync();
-  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'verisieve-enterprise-v1');
+  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'versieve-enterprise-v1');
   const sceneThreshold = options.sceneDeltaThreshold ?? 0.12;
   const maxIntervalMs = options.maxKeyframeIntervalMs ?? 5000;
   const pixelMode = options.pixelMode || 'blackout';
@@ -234,7 +234,7 @@ export async function redactVideoKeyframes(source, frames = [], options = {}) {
 }
 
 /**
- * Scrub MP4/MOV/JPEG/PNG forensic metadata using `verisieve_media.wasm`.
+ * Scrub MP4/MOV/JPEG/PNG forensic metadata using `versieve_media.wasm`.
  */
 export function scrubBinaryMediaMetadata(bytes) {
   const engine = loadMediaWasmSync();
@@ -243,11 +243,11 @@ export function scrubBinaryMediaMetadata(bytes) {
 
 /**
  * Fail-closed local `ffmpeg` resolver:
- * Checks VERISIEVE_FFMPEG_BIN -> PATH `ffmpeg` -> local Python `imageio_ffmpeg` bundled binary.
+ * Checks VERSIEVE_FFMPEG_BIN -> PATH `ffmpeg` -> local Python `imageio_ffmpeg` bundled binary.
  * Zero remote downloads; throws `FFMPEG_REQUIRED` if absent.
  */
 export function resolveLocalFfmpegBin(explicitBin) {
-  const candidates = [explicitBin, process.env.VERISIEVE_FFMPEG_BIN, 'ffmpeg'].filter(Boolean);
+  const candidates = [explicitBin, process.env.VERSIEVE_FFMPEG_BIN, 'ffmpeg'].filter(Boolean);
   for (const bin of candidates) {
     try {
       execFileSync(bin, ['-version'], { stdio: 'ignore', timeout: 3000 });
@@ -265,7 +265,7 @@ export function resolveLocalFfmpegBin(explicitBin) {
     } catch {}
   }
   throw new Error(
-    'FFMPEG_REQUIRED: Local ffmpeg binary not found on PATH or local imageio_ffmpeg (set VERISIEVE_FFMPEG_BIN). Zero remote processing enforced.'
+    'FFMPEG_REQUIRED: Local ffmpeg binary not found on PATH or local imageio_ffmpeg (set VERSIEVE_FFMPEG_BIN). Zero remote processing enforced.'
   );
 }
 
@@ -394,7 +394,7 @@ export function scrubMp4FileMetadata(inputPath, outputPath) {
 export async function redactLocalVideoFile(videoPath, options = {}) {
   const ffmpegBin = resolveLocalFfmpegBin(options.ffmpegBin);
   const metadataAudit = inspectMp4StreamMetadata(videoPath);
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-vid-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-vid-'));
   const fps = options.fps ?? 0.5;
   const maxSeconds = options.maxSeconds ?? 30;
   const scaleWidth = options.scaleWidth ?? 1920;

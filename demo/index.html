@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VeriSieve — Zero-Egress Unstructured Document Sieve & Conformal Gatekeeper Studio</title>
+  <title>Versieve — Zero-Egress Unstructured Document Sieve & Conformal Gatekeeper Studio</title>
   <style>
     :root {
       --bg: #090d16;
@@ -385,7 +385,7 @@
         <span class="pulse-dot"></span>
         <span class="sandbox-title">Sandbox</span>
         <span class="sandbox-pill">RUNS LOCALLY IN YOUR BROWSER</span>
-        <span class="sandbox-engine">verisieve_dl.wasm 60KB + cactus.wasm</span>
+        <span class="sandbox-engine">versieve_dl.wasm 60KB + cactus.wasm</span>
       </div>
       <div class="sandbox-tabs">
         <button class="sandbox-tab active" onclick="switchSandboxSection('ingest', this)">1. Ingest &amp; Camera/Image (Mirage)</button>
@@ -397,7 +397,7 @@
 
     <!-- Live Telemetry Ticker -->
     <div class="telemetry-bar" id="telemetryTickerBar">
-      <div class="telemetry-item"><span class="t-label">ENGINE:</span> <span class="t-val">VERISIEVE WASM (60KB)</span></div>
+      <div class="telemetry-item"><span class="t-label">ENGINE:</span> <span class="t-val">VERSIEVE WASM (60KB)</span></div>
       <div class="telemetry-item"><span class="t-label">CONFIDENCE:</span> <span class="t-val safe" id="tickerConfidence">PENDING</span></div>
       <div class="telemetry-item"><span class="t-label">THROUGHPUT:</span> <span class="t-val" id="tickerThroughput">LIVE MEASURED</span></div>
       <div class="telemetry-item"><span class="t-label">TRAIN LATENCY:</span> <span class="t-val" id="tickerTrainLatency">LIVE MEASURED</span></div>
@@ -405,7 +405,7 @@
     </div>
 
     <header>
-      <h1>VeriSieve <span>Zero-Egress Document Sieve & Gatekeeper Studio</span></h1>
+      <h1>Versieve <span>Zero-Egress Document Sieve & Gatekeeper Studio</span></h1>
       <p class="subtitle">Zero-Egress Ingestion, Dual Text+Pixel PII Redaction, Conformal Risk Control &amp; Open-Weight Model Training</p>
     </header>
 
@@ -641,11 +641,11 @@ Hip fracture incidence is increasing among the elderly and is associated with in
     <!-- WASM SQL Data Explorer -->
     <div class="card" id="section-duckdb">
       <h3>
-        <span>🧮 VeriSieve SQL Data Explorer (Raw PDF/Image → Structured CSV Transformation)</span>
-        <span class="engine-badge" id="duckdbEngineBadge">VeriSieve WASM SQL Subset v1 Ready</span>
+        <span>🧮 Versieve SQL Data Explorer (Raw PDF/Image → Structured CSV Transformation)</span>
+        <span class="engine-badge" id="duckdbEngineBadge">Versieve WASM SQL Subset v1 Ready</span>
       </h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-        See exactly how unstructured PDF text and noisy OCR scans transform into clean, auditable SQL tables. Query live via zero-import <code style="color: #38bdf8;">verisieve_sql.wasm</code> subset engine.
+        See exactly how unstructured PDF text and noisy OCR scans transform into clean, auditable SQL tables. Query live via zero-import <code style="color: #38bdf8;">versieve_sql.wasm</code> subset engine.
       </p>
       
       <div class="sql-preset-bar">
@@ -706,8 +706,8 @@ Hip fracture incidence is increasing among the elderly and is associated with in
     <!-- Self-Service WASM Small Model & Needle Semantic Engine -->
     <div class="card" id="section-train">
       <h3>
-        <span>🤖 5. WASM Small Model (verisieve_dl.wasm 1.58-Bit BitNet + VeRA + Transformer) &amp; Needle Semantic Search (Zero Python!)</span>
-        <span class="engine-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;">verisieve_dl.wasm (&lt;15ms Training • Pure WASM)</span>
+        <span>🤖 5. WASM Small Model (versieve_dl.wasm 1.58-Bit BitNet + VeRA + Transformer) &amp; Needle Semantic Search (Zero Python!)</span>
+        <span class="engine-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;">versieve_dl.wasm (&lt;15ms Training • Pure WASM)</span>
       </h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
         100% air-gapped in-browser and local WebAssembly model training and semantic search engine. Runs Matryoshka subword embeddings, 1.58-bit ternary BitNet text encoding, and VeRA parameter-efficient fine-tuning with 0.0% PII leakage guaranteed by conformal LTT gatekeeper.
@@ -717,7 +717,7 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 18px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <label style="font-weight: bold; color: #38bdf8; font-size: 13px; margin: 0;">⚡ WASM Needle Semantic Search (embedNeedleWasm — &lt;2ms)</label>
-          <span class="engine-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;" id="needleEngineBadge">verisieve_dl.wasm + cactus.wasm</span>
+          <span class="engine-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;" id="needleEngineBadge">versieve_dl.wasm + cactus.wasm</span>
         </div>
         <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">
           Rank certified KEEP_SAFE documents by Matryoshka + 1.58-bit BitNet cosine similarity in WebAssembly with 0.0% PII exposure:
@@ -747,7 +747,7 @@ Hip fracture incidence is increasing among the elderly and is associated with in
           <span class="engine-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;" id="openWeightDetectedBadge">Checking Local Weights...</span>
         </div>
         <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">
-          Provide the local path to your own open-weight model on this machine. VeriSieve inspects the binary header in &lt;1 ms (zero RAM spike) and trains the BitNet + VeRA adapter directly against your model's weight seed:
+          Provide the local path to your own open-weight model on this machine. Versieve inspects the binary header in &lt;1 ms (zero RAM spike) and trains the BitNet + VeRA adapter directly against your model's weight seed:
         </p>
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <input type="text" id="customModelPathInput" placeholder="Optional path to .gguf, .safetensors, ollama:tag, or HF model ID..." value="" style="flex: 1; font-size: 12px; font-family: monospace; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 8px 12px;" onchange="inspectCustomModelPath()" onkeyup="if(event.key==='Enter') inspectCustomModelPath()">
@@ -780,7 +780,7 @@ Hip fracture incidence is increasing among the elderly and is associated with in
       <div class="actions-bar" style="margin-bottom: 15px;">
         <button class="secondary" onclick="downloadArtifact('jsonl')">📥 Download train-qwen-llama-sft.jsonl (ChatML)</button>
         <button class="secondary" onclick="downloadArtifact('bin')">📥 Download train-tokens.bin (Uint32 Shard)</button>
-        <button class="secondary" onclick="downloadArtifact('duckdb')">📥 Download verisieve_audit.duckdb</button>
+        <button class="secondary" onclick="downloadArtifact('duckdb')">📥 Download versieve_audit.duckdb</button>
         <button class="accent" id="btnTrainModel" onclick="runModelTrainingBenchmark()">⚡ Run WASM BitNet/VeRA Training Benchmark (Zero Python!)</button>
       </div>
 
@@ -788,7 +788,7 @@ Hip fracture incidence is increasing among the elderly and is associated with in
         <div class="stat-badge">
           <div class="stat-label">Model Architecture</div>
           <div class="stat-val" style="font-size: 15px; color: #38bdf8;">BitNet + VeRA</div>
-          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">verisieve_dl.wasm • Pure WASM</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">versieve_dl.wasm • Pure WASM</div>
         </div>
         <div class="stat-badge">
           <div class="stat-label">Clean Clinical Perplexity</div>
@@ -831,12 +831,12 @@ Hip fracture incidence is increasing among the elderly and is associated with in
               <span>PyTorch + Transformers + DuckDB Training Script</span>
               <button class="outline copy-btn" style="padding: 2px 8px; font-size: 10px;" onclick="copyPythonSnippet()">Copy Script</button>
             </div>
-            <div class="code-content" id="pythonScriptBox" style="font-size: 11px; max-height: 140px; overflow-y: auto; color: #a5f3fc;"># Train any open-weight model with your VeriSieve DuckDB shard:
+            <div class="code-content" id="pythonScriptBox" style="font-size: 11px; max-height: 140px; overflow-y: auto; color: #a5f3fc;"># Train any open-weight model with your Versieve DuckDB shard:
 import duckdb, torch
 from transformers import Qwen2ForCausalLM, Qwen2Config
 
-con = duckdb.connect("results/verisieve_audit.duckdb")
-safe_rows = con.execute("SELECT masked_text FROM verisieve_certified_tokens").fetchall()
+con = duckdb.connect("results/versieve_audit.duckdb")
+safe_rows = con.execute("SELECT masked_text FROM versieve_certified_tokens").fetchall()
 # Train with standard PyTorch AdamW / HuggingFace Trainer!</div>
           </div>
         </div>
@@ -847,10 +847,10 @@ safe_rows = con.execute("SELECT masked_text FROM verisieve_certified_tokens").fe
     <div class="card" id="section-chat-ab">
       <h3>
         <span>💬 4. In-Place A/B Model Chat Playground (Side-by-Side Capability Audit)</span>
-        <span class="engine-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;">verisieve_dl.wasm A/B Matrix</span>
+        <span class="engine-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;">versieve_dl.wasm A/B Matrix</span>
       </h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-        Extract your documents, train the WASM small models, and chat with all 3 model variants simultaneously. Witness the exact empirical difference: unfiltered data leaks raw PII secrets, naive regex corrupts clinical terms, while VeriSieve preserves knowledge with conformal safety.
+        Extract your documents, train the WASM small models, and chat with all 3 model variants simultaneously. Witness the exact empirical difference: unfiltered data leaks raw PII secrets, naive regex corrupts clinical terms, while Versieve preserves knowledge with conformal safety.
       </p>
 
       <!-- Quick test prompt presets -->
@@ -870,12 +870,12 @@ safe_rows = con.execute("SELECT masked_text FROM verisieve_certified_tokens").fe
 
       <!-- 3-Column Models Output Grid -->
       <div class="ab-models-grid" id="abModelsGrid">
-        <!-- Model 1: Without VeriSieve (Raw Unfiltered) -->
+        <!-- Model 1: Without Versieve (Raw Unfiltered) -->
         <div class="ab-model-col danger" id="cardModel1">
           <div class="ab-model-head">
             <div>
               <div class="ab-model-title" style="color: #f43f5e;">Model 1: Raw Unfiltered</div>
-              <div class="ab-model-sub">Trained Without VeriSieve (pdftotext + raw OCR)</div>
+              <div class="ab-model-sub">Trained Without Versieve (pdftotext + raw OCR)</div>
             </div>
             <span class="ab-telemetry-pill" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid #f43f5e;" id="abPillModel1">Confidence: 0.65</span>
           </div>
@@ -908,11 +908,11 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
           </div>
         </div>
 
-        <!-- Model 3: VeriSieve Full -->
+        <!-- Model 3: Versieve Full -->
         <div class="ab-model-col safe" id="cardModel3">
           <div class="ab-model-head">
             <div>
-              <div class="ab-model-title" style="color: #10b981;">Model 3: VeriSieve Certified</div>
+              <div class="ab-model-title" style="color: #10b981;">Model 3: Versieve Certified</div>
               <div class="ab-model-sub">LTT Conformal Gate + Context-Aware Dual PII</div>
             </div>
             <span class="ab-telemetry-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;" id="abPillModel3">Confidence: Pending</span>
@@ -1063,11 +1063,11 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
       const tabBox = document.getElementById('tabContent');
 
       if (activeTab === 0) {
-        tabBox.textContent = `npx verisieve run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
+        tabBox.textContent = `npx versieve run "${target}" --mode ${mode} --pii-strategy ${pii} --alpha ${alpha} --max-seq-len ${seq} --out-dir ./my-results`;
       } else if (activeTab === 1) {
         tabBox.textContent = `// Live JSON-RPC 2.0 tool call payload (POST /api/mcp):\n{\n  "jsonrpc": "2.0",\n  "id": 1,\n  "method": "tools/call",\n  "params": {\n    "name": "ingest_and_tokenize",\n    "arguments": {\n      "input": "${target}",\n      "options": { "mode": "${mode}", "piiStrategy": "${pii}", "alpha": ${alpha}, "maxSeqLen": ${seq} }\n    }\n  }\n}`;
       } else {
-        tabBox.textContent = `import { ingestFromUrlOrPath } from 'verisieve';\n\nconst result = await ingestFromUrlOrPath("${target}", {\n  mode: "${mode}",\n  piiStrategy: "${pii}",\n  alpha: ${alpha},\n  maxSeqLen: ${seq}\n});\nconsole.log(result.stats);`;
+        tabBox.textContent = `import { ingestFromUrlOrPath } from 'versieve';\n\nconst result = await ingestFromUrlOrPath("${target}", {\n  mode: "${mode}",\n  piiStrategy: "${pii}",\n  alpha: ${alpha},\n  maxSeqLen: ${seq}\n});\nconsole.log(result.stats);`;
       }
     };
 
@@ -1214,7 +1214,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
       tbody.replaceChildren(frag);
     }
 
-    // --- VeriSieve WASM SQL Methods ---
+    // --- Versieve WASM SQL Methods ---
     const SQL_PRESETS = {
       quarantined_pii: `SELECT line_index, source_mode, raw_excerpt, pii_types, hidden_pii_preview, gatekeeper_action FROM documents WHERE pii_detected = true;`,
       group_gatekeeper: `SELECT gatekeeper_action, count(*) AS count, round(avg(pred_prob), 4) AS avg_prob, sum(token_count) AS total_tokens FROM documents GROUP BY gatekeeper_action ORDER BY count DESC;`,
@@ -1243,7 +1243,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
         const res = await resp.json();
 
         if (resp.ok && res.ok) {
-          document.getElementById('duckdbEngineBadge').textContent = res.engine || 'VeriSieve WASM SQL Subset v1';
+          document.getElementById('duckdbEngineBadge').textContent = res.engine || 'Versieve WASM SQL Subset v1';
           statusText.textContent = `Returned ${res.total_rows ?? res.rows.length} rows in ${res.elapsedMs}ms (${res.engine})`;
           renderDuckDbTable(res.columns, res.rows);
         } else {
@@ -1299,7 +1299,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
       const list = document.getElementById('needleResultsList');
       const stats = document.getElementById('needleStatsText');
 
-      stats.textContent = 'Searching in WebAssembly (verisieve_dl.wasm)...';
+      stats.textContent = 'Searching in WebAssembly (versieve_dl.wasm)...';
       container.style.display = 'block';
 
       try {
@@ -1311,7 +1311,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
         const data = await resp.json();
 
         if (resp.ok && data.ok && Array.isArray(data.results)) {
-          stats.textContent = `Top-${data.results.length} Semantic Matches in ${data.latencyMs}ms (verisieve_dl.wasm · 0.0% PII Exposure):`;
+          stats.textContent = `Top-${data.results.length} Semantic Matches in ${data.latencyMs}ms (versieve_dl.wasm · 0.0% PII Exposure):`;
           const cards = data.results.map((item, idx) => {
             const card = document.createElement('div');
             card.style.cssText = 'background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px;';
@@ -1440,12 +1440,12 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
         }
 
         const m = res.model_training;
-        setCompareMetric(document.getElementById('valPplVal'), m.valPerplexityVerisieve, `vs ${m.valPerplexityRaw} Raw`, '#94a3b8');
-        setCompareMetric(document.getElementById('piiLeakVal'), `${m.piiExposureRatePctVerisieve}%`, `vs ${m.piiExposureRatePctRaw}% Raw`, '#f43f5e');
+        setCompareMetric(document.getElementById('valPplVal'), m.valPerplexityVersieve, `vs ${m.valPerplexityRaw} Raw`, '#94a3b8');
+        setCompareMetric(document.getElementById('piiLeakVal'), `${m.piiExposureRatePctVersieve}%`, `vs ${m.piiExposureRatePctRaw}% Raw`, '#f43f5e');
         if (document.getElementById('needlePurityVal')) {
-          setCompareMetric(document.getElementById('needlePurityVal'), `${m.needleRetrievalPurityPctVerisieve}%`, `vs ${m.needleRetrievalPurityPctRaw}% Raw`, '#94a3b8');
+          setCompareMetric(document.getElementById('needlePurityVal'), `${m.needleRetrievalPurityPctVersieve}%`, `vs ${m.needleRetrievalPurityPctRaw}% Raw`, '#94a3b8');
         }
-        document.getElementById('lossConvergeVal').textContent = `${m.lossHistoryVerisieve[0]} → ${m.lossHistoryVerisieve[m.lossHistoryVerisieve.length - 1]}`;
+        document.getElementById('lossConvergeVal').textContent = `${m.lossHistoryVersieve[0]} → ${m.lossHistoryVersieve[m.lossHistoryVersieve.length - 1]}`;
         if (document.getElementById('wasmLatencyBadge')) {
           document.getElementById('wasmLatencyBadge').textContent = `${m.wasmTrainMs} ms Pure-WASM Latency`;
         }
@@ -1466,7 +1466,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
     window.downloadArtifact = function(type) {
       if (type === 'jsonl') { window.location.href = '/results/train-qwen-llama-sft.jsonl'; return; }
       if (type === 'bin') { window.location.href = '/results/train-tokens.bin'; return; }
-      if (type === 'duckdb') { window.location.href = '/results/verisieve_audit.duckdb'; return; }
+      if (type === 'duckdb') { window.location.href = '/results/versieve_audit.duckdb'; return; }
 
       if (!currentResults) {
         if (type === 'csv') window.location.href = '/results/real-data-pmc-pdf.csv';
@@ -1478,10 +1478,10 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
       let blob, filename;
       if (type === 'csv') {
         blob = new Blob([currentResults.csv || ''], { type: 'text/csv' });
-        filename = 'verisieve-results.csv';
+        filename = 'versieve-results.csv';
       } else if (type === 'json') {
         blob = new Blob([currentResults.json || JSON.stringify(currentResults.rows, null, 2)], { type: 'application/json' });
-        filename = 'verisieve-results.json';
+        filename = 'versieve-results.json';
       } else if (type === 'bundle') {
         blob = new Blob([JSON.stringify(currentResults.gatekeeperBundle, null, 2)], { type: 'application/json' });
         filename = 'gatekeeper-bundle.json';
@@ -1491,7 +1491,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
           return;
         }
         blob = new Blob([currentResults.summarySvg], { type: 'image/svg+xml' });
-        filename = 'verisieve-summary-report.svg';
+        filename = 'versieve-summary-report.svg';
       }
       const a = document.createElement('a');
       const objUrl = URL.createObjectURL(blob);
@@ -1583,7 +1583,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
 
       document.getElementById('abResponseModel1').textContent = 'Generating in WASM (Raw Weights)...';
       document.getElementById('abResponseModel2').textContent = 'Generating in WASM (Regex Baseline)...';
-      document.getElementById('abResponseModel3').textContent = 'Generating in WASM (VeriSieve VeRA)...';
+      document.getElementById('abResponseModel3').textContent = 'Generating in WASM (Versieve VeRA)...';
 
       const modelPath = document.getElementById('customModelPathInput')?.value.trim() || null;
 
@@ -1613,7 +1613,7 @@ Notice scientific nouns were replaced by false-positive regex tags.</div>
       const m = data.models;
       const m1 = m.model_raw;
       const m2 = m.model_naive_regex;
-      const m3 = m.model_verisieve;
+      const m3 = m.model_versieve;
 
       document.getElementById('abPillModel1').textContent = 'Confidence: ' + m1.confidence;
       const alert1 = document.getElementById('abAlertModel1');

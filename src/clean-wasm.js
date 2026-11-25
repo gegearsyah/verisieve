@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DEFAULT_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/verisieve_clean.wasm');
+const DEFAULT_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/versieve_clean.wasm');
 
 const FLAG_HTML = 1;
 const FLAG_CHROME = 2;
@@ -19,7 +19,7 @@ export function buildEngineFromInstance(instance) {
   const ex = instance.exports;
   const abiVersion = Number(ex.vs_clean_abi_version?.() ?? 0);
   if (abiVersion !== 1) {
-    throw new Error(`Unsupported verisieve_clean WASM ABI version: ${abiVersion} (expected 1)`);
+    throw new Error(`Unsupported versieve_clean WASM ABI version: ${abiVersion} (expected 1)`);
   }
   const inPtr = ex.vs_clean_in_ptr();
   const outPtr = ex.vs_clean_out_ptr();

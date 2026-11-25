@@ -8,15 +8,15 @@ Target venue: MLSys main track. Field: systems for ML, privacy-preserving docume
 ## Coverage (what was read, what was not)
 
 Read in full:
-- `paper/verisieve-extraction-redaction-benchmark.tex` (the manuscript under review, 432 lines).
-- `paper/verisieve-extraction-redaction-benchmark.bib` (16 entries, all cross-checked against `\citep` usage).
-- The companion `paper/verisieve-local-training-benchmark.tex` (abstract, introduction, related work, experimental design, results, limitations, conclusion: the sections that host the Track C duplicate) for the duplication analysis.
+- `paper/versieve-extraction-redaction-benchmark.tex` (the manuscript under review, 432 lines).
+- `paper/versieve-extraction-redaction-benchmark.bib` (16 entries, all cross-checked against `\citep` usage).
+- The companion `paper/versieve-local-training-benchmark.tex` (abstract, introduction, related work, experimental design, results, limitations, conclusion: the sections that host the Track C duplicate) for the duplication analysis.
 - Existence check of all four referenced figure PDFs (`figs/fig0-redaction-architecture.pdf`, `fig1-ltt-calibration.pdf`, `fig2-pii-disambiguation.pdf`, `fig3-substrate-and-scaling.pdf`): all present.
 
-Verified as existing in the repo but not reviewed line by line: `src/gatekeeper.js`, `src/mcp-server.js`, `include/verisieve.h`, `test/verisieve-train.test.py`, `package.json`.
+Verified as existing in the repo but not reviewed line by line: `src/gatekeeper.js`, `src/mcp-server.js`, `include/versieve.h`, `test/versieve-train.test.py`, `package.json`.
 
 Not read / not done:
-- The two other companion papers (`verisieve-multimodal-sanitization-benchmark.tex`, `verisieve-graph-grounded-enterprise-corpus.tex`) were only inventoried, not compared; their potential overlap (Graph-PPR/`verisieve_graph.wasm` mechanics) is flagged as a risk, not quantified.
+- The two other companion papers (`versieve-multimodal-sanitization-benchmark.tex`, `versieve-graph-grounded-enterprise-corpus.tex`) were only inventoried, not compared; their potential overlap (Graph-PPR/`versieve_graph.wasm` mechanics) is flagged as a risk, not quantified.
 - Figure PDFs were not rendered or read visually; captions were reviewed as text.
 - The LaTeX was not compiled (no build run); undefined-reference and citation checks were done by hand from label/key inventories.
 - No repository code was executed to re-derive any number; all arithmetic was recomputed manually from the text.
@@ -90,7 +90,7 @@ Rationale: the unique core (Sections 2, 3, 4: deterministic ingestion, 2D tiling
 
 | ID | Severity | Location | Issue | Exact fix |
 |----|----------|----------|-------|-----------|
-| R1 | CRITICAL | Sec 5.3 + abstract/conclusion model counts | Track C duplicates companion (`verisieve-local-training-benchmark.tex`); 5.8% shared 6-grams concentrated in one section | Cut Sec 5.3 to one paragraph + `\citep` companion; fix "six-model"/"five LLMs" into one reconciled count |
+| R1 | CRITICAL | Sec 5.3 + abstract/conclusion model counts | Track C duplicates companion (`versieve-local-training-benchmark.tex`); 5.8% shared 6-grams concentrated in one section | Cut Sec 5.3 to one paragraph + `\citep` companion; fix "six-model"/"five LLMs" into one reconciled count |
 | R2 | CRITICAL | Sec 3 "labeled unsafe" + all "certified"/`KEEP\_SAFE` phrasing | Gate labels derive from the same scanner the gate supervises; certificate means scanner-agreement, not true-PII cleanliness | Recalibrate on ai4privacy gold labels or scope every certificate phrasing + one miss-regime leakage test |
 | R3 | CRITICAL | Sec 3 corpus, whole paper | No seeds, no doc IDs, no code/artifact link, PMC role cites one article for 8 PDFs | Ship manifest + seeds + artifact statement + per-PDF list |
 | R4 | MAJOR | Table 1 "56-tag" vs abstract/Fig2/Sec5 "26 structured" (confirmed 3-vs-1 inconsistency) | Tag subset never reconciled | One sentence defining the 26-tag subset; make Table 1 match |
@@ -124,5 +124,5 @@ Two CRITICAL findings from Seat 5's seat (the claim-chain hole and circularity, 
 - Figure PDFs not rendered; caption text only.
 - LaTeX not compiled; reference/citation integrity verified by label-key inventory, not by a build log.
 - Repository code (gatekeeper.js, audit-wasm script) not audited; the "verified" claims in Table 1 and Appendix A are taken as the paper's own description, not independently reproduced.
-- Only one of the three companion papers was compared; overlap with `verisieve-multimodal-sanitization-benchmark.tex` and `verisieve-graph-grounded-enterprise-corpus.tex` is flagged (Graph-PPR mechanics) but not measured.
+- Only one of the three companion papers was compared; overlap with `versieve-multimodal-sanitization-benchmark.tex` and `versieve-graph-grounded-enterprise-corpus.tex` is flagged (Graph-PPR mechanics) but not measured.
 - Numbers recomputed manually from the text; no raw runs or logs were executed to confirm any measured value.

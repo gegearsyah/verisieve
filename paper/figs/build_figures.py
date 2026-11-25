@@ -1,4 +1,4 @@
-"""Generate publication-grade vector figures for verisieve-extraction-redaction-benchmark.tex."""
+"""Generate publication-grade vector figures for versieve-extraction-redaction-benchmark.tex."""
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")

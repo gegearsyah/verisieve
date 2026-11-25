@@ -4,7 +4,7 @@
  * Track C5 Controlled Local Ablation Runner (T0 Base vs T0+Graph-PPR vs T0+PageIndex-TOC vs T0+Native-CAG)
  *
  * Strictly zero data egress & zero hardcoded machine paths:
- * accepts corpus via --corpus <dir-or-file> or VERISIEVE_CORPUS_DIR.
+ * accepts corpus via --corpus <dir-or-file> or VERSIEVE_CORPUS_DIR.
  *
  * Usage:
  *   node scripts/run-track-c-ablation.mjs --corpus <dir> --model lfm3:latest --budget 24576
@@ -357,9 +357,9 @@ function summarizeArm(armName, rows, extra = {}) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const corpusPath = args.corpus || process.env.VERISIEVE_CORPUS_DIR;
+  const corpusPath = args.corpus || process.env.VERSIEVE_CORPUS_DIR;
   if (!corpusPath) {
-    console.error('Error: pass --corpus <file-or-dir> or set VERISIEVE_CORPUS_DIR.');
+    console.error('Error: pass --corpus <file-or-dir> or set VERSIEVE_CORPUS_DIR.');
     process.exit(1);
   }
   const model = String(args.model || 'lfm3:latest');
@@ -374,7 +374,7 @@ async function main() {
   }
 
   // Inject synthetic canary doc in memory to verify 0.0% raw PII leakage into graph/CAG/answers
-  const syntheticCanaryEmail = 'canary.audit.9941@verisieve-synthetic.invalid';
+  const syntheticCanaryEmail = 'canary.audit.9941@versieve-synthetic.invalid';
   const syntheticCanarySsn = '987-65-4321';
   docs.push({
     source: 'synthetic-canary-governance.md',
@@ -413,7 +413,7 @@ async function main() {
     t0BaseRows.push({ id: p.id, category: p.category, ...sc, latencyMs: res.latencyMs, promptEvalCount: res.promptEvalCount, answer: res.answer });
   }
 
-  // --- Arm 2: T0 + Layer-1 Graph-PPR (verisieve_graph.wasm) ---
+  // --- Arm 2: T0 + Layer-1 Graph-PPR (versieve_graph.wasm) ---
   const t0PprRows = [];
   for (const p of probes) {
     const tRet0 = performance.now();
@@ -490,7 +490,7 @@ async function main() {
   const canaryEnt = idxSummary.entities.find((e) => e.pii_kind === 'EMAIL');
   const eviction = canaryEnt ? checkCagEviction(graph, cagManifest, [canaryEnt.entity_id]) : null;
 
-  // --- Optional Raw vs VeriSieve Redacted A/B Privacy & Utility Experiment (--ab-redaction) ---
+  // --- Optional Raw vs Versieve Redacted A/B Privacy & Utility Experiment (--ab-redaction) ---
   let redactionAb = null;
   if (args['ab-redaction']) {
     const adversarialProbes = [
@@ -536,8 +536,8 @@ async function main() {
         .slice(0, k);
     };
 
-    // 1. Utility A/B on the exact 12 frozen OAIC QA probes (Raw Graph-PPR-matched text vs VeriSieve Masked Graph-PPR)
-    // Map each VeriSieve Graph-PPR retrieved passage back to its raw unmasked text using lineIndex so retrieval is held 100% constant!
+    // 1. Utility A/B on the exact 12 frozen OAIC QA probes (Raw Graph-PPR-matched text vs Versieve Masked Graph-PPR)
+    // Map each Versieve Graph-PPR retrieved passage back to its raw unmasked text using lineIndex so retrieval is held 100% constant!
     const rawTextByLineIndex = new Map();
     let rIdx = 0;
     for (const d of docs) {
@@ -615,16 +615,16 @@ async function main() {
     }
 
     const rawUtilitySummary = summarizeArm('Raw_Unredacted_GraphPPR_Controlled', rawUtilityRows);
-    const maskedUtilitySummary = summarizeArm('VeriSieve_Redacted_GraphPPR_Controlled', t0PprRows);
+    const maskedUtilitySummary = summarizeArm('Versieve_Redacted_GraphPPR_Controlled', t0PprRows);
 
     redactionAb = {
       utilityComparison: {
         rawAccuracyPct: rawUtilitySummary.overallAccuracyPct,
         rawAccuracyFraction: rawUtilitySummary.overallAccuracyFraction,
         rawMeanF1: rawUtilitySummary.meanTokenF1,
-        verisieveAccuracyPct: maskedUtilitySummary.overallAccuracyPct,
-        verisieveAccuracyFraction: maskedUtilitySummary.overallAccuracyFraction,
-        verisieveMeanF1: maskedUtilitySummary.meanTokenF1,
+        versieveAccuracyPct: maskedUtilitySummary.overallAccuracyPct,
+        versieveAccuracyFraction: maskedUtilitySummary.overallAccuracyFraction,
+        versieveMeanF1: maskedUtilitySummary.meanTokenF1,
         accuracyDeltaPct: Math.round((maskedUtilitySummary.overallAccuracyPct - rawUtilitySummary.overallAccuracyPct) * 10) / 10,
         f1Delta: Math.round((maskedUtilitySummary.meanTokenF1 - rawUtilitySummary.meanTokenF1) * 1000) / 1000,
       },
@@ -632,10 +632,10 @@ async function main() {
         probesRun: adversarialProbes.length,
         rawLeakProbeRatePct: Math.round((rawAdvResults.filter((r) => r.leakedAny).length / adversarialProbes.length) * 1000) / 10,
         rawTotalSecretInstancesLeaked: rawAdvResults.reduce((s, r) => s + r.leakedCanaries, 0),
-        verisieveLeakProbeRatePct: Math.round((maskedAdvResults.filter((r) => r.leakedAny).length / adversarialProbes.length) * 1000) / 10,
-        verisieveTotalSecretInstancesLeaked: maskedAdvResults.reduce((s, r) => s + r.leakedCanaries, 0),
+        versieveLeakProbeRatePct: Math.round((maskedAdvResults.filter((r) => r.leakedAny).length / adversarialProbes.length) * 1000) / 10,
+        versieveTotalSecretInstancesLeaked: maskedAdvResults.reduce((s, r) => s + r.leakedCanaries, 0),
         rawDetails: rawAdvResults,
-        verisieveDetails: maskedAdvResults,
+        versieveDetails: maskedAdvResults,
       },
     };
   }

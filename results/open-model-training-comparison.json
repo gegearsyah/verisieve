@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "pipeline": "VeriSieve Open-Weight Model Training (Qwen2 / PyTorch 2.10 / DuckDB 1.5.5)",
+  "pipeline": "Versieve Open-Weight Model Training (Qwen2 / PyTorch 2.10 / DuckDB 1.5.5)",
   "timestamp": "2026-11-15T00:00:00.000Z",
   "duckdb_audit": {
     "version": "1.5.5",
@@ -109,7 +109,7 @@
       3.1611,
       3.1293
     ],
-    "lossHistoryVerisieve": [
+    "lossHistoryVersieve": [
       6.235,
       5.8874,
       5.3598,
@@ -137,9 +137,9 @@
       2.8699
     ],
     "valPerplexityRaw": 18.78,
-    "valPerplexityVerisieve": 17.49,
+    "valPerplexityVersieve": 17.49,
     "piiExposureRatePctRaw": 100.0,
-    "piiExposureRatePctVerisieve": 0.0,
+    "piiExposureRatePctVersieve": 0.0,
     "testedPiiEntities": [
       "miuky@ha.org.hk",
       "614 -466 -5087",

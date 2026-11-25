@@ -52,14 +52,14 @@ test('10. Live Held-Out Gatekeeper & WASM VeRA Ablation (Train N=100 -> 300 -> F
   const ab300 = r4.downstreamAblation.ablation_300;
   const abFull = r4.downstreamAblation.ablation_full_train;
 
-  assert.ok(ab100.verisieve_conformal.heldOutGateBceLoss > ab300.verisieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=100 -> N=300');
-  assert.ok(ab300.verisieve_conformal.heldOutGateBceLoss > abFull.verisieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=300 -> full train');
-  assert.ok(abFull.verisieve_conformal.heldOutGateAccPct > abFull.raw_unfiltered.heldOutAccPct, 'Trained gatekeeper must strictly beat raw unfiltered baseline');
-  assert.ok(abFull.verisieve_conformal.wasmVeraBceLoss > 0 && abFull.verisieve_conformal.wasmVeraBceLoss < 1.0, 'WASM VeRA loss must be computed live');
+  assert.ok(ab100.versieve_conformal.heldOutGateBceLoss > ab300.versieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=100 -> N=300');
+  assert.ok(ab300.versieve_conformal.heldOutGateBceLoss > abFull.versieve_conformal.heldOutGateBceLoss, 'Held-out BCE loss must drop N=300 -> full train');
+  assert.ok(abFull.versieve_conformal.heldOutGateAccPct > abFull.raw_unfiltered.heldOutAccPct, 'Trained gatekeeper must strictly beat raw unfiltered baseline');
+  assert.ok(abFull.versieve_conformal.wasmVeraBceLoss > 0 && abFull.versieve_conformal.wasmVeraBceLoss < 1.0, 'WASM VeRA loss must be computed live');
 
   const nb = r4.needleBenchmark;
-  assert.ok(nb.verisieve_masked.recallAt5Pct >= nb.raw_unmasked.recallAt5Pct - 5.0, 'VeriSieve masking must preserve retrieval utility');
-  assert.ok(abFull.verisieve_conformal.contactPiiHighConfLeakPct < 5.0, 'High-confidence contact PII leak rate must stay below 5%');
+  assert.ok(nb.versieve_masked.recallAt5Pct >= nb.raw_unmasked.recallAt5Pct - 5.0, 'Versieve masking must preserve retrieval utility');
+  assert.ok(abFull.versieve_conformal.contactPiiHighConfLeakPct < 5.0, 'High-confidence contact PII leak rate must stay below 5%');
 });
 
 test('11. 1,207-Document Benchmark SVG Determinism (100% Byte-Identical)', () => {

@@ -1,5 +1,5 @@
 /**
- * Paper 2 Public Benchmark Suite — VeriSieve-MM (Zero-Import WebAssembly Multimodal Sanitization)
+ * Paper 2 Public Benchmark Suite — Versieve-MM (Zero-Import WebAssembly Multimodal Sanitization)
  *
  * 100% Reproducible on Public Open Datasets (zero private files):
  *   Exp 1: ai4privacy-200k (500 records) + Blind PubMedQA (250 abstracts) + Adversarial Unicode Evasion
@@ -9,7 +9,7 @@
  *   Exp 4: LibriSpeech 16 kHz Speech Audio (40 real utterances, 280.1s) + 100 Spoken-ITN PII utterances —
  *          Spoken ITN recall, exact dB RMS attenuation inside/outside windows, RIFF metadata scrub, WASM RTF
  *   Exp 5: Cross-Modal Scale & Adversarial Archive Security — O(1) streaming MP4 seek (1 MB -> 1 GB),
- *          mid-stream ZIP-bomb & Zip-Slip defense, and verisieve_graph.wasm GDPR Art. 17 blast_radius scaling
+ *          mid-stream ZIP-bomb & Zip-Slip defense, and versieve_graph.wasm GDPR Art. 17 blast_radius scaling
  */
 
 import fs from 'node:fs';
@@ -566,7 +566,7 @@ const exp4 = {
 console.log('Running Exp 5: Streaming MP4 O(1) Seek + Zip-Bomb Defense + Cross-Modal GDPR Art. 17 Blast Radius...');
 
 // 5a. Streaming MP4 atom seek latency across 1 MB -> 10 MB -> 100 MB -> 1024 MB sparse MP4 files
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-paper2-'));
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-paper2-'));
 const mp4Scaling = [];
 for (const sizeMB of [1, 10, 100, 1024]) {
   const mp4Path = path.join(tmpDir, `sparse_${sizeMB}mb.mp4`);
@@ -628,7 +628,7 @@ const zipSlipBuf = buildSingleZip('../../etc/passwd', Buffer.from('root:x:0:0'))
 let zipSlipError = '';
 try { parseEnterpriseBuffer('slip.zip', zipSlipBuf); } catch (e) { zipSlipError = e.message; }
 
-// 5c. Cross-Modal GDPR Art. 17 Blast Radius Scaling in verisieve_graph.wasm (100 -> 1,000 -> 5,000 multimodal blocks)
+// 5c. Cross-Modal GDPR Art. 17 Blast Radius Scaling in versieve_graph.wasm (100 -> 1,000 -> 5,000 multimodal blocks)
 const graphScaling = [];
 for (const blockCount of [100, 1000, 5000]) {
   const vault = new SaltedPseudonymVault('gdpr-scale-salt');

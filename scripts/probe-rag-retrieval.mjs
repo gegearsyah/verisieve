@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Rank the needle's 125 held-out PubMedQA questions three ways:
- * cosine, lexical, and 0.55/0.45 hybrid on verisieve-masked bodies.
+ * cosine, lexical, and 0.55/0.45 hybrid on versieve-masked bodies.
  * Cosine recall must match the published needle figures before any JSON is written.
  */
 
@@ -156,7 +156,7 @@ if (cosineRecallAt1.pct !== 31.2 || cosineRecallAt5.pct !== 60) {
 
 const report = {
   task: "sandbox ranker on the needle's 125 held-out PubMedQA questions",
-  text: 'verisieve_masked_body',
+  text: 'versieve_masked_body',
   dim: DIM,
   seed: SEED,
   candidateCount: N,

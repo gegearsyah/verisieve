@@ -2,7 +2,7 @@
 /**
  * scripts/build-track-d-datasets.mjs
  *
- * Builds strictly matched Raw vs. VeriSieve-Redacted pure Chat-Only SFT datasets
+ * Builds strictly matched Raw vs. Versieve-Redacted pure Chat-Only SFT datasets
  * (ZERO raw packed_passage continuation rows) + 10% explicit abstention turns +
  * 104 Carlini Secret-Sharer canary chat turns + a 20-question Seen-Document
  * Factual Recall Probe grounded strictly in the 93 in-training compliance docs.
@@ -24,8 +24,8 @@ import {
 } from '../src/structure-extractor.js';
 import { PortableDocumentGraph, SaltedPseudonymVault } from '../src/graph-wasm.js';
 
-const DEFAULT_CORPUS_DIR = path.resolve(process.env.VERISIEVE_COMPLIANCE_DIR || '../../Compliance Research');
-const DEFAULT_CANARIES = path.resolve(process.env.VERISIEVE_CANARIES_JSON || '../Rtio/experiments/lora-e2e/data/canaries.json');
+const DEFAULT_CORPUS_DIR = path.resolve(process.env.VERSIEVE_COMPLIANCE_DIR || '../../Compliance Research');
+const DEFAULT_CANARIES = path.resolve(process.env.VERSIEVE_CANARIES_JSON || '../Rtio/experiments/lora-e2e/data/canaries.json');
 const OUT_DIR = path.resolve(process.env.TRACK_D_DATA_DIR || 'D:/rtio-lfm3-ablation/track-d-fair-lora/datasets');
 
 const EXCLUDE_PATTERNS = [

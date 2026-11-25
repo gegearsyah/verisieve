@@ -6,7 +6,7 @@ import { scanRecordsForPII } from './clean-and-tokenize.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-export const DEFAULT_GRAPH_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/verisieve_graph.wasm');
+export const DEFAULT_GRAPH_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/versieve_graph.wasm');
 
 export const EDGE_TYPE_TO_ID = {
   CONTAINS_SECTION: 0,
@@ -57,7 +57,7 @@ export function buildGraphEngineFromInstance(instance) {
   const ex = instance.exports;
   const abiVersion = Number(ex.vs_graph_abi_version?.() ?? 0);
   if (abiVersion !== 1) {
-    throw new Error(`Unsupported verisieve_graph WASM ABI version: ${abiVersion} (expected 1)`);
+    throw new Error(`Unsupported versieve_graph WASM ABI version: ${abiVersion} (expected 1)`);
   }
 
   return {
@@ -346,7 +346,7 @@ function rrfFuse(scoreArrays, k = 60) {
 }
 
 /**
- * Builds a strictly redacted Document Knowledge Graph backed by `verisieve_graph.wasm` Dual-CSR.
+ * Builds a strictly redacted Document Knowledge Graph backed by `versieve_graph.wasm` Dual-CSR.
  * Accepts documents: [{ source, text, pageNo? }] and optional artifacts: [{ artifactId, kind, sourceRowIndices }].
  */
 export class PortableDocumentGraph {
@@ -610,7 +610,7 @@ export class PortableDocumentGraph {
           });
         }
         // Diagram connector edges (Stage 6): endpoint labels become PASSAGE nodes joined
-        // by RELATES_TO in the verisieve_graph.wasm Dual-CSR
+        // by RELATES_TO in the versieve_graph.wasm Dual-CSR
         const diagramNodes = new Map();
         const ensureDiagramNode = (label) => {
           const raw = String(label ?? '').trim();
@@ -826,7 +826,7 @@ export class PortableDocumentGraph {
       }
     }
 
-    // Load into verisieve_graph.wasm Dual-CSR
+    // Load into versieve_graph.wasm Dual-CSR
     const srcs = [];
     const dsts = [];
     const types = [];
@@ -853,7 +853,7 @@ export class PortableDocumentGraph {
       edgeCount: this.edges.length,
       provenanceCount: this.provenance.length,
       entities: this.vault.exportRedactedEntities(),
-      wasmBackend: 'verisieve_graph.wasm',
+      wasmBackend: 'versieve_graph.wasm',
     };
   }
 
@@ -1068,7 +1068,7 @@ export class PortableDocumentGraph {
       this.edges.push({ src_id: artId, dst_id: srcNodeId, edge_type: 'DERIVED_FROM', weight: 1.0, props: {} });
     }
 
-    // Rebuild Dual-CSR in verisieve_graph.wasm so blastRadius immediately traverses ARTIFACT -> DERIVED_FROM -> PASSAGE -> MENTIONS -> ENTITY
+    // Rebuild Dual-CSR in versieve_graph.wasm so blastRadius immediately traverses ARTIFACT -> DERIVED_FROM -> PASSAGE -> MENTIONS -> ENTITY
     const srcs = [];
     const dsts = [];
     const types = [];

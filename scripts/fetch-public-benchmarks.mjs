@@ -30,7 +30,7 @@ async function fetchHfRows(dataset, config, split, offset, length) {
   console.log(`   Fetching ${dataset} (${split}, offset=${offset}, length=${length})...`);
   const res = await fetch(url.toString(), {
     headers: {
-      'User-Agent': 'VeriSieve-Benchmark/1.0.0 (Research Benchmark Ingestion)'
+      'User-Agent': 'Versieve-Benchmark/1.0.0 (Research Benchmark Ingestion)'
     }
   });
 
@@ -121,7 +121,7 @@ async function verifyPmcPdfs() {
   fs.mkdirSync(pmcCacheDir, { recursive: true });
 
   const candidateDirs = [
-    process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null,
+    process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null,
     pmcCacheDir,
     path.resolve('fixtures/pmc'),
     path.resolve('fixtures'),
@@ -143,7 +143,7 @@ async function verifyPmcPdfs() {
         try {
           const url = `https://europepmc.org/backend/ptpmcrender.fcgi?accid=${pmcid}&blobtype=pdf`;
           const res = await fetch(url, {
-            headers: { 'User-Agent': 'VeriSieve-Benchmark/1.0.0' },
+            headers: { 'User-Agent': 'Versieve-Benchmark/1.0.0' },
             signal: AbortSignal.timeout(20000),
           });
           if (res.ok) {
@@ -173,7 +173,7 @@ async function verifyPmcPdfs() {
 
 async function main() {
   console.log('========================================================================');
-  console.log('   VERISIEVE PUBLIC BENCHMARK DATASET INGESTION                         ');
+  console.log('   VERSIEVE PUBLIC BENCHMARK DATASET INGESTION                         ');
   console.log('   Target: 1,207 Real Public Documents (199 FUNSD + 500 ai4privacy +     ');
   console.log('           500 PubMedQA + 8 PMC Clinical PDFs)                          ');
   console.log('========================================================================');

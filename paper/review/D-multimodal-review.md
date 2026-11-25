@@ -1,6 +1,6 @@
 # Review: Versieve-MM: Zero-Import WebAssembly Multimodal Enterprise Sanitization, Ground-Truth Conformal Gating, and Noisy Cross-Modal Erasure
 
-Panel run: academic-paper-reviewer, single manuscript, five role-separated seats. Manuscript: `paper/verisieve-multimodal-sanitization-benchmark.tex` (MLSys 2025 style, `[accepted]` mode). Bibliography: `paper/verisieve-multimodal-sanitization-benchmark.bib`.
+Panel run: academic-paper-reviewer, single manuscript, five role-separated seats. Manuscript: `paper/versieve-multimodal-sanitization-benchmark.tex` (MLSys 2025 style, `[accepted]` mode). Bibliography: `paper/versieve-multimodal-sanitization-benchmark.bib`.
 
 Role separation here is procedural, not epistemic: all five seats were executed by one reviewing process over the same evidence base, so findings are not independent samples from five error processes. Seats are kept separate only to force distinct evaluation lenses (fit, statistics, domain depth, deployment, adversarial). Cross-seat agreement therefore carries no calibration value beyond what the evidence itself supports.
 
@@ -9,7 +9,7 @@ Role separation here is procedural, not epistemic: all five seats were executed 
 Read in full:
 - The manuscript TeX (all 360 lines: abstract, Secs. 1-6, Fig. 1-3 captions, Tables 1-6, appendix audit table).
 - The complete `.bib` (24 entries; 17 used per `.blg`), the `.blg`, and compile-log warnings.
-- Companion Paper 1 (`verisieve-extraction-redaction-benchmark.tex`) HC-CRC/E-LTT paragraph (lines 267-268) and all three companion titles, for the distinctness check.
+- Companion Paper 1 (`versieve-extraction-redaction-benchmark.tex`) HC-CRC/E-LTT paragraph (lines 267-268) and all three companion titles, for the distinctness check.
 - All cited arithmetic recomputed from the tables (see Seat 2).
 
 Not read / not verifiable in this review:
@@ -24,7 +24,7 @@ Not read / not verifiable in this review:
 
 **JF-1 (MAJOR) Abstract claims HC-CRC/E-LTT as a contribution that already exists, verbatim, in companion Paper 1.**
 - Location: Abstract, "makes three contributions: ... (2) **Hierarchical Cluster-Robust Conformal Risk Control (`HC-CRC`)** and **Anytime-Valid Ville Betting Martingales (`E-LTT`)**"; duplicated in "Scope of Novelty"
-- Evidence anchor: `verisieve-extraction-redaction-benchmark.tex:267-268` defines the identical cluster loss $L_m(\lambda) = |U_m|^{-1}\sum \mathbb{I}[f(c)\ge\lambda]$, the identical DEFF $=1+(\bar N_u-1)\rho$ and $N_{\text{eff}}=\lfloor n_0/\text{DEFF}\rfloor$ inversion, and the identical Ville supermartingale $\mathcal E_t(\lambda)=\prod(1+\gamma_m(\alpha-L_m(\lambda)))$. The multimodal paper's Sec. 3 repeats the same formulas with only the detector score swapped for $\hat p_{\text{safe}}(c)$.
+- Evidence anchor: `versieve-extraction-redaction-benchmark.tex:267-268` defines the identical cluster loss $L_m(\lambda) = |U_m|^{-1}\sum \mathbb{I}[f(c)\ge\lambda]$, the identical DEFF $=1+(\bar N_u-1)\rho$ and $N_{\text{eff}}=\lfloor n_0/\text{DEFF}\rfloor$ inversion, and the identical Ville supermartingale $\mathcal E_t(\lambda)=\prod(1+\gamma_m(\alpha-L_m(\lambda)))$. The multimodal paper's Sec. 3 repeats the same formulas with only the detector score swapped for $\hat p_{\text{safe}}(c)$.
 - Why it matters: contribution (2) of three named contributions is not new to this manuscript. The genuinely new content is the *empirical TAB evaluation* (1,999 held-out paragraphs, five regimes, ICC/DEFF measured) and the finding that naive-i.i.d. LTT overshoots. Claiming the mechanism as a contribution in the abstract invites a "novelty already claimed in a companion submission" review outcome.
 - Minimal fix: restyle contribution (2) as "first empirical cluster-robust validation of the companion HC-CRC/E-LTT gatekeepers on human-annotated multi-paragraph legal text, including measured DEFF=2.62 and the naive-i.i.d. overshoot," and cross-reference the companion mechanism definition explicitly.
 
@@ -42,7 +42,7 @@ Not read / not verifiable in this review:
 
 **JF-4 (MINOR) Internal draft language leaks into a submitted abstract.**
 - Location: Abstract, "($+$28.65 F1 over **Paper 1 regex**)"; Sec. 4.1, "Paper 1 Regex+Lexicon" row; Sec. 2.2, "fuses Paper 1 regexes"
-- Evidence anchor: self-reference to an unpublished companion technical report (`ardiyansyah2026verisieve`, "Technical Report"); "Paper 1" is house numbering a reviewer has no way to resolve beyond one citation.
+- Evidence anchor: self-reference to an unpublished companion technical report (`ardiyansyah2026versieve`, "Technical Report"); "Paper 1" is house numbering a reviewer has no way to resolve beyond one citation.
 - Why it matters: opaque jargon in the abstract degrades readability and, under a future double-blind setting, self-identifies the authorship lineage.
 - Minimal fix: call it "the companion Versieve text pipeline's regex+lexicon baseline" and cite it on first use in the abstract.
 

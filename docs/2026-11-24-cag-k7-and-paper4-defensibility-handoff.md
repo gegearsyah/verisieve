@@ -24,7 +24,7 @@ there is a conceptual upgrade in the CAG direction. This handoff packages all fo
 4. **Word bans in papers and docs:** "mathematically grounded", /eliminat/ (eliminates/
    eliminating/eliminated), novelty-claim "first" ("first to", "the first", "for the
    first time", "our first"), "perceive everything", "atomic knowledge". No em-dashes.
-5. **Verification bar:** `npm run test:ci` green end-to-end, `node bin/verisieve.mjs
+5. **Verification bar:** `npm run test:ci` green end-to-end, `node bin/versieve.mjs
    audit-wasm` allVerified, no unintended `results/*.json` dirt (restore wallclock dirt
    with explicit-path `git checkout -- <paths>`, never `git add -A`; never touch the
    committed `results/open-estate-baseline.json` Enron aggregates — see the
@@ -153,7 +153,7 @@ run-record entry with every deviation.
 
 ## Item 2: Paper 4 defensibility research (CPU)
 
-Paper 4 is `paper/verisieve-graph-grounded-enterprise-corpus.tex` on
+Paper 4 is `paper/versieve-graph-grounded-enterprise-corpus.tex` on
 `feat/parked-followups` (compiles clean, 8 pages, 0 undefined refs; every number is
 needled in `scripts/check-paper-numbers.mjs`). Its claims are already boundary-stated;
 your job is to close the remaining reviewer attacks with literature and, where

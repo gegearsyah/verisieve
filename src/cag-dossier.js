@@ -7,7 +7,7 @@
  *      PortableDocumentGraph in deterministic TOC reading order (<= 16k/32k/64k tokens).
  *   2. Emits dossier_sha256 + taint_entity_ids[] + slotFilename manifest so GDPR Art. 17
  *      entity revocation immediately identifies and evicts tainted KV slots via
- *      verisieve_graph.wasm blast_radius.
+ *      versieve_graph.wasm blast_radius.
  *   3. Integrates natively with llama-server (--slot-save-path) and Ollama (keep_alive).
  */
 
@@ -81,7 +81,7 @@ export function buildCagDossier(graph, options = {}) {
   const maxTokens = Math.max(32, Math.round(options.maxTokens ?? 32768));
   const preamble =
     options.preamble ??
-    'You are answering questions strictly from the verified, PII-redacted VeriSieve workspace dossier below. Preserve salted entity tags (<PII:...>) exactly and never fabricate facts outside this dossier.';
+    'You are answering questions strictly from the verified, PII-redacted Versieve workspace dossier below. Preserve salted entity tags (<PII:...>) exactly and never fabricate facts outside this dossier.';
 
   const provByNodeId = new Map();
   for (const p of graph.provenance || []) {
@@ -193,7 +193,7 @@ export function buildCagDossier(graph, options = {}) {
 
 /**
  * Registers the CAG KV-slot manifest as an ARTIFACT node in PortableDocumentGraph
- * with DERIVED_FROM edges to every included passage so verisieve_graph.wasm blast_radius
+ * with DERIVED_FROM edges to every included passage so versieve_graph.wasm blast_radius
  * can immediately identify tainted KV caches on GDPR Art. 17 entity revocation.
  */
 export function registerCagArtifactInGraph(graph, manifest) {
@@ -210,7 +210,7 @@ export function registerCagArtifactInGraph(graph, manifest) {
 }
 
 /**
- * Evaluates GDPR Art. 17 cache eviction using verisieve_graph.wasm blastRadius
+ * Evaluates GDPR Art. 17 cache eviction using versieve_graph.wasm blastRadius
  * over revoked salted entity IDs (`ent:<kind>:<hmac16>`).
  */
 export function checkCagEviction(graph, manifest, revokedEntityIds = []) {

@@ -4,9 +4,9 @@ Date: 2026-11-17. Primary sources only (Rtio sandbox code + prior matilda-portab
 
 ## What the pipeline actually does
 
-Source: `Rtio/frontend/lib/verisieve/sandbox-chat.ts`.
+Source: `Rtio/frontend/lib/versieve/sandbox-chat.ts`.
 
-1. **No query rewrite.** `runSandboxChatTurn` passes `params.question` straight into `retrieveRedactedContext` ([sandbox-chat.ts](../../Rtio/frontend/lib/verisieve/sandbox-chat.ts) ~606–609). There is no HyDE, multi-query, synonym expansion, or legal-term rewrite step.
+1. **No query rewrite.** `runSandboxChatTurn` passes `params.question` straight into `retrieveRedactedContext` ([sandbox-chat.ts](../../Rtio/frontend/lib/versieve/sandbox-chat.ts) ~606–609). There is no HyDE, multi-query, synonym expansion, or legal-term rewrite step.
 
 2. **Eligibility.** Only rows with non-empty `masked_text` and `KEEP_SAFE`, or `ABSTAIN_HUMAN_REVIEW` when `includeReviewRows` is true (default). `DROP_OR_QUARANTINE` and empty masks are out (`eligibleRows`, ~207–213).
 

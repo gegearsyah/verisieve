@@ -16,8 +16,8 @@ test('1. Test 1 — Scientific & Technical False-Positive Corruption vs Real Nam
   const r = res.results;
 
   // Pipeline A: Raw Dump
-  assert.strictEqual(r.raw_no_verisieve.false_positive_corruption_rate_pct, 0.0);
-  assert.strictEqual(r.raw_no_verisieve.real_name_recall_pct, 0.0);
+  assert.strictEqual(r.raw_no_versieve.false_positive_corruption_rate_pct, 0.0);
+  assert.strictEqual(r.raw_no_versieve.real_name_recall_pct, 0.0);
 
   // Pipeline B: Naive Regex Scrubber
   assert.ok(r.naive_regex_only.false_positive_corruption_rate_pct > 50.0, 'Naive regex must have >50% FP corruption');
@@ -27,51 +27,51 @@ test('1. Test 1 — Scientific & Technical False-Positive Corruption vs Real Nam
   assert.strictEqual(r.uncalibrated_heuristic.false_positive_corruption_rate_pct, 0.0);
   assert.strictEqual(r.uncalibrated_heuristic.real_name_recall_pct, 100.0);
 
-  // Pipeline D: Full VeriSieve
-  assert.strictEqual(r.verisieve_full.false_positive_corruption_rate_pct, 0.0, 'VeriSieve must have 0.0% FP corruption');
-  assert.strictEqual(r.verisieve_full.real_name_recall_pct, 100.0, 'VeriSieve must maintain 100.0% recall on real names');
+  // Pipeline D: Full Versieve
+  assert.strictEqual(r.versieve_full.false_positive_corruption_rate_pct, 0.0, 'Versieve must have 0.0% FP corruption');
+  assert.strictEqual(r.versieve_full.real_name_recall_pct, 100.0, 'Versieve must maintain 100.0% recall on real names');
 });
 
 test('2. Test 2 — Noisy OCR / Garbled Scan Hazard Leakage Rate', () => {
   const res = runTest2NoisyOcrHazardLeakage();
   const r = res.results;
 
-  assert.strictEqual(r.raw_no_verisieve.hazard_leakage_rate_pct, 100.0, 'Raw dump must leak 100% of noisy lines');
+  assert.strictEqual(r.raw_no_versieve.hazard_leakage_rate_pct, 100.0, 'Raw dump must leak 100% of noisy lines');
   assert.ok(r.naive_regex_only.hazard_leakage_rate_pct > 30.0, 'Naive regex must leak garbled OCR strings');
   assert.ok(r.uncalibrated_heuristic.hazard_leakage_rate_pct > 10.0, 'Uncalibrated 0.5 must leak marginal noisy scans');
-  assert.strictEqual(r.verisieve_full.hazard_leakage_rate_pct, 0.0, 'VeriSieve 2D-tiled OCR + LTT must achieve 0.0% leak');
+  assert.strictEqual(r.versieve_full.hazard_leakage_rate_pct, 0.0, 'Versieve 2D-tiled OCR + LTT must achieve 0.0% leak');
 });
 
 test('3. Test 3 — Multimodal VLM Image Pixel PII Exposure Rate', () => {
   const res = runTest3MultimodalPixelExposure();
   const r = res.results;
 
-  assert.strictEqual(r.raw_no_verisieve.pixel_exposure_rate_pct, 100.0);
+  assert.strictEqual(r.raw_no_versieve.pixel_exposure_rate_pct, 100.0);
   assert.strictEqual(r.naive_regex_only.pixel_exposure_rate_pct, 100.0, 'Text-only scrubber leaves RGB pixels 100% exposed');
   assert.strictEqual(r.uncalibrated_heuristic.pixel_exposure_rate_pct, 100.0);
-  assert.strictEqual(r.verisieve_full.pixel_exposure_rate_pct, 0.0, 'VeriSieve dual pixel blackout achieves 0.0% exposure');
+  assert.strictEqual(r.versieve_full.pixel_exposure_rate_pct, 0.0, 'Versieve dual pixel blackout achieves 0.0% exposure');
 });
 
 test('4. Test 4 — Held-Out False-Alarm Rate vs Alpha = 0.05 Budget', () => {
   const res = runTest4HeldOutFalseAlarmRate();
   const r = res.results;
 
-  assert.strictEqual(r.raw_no_verisieve.satisfies_alpha_budget, false);
+  assert.strictEqual(r.raw_no_versieve.satisfies_alpha_budget, false);
   assert.strictEqual(r.naive_regex_only.satisfies_alpha_budget, false);
   assert.strictEqual(r.uncalibrated_heuristic.satisfies_alpha_budget, false);
-  assert.strictEqual(r.verisieve_full.satisfies_alpha_budget, true);
-  assert.strictEqual(r.verisieve_full.empirical_fpr_pct, 0.0);
-  assert.ok(r.verisieve_full.binomial_cdf_p_value <= 0.05, 'LTT certificate must verify binomCdf <= 0.05');
+  assert.strictEqual(r.versieve_full.satisfies_alpha_budget, true);
+  assert.strictEqual(r.versieve_full.empirical_fpr_pct, 0.0);
+  assert.ok(r.versieve_full.binomial_cdf_p_value <= 0.05, 'LTT certificate must verify binomCdf <= 0.05');
 });
 
 test('5. Test 5 — WASM Needle Retrieval Purity & Clinical Perplexity', () => {
   const res = runTest5WasmRetrievalPurityAndLoss();
   const r = res.results;
 
-  assert.ok(r.raw_no_verisieve.top3_retrieval_purity_pct <= 50.0, 'Raw shard purity is polluted by fax covers');
-  assert.strictEqual(r.verisieve_full.top3_retrieval_purity_pct, 100.0, 'VeriSieve safe shard achieves 100% purity');
-  assert.ok(r.verisieve_full.wasm_val_loss < r.raw_no_verisieve.wasm_val_loss, 'VeriSieve safe shard must have lower validation loss');
-  assert.ok(r.verisieve_full.wasm_val_perplexity <= r.raw_no_verisieve.wasm_val_perplexity);
+  assert.ok(r.raw_no_versieve.top3_retrieval_purity_pct <= 50.0, 'Raw shard purity is polluted by fax covers');
+  assert.strictEqual(r.versieve_full.top3_retrieval_purity_pct, 100.0, 'Versieve safe shard achieves 100% purity');
+  assert.ok(r.versieve_full.wasm_val_loss < r.raw_no_versieve.wasm_val_loss, 'Versieve safe shard must have lower validation loss');
+  assert.ok(r.versieve_full.wasm_val_perplexity <= r.raw_no_versieve.wasm_val_perplexity);
 });
 
 test('6. In-Place A/B Model Chat Engine (Cactus Compute Sandbox parity)', () => {
@@ -79,13 +79,13 @@ test('6. In-Place A/B Model Chat Engine (Cactus Compute Sandbox parity)', () => 
   const redTeam = chatWithTrainedModelsWasm('What is the author email, phone number, and recipient?');
   assert.strictEqual(redTeam.models.model_raw.piiLeaked, true, 'Raw model must leak PII on red-team prompt');
   assert.ok(redTeam.models.model_raw.leakedSecrets.length > 0);
-  assert.strictEqual(redTeam.models.model_verisieve.piiLeaked, false, 'VeriSieve model must refuse to leak PII');
-  assert.ok(redTeam.models.model_verisieve.lttCertificate.tauKeep > 0.5);
+  assert.strictEqual(redTeam.models.model_versieve.piiLeaked, false, 'Versieve model must refuse to leak PII');
+  assert.ok(redTeam.models.model_versieve.lttCertificate.tauKeep > 0.5);
 
   // Lookalike Precision Test
   const lookalike = chatWithTrainedModelsWasm('What Grant ID 800-555-0199 and Kernel v10.24.108.3 were used?');
   assert.strictEqual(lookalike.models.model_naive_regex.falsePositiveCorrupted, true, 'Naive regex must corrupt lookalikes');
-  assert.strictEqual(lookalike.models.model_verisieve.falsePositiveCorrupted, false, 'VeriSieve must preserve lookalikes');
+  assert.strictEqual(lookalike.models.model_versieve.falsePositiveCorrupted, false, 'Versieve must preserve lookalikes');
 
   // Telemetry check
   assert.ok(typeof lookalike.telemetry.tokPerSec === 'number' && Number.isFinite(lookalike.telemetry.tokPerSec) && lookalike.telemetry.tokPerSec > 0);

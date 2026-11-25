@@ -1,7 +1,7 @@
 # Perceive-Everything (`Versieve`): Unified Theoretical Framework & Algorithmic Novelty Across All Three Papers
 
 - **Date:** 2026-11-24
-- **Repository:** `gegearsyah/verisieve` (`matilda-portable`) & `gegearsyah/RTIO` (`rtio.io/sandbox`)
+- **Repository:** `gegearsyah/versieve` (`matilda-portable`) & `gegearsyah/RTIO` (`rtio.io/sandbox`)
 - **Scope:** Formal Mathematical Propositions, Proofs, and Systems Complexity Bounds for:
   1. **Pillar 1 (Papers 1 & 2 — Statistical Theory):** Hierarchical Cluster-Robust Conformal Risk Control (`HC-CRC`) and Anytime-Valid Streaming Conformal Martingales (`E-LTT`).
   2. **Pillar 2 (Paper 2 & Core Rust/WASM Engine):** Sparse-Reference Multimodal Perception (`SR-MP`) in $O(1)$ Bounded WASM Memory and Synchronized Omnimodal Scene-Graph Fusion.
@@ -79,13 +79,13 @@ In **Versieve (`Perceive-Everything`)**, multimodal PII and secret perception ac
 1. **The Fragmented Context Horizon:** Local span detectors (`Presidio`, `GLiNER-Edge`, `Stage 3A`) process each paragraph, slide, or 30-second audio turn in a bounded window ($W \le 384$ tokens). An entity introduced with explicit title/role cues in Block 1 (*"Applicant: Mr. Markus Pentikäinen"*) reappears in Block 45 as a bare surname (*"Pentikäinen"*), an ASR homophone (*"Pentikaynen"*, *"Elena Vans"*), or a dark-mode video OCR substitution (*"Pentikalnen"*), receiving a sub-threshold local score $s_{\text{local}}(m) < \tau_{\text{anchor}}$.
 2. **Low-Threshold Precision Collapse:** Lowering $\tau$ globally from $0.50 \to 0.20$ to recover weak follow-up mentions causes false positives on domain nouns (*"Clinical Trial"*, *"the High Court"*, *"Confidence Interval"*) to explode.
 
-### 3.2 The Fixed-Capacity `512`-Slot Salted Reference Sketch Ring in `verisieve_media.wasm`
+### 3.2 The Fixed-Capacity `512`-Slot Salted Reference Sketch Ring in `versieve_media.wasm`
 
-We design **`SR-MP` (Sparse-Reference Multimodal Perception)** and compile its core data structure directly into `#![no_std]` Rust (`rust/verisieve-media/src/pii_secrets.rs` $\to$ `verisieve_media.wasm`, `0` host imports):
+We design **`SR-MP` (Sparse-Reference Multimodal Perception)** and compile its core data structure directly into `#![no_std]` Rust (`rust/versieve-media/src/pii_secrets.rs` $\to$ `versieve_media.wasm`, `0` host imports):
 
 ```text
 +-----------------------------------------------------------------------------------+
-|          verisieve_media.wasm: Static 512-Slot Salted Reference Sketch Ring       |
+|          versieve_media.wasm: Static 512-Slot Salted Reference Sketch Ring       |
 |                     (512 slots × 32 bytes = 16,384 bytes = O(1) RAM)              |
 +-----------------------------------------------------------------------------------+
 | Slot k (32 B):                                                                    |

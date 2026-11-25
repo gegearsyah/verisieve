@@ -1,6 +1,6 @@
 # Verdict, 16 Nov 2026 — sandbox ranker and the local VeRA heads
 
-The trainer in `vendor/wasm/verisieve_dl.wasm` ran both tasks. Its sha256 is `2ff6e7756acafb31a97ac365d7bfeb9911654d751126c603a9cdeda8f2e314d2`. No checkpoint was loaded. The head is the in-tree VeRA session: dim 64, dModel 16, 2 layers, rank 4, 25 epochs. It scores one 64-dim vector. The regex still proposes every span.
+The trainer in `vendor/wasm/versieve_dl.wasm` ran both tasks. Its sha256 is `2ff6e7756acafb31a97ac365d7bfeb9911654d751126c603a9cdeda8f2e314d2`. No checkpoint was loaded. The head is the in-tree VeRA session: dim 64, dModel 16, 2 layers, rank 4, 25 epochs. It scores one 64-dim vector. The regex still proposes every span.
 
 Numbers below are copied from `results/rag-retrieval-probe.json` and `results/local-vera-probe.json`. The figure is drawn from those files by `scripts/probe-rag-redaction-figure.mjs`.
 
@@ -36,7 +36,7 @@ Of the 125 hybrid top scores, 0 are below 0.15 and 1 is below 0.30 (0.8%). Every
 
 ## Chat gaps that stay open
 
-Read again from `Rtio/frontend/lib/verisieve/sandbox-chat.ts` and `ChatTab.tsx` on 16 Nov 2026. `npx tsx --test tests/unit/verisieve-chat.test.ts` passed 6/0. The scrub test sends `history: []`.
+Read again from `Rtio/frontend/lib/versieve/sandbox-chat.ts` and `ChatTab.tsx` on 16 Nov 2026. `npx tsx --test tests/unit/versieve-chat.test.ts` passed 6/0. The scrub test sends `history: []`.
 
 - Earlier turns are stored unmasked and copied into the outbound messages with no second mask.
 - `maskDirectQuestionPii` skips every hit whose type is `name_likely`.

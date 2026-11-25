@@ -19,7 +19,7 @@
  *    zero network, zero egress in this run.
  *  - Workspace 4 representation is keyframes (PNG) + WAV + VTT only. There is no
  *    mp4-decode claim anywhere; video decode is a fail-closed external.
- *  - verisieve_media.wasm does not yet ship the raster chart-inversion / layout-region
+ *  - versieve_media.wasm does not yet ship the raster chart-inversion / layout-region
  *    kernels (Pillar I item 2), so pixel-to-data inversion and diagram-box/arrow
  *    detection are implemented as deterministic JS perception layers in this harness —
  *    recorded as deviations, numbers measured and published whatever they are.
@@ -1014,7 +1014,7 @@ function buildWorkspace4() {
 }
 
 // ---------------------------------------------------------------------------
-// Workspace 5 — .xlsx sheet + PDF vector table joined in verisieve_sql.wasm.
+// Workspace 5 — .xlsx sheet + PDF vector table joined in versieve_sql.wasm.
 // Kernel ABI: single-table load, INNER equi-joins on aliased instances only, so
 // the perceived rows are loaded as one unioned table and joined via aliases
 // (recorded as a deviation; cross-table JOIN fails closed in the kernel).
@@ -1104,7 +1104,7 @@ function buildWorkspace5() {
   const engineVisibleText = `${shared}\n${priceRowsGt.map((r) => r.join('|')).join(';')}`;
   return {
     id: 'W5',
-    title: 'Cross-document SQL join (xlsx sheet + PDF vector table) in verisieve_sql.wasm',
+    title: 'Cross-document SQL join (xlsx sheet + PDF vector table) in versieve_sql.wasm',
     seed: SEEDS.W5,
     inputs: [
       { name: 'sheets/shipments.xlsx', bytes: xlsx },
@@ -1678,7 +1678,7 @@ async function runAll() {
         perceivedFromSheets: perceivedRows.filter((r) => r.tab === 'sheet').length,
         perceivedFromPdf: perceivedRows.filter((r) => r.tab === 'pdf').length,
         queryResults,
-        kernelNote: 'verisieve_sql.wasm loads a single table; the perceived sheet and PDF rows are unioned into one kernel table and joined via aliased INNER equi-join inside the kernel.',
+        kernelNote: 'versieve_sql.wasm loads a single table; the perceived sheet and PDF rows are unioned into one kernel table and joined via aliased INNER equi-join inside the kernel.',
       },
       antiCircularity: {
         present: true,
@@ -1932,8 +1932,8 @@ async function runAll() {
     sql: sqlReport,
     qa: qaReport,
     deviations: [
-      'vs_media_invert_chart_series / vs_media_segment_layout_regions are not compiled into verisieve_media.wasm yet; W2 pixel inversion and diagram detection run as deterministic JS perception layers in the harness (measured, published as-is).',
-      'verisieve_sql.wasm loads a single table (cross-table JOIN fails closed); W5 unions the perceived xlsx + PDF rows into one kernel table and uses an aliased INNER equi-join inside the kernel.',
+      'vs_media_invert_chart_series / vs_media_segment_layout_regions are not compiled into versieve_media.wasm yet; W2 pixel inversion and diagram detection run as deterministic JS perception layers in the harness (measured, published as-is).',
+      'versieve_sql.wasm loads a single table (cross-table JOIN fails closed); W5 unions the perceived xlsx + PDF rows into one kernel table and uses an aliased INNER equi-join inside the kernel.',
       'W4 representation is keyframes (PNG) + WAV + VTT only; there is no mp4-decode claim anywhere.',
       'ASR is a fail-closed external, so the WAV perception paths receive word-timestamp lists generated from the same transcript text the engine is given (never from GT labels).',
       'The Flat-Text/OCR baseline cannot express chart RelErr, diagram F1, SQL aggregations, diarization or multi-hop bindings; those baseline cells use the documented convention values 0 or 100 recorded beside each metric.',

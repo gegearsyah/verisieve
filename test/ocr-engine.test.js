@@ -140,7 +140,7 @@ test('T4: auditCactusWasmArtifact verifies exact 16-import signatures and fails 
   assert.deepStrictEqual(audit.unexpectedImports, []);
   assert.deepStrictEqual(audit.signatureMismatches, []);
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-t4-wasm-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-t4-wasm-'));
   try {
     const badPath = path.join(tmpDir, 'bad.wasm');
     fs.writeFileSync(badPath, buildMinimalWasmWithImport('env', 'fetch'));
@@ -307,7 +307,7 @@ test('T4: real PNG (None/Sub/Up/Average/Paeth + colorType 0/2/3/6) and BMP (top-
 });
 
 test('T4: PDF /Image XObject decode, 2D seam stitching, and fail-closed ingest when .cact weights are absent', async () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verisieve-t4-ingest-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-t4-ingest-'));
   try {
     const doc = generateMultiFontDocument({ seed: 20261115 });
     const pngPath = path.join(tmpDir, 'scan.png');

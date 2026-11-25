@@ -67,7 +67,7 @@
         47.12
       ]
     },
-    "verisieveHybridDevFiltered": {
+    "versieveHybridDevFiltered": {
       "precisionPct": 41.29,
       "recallPct": 51.7,
       "f1Pct": 45.91,
@@ -82,7 +82,7 @@
         48.9
       ]
     },
-    "verisieveHybridSrmpWasm": {
+    "versieveHybridSrmpWasm": {
       "precisionPct": 40.3,
       "recallPct": 51.77,
       "f1Pct": 45.32,

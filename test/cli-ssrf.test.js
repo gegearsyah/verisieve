@@ -46,7 +46,7 @@ function generateMinimalPdfBuffer(lines) {
   return Buffer.from(pdf, 'utf8');
 }
 
-function makeTempDir(prefix = 'verisieve-t5-') {
+function makeTempDir(prefix = 'versieve-t5-') {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
@@ -236,7 +236,7 @@ test('T5: SSRF validation blocks private/IMDS/loopback IPs, private DNS, credent
 });
 
 test('T5: CLI implements audit-wasm (all binaries), honest run status, binary-safe ingest, train, and decide', () => {
-  const cliPath = path.resolve('bin/verisieve.mjs');
+  const cliPath = path.resolve('bin/versieve.mjs');
   const tmpDir = makeTempDir();
   try {
     // 1. multi-binary audit-wasm
@@ -244,8 +244,8 @@ test('T5: CLI implements audit-wasm (all binaries), honest run status, binary-sa
     const auditJson = JSON.parse(auditOut);
     assert.equal(auditJson.allVerified, true);
     assert.equal(auditJson.binaries.cactus.zeroEgressVerified, true);
-    assert.equal(auditJson.binaries.verisieve_clean.zeroEgressVerified, true);
-    assert.equal(auditJson.binaries.verisieve_dl.zeroEgressVerified, true);
+    assert.equal(auditJson.binaries.versieve_clean.zeroEgressVerified, true);
+    assert.equal(auditJson.binaries.versieve_dl.zeroEgressVerified, true);
 
     // 2. CLI audit-wasm fails exit 1 on tampered WASM with host imports
     const evilWasm = path.join(tmpDir, 'evil.wasm');
@@ -350,7 +350,7 @@ test('ingestFromUrlOrPath parses HTML saved with a .pdf extension', async () => 
     const cliResult = JSON.parse(
       execFileSync(
         process.execPath,
-        [path.resolve('bin/verisieve.mjs'), 'ingest', mislabeledPath],
+        [path.resolve('bin/versieve.mjs'), 'ingest', mislabeledPath],
         { encoding: 'utf8' }
       )
     );

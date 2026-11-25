@@ -333,13 +333,13 @@ def build_gif():
     pal = ims[0].quantize(colors=64)
     qims = [im.quantize(palette=pal, dither=Image.NONE) for im in ims]
     qims[0].save(
-        DOCS_DIR / "verisieve-architecture.gif",
+        DOCS_DIR / "versieve-architecture.gif",
         save_all=True, append_images=qims[1:], duration=[dur] * frames,
         loop=0, optimize=True, disposal=2,
     )
     shutil.rmtree(frames_dir)
-    print(f"Wrote docs/verisieve-architecture.gif "
-          f"({(DOCS_DIR / 'verisieve-architecture.gif').stat().st_size} B)")
+    print(f"Wrote docs/versieve-architecture.gif "
+          f"({(DOCS_DIR / 'versieve-architecture.gif').stat().st_size} B)")
 
 
 # ---------------------------------------------------------------------------

@@ -292,7 +292,7 @@ test('T8: demo/index.html parses with zero JS SyntaxErrors, removes node imports
     assert.doesNotMatch(code, /node:(fs|path|crypto)/, 'Browser demo must not reference node:* builtins');
 
     // Full ESM syntax check via node --check
-    const tmpMjs = path.join(os.tmpdir(), `verisieve-demo-check-${Date.now()}.mjs`);
+    const tmpMjs = path.join(os.tmpdir(), `versieve-demo-check-${Date.now()}.mjs`);
     fs.writeFileSync(tmpMjs, code, 'utf8');
     try {
       const checkRes = spawnSync(process.execPath, ['--check', tmpMjs], { encoding: 'utf8' });

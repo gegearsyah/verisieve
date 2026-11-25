@@ -261,6 +261,6 @@ test('MCP Server multi-axis gatekeeper, open-weight plan, link ingestion, and SK
   assert.ok(ingested.blocks.length >= 1);
   assert.ok(!ingested.blocks[0].text.includes('dr.lee@clinic.org'));
 
-  const skillPath = path.resolve(process.cwd(), 'skills/verisieve-local-train/SKILL.md');
+  const skillPath = path.resolve(process.cwd(), 'skills/versieve-local-train/SKILL.md');
   assert.ok(fs.existsSync(skillPath), `Expected SKILL.md at ${skillPath}`);
 });

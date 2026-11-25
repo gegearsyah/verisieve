@@ -15,7 +15,7 @@ import {
   AMNESIAC_ENGINE_VERSION_SHA256,
 } from '../src/amnesiac-corpus.js';
 
-// Spec: gegearsyah/verisieve#25 — external-behavior-only tests at the new seam (bytes in → bytes out).
+// Spec: gegearsyah/versieve#25 — external-behavior-only tests at the new seam (bytes in → bytes out).
 const INPUTS = [
   {
     name: 'contracts/msa.txt',

@@ -108,7 +108,7 @@ test('T9: benchmark modules eliminate synthetic formulas, PRNG fake calibration,
 
 test('T9: technical note cites the live deterministic benchmark headlines', () => {
   const report = JSON.parse(fs.readFileSync(path.resolve('results/scale-and-paradigm-benchmark.json'), 'utf8'));
-  const tex = fs.readFileSync(path.resolve('paper/verisieve-extraction-redaction-benchmark.tex'), 'utf8');
+  const tex = fs.readFileSync(path.resolve('paper/versieve-extraction-redaction-benchmark.tex'), 'utf8');
   const contactSpans = report.race_2_pii_disambiguation_regex_ceiling.ai4privacy_ground_truth.contact_spans;
   const nCalUnsafe = report.race_3_ltt_conformal_calibration.split.nCalUnsafe;
   assert.match(tex, new RegExp(contactSpans.replace('/', '\\/')));

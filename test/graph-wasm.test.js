@@ -10,18 +10,18 @@ import {
 import { handleJsonRpcRequest } from '../src/mcp-server.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RTIO_GRAPH_WASM = path.resolve(__dirname, '../../Rtio/frontend/public/wasm/verisieve_graph.wasm');
+const RTIO_GRAPH_WASM = path.resolve(__dirname, '../../Rtio/frontend/public/wasm/versieve_graph.wasm');
 
-test('Track B2 Portable: vendor verisieve_graph.wasm matches Rtio byte-for-byte, has 0 imports, and round-trips .csr snapshot', () => {
-  assert.ok(fs.existsSync(DEFAULT_GRAPH_WASM_PATH), 'Expected vendor/wasm/verisieve_graph.wasm');
+test('Track B2 Portable: vendor versieve_graph.wasm matches Rtio byte-for-byte, has 0 imports, and round-trips .csr snapshot', () => {
+  assert.ok(fs.existsSync(DEFAULT_GRAPH_WASM_PATH), 'Expected vendor/wasm/versieve_graph.wasm');
   const vendorBytes = fs.readFileSync(DEFAULT_GRAPH_WASM_PATH);
   if (fs.existsSync(RTIO_GRAPH_WASM)) {
     const rtioBytes = fs.readFileSync(RTIO_GRAPH_WASM);
-    assert.deepEqual(vendorBytes, rtioBytes, 'vendor verisieve_graph.wasm must match Rtio byte-for-byte');
+    assert.deepEqual(vendorBytes, rtioBytes, 'vendor versieve_graph.wasm must match Rtio byte-for-byte');
   }
 
   const mod = new WebAssembly.Module(vendorBytes);
-  assert.equal(WebAssembly.Module.imports(mod).length, 0, 'verisieve_graph.wasm must have zero external host imports');
+  assert.equal(WebAssembly.Module.imports(mod).length, 0, 'versieve_graph.wasm must have zero external host imports');
 
   const engine = loadGraphWasmSync();
   assert.equal(engine.abiVersion, 1);
@@ -76,7 +76,7 @@ test('Track B2 Portable MCP: index_document_graph, blast_radius, ppr_retrieve, t
   });
 
   const idxData = JSON.parse(indexRes.result.content[0].text);
-  assert.equal(idxData.wasmBackend, 'verisieve_graph.wasm');
+  assert.equal(idxData.wasmBackend, 'versieve_graph.wasm');
   assert.ok(idxData.nodeCount >= 8);
   assert.ok(!JSON.stringify(idxData).includes('Alice Mercer'), 'Zero raw PII in graph index summary');
   assert.ok(!JSON.stringify(idxData).includes('alice.mercer@clinic.org'));
@@ -104,7 +104,7 @@ test('Track B2 Portable MCP: index_document_graph, blast_radius, ppr_retrieve, t
   assert.ok(hitIds.includes('art:sft_jsonl:tainted_lora_shard'), `Expected tainted shard in blast_radius: ${JSON.stringify(hitIds)}`);
   assert.ok(!hitIds.includes('art:sft_jsonl:clean_lora_shard'), 'Clean shard must not be in blast_radius');
 
-  // 2. ppr_retrieve (2-hop entity bridging via verisieve_graph.wasm)
+  // 2. ppr_retrieve (2-hop entity bridging via versieve_graph.wasm)
   const pprRes = handleJsonRpcRequest({
     jsonrpc: '2.0',
     method: 'tools/call',

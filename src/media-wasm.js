@@ -1,5 +1,5 @@
 /**
- * Zero-import Rust/WASM Multimodal Core loader for Node.js (`verisieve_media.wasm`, ABI v1).
+ * Zero-import Rust/WASM Multimodal Core loader for Node.js (`versieve_media.wasm`, ABI v1).
  *
  * Powers byte-identical execution across `matilda-portable` (CLI/MCP) and `Rtio/frontend` (Browser):
  * - Bomb-guarded ZIP Central Directory (+ bit-3 + ZIP64) & TAR/TGZ unpacking with Zip-Slip guards
@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const DEFAULT_MEDIA_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/verisieve_media.wasm');
+export const DEFAULT_MEDIA_WASM_PATH = path.resolve(__dirname, '../vendor/wasm/versieve_media.wasm');
 
 const UTF8_ENC = new TextEncoder();
 const UTF8_DEC = new TextDecoder('utf-8');
@@ -37,7 +37,7 @@ export function buildMediaEngineFromInstance(instance) {
   const ex = instance.exports;
   const abiVersion = Number(ex.vs_media_abi_version?.() ?? 0);
   if (abiVersion !== 1) {
-    throw new Error(`Unsupported verisieve_media WASM ABI version: ${abiVersion} (expected 1)`);
+    throw new Error(`Unsupported versieve_media WASM ABI version: ${abiVersion} (expected 1)`);
   }
 
   const memU8 = () => new Uint8Array(ex.memory.buffer);
@@ -130,7 +130,7 @@ export function buildMediaEngineFromInstance(instance) {
       return readMetaJson() || { evasionCharsStripped: 0, homoglyphsFolded: 0, spans: [] };
     },
 
-    pprlSignature(text, salt = 'verisieve-pprl') {
+    pprlSignature(text, salt = 'versieve-pprl') {
       writeIn1(String(text ?? ''));
       writeIn2(String(salt ?? ''));
       const rc = ex.vs_media_pprl_signature();
@@ -144,7 +144,7 @@ export function buildMediaEngineFromInstance(instance) {
       return rc;
     },
 
-    srmpSeedAnchor(text, salt = 'verisieve-srmp', options = {}) {
+    srmpSeedAnchor(text, salt = 'versieve-srmp', options = {}) {
       writeIn1(String(text ?? ''));
       writeIn2(String(salt ?? ''));
       const entityUid = Math.max(0, Math.round(Number(options.entityUid ?? 1))) >>> 0;
@@ -156,7 +156,7 @@ export function buildMediaEngineFromInstance(instance) {
       return readMetaJson() || { slotCount: rc, capacity: 512, entityUid, blockIdx };
     },
 
-    srmpQueryCandidate(text, salt = 'verisieve-srmp', options = {}) {
+    srmpQueryCandidate(text, salt = 'versieve-srmp', options = {}) {
       writeIn1(String(text ?? ''));
       writeIn2(String(salt ?? ''));
       const blockIdx = Math.max(0, Math.round(Number(options.blockIdx ?? 0))) >>> 0;
@@ -337,7 +337,7 @@ export function loadMediaWasmSync(wasmPath = DEFAULT_MEDIA_WASM_PATH) {
   const mod = new WebAssembly.Module(bytes);
   const imports = WebAssembly.Module.imports(mod);
   if (imports.length !== 0) {
-    throw new Error(`ZERO_IMPORT_VIOLATION: verisieve_media.wasm has ${imports.length} unexpected imports`);
+    throw new Error(`ZERO_IMPORT_VIOLATION: versieve_media.wasm has ${imports.length} unexpected imports`);
   }
   const instance = new WebAssembly.Instance(mod, {});
   const engine = buildMediaEngineFromInstance(instance);

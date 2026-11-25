@@ -6,7 +6,7 @@ Reviewer configuration card: Card #2, academic-paper-reviewer v1.11.1 panel, Rou
 
 ## Manuscript Information
 - **Title**: How Training Data Should Look: From Stitched Chunks to Records That Know What They Describe
-- **Manuscript ID**: verisieve-graph-grounded-enterprise-corpus.tex (MLSys 2025 style)
+- **Manuscript ID**: versieve-graph-grounded-enterprise-corpus.tex (MLSys 2025 style)
 - **Review Date**: 2026-11-25
 - **Review Round**: Round 1
 

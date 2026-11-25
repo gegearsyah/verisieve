@@ -154,7 +154,7 @@ test('Task C1: Tier-0 structure extractor preserves PDF headings/breadcrumbs, CS
   assert.equal(tableBlocks[0].breadcrumb, 'Privacy Policy > Threshold Schedule');
 });
 
-test('Task C1: ingestFromUrlOrPath fixes toxic URL/PII auto-drop, wires verisieve_clean.wasm chunking, and preserves salted pseudonyms + breadcrumbs', async () => {
+test('Task C1: ingestFromUrlOrPath fixes toxic URL/PII auto-drop, wires versieve_clean.wasm chunking, and preserves salted pseudonyms + breadcrumbs', async () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vs-c1-'));
   try {
     const mdPath = path.join(tmpDir, 'compliance-corpus.md');
@@ -388,7 +388,7 @@ test('Task C4: Native CAG dossier serialization, token budget capping, GDPR Art.
   assert.ok(capped.omittedPassageIds.length >= 1);
   assert.ok(!/<PII:[A-Z0-9_]*$/.test(capped.dossierText), 'Must never split a <PII:...> token at truncation boundary');
 
-  // 3. GDPR Art. 17 revocation via verisieve_graph.wasm blastRadius
+  // 3. GDPR Art. 17 revocation via versieve_graph.wasm blastRadius
   const aliceEnt = idxInfo.entities.find((e) => e.pii_kind === 'PERSON');
   assert.ok(aliceEnt);
   const reg = registerCagArtifactInGraph(graph, manifest);

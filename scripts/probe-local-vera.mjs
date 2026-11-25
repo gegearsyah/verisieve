@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Local VeRA probe. Runtime is vendor/wasm/verisieve_dl.wasm only.
+ * Local VeRA probe. Runtime is vendor/wasm/versieve_dl.wasm only.
  * On success writes results/local-vera-probe.json and nothing else.
  */
 
@@ -16,11 +16,11 @@ import {
 import {
   cosineSimilarityUnitNorm,
   embedNeedleWasm,
-  getVerisieveDlInstanceSync
+  getVersieveDlInstanceSync
 } from '../src/wasm-needle-dl.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const WASM_PATH = path.join(ROOT, 'vendor', 'wasm', 'verisieve_dl.wasm');
+const WASM_PATH = path.join(ROOT, 'vendor', 'wasm', 'versieve_dl.wasm');
 const OUT_PATH = path.join(ROOT, 'results', 'local-vera-probe.json');
 
 const DIM = 64;
@@ -520,7 +520,7 @@ function loadAi4Docs() {
 function main() {
   const wasmBytes = fs.readFileSync(WASM_PATH);
   const wasmSha256 = crypto.createHash('sha256').update(wasmBytes).digest('hex');
-  const inst = getVerisieveDlInstanceSync(WASM_PATH);
+  const inst = getVersieveDlInstanceSync(WASM_PATH);
   const exp = inst.exports;
   for (const name of VERA_EXPORTS) {
     if (typeof exp[name] !== 'function') {

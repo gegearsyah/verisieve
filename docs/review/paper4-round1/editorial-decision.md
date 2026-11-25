@@ -2,7 +2,7 @@
 
 ## Manuscript Information
 - **Title**: How Training Data Should Look: From Stitched Chunks to Records That Know What They Describe
-- **Manuscript ID**: paper/verisieve-graph-grounded-enterprise-corpus.tex (MLSys 2025 style, accepted mode; no venue confirmed)
+- **Manuscript ID**: paper/versieve-graph-grounded-enterprise-corpus.tex (MLSys 2025 style, accepted mode; no venue confirmed)
 - **Review Date**: 2026-11-25
 - **Decision Date**: 2026-11-25
 - **Review Round**: Round 1 (panel review, paper 4)

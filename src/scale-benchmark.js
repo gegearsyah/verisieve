@@ -1,13 +1,13 @@
 /**
  * src/scale-benchmark.js
  * 
- * VeriSieve Public Benchmark Suite & Multi-Race Evaluation
+ * Versieve Public Benchmark Suite & Multi-Race Evaluation
  * Evaluates:
  * 1. Real Public Benchmark Corpus Ingestion (N = 1,207 real documents):
  *    - 199 ICDAR-2019 FUNSD noisy scanned archival forms (results/untrusted-benchmarks/funsd-full.json)
  *    - 500 ai4privacy-200k ground-truth PII records (results/untrusted-benchmarks/ai4privacy-500.json)
  *    - 500 PubMedQA labeled biomedical research QA records (results/untrusted-benchmarks/pubmedqa-500.json)
- *    - 8 Full-Text Born-Digital PubMed Central clinical research PDFs (VERISIEVE_PAPERS_DIR / fixtures)
+ *    - 8 Full-Text Born-Digital PubMed Central clinical research PDFs (VERSIEVE_PAPERS_DIR / fixtures)
  * 2. Race 1: Born-Digital PDF Front Door vs. 2D Tiled OCR (8 PMC PDFs + 199 FUNSD forms)
  *    - Measures /FlateDecode stream extraction and documents the 4/8 CIDFont ToUnicode CMap null
  *    - Measures word recovery across Stock capped-8 vs. Untiled-512 vs. Horizontal-1D vs. 2D Tiling
@@ -44,10 +44,10 @@ import {
   binomCdf
 } from './gatekeeper.js';
 import {
-  getVerisieveDlInstanceSync,
+  getVersieveDlInstanceSync,
   embedNeedleWasm,
   searchNeedleWasm,
-  auditVerisieveDlWasm
+  auditVersieveDlWasm
 } from './wasm-needle-dl.js';
 import {
   trainMultiAxisGatekeeper,
@@ -80,7 +80,7 @@ export const PMC_PDF_FILENAMES = [
  * Resolves path to a clinical research PDF with graceful fallback
  */
 function resolvePdfPath(filename) {
-  const envDir = process.env.VERISIEVE_PAPERS_DIR ? path.resolve(process.env.VERISIEVE_PAPERS_DIR) : null;
+  const envDir = process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null;
   const candidates = [
     envDir ? path.join(envDir, filename) : null,
     path.resolve('results/untrusted-benchmarks/pmc', filename),
@@ -987,12 +987,12 @@ export function runPiiDisambiguationExperiment(corpus, options = {}) {
   // 3. Lookalike immunity on SAFE_LOOKALIKE_CLINICAL_LINES (Grant ID, Kernel v10, Markov Chain, Boolean Logic)
   const naivePhoneRegex = /(?:\+\d{1,3}[-.\s]*)?(?:\(\s*\d{2,4}\s*\)|\b\d{2,4}\b)[-.\s]*\d{3,4}[-.\s]*\d{3,4}\b/g;
   const naiveIpRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
-  let lookalikeTests = 0, lookalikeNaiveFp = 0, lookalikeVerisieveFp = 0;
+  let lookalikeTests = 0, lookalikeNaiveFp = 0, lookalikeVersieveFp = 0;
   for (const line of SAFE_LOOKALIKE_CLINICAL_LINES) {
     lookalikeTests++;
     const nHits = (line.match(naiveTitleCaseRegex)?.length || 0) + (line.match(naivePhoneRegex)?.length || 0) + (line.match(naiveIpRegex)?.length || 0);
     if (nHits > 0) lookalikeNaiveFp++;
-    if (scanRecordsForPII(line).length > 0) lookalikeVerisieveFp++;
+    if (scanRecordsForPII(line).length > 0) lookalikeVersieveFp++;
   }
 
   return {
@@ -1019,9 +1019,9 @@ export function runPiiDisambiguationExperiment(corpus, options = {}) {
       lookalike_guard_eval: {
         lookalikeLinesTested: lookalikeTests,
         naive_regex_fp_pct: pct(lookalikeNaiveFp, lookalikeTests),
-        verisieve_context_fp_pct: pct(lookalikeVerisieveFp, lookalikeTests)
+        versieve_context_fp_pct: pct(lookalikeVersieveFp, lookalikeTests)
       },
-      generalization_note: `Pre-committed ${EXCLUDED_NAME_WORDS.size}-word functional/biomedical lexicon cuts unprefixed Title-Case false positives on blind test abstracts from ${testHalf.naive_hits_per_1k_words} to ${testHalf.context_hits_per_1k_words} hits / 1k words (${testHalf.naive_doc_fp_pct}% -> ${testHalf.context_doc_fp_pct}% of docs), while achieving ${pct(lookalikeVerisieveFp, lookalikeTests)}% FP on Grant ID / Kernel / Markov lookalikes (naive ${pct(lookalikeNaiveFp, lookalikeTests)}%).`
+      generalization_note: `Pre-committed ${EXCLUDED_NAME_WORDS.size}-word functional/biomedical lexicon cuts unprefixed Title-Case false positives on blind test abstracts from ${testHalf.naive_hits_per_1k_words} to ${testHalf.context_hits_per_1k_words} hits / 1k words (${testHalf.naive_doc_fp_pct}% -> ${testHalf.context_doc_fp_pct}% of docs), while achieving ${pct(lookalikeVersieveFp, lookalikeTests)}% FP on Grant ID / Kernel / Markov lookalikes (naive ${pct(lookalikeNaiveFp, lookalikeTests)}%).`
     }
   };
 }
@@ -1353,7 +1353,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
 
   // 1. Live in-process WASM init & feature inference check
   const tWasmStart = performance.now();
-  getVerisieveDlInstanceSync();
+  getVersieveDlInstanceSync();
   const inProcessWasmInitMs = Number((performance.now() - tWasmStart).toFixed(3));
 
   const runLiveSubprocessTrials = () => {
@@ -1487,7 +1487,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
   const testY = testDocs.map(d => d.label);
 
   // Setup WASM VeRA 2-bit evaluation tensor once on testDocs
-  const inst = getVerisieveDlInstanceSync();
+  const inst = getVersieveDlInstanceSync();
   const exp = inst.exports;
   const wDim = 64, dModel = 32, nLayers = 1, rank = 4;
   const vbBytes = exp.mle_dl_vera_backbone_bytes(wDim, dModel, nLayers);
@@ -1505,7 +1505,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
 
   const measureSubset = (subN) => {
     const subDocs = interleavedTrain.slice(0, Math.min(subN, interleavedTrain.length));
-    // A. VeriSieve 520-dim conformal gatekeeper
+    // A. Versieve 520-dim conformal gatekeeper
     const subX = subDocs.map(makeBoundedGateFeature);
     const subY = subDocs.map(d => d.label);
     const gateModel = trainGatekeeper(subX, subY, { epochs: 280, lr: 2.2, l2: 5e-5, seed: 42 });
@@ -1564,7 +1564,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
     return {
       nTrain: subDocs.length,
       nTest: testDocs.length,
-      verisieve_conformal: {
+      versieve_conformal: {
         heldOutGateBceLoss: Number((gateBce / testDocs.length).toFixed(4)),
         heldOutGateAccPct: Number(((gateOk / testDocs.length) * 100).toFixed(1)),
         wasmVeraBceLoss: Number(wasmVeraBceLoss.toFixed(4)),
@@ -1622,7 +1622,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
     definition: "Top-5 cosine retrieval over 64-dim WASM bag-of-ngrams embeddings: percentage of 125 held-out PubMedQA questions whose stripped passage body ranks in top-5 of 125 candidates.",
     raw_unmasked: evalNeedleMode(t => t),
     naive_regex_corrupted: evalNeedleMode(naiveScrub),
-    verisieve_masked: evalNeedleMode(vsScrub)
+    versieve_masked: evalNeedleMode(vsScrub)
   };
 
   const coldStartSpeedupVsPytorch = Number((sub.pythonPyTorch.processSpawnColdStartMs / Math.max(1, sub.nodeWasm.processSpawnColdStartMs)).toFixed(1));
@@ -1638,7 +1638,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
         hotLoopInferenceMs: sub.c99.hotLoopInferenceMs,
         spawnSamplesMs: sub.c99.spawnSamplesMs,
         artifactBytes: 2129,
-        artifactLabel: "verisieve.h (2,129 B source; gcc -O3 bench exe is separate)",
+        artifactLabel: "versieve.h (2,129 B source; gcc -O3 bench exe is separate)",
         compiled: sub.c99Compiled
       },
       pure_wasm_js: {
@@ -1649,7 +1649,7 @@ export function runSameSessionSubstrateExperiment(corpus, options = {}) {
         hotLoopInferenceMs: sub.nodeWasm.hotLoopInferenceMs,
         spawnSamplesMs: sub.nodeWasm.spawnSamplesMs,
         artifactBytes: 60096,
-        artifactLabel: "verisieve_dl.wasm (60.1 KB) + Node V8"
+        artifactLabel: "versieve_dl.wasm (60.1 KB) + Node V8"
       },
       python_numpy: {
         processSpawnColdStartMs: sub.pythonNumpy.processSpawnColdStartMs,
@@ -1708,7 +1708,7 @@ export function generateScaleAndParadigmBenchmarkSvg(data) {
 
   const body = [];
   body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
-  body.push(txt(32, 28, "VeriSieve Public Benchmark Measurement Study (N = 1,207 Real Documents)", { size: 13, weight: 'bold', fill: INK }));
+  body.push(txt(32, 28, "Versieve Public Benchmark Measurement Study (N = 1,207 Real Documents)", { size: 13, weight: 'bold', fill: INK }));
   body.push(txt(32, 44, "ICDAR-2019 FUNSD (199) + ai4privacy (500) + PubMedQA (500) + PMC Full-Text (8)", { size: 10, fill: MUT }));
 
   const r1Modes = data.race_1_born_digital_vs_tiled_ocr.funsd_scanned_eval.modes;
@@ -1852,8 +1852,8 @@ export function runScaleAndParadigmBenchmark(options = {}) {
   const race3 = runLttConformalGatekeeperExperiment(corpus, options);
   const race4 = runSameSessionSubstrateExperiment(corpus, options);
 
-  const abStart = race4.downstreamAblation.ablation_100.verisieve_conformal;
-  const abEnd = race4.downstreamAblation.ablation_full_train.verisieve_conformal;
+  const abStart = race4.downstreamAblation.ablation_100.versieve_conformal;
+  const abEnd = race4.downstreamAblation.ablation_full_train.versieve_conformal;
   const bceReductionPct = Number((((abStart.heldOutGateBceLoss - abEnd.heldOutGateBceLoss) / Math.max(1e-6, abStart.heldOutGateBceLoss)) * 100).toFixed(1));
 
   const speedupVsPytorch = Number((race4.substrates.local_python.processSpawnColdStartMs / Math.max(1, race4.substrates.pure_wasm_js.processSpawnColdStartMs)).toFixed(1));
@@ -1861,7 +1861,7 @@ export function runScaleAndParadigmBenchmark(options = {}) {
   const c99HotSpeedupVsJs = Number((race4.substrates.pure_wasm_js.hotLoopInferenceMs / Math.max(1e-4, race4.substrates.single_header_c99.hotLoopInferenceMs)).toFixed(2));
 
   const report = {
-    benchmark_suite: "VeriSieve Public Benchmark Measurement Study (N = 1,207 Documents)",
+    benchmark_suite: "Versieve Public Benchmark Measurement Study (N = 1,207 Documents)",
     timestamp: options.timestamp || '2026-11-16T00:00:00.000Z',
     corpus_metadata: {
       total_documents: n,
@@ -1882,7 +1882,7 @@ export function runScaleAndParadigmBenchmark(options = {}) {
       memory_reduction_factor_vs_pytorch: ramReductionVsPytorch,
       post_training_gate_bce_loss_reduction_pct: bceReductionPct,
       post_training_gate_acc_full_train: abEnd.heldOutGateAccPct,
-      needle_recall_at_5_verisieve: race4.needleBenchmark.verisieve_masked.recallAt5Pct,
+      needle_recall_at_5_versieve: race4.needleBenchmark.versieve_masked.recallAt5Pct,
       c99_hot_loop_speedup_vs_js: c99HotSpeedupVsJs,
       numpy_hot_loop_ms: race4.substrates.python_numpy.hotLoopInferenceMs,
       honest_nulls_and_boundaries_reported: [

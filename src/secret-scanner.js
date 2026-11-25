@@ -1,6 +1,6 @@
 /**
  * Enterprise Secret & Unified Stage 3A/3B Hybrid PII Fusion Engine
- * Powered by zero-import `verisieve_media.wasm` (Unicode anti-evasion + international checksums
+ * Powered by zero-import `versieve_media.wasm` (Unicode anti-evasion + international checksums
  * + 30+ secret detectors with capture-group Shannon entropy & JWT structural verification).
  *
  * Also implements intra-document surname/title coreference linking so `"Elena Vance"` and
@@ -172,7 +172,7 @@ export function scanEnterprisePiiAndSecrets(text, options = {}) {
  */
 export function redactEnterpriseText(text, options = {}) {
   const raw = String(text ?? '');
-  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'verisieve-enterprise-v1');
+  const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'versieve-enterprise-v1');
   const scan = scanEnterprisePiiAndSecrets(raw, options);
 
   // Build surname -> full-name coreference map from detected PERSON / NAME_LIKELY spans

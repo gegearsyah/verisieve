@@ -7,7 +7,7 @@
  *   against the GT manifest (scorer-side only — the engine path never sees it), how many
  *   GT cross-department links were recovered via the engine's seams: the SR-MP salted
  *   anchor ring (which resolves the same real-world value across chunks, modalities and
- *   files onto one salted entity id) and the verisieve_graph.wasm Dual-CSR Personalized
+ *   files onto one salted entity id) and the versieve_graph.wasm Dual-CSR Personalized
  *   PageRank / Louvain communities.
  *
  * P3 — zero-egress receipt: the whole run executes with every network entry point armed
@@ -173,9 +173,9 @@ export async function runCompanyBrainSlice() {
   const declaredFileReads = [
     ...manifest.files.map((f) => `fixtures/company-estate/${f.path}`),
     'fixtures/company-estate-manifest.json',
-    'vendor/wasm/verisieve_clean.wasm',
-    'vendor/wasm/verisieve_graph.wasm',
-    'vendor/wasm/verisieve_media.wasm',
+    'vendor/wasm/versieve_clean.wasm',
+    'vendor/wasm/versieve_graph.wasm',
+    'vendor/wasm/versieve_media.wasm',
   ];
 
   return withZeroEgressTraps(async () => {

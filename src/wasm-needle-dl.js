@@ -1,10 +1,10 @@
 /**
  * src/wasm-needle-dl.js
- * Pure-WASM Small Model & Needle Semantic Engine (verisieve_dl.wasm + cactus.wasm)
+ * Pure-WASM Small Model & Needle Semantic Engine (versieve_dl.wasm + cactus.wasm)
  * 100% Air-Gapped, Zero Python Required.
  *
  * Capabilities:
- * 1. auditVerisieveDlWasm: Verifies 60,096 bytes, SHA-256, 0 imports, 23 DL kernel exports.
+ * 1. auditVersieveDlWasm: Verifies 60,096 bytes, SHA-256, 0 imports, 23 DL kernel exports.
  * 2. embedNeedleWasm: Matryoshka subword + 1.58-bit BitNet embeddings in pure WASM (<2 ms).
  * 3. searchNeedleWasm: Cosine similarity semantic search over document shards in pure WASM (<2 ms).
  * 4. trainWasmSmallModel: Trains WASM Self-Attention Transformer + 2-Bit VeRA adapter in pure WASM (<15 ms).
@@ -19,13 +19,13 @@ import { scanRecordsForPII } from './clean-and-tokenize.js';
 import { binomCdf } from './gatekeeper.js';
 import { executeSqlWasm, executeSqlSubsetFallback } from './sql-wasm.js';
 
-export const VERISIEVE_DL_WASM_PATH = 'vendor/wasm/verisieve_dl.wasm';
-export const VERISIEVE_DL_PROVENANCE_PATH = 'vendor/wasm/verisieve_dl.provenance.json';
+export const VERSIEVE_DL_WASM_PATH = 'vendor/wasm/versieve_dl.wasm';
+export const VERSIEVE_DL_PROVENANCE_PATH = 'vendor/wasm/versieve_dl.provenance.json';
 export const CACTUS_WASM_PATH = 'vendor/cactus/cactus.wasm';
 
-export const EXPECTED_VERISIEVE_DL_HASH = '2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2';
-export const EXPECTED_VERISIEVE_DL_BYTES = 60096;
-export const MAX_VERISIEVE_DL_BYTES = 65536;
+export const EXPECTED_VERSIEVE_DL_HASH = '2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2';
+export const EXPECTED_VERSIEVE_DL_BYTES = 60096;
+export const MAX_VERSIEVE_DL_BYTES = 65536;
 
 /**
  * Inspects a local open-weight model path or Ollama tag in <1 ms without full loading.
@@ -38,7 +38,7 @@ export function inspectLocalOpenWeightPath(modelPath) {
   }
 
   let resolved = modelPath.trim();
-  const envModelPath = process.env.VERISIEVE_MODEL_PATH;
+  const envModelPath = process.env.VERSIEVE_MODEL_PATH;
 
   if (envModelPath && (/^(?:ollama:)?llama3\.2(?::3b)?$/i.test(resolved) || resolved.startsWith('ollama:'))) {
     if (fs.existsSync(envModelPath)) {
@@ -192,7 +192,7 @@ export function inspectLocalOpenWeightPath(modelPath) {
     modelName,
     executionScope: 'header_audit_only',
     canFineTuneInWasm: false,
-    recommendedUvCommand: `uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model ${modelName || 'Qwen/Qwen2.5-0.5B-Instruct'}`
+    recommendedUvCommand: `uv run skills/versieve-local-train/scripts/versieve-train.py --data rtio-train.jsonl --model ${modelName || 'Qwen/Qwen2.5-0.5B-Instruct'}`
   };
 }
 
@@ -200,14 +200,14 @@ let cachedInstance = null;
 let cachedModule = null;
 
 /**
- * Loads and caches WebAssembly instance for verisieve_dl.wasm
+ * Loads and caches WebAssembly instance for versieve_dl.wasm
  */
-export async function getVerisieveDlInstance(wasmPath = VERISIEVE_DL_WASM_PATH) {
+export async function getVersieveDlInstance(wasmPath = VERSIEVE_DL_WASM_PATH) {
   if (cachedInstance) return cachedInstance;
 
   const fullPath = path.isAbsolute(wasmPath) ? wasmPath : path.resolve(process.cwd(), wasmPath);
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`verisieve_dl.wasm not found at ${fullPath}`);
+    throw new Error(`versieve_dl.wasm not found at ${fullPath}`);
   }
 
   const bytes = fs.readFileSync(fullPath);
@@ -219,12 +219,12 @@ export async function getVerisieveDlInstance(wasmPath = VERISIEVE_DL_WASM_PATH) 
 /**
  * Synchronous loader using WebAssembly.Instance
  */
-export function getVerisieveDlInstanceSync(wasmPath = VERISIEVE_DL_WASM_PATH) {
+export function getVersieveDlInstanceSync(wasmPath = VERSIEVE_DL_WASM_PATH) {
   if (cachedInstance) return cachedInstance;
 
   const fullPath = path.isAbsolute(wasmPath) ? wasmPath : path.resolve(process.cwd(), wasmPath);
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`verisieve_dl.wasm not found at ${fullPath}`);
+    throw new Error(`versieve_dl.wasm not found at ${fullPath}`);
   }
 
   const bytes = fs.readFileSync(fullPath);
@@ -234,8 +234,8 @@ export function getVerisieveDlInstanceSync(wasmPath = VERISIEVE_DL_WASM_PATH) {
 }
 
 /**
- * 1. auditVerisieveDlWasm()
- * Audits vendor/wasm/verisieve_dl.wasm:
+ * 1. auditVersieveDlWasm()
+ * Audits vendor/wasm/versieve_dl.wasm:
  * - Compiles via WebAssembly.compile
  * - Verifies importCount === 0 (100% air-gapped WASM)
  * - Verifies exportCount === 23 DL kernel exports
@@ -246,10 +246,10 @@ function hashLfNormalizedFile(filePath) {
   return crypto.createHash('sha256').update(Buffer.from(raw, 'utf8')).digest('hex').toUpperCase();
 }
 
-export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
+export async function auditVersieveDlWasm(wasmPath = VERSIEVE_DL_WASM_PATH) {
   const fullPath = path.isAbsolute(wasmPath) ? wasmPath : path.resolve(process.cwd(), wasmPath);
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`verisieve_dl.wasm not found at ${fullPath}`);
+    throw new Error(`versieve_dl.wasm not found at ${fullPath}`);
   }
 
   const bytes = fs.readFileSync(fullPath);
@@ -264,12 +264,12 @@ export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
     e.name.startsWith('mle_dl_') && !['mle_dl_alloc', 'mle_dl_free', 'mle_dl_abi_version'].includes(e.name)
   );
 
-  const withinSizeCeiling = byteLength <= MAX_VERISIEVE_DL_BYTES;
-  const manifestPath = path.resolve(process.cwd(), VERISIEVE_DL_PROVENANCE_PATH);
+  const withinSizeCeiling = byteLength <= MAX_VERSIEVE_DL_BYTES;
+  const manifestPath = path.resolve(process.cwd(), VERSIEVE_DL_PROVENANCE_PATH);
   let provenance = null;
   if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const crateDir = path.resolve(process.cwd(), manifest.sourceCrate || 'rust/verisieve-dl');
+    const crateDir = path.resolve(process.cwd(), manifest.sourceCrate || 'rust/versieve-dl');
     const verifiedFiles = {};
     let sourceSha256Verified = Boolean(fs.existsSync(crateDir) && manifest.sourceFilesSha256);
     if (manifest.sourceFilesSha256) {
@@ -293,8 +293,8 @@ export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
   const ok =
     imports.length === 0 &&
     withinSizeCeiling &&
-    byteLength === EXPECTED_VERISIEVE_DL_BYTES &&
-    sha256 === EXPECTED_VERISIEVE_DL_HASH &&
+    byteLength === EXPECTED_VERSIEVE_DL_BYTES &&
+    sha256 === EXPECTED_VERSIEVE_DL_HASH &&
     kernelExports.length === 23 &&
     Boolean(provenance?.sourceSha256Verified);
 
@@ -302,7 +302,7 @@ export async function auditVerisieveDlWasm(wasmPath = VERISIEVE_DL_WASM_PATH) {
     ok,
     byteLength,
     withinSizeCeiling,
-    maxBytes: MAX_VERISIEVE_DL_BYTES,
+    maxBytes: MAX_VERSIEVE_DL_BYTES,
     sha256,
     importCount: imports.length,
     exportCount: kernelExports.length,
@@ -332,7 +332,7 @@ export function embedNeedleWasm(texts, options = {}) {
     subwordOnly = false,
     batchSize = 512,
     cactModelPath = null,
-    wasmPath = VERISIEVE_DL_WASM_PATH
+    wasmPath = VERSIEVE_DL_WASM_PATH
   } = options;
 
   const isSingle = typeof texts === 'string';
@@ -356,7 +356,7 @@ export function embedNeedleWasm(texts, options = {}) {
     return allResults;
   }
 
-  const inst = getVerisieveDlInstanceSync(wasmPath);
+  const inst = getVersieveDlInstanceSync(wasmPath);
   const exp = inst.exports;
 
   // UTF-8 encoding
@@ -613,13 +613,13 @@ export function loadExtractedDatasets() {
     funsd_ocr_data: funsdRows,
     raw_extracted_documents: rawRows,
     documents: rawRows,
-    verisieve_certified_tokens: certifiedRows
+    versieve_certified_tokens: certifiedRows
   };
 }
 
 /**
  * 4. executeJsSql(sql, dataset, options)
- * Runs strict SQL subset over tabular document rows using zero-import verisieve_sql.wasm
+ * Runs strict SQL subset over tabular document rows using zero-import versieve_sql.wasm
  * (or strict AST JS subset fallback when options.forceJsFallback is true).
  */
 export function executeJsSql(sql, dataset = 'all', options = {}) {
@@ -632,7 +632,7 @@ export function executeJsSql(sql, dataset = 'all', options = {}) {
 
 /**
  * 5. trainWasmSmallModel(datasetRows, options)
- * Executes 100% in WebAssembly (verisieve_dl.wasm):
+ * Executes 100% in WebAssembly (versieve_dl.wasm):
  * - Subword + 1.58-bit BitNet embeddings
  * - WASM Self-Attention Transformer training (mle_dl_transformer_train)
  * - WASM 2-Bit BitNet + VeRA Adapter training (mle_dl_vera_train)
@@ -803,7 +803,7 @@ function splitTrainAndHoldoutRows(rows, safeRows) {
   };
 }
 
-function buildEmbedLookup(texts, { dim = 64, dModel = 64, nHeads = 4, nLayers = 2, wasmPath = VERISIEVE_DL_WASM_PATH } = {}) {
+function buildEmbedLookup(texts, { dim = 64, dModel = 64, nHeads = 4, nLayers = 2, wasmPath = VERSIEVE_DL_WASM_PATH } = {}) {
   const unique = Array.from(new Set(texts.map((t) => String(t ?? ''))));
   const vecs = unique.length > 0
     ? embedNeedleWasm(unique, { dim, dModel, nHeads, nLayers, wasmPath })
@@ -944,19 +944,19 @@ function measureNeedleRetrievalMetrics({
 
   const needleRetrievalPurityPctRaw =
     rawTotalHits > 0 ? Number(((rawCleanHits / rawTotalHits) * 100).toFixed(1)) : 0.0;
-  const needleRetrievalPurityPctVerisieve =
+  const needleRetrievalPurityPctVersieve =
     safeTotalHits > 0 ? Number(((safeCleanHits / safeTotalHits) * 100).toFixed(1)) : 0.0;
 
   const piiExposureRatePctRaw =
     piiProbes.length > 0 ? Number(((rawExposed / piiProbes.length) * 100).toFixed(1)) : 0.0;
-  const piiExposureRatePctVerisieve =
+  const piiExposureRatePctVersieve =
     piiProbes.length > 0 ? Number(((safeExposed / piiProbes.length) * 100).toFixed(1)) : 0.0;
 
   return {
     needleRetrievalPurityPctRaw,
-    needleRetrievalPurityPctVerisieve,
+    needleRetrievalPurityPctVersieve,
     piiExposureRatePctRaw,
-    piiExposureRatePctVerisieve,
+    piiExposureRatePctVersieve,
     testedPiiEntities: detectedEntities.slice(0, 8),
     retrievalQueries: evalProbes,
   };
@@ -972,7 +972,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     nLayers = 2,
     rank = 4,
     exportArtifacts = true,
-    wasmPath = VERISIEVE_DL_WASM_PATH,
+    wasmPath = VERSIEVE_DL_WASM_PATH,
     modelPath = null,
     retrievalProbes = null,
   } = options;
@@ -984,7 +984,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     localWeightAudit = inspectLocalOpenWeightPath(modelPath);
   }
   const recommendedUvCommand = localWeightAudit?.recommendedUvCommand
-    || 'uv run skills/verisieve-local-train/scripts/verisieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct';
+    || 'uv run skills/versieve-local-train/scripts/versieve-train.py --data rtio-train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct';
 
   const t0 = performance.now();
   const hasExplicitRows = Array.isArray(datasetRows) && datasetRows.length > 0;
@@ -1008,7 +1008,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
   const tablesForSql = diskTables || {
     raw_extracted_documents: allRows,
     documents: allRows,
-    verisieve_certified_tokens: safeRows,
+    versieve_certified_tokens: safeRows,
   };
   const sqlBreakdown = executeJsSql(
     'SELECT source_mode, gatekeeper_action, count(*) AS count, round(avg(pred_prob), 4) AS avg_prob, sum(token_count) AS total_tokens FROM documents GROUP BY source_mode, gatekeeper_action ORDER BY source_mode, gatekeeper_action;',
@@ -1024,7 +1024,7 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
     total_tokens: r[4]
   }));
 
-  const inst = getVerisieveDlInstanceSync(wasmPath);
+  const inst = getVersieveDlInstanceSync(wasmPath);
   const exp = inst.exports;
 
   const safeDocs = safeRows.map(getSafeTextFromRow);
@@ -1103,11 +1103,11 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
   });
 
   const lossHistoryRaw = rawWasmRun.lossHistory;
-  const lossHistoryVerisieve = safeWasmRun.lossHistory;
+  const lossHistoryVersieve = safeWasmRun.lossHistory;
   const wasmTrainMs = Math.round((performance.now() - t0) * 100) / 100;
 
   const valPerplexityRaw = Number(Math.exp(rawWasmRun.valLoss).toFixed(4));
-  const valPerplexityVerisieve = Number(Math.exp(safeWasmRun.valLoss).toFixed(4));
+  const valPerplexityVersieve = Number(Math.exp(safeWasmRun.valLoss).toFixed(4));
 
   const retrievalMetrics = measureNeedleRetrievalMetrics({
     allRows,
@@ -1124,11 +1124,11 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
 
   const resultsObj = {
     schema_version: '1.0',
-    pipeline: 'VeriSieve Pure-WASM Small Model & Needle Semantic Engine (verisieve_dl.wasm + cactus.wasm)',
+    pipeline: 'Versieve Pure-WASM Small Model & Needle Semantic Engine (versieve_dl.wasm + cactus.wasm)',
     timestamp: new Date().toISOString(),
     duckdb_audit: {
-      engine: 'VeriSieve WASM SQL Subset v1',
-      version: 'verisieve-sql-wasm-v1',
+      engine: 'Versieve WASM SQL Subset v1',
+      version: 'versieve-sql-wasm-v1',
       sql_subset: true,
       total_rows_ingested: totalRows,
       pii_detected_rows: piiCount,
@@ -1138,8 +1138,8 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       breakdown: breakdownData
     },
     model_training: {
-      architecture: 'WASM Small Model: 1.58-Bit BitNet + VeRA & Self-Attention Transformer (verisieve_dl.wasm)',
-      wasm_engine: 'verisieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)',
+      architecture: 'WASM Small Model: 1.58-Bit BitNet + VeRA & Self-Attention Transformer (versieve_dl.wasm)',
+      wasm_engine: 'versieve_dl.wasm (60,096 bytes, SHA-256 2FF6E7756ACAFB31A97AC365D7BFEB9911654D751126C603A9CDEDA8F2E314D2)',
       needle_engine: 'Needle Semantic Matcher (embedNeedleWasm / Matryoshka + BitNet)',
       device: 'WebAssembly (Zero Python)',
       executionScope: 'wasm_gatekeeper_only_no_llm_backprop',
@@ -1154,16 +1154,16 @@ export function trainWasmSmallModel(datasetRows = null, options = {}) {
       wasmTrainMs,
       learning_rate: lr,
       lossHistoryRaw,
-      lossHistoryVerisieve,
+      lossHistoryVersieve,
       valLossRaw: Number(rawWasmRun.valLoss.toFixed(6)),
-      valLossVerisieve: Number(safeWasmRun.valLoss.toFixed(6)),
+      valLossVersieve: Number(safeWasmRun.valLoss.toFixed(6)),
       valPerplexityRaw,
-      valPerplexityVerisieve,
+      valPerplexityVersieve,
       needleRetrievalPurityPctRaw: retrievalMetrics.needleRetrievalPurityPctRaw,
-      needleRetrievalPurityPctVerisieve: retrievalMetrics.needleRetrievalPurityPctVerisieve,
-      needleRetrievalPurityPct: retrievalMetrics.needleRetrievalPurityPctVerisieve,
+      needleRetrievalPurityPctVersieve: retrievalMetrics.needleRetrievalPurityPctVersieve,
+      needleRetrievalPurityPct: retrievalMetrics.needleRetrievalPurityPctVersieve,
       piiExposureRatePctRaw: retrievalMetrics.piiExposureRatePctRaw,
-      piiExposureRatePctVerisieve: retrievalMetrics.piiExposureRatePctVerisieve,
+      piiExposureRatePctVersieve: retrievalMetrics.piiExposureRatePctVersieve,
       testedPiiEntities: retrievalMetrics.testedPiiEntities,
       retrievalQueries: retrievalMetrics.retrievalQueries,
     }
@@ -1201,7 +1201,7 @@ export function generateOpenModelComparisonSvg(data) {
   const drop = duck.drop_or_quarantine_rows || 25;
 
   const rawLosses = model.lossHistoryRaw || [2.4, 2.1, 1.9, 1.8, 1.75];
-  const certLosses = model.lossHistoryVerisieve || [2.3, 1.8, 1.4, 1.1, 0.85];
+  const certLosses = model.lossHistoryVersieve || [2.3, 1.8, 1.4, 1.1, 0.85];
 
   // Exact MLE dataviz reference palette, light mode
   const INK = '#0b0b0b', SUB = '#52514e', MUT = '#898781';
@@ -1222,8 +1222,8 @@ export function generateOpenModelComparisonSvg(data) {
 
   const body = [];
   body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
-  body.push(txt(32, 28, "VeriSieve Pure-WASM Small Model &amp; Needle Semantic Engine", { size: 13, weight: 'bold', fill: INK }));
-  body.push(txt(32, 44, "verisieve_dl.wasm (60,096 B) • 1.58-Bit BitNet + VeRA Transformer • Zero Python Remote Egress", { size: 10, fill: MUT }));
+  body.push(txt(32, 28, "Versieve Pure-WASM Small Model &amp; Needle Semantic Engine", { size: 13, weight: 'bold', fill: INK }));
+  body.push(txt(32, 44, "versieve_dl.wasm (60,096 B) • 1.58-Bit BitNet + VeRA Transformer • Zero Python Remote Egress", { size: 10, fill: MUT }));
 
   // Panel A: SQL & Conformal Funnel (x: 50..340, y: 70..240)
   {
@@ -1290,7 +1290,7 @@ export function generateOpenModelComparisonSvg(data) {
     body.push(`<line x1="${x1 - 140}" y1="${yTop + 10}" x2="${x1 - 110}" y2="${yTop + 10}" stroke="${ORANGE}" stroke-width="2" stroke-dasharray="4,3"/>`);
     body.push(txt(x1 - 105, yTop + 13, "Raw Unfiltered", { size: 9, fill: SUB }));
     body.push(`<line x1="${x1 - 140}" y1="${yTop + 24}" x2="${x1 - 110}" y2="${yTop + 24}" stroke="${BLUE}" stroke-width="2.5"/>`);
-    body.push(txt(x1 - 105, yTop + 27, "VeriSieve Safe Shard", { size: 9, fill: SUB }));
+    body.push(txt(x1 - 105, yTop + 27, "Versieve Safe Shard", { size: 9, fill: SUB }));
   }
 
   // Panel C: Needle Top-3 Retrieval Purity (%) (x: 50..340, y: 280..440)
@@ -1307,10 +1307,10 @@ export function generateOpenModelComparisonSvg(data) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const rawPurity = model.needleRetrievalPurityPctRaw ?? 33.3;
-    const safePurity = model.needleRetrievalPurityPctVerisieve ?? 100.0;
+    const safePurity = model.needleRetrievalPurityPctVersieve ?? 100.0;
     const bars = [
       ['Raw Unfiltered', rawPurity, ORANGE],
-      ['VeriSieve Shard', safePurity, BLUE]
+      ['Versieve Shard', safePurity, BLUE]
     ];
     const bw = 36, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {
@@ -1336,10 +1336,10 @@ export function generateOpenModelComparisonSvg(data) {
     body.push(`<line x1="${x0}" y1="${yTop - 5}" x2="${x0}" y2="${yBase}" stroke="${AXIS}" stroke-width="1"/>`);
 
     const rawExp = model.piiExposureRatePctRaw ?? 100.0;
-    const safeExp = model.piiExposureRatePctVerisieve ?? 0.0;
+    const safeExp = model.piiExposureRatePctVersieve ?? 0.0;
     const bars = [
       ['Raw Unfiltered', rawExp, ORANGE],
-      ['VeriSieve Shard', safeExp, BLUE]
+      ['Versieve Shard', safeExp, BLUE]
     ];
     const bw = 36, band = (x1 - x0) / bars.length;
     bars.forEach(([name, val, fill], i) => {
@@ -1421,7 +1421,7 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
     lr = 0.02,
     seed = 42,
     alpha = 0.05,
-    wasmPath = VERISIEVE_DL_WASM_PATH,
+    wasmPath = VERSIEVE_DL_WASM_PATH,
     gatekeeperBundle = null,
   } = options;
 
@@ -1452,7 +1452,7 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
     : [];
 
   // Drive live WASM VeRA training + mle_dl_vera_predict scoring across prompt & retrieved hits
-  const inst = getVerisieveDlInstanceSync(wasmPath);
+  const inst = getVersieveDlInstanceSync(wasmPath);
   const exp = inst.exports;
   const trainAllLabels = new Float32Array(allRows.map((r) => (isSafeDatasetRow(r) ? 1.0 : 0.0)));
   const xTrain = buildFlatEmbedMatrix(rawDocs, dim, wasmPath);
@@ -1529,15 +1529,15 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
   const model2Text = `[NAIVE REGEX SCRUBBER — prompt="${promptNaive.scrubbed}", corruptedTerms=${corruptedTerms.length}, residualPii=${naiveResidualPii.length}]\n` +
     naiveHits.map((h, i) => `${i + 1}. "${h.text}"`).join('\n');
 
-  // Model 3: VeriSieve Certified Safe Shard + WASM VeRA
+  // Model 3: Versieve Certified Safe Shard + WASM VeRA
   const safeResidualPii = safeHits.flatMap((h) => scanRecordsForPII(h.text));
   const safeMeanScore = safeHitScores.length > 0
     ? Number((safeHitScores.reduce((a, b) => a + b, 0) / safeHitScores.length).toFixed(4))
     : Number(promptVeraScore.toFixed(4));
   const model3Text = safeHits.length > 0
-    ? `[VERISIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}, tauKeep=${calMeta.tauKeep}]\n` +
+    ? `[VERSIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}, tauKeep=${calMeta.tauKeep}]\n` +
       safeHits.map((h, i) => `${i + 1}. "${h.text}"`).join('\n')
-    : `[VERISIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}]\nNo safe shard rows available for retrieval.`;
+    : `[VERSIEVE SAFE SHARD — ${calMeta.gatekeeperStatus}, veraScore=${safeMeanScore}]\nNo safe shard rows available for retrieval.`;
 
   const elapsedMs = Math.round((performance.now() - t0) * 100) / 100;
   const processedTokens = predictTexts.reduce(
@@ -1550,7 +1550,7 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
     prompt,
     latencyMs: elapsedMs,
     telemetry: {
-      wasmEngine: 'verisieve_dl.wasm (60,096 bytes)',
+      wasmEngine: 'versieve_dl.wasm (60,096 bytes)',
       tokPerSec,
       conformalStatus: calMeta.gatekeeperStatus,
       certified: calMeta.certified,
@@ -1560,7 +1560,7 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
     },
     models: {
       model_raw: {
-        pipeline: 'Without VeriSieve (Raw Unfiltered Data)',
+        pipeline: 'Without Versieve (Raw Unfiltered Data)',
         status: piiLeaked ? 'VULNERABLE (Raw PII Exposed)' : 'UNFILTERED (Non-Quarantined)',
         confidence: rawMeanScore,
         veraScore: rawMeanScore,
@@ -1582,8 +1582,8 @@ export function chatWithTrainedModelsWasm(prompt, datasetRows = null, options = 
         residualPiiCount: naiveResidualPii.length,
         response: model2Text
       },
-      model_verisieve: {
-        pipeline: 'VeriSieve (WASM VeRA + Conformal Gatekeeper)',
+      model_versieve: {
+        pipeline: 'Versieve (WASM VeRA + Conformal Gatekeeper)',
         status: safeResidualPii.length === 0
           ? `${calMeta.gatekeeperStatus} (0% PII Leakage on Retrieved Shard)`
           : 'WARNING (Residual PII Detected)',

@@ -5,10 +5,10 @@ Reviewer panel: 5 role-separated seats (Journal-Fit, Methodology, Domain, Perspe
 ## Coverage (what was read, what was not)
 
 Read in full:
-- `paper/verisieve-local-training-benchmark.tex` (349 lines, complete manuscript, all sections, tables, abstract).
-- `paper/verisieve-local-training-benchmark.bib` (all 16 entries).
-- `paper/verisieve-local-training-benchmark.log` (compile warnings, undefined refs/cites, overfull boxes).
-- Companion `paper/verisieve-extraction-redaction-benchmark.tex` (abstract, Section 5.3 "Local Open-Weight Retrieval, Native CAG, and LoRA Adaptation", hardware paragraph, conclusion) for overlap assessment.
+- `paper/versieve-local-training-benchmark.tex` (349 lines, complete manuscript, all sections, tables, abstract).
+- `paper/versieve-local-training-benchmark.bib` (all 16 entries).
+- `paper/versieve-local-training-benchmark.log` (compile warnings, undefined refs/cites, overfull boxes).
+- Companion `paper/versieve-extraction-redaction-benchmark.tex` (abstract, Section 5.3 "Local Open-Weight Retrieval, Native CAG, and LoRA Adaptation", hardware paragraph, conclusion) for overlap assessment.
 - Figure build scripts directory listing; confirmed both included figures exist on disk.
 
 Not read / not verified:

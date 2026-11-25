@@ -24,10 +24,10 @@ jobs:
       run: npm ci
 
     - name: Run CLI Selftest
-      run: node bin/verisieve.mjs selftest
+      run: node bin/versieve.mjs selftest
 
     - name: Verify Zero-Egress WASM Audit
-      run: node bin/verisieve.mjs audit-wasm
+      run: node bin/versieve.mjs audit-wasm
 
     - name: Run Portable Test Suite
       run: npm run test:ci

@@ -106,7 +106,7 @@ def build_redaction_architecture():
         ax, 2.88, y_top, 2.18, h_top,
         "2. Clean & Dedup",
         [
-            "verisieve_clean.wasm",
+            "versieve_clean.wasm",
             "(14.6 KB, 0 imports)",
             "Boilerplate stripping",
             "3-Layer Deduplication:",
@@ -169,7 +169,7 @@ def build_redaction_architecture():
         [
             "f(X) ≥ τ_keep  (Certified)",
             "Redacted Graph-SFT (.jsonl)",
-            "Triples + verisieve_graph.wasm",
+            "Triples + versieve_graph.wasm",
         ],
         fc=TEAL_BG, ec=TEAL, title_color=TEAL, title_size=7.0, body_size=6.0, lw=1.25,
     )

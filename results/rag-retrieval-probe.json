@@ -1,6 +1,6 @@
 {
   "task": "sandbox ranker on the needle's 125 held-out PubMedQA questions",
-  "text": "verisieve_masked_body",
+  "text": "versieve_masked_body",
   "dim": 64,
   "seed": 42,
   "candidateCount": 125,

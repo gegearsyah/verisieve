@@ -339,7 +339,7 @@ SCENES = [
     ("architecture-a-extraction.gif", draw_paper1, True),
     ("architecture-d-multimodal.gif", draw_paper2, True),
     ("architecture-c-training.gif", draw_paper3, True),
-    ("verisieve-data-architecture.gif", draw_data, False),
+    ("versieve-data-architecture.gif", draw_data, False),
 ]
 
 

@@ -57,7 +57,7 @@
       "provider": "supplied_word_timestamps (no local ASR weights on this CPU box)",
       "wordCount": 127
     },
-    "buildWallclockMs": 179.26419999999996
+    "buildWallclockMs": 138.9065
   },
   "certificates": {
     "statedConfidence": 0.95,
@@ -134,7 +134,7 @@
           "diffReceiptSha256": "e822bd8b703631e6a8d845af368e8e017130408e404c85ed148bd324f6f45b24"
         }
       ],
-      "regenerationWallclockMs": 2.0429000000000315
+      "regenerationWallclockMs": 1.8589999999999804
     },
     "0.05": {
       "fraction": 0.05,
@@ -187,7 +187,7 @@
           "diffReceiptSha256": "f4e15043113bceaf8a2b4502720fc5997788dd99785426ad1d73528be7e71536"
         }
       ],
-      "regenerationWallclockMs": 11.006999999999948
+      "regenerationWallclockMs": 9.319799999999987
     },
     "0.2": {
       "fraction": 0.2,
@@ -317,7 +317,7 @@
           "diffReceiptSha256": "b97625230ed32928e9aeca290c9a7dd8068433e0194cf4de730d19e8f0af2628"
         }
       ],
-      "regenerationWallclockMs": 41.686199999999985
+      "regenerationWallclockMs": 47.39469999999994
     }
   },
   "gpuDependent": {

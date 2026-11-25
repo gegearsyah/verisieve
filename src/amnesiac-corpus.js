@@ -1,6 +1,6 @@
 /**
  * src/amnesiac-corpus.js
- * Amnesiac Corpus core — one new seam at the perceiveMulti() level (spec: gegearsyah/verisieve#25).
+ * Amnesiac Corpus core — one new seam at the perceiveMulti() level (spec: gegearsyah/versieve#25).
  *
  * buildAmnesiacCorpus(inputs, view) → deterministic entity-indexed SFT JSONL: every sample
  *   records its source byte-ranges + entity IDs, carries a gatekeeper certificate, and the
@@ -300,7 +300,7 @@ function computeCertificates(samples) {
 }
 
 /**
- * One new public seam (spec: gegearsyah/verisieve#25): deterministic, entity-indexed
+ * One new public seam (spec: gegearsyah/versieve#25): deterministic, entity-indexed
  * SFT corpus with per-sample certificates and version-pinned SHA-256 receipts.
  * `inputs` is anything perceiveMulti() accepts, or a perception result with a `blocks` array.
  * `view` is a declarative projection filter over the perception result ({ sources: [...] }).
@@ -503,7 +503,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
 }
 
 /**
- * Provable erasure (spec: gegearsyah/verisieve#25): regenerate the corpus minus one entity.
+ * Provable erasure (spec: gegearsyah/versieve#25): regenerate the corpus minus one entity.
  * Only the samples referencing the entity change; the byte-diff is exactly the erased
  * entity's token spans plus its index entry — anything else fails loudly.
  */

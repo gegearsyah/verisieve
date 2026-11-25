@@ -60,7 +60,7 @@ Update `\mlsystitle`, `\mlsystitlerunning`, `\hypersetup{pdftitle=...}`, and any
 }
 ```
 
-If a paper already has `ardiyansyah2026verisieve`, keep the key and replace its title with the Paper A title above.
+If a paper already has `ardiyansyah2026versieve`, keep the key and replace its title with the Paper A title above.
 
 ## 5. Reviewer findings that are WRONG and must not be applied
 
@@ -126,7 +126,7 @@ At the sealed-recipe sentence, add: "The 18-combination epoch and learning-rate 
 
 Add one paragraph at the end of the measurement setup:
 
-> Artifact availability. Every number in this paper is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/verisieve}); the result JSON files carry the corpus SHA-256, the engine-version SHA-256, and the seed. The submission package pins the repository commit and lists the per-kernel SHA-256 values for the five WebAssembly kernels and the checkpoint identifiers for Qwen2.5-1.5B-Instruct and the two judge models.
+> Artifact availability. Every number in this paper is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/versieve}); the result JSON files carry the corpus SHA-256, the engine-version SHA-256, and the seed. The submission package pins the repository commit and lists the per-kernel SHA-256 values for the five WebAssembly kernels and the checkpoint identifiers for Qwen2.5-1.5B-Instruct and the two judge models.
 
 Do not invent a commit hash, a DOI, or a license. Note in the change log that the author must paste the actual commit and kernel hashes into the submission package.
 

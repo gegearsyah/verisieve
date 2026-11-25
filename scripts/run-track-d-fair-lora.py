@@ -1,7 +1,7 @@
 """scripts/run-track-d-fair-lora.py
 
 Track D: Fair-Shot Chat-Only LoRA (assistant-only loss, 0 packed_passage continuations,
-10% explicit abstention rows) + Matched Raw vs. VeriSieve-Redacted Privacy A/B across
+10% explicit abstention rows) + Matched Raw vs. Versieve-Redacted Privacy A/B across
 3 open-weight models on a single 8 GB RTX 4070 Laptop GPU:
   1. Qwen/Qwen2.5-0.5B-Instruct (0.5B)
   2. Qwen/Qwen2.5-1.5B-Instruct (1.5B — size-matched to LFM3-1.7B)
@@ -48,16 +48,16 @@ RESULTS_DIR = ROOT_OUT / "results"
 
 HELD_OUT_50Q = Path(
     os.environ.get(
-        "VERISIEVE_EVAL_50Q",
+        "VERSIEVE_EVAL_50Q",
         str(Path(__file__).resolve().parents[2] / "Rtio" / "experiments" / "lora-e2e" / "data" / "eval_questions.jsonl"),
     )
 )
 HELD_OUT_PPR = Path(
-    os.environ.get("VERISIEVE_EVAL_50Q_PPR", "D:/rtio-lfm3-ablation/results/track-c-v4-ppr-contexts.json")
+    os.environ.get("VERSIEVE_EVAL_50Q_PPR", "D:/rtio-lfm3-ablation/results/track-c-v4-ppr-contexts.json")
 )
 CANARIES_JSON = Path(
     os.environ.get(
-        "VERISIEVE_CANARIES_JSON",
+        "VERSIEVE_CANARIES_JSON",
         str(Path(__file__).resolve().parents[2] / "Rtio" / "experiments" / "lora-e2e" / "data" / "canaries.json"),
     )
 )

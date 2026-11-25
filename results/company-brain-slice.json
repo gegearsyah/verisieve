@@ -501,9 +501,9 @@
           "fixtures/company-estate/meetings/weekly-sync.wav",
           "fixtures/company-estate/shared/kickoff-announcement.eml",
           "fixtures/company-estate/shared/review-q3.eml",
-          "vendor/wasm/verisieve_clean.wasm",
-          "vendor/wasm/verisieve_graph.wasm",
-          "vendor/wasm/verisieve_media.wasm"
+          "vendor/wasm/versieve_clean.wasm",
+          "vendor/wasm/versieve_graph.wasm",
+          "vendor/wasm/versieve_media.wasm"
         ],
         "byteCount": 732636,
         "note": "Exhaustive local read surface by construction: the estate corpus files, the GT manifest (scorer-side only), and the three zero-import engine wasm kernels. No other file is read; the engine path writes nothing (outputs are emitted by this scorer after the traps are restored)."
@@ -3021,7 +3021,7 @@
     "propagatedSpansCount": 7
   },
   "wallclock": {
-    "perceptionWallclockMs": 130.71620000000001,
-    "totalWallclockMs": 249.94439999999997
+    "perceptionWallclockMs": 106.82939999999996,
+    "totalWallclockMs": 292.9554
   }
 }

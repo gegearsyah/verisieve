@@ -9,10 +9,10 @@
  *      Page 1 of a ruling) reappear as bare, inflected, or ASR/OCR-corrupted mentions
  *      ("pentikainen", "elena vans") in later paragraphs, audio turns, or video slides.
  *    - Seeds a bounded Salted Reference Anchor Pool `A = {(entityId, sig128, nodeId)}` from
- *      high-confidence spans using `verisieve_media.wasm`'s 128-bit salted Bloom+Soundex
+ *      high-confidence spans using `versieve_media.wasm`'s 128-bit salted Bloom+Soundex
  *      signature (`vs_media_pprl_signature`).
  *    - Propagates anchor risk across all chunks and modalities via Dual-CSR Personalized
- *      PageRank (`verisieve_graph.wasm`) + phonetic Dice similarity, recovering cross-chunk
+ *      PageRank (`versieve_graph.wasm`) + phonetic Dice similarity, recovering cross-chunk
  *      and cross-modal mentions without lowering the global NER threshold (avoiding the
  *      precision collapse of low-threshold isolated NER).
  * 2. `perceive()` / `perceiveMulti()`:
@@ -88,7 +88,7 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
   const gamma = options.gamma ?? 0.85;
   const beta = options.beta ?? 0.20;
 
-  // Bounded Salted Reference Anchor Pool (cap = 512 working anchors in verisieve_media.wasm SR-MP Ring)
+  // Bounded Salted Reference Anchor Pool (cap = 512 working anchors in versieve_media.wasm SR-MP Ring)
   const MAX_ANCHORS = options.maxAnchors ?? 512;
   const anchorPool = new Map(); // normToken -> { token, rawSample, type, entityId, entityUid, sig, blockIdx }
   const anchorByUid = new Map();
@@ -447,6 +447,76 @@ function formatPerceptionBlockTag(blk, idx) {
 }
 
 /**
+ * Best-effort container type from magic bytes, so callers can hand over raw
+ * bytes or a folder without naming the format themselves.
+ */
+function sniffExtension(buf) {
+  const b = Buffer.isBuffer(buf) ? buf : Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
+  const ascii = (start, end) => b.toString('latin1', start, Math.min(end, b.length));
+  if (ascii(0, 5) === '%PDF-') return '.pdf';
+  if (b[0] === 0x89 && ascii(1, 4) === 'PNG') return '.png';
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return '.jpg';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WAVE') return '.wav';
+  if (ascii(0, 4) === 'GIF8') return '.gif';
+  if (ascii(0, 2) === 'PK' && b[2] === 3 && b[3] === 4) {
+    const head = ascii(0, 32768);
+    if (head.includes('word/')) return '.docx';
+    if (head.includes('ppt/')) return '.pptx';
+    if (head.includes('xl/')) return '.xlsx';
+    return '.zip';
+  }
+  if (b[0] === 0x1f && b[1] === 0x8b) return '.tar.gz';
+  if (ascii(257, 262) === 'ustar') return '.tar';
+  if (b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0) {
+    return ascii(0, 65536).includes('__substg1.0_') ? '.msg' : '';
+  }
+  return '';
+}
+
+function looksLikeUtf8Text(buf) {
+  const b = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+  const sample = b.subarray(0, 8192);
+  if (sample.includes(0)) return false;
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(sample);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Keep an explicit extension; otherwise append the sniffed or text one. */
+function detectName(name, buf) {
+  if (name && path.extname(name)) return name;
+  const ext = buf ? sniffExtension(buf) || (looksLikeUtf8Text(buf) ? '.txt' : '') : '.txt';
+  return `${name || 'inline'}${ext}`;
+}
+
+/** Expand directory inputs into their files, in deterministic order. */
+function expandInputs(inputs, recursive) {
+  const out = [];
+  const walk = (dir) => {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        if (recursive) walk(p);
+      } else if (ent.isFile()) {
+        out.push(p);
+      }
+    }
+  };
+  for (const item of inputs) {
+    if (typeof item === 'string' && fs.existsSync(item) && fs.statSync(item).isDirectory()) {
+      walk(item);
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+/**
  * One-shot multimodal perception & sanitization pipeline (`perceive`).
  *
  * Accepts a file path, `{ name, bytes/content/text }`, or raw text/buffer across:
@@ -456,7 +526,7 @@ function formatPerceptionBlockTag(blk, idx) {
  *   - Video (`frames` / `.mp4`): Keyframe scene-change + OCR + temporal box pixel redaction
  *
  * Returns structured `<DOC><BLOCK...>` perception tags, clean Markdown, tokenized SFT/RAG chunks,
- * live Dual-CSR `verisieve_graph.wasm` knowledge graph, and a SHA-256 provenance receipt.
+ * live Dual-CSR `versieve_graph.wasm` knowledge graph, and a SHA-256 provenance receipt.
  */
 export async function perceive(input, options = {}) {
   const res = await perceiveMulti([input], options);
@@ -467,8 +537,14 @@ export async function perceive(input, options = {}) {
  * Multi-file / cross-modal one-shot perception (`perceiveMulti`).
  * Processes an entire multimodal stack (e.g., PDF + PPTX deck + email + WAV audio call)
  * in a single shared `GC-CRC` reference anchor horizon and Dual-CSR knowledge graph.
+ *
+ * `inputs` may be file paths, directory paths (walked recursively unless
+ * `options.recursive === false`), raw bytes (format sniffed from magic bytes),
+ * raw text, or `{ name?, bytes?, text?, frames? }` objects. A bare string that
+ * is not an existing path is treated as text.
  */
 export async function perceiveMulti(inputs = [], options = {}) {
+  const inputList = Array.isArray(inputs) ? inputs : [inputs];
   const workspaceSalt = options.workspaceSalt || 'versieve-perceive-v1';
   const vault = options.vault || new SaltedPseudonymVault(workspaceSalt);
   const cleanEngine = loadCleanWasmSync();
@@ -482,8 +558,8 @@ export async function perceiveMulti(inputs = [], options = {}) {
   const diagramEdgesBySource = new Map();
   const chartSeriesBySource = new Map();
 
-  for (const item of inputs) {
-    let name = 'inline.txt';
+  for (const item of expandInputs(inputList, options.recursive !== false)) {
+    let name = null;
     let buf = null;
     let text = null;
 
@@ -496,15 +572,19 @@ export async function perceiveMulti(inputs = [], options = {}) {
       }
     } else if (item instanceof Uint8Array || Buffer.isBuffer(item)) {
       buf = item;
+    } else if (item instanceof ArrayBuffer) {
+      buf = new Uint8Array(item);
     } else if (item && typeof item === 'object') {
-      name = item.name || item.source || 'input.txt';
+      name = item.name || item.source || null;
       if (typeof item.text === 'string') text = item.text;
+      else if (!item.bytes && typeof item.content === 'string') text = item.content;
       else if (item.bytes || item.content || item.buffer) {
         const b = item.bytes || item.content || item.buffer;
         buf = b instanceof Uint8Array ? b : new Uint8Array(b);
       }
     }
 
+    name = detectName(name, buf);
     const lower = name.toLowerCase();
 
     // Audio WAV perception + Spoken ITN + waveform redaction
@@ -704,7 +784,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
 
   const sceneTimeline = buildOmnimodalSceneTimeline(gccrc.blocks);
 
-  // Index into zero-import Dual-CSR verisieve_graph.wasm for <1ms PPR & GDPR Art. 17 erasure
+  // Index into zero-import Dual-CSR versieve_graph.wasm for <1ms PPR & GDPR Art. 17 erasure
   const graphIndex = new PortableDocumentGraph({ workspaceSalt });
   const docsForGraph = Array.from(docTagsBySource.keys()).map((src) => ({
     source: src,

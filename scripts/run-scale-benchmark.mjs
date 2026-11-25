@@ -2,7 +2,7 @@
 /**
  * scripts/run-scale-benchmark.mjs
  * 
- * VeriSieve 1,207-Document Public Benchmark & Multi-Race Audit Runner
+ * Versieve 1,207-Document Public Benchmark & Multi-Race Audit Runner
  * 1. Executes 1,207-Document Multi-Source Public Benchmark (PMC Clinical PDFs + FUNSD + ai4privacy + PubMedQA)
  * 2. Audits 4 Real Races:
  *    - Race 1: Born-Digital PDF Front Door vs. 2D Tiled OCR (and 4/8 CIDFont ToUnicode CMap null)
@@ -19,7 +19,7 @@ import crypto from 'node:crypto';
 import { runScaleAndParadigmBenchmark } from '../src/scale-benchmark.js';
 
 console.log('========================================================================');
-console.log('   VERISIEVE — 1,207-DOCUMENT PUBLIC BENCHMARK & MULTI-RACE AUDIT       ');
+console.log('   VERSIEVE — 1,207-DOCUMENT PUBLIC BENCHMARK & MULTI-RACE AUDIT       ');
 console.log('   FUNSD (199) + ai4privacy (500) + PubMedQA (500) + PMC Full-Text (8)   ');
 console.log('========================================================================\n');
 
@@ -126,8 +126,8 @@ console.log('===================================================================
 console.log(` OS Spawn Speedup vs. PyTorch:           ${summary.speedup_vs_pytorch_spawn}x faster (${r4.substrates.pure_wasm_js.processSpawnColdStartMs} ms vs. ${r4.substrates.local_python.processSpawnColdStartMs} ms)`);
 console.log(` RAM Reduction vs. PyTorch:              ${summary.memory_reduction_factor_vs_pytorch}x smaller (${r4.substrates.pure_wasm_js.peakRssMb} MB vs. ${r4.substrates.local_python.peakRssMb} MB)`);
 console.log(` C99 Hot-Loop vs. Node JIT:              ${summary.c99_hot_loop_speedup_vs_js}x faster (${r4.substrates.single_header_c99.hotLoopInferenceMs} ms vs. ${r4.substrates.pure_wasm_js.hotLoopInferenceMs} ms; NumPy BLAS: ${summary.numpy_hot_loop_ms} ms)`);
-console.log(` Held-Out Gatekeeper Loss N=100->Full:   -${summary.post_training_gate_bce_loss_reduction_pct}% (${r4.downstreamAblation.ablation_100.verisieve_conformal.heldOutGateBceLoss} -> ${r4.downstreamAblation.ablation_full_train.verisieve_conformal.heldOutGateBceLoss}), Acc ${summary.post_training_gate_acc_full_train}%`);
-console.log(` Held-Out Needle R@5 (125 Q->Body):      ${summary.needle_recall_at_5_verisieve}% (vs Raw ${r4.needleBenchmark.raw_unmasked.recallAt5Pct}%)`);
+console.log(` Held-Out Gatekeeper Loss N=100->Full:   -${summary.post_training_gate_bce_loss_reduction_pct}% (${r4.downstreamAblation.ablation_100.versieve_conformal.heldOutGateBceLoss} -> ${r4.downstreamAblation.ablation_full_train.versieve_conformal.heldOutGateBceLoss}), Acc ${summary.post_training_gate_acc_full_train}%`);
+console.log(` Held-Out Needle R@5 (125 Q->Body):      ${summary.needle_recall_at_5_versieve}% (vs Raw ${r4.needleBenchmark.raw_unmasked.recallAt5Pct}%)`);
 console.log('\n Honest Findings & Boundaries:');
 for (const nullReport of summary.honest_nulls_and_boundaries_reported) {
   console.log(`   - ${nullReport}`);

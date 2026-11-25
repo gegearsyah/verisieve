@@ -5,9 +5,9 @@ import path from 'node:path';
 import { loadCleanWasm, loadCleanWasmSync } from '../src/clean-wasm.js';
 import { runCleanAndTokenizePipeline } from '../src/clean-and-tokenize.js';
 
-const WASM_PATH = path.resolve(process.cwd(), 'vendor/wasm/verisieve_clean.wasm');
+const WASM_PATH = path.resolve(process.cwd(), 'vendor/wasm/versieve_clean.wasm');
 
-test('matilda-portable loads identical verisieve_clean.wasm for boilerplate strip, dedup, and chunking', async () => {
+test('matilda-portable loads identical versieve_clean.wasm for boilerplate strip, dedup, and chunking', async () => {
   assert.ok(fs.existsSync(WASM_PATH), `Expected synced WASM at ${WASM_PATH}`);
   const wasmBytes = fs.readFileSync(WASM_PATH);
   const mod = await WebAssembly.compile(wasmBytes);
@@ -51,7 +51,7 @@ import {
 } from '../src/clean-wasm.js';
 
 testT1('T1: zero imports, ABI v1 enforcement, and strict RangeError on oversized slices', () => {
-  const wasmPath = pathT1.resolve(process.cwd(), 'vendor/wasm/verisieve_clean.wasm');
+  const wasmPath = pathT1.resolve(process.cwd(), 'vendor/wasm/versieve_clean.wasm');
   const wasmBytes = fsT1.readFileSync(wasmPath);
   const wasmMod = new WebAssembly.Module(wasmBytes);
   assertT1.equal(WebAssembly.Module.imports(wasmMod).length, 0);
@@ -127,10 +127,10 @@ testT1('T1: dedup ring tracks overflow and eviction count accurately', () => {
   assertT1.equal(engine.dedupEvicted(), 3);
 });
 
-testT1('T1: vendor verisieve_clean.wasm matches Rtio frontend public wasm byte-for-byte', () => {
-  const localWasm = pathT1.resolve(process.cwd(), 'vendor/wasm/verisieve_clean.wasm');
+testT1('T1: vendor versieve_clean.wasm matches Rtio frontend public wasm byte-for-byte', () => {
+  const localWasm = pathT1.resolve(process.cwd(), 'vendor/wasm/versieve_clean.wasm');
   assertT1.ok(fsT1.existsSync(localWasm), `missing local wasm at ${localWasm}`);
-  const rtioWasm = pathT1.resolve(process.cwd(), '../Rtio/frontend/public/wasm/verisieve_clean.wasm');
+  const rtioWasm = pathT1.resolve(process.cwd(), '../Rtio/frontend/public/wasm/versieve_clean.wasm');
   if (fsT1.existsSync(rtioWasm)) {
     const h1 = cryptoT1.createHash('sha256').update(fsT1.readFileSync(localWasm)).digest('hex');
     const h2 = cryptoT1.createHash('sha256').update(fsT1.readFileSync(rtioWasm)).digest('hex');

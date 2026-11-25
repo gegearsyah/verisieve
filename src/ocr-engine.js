@@ -1106,7 +1106,7 @@ export function resolveCactusWeightsBytes(options = {}) {
     }
     return fs.readFileSync(p);
   }
-  const envPath = process.env.VERISIEVE_CACTUS_WEIGHTS;
+  const envPath = process.env.VERSIEVE_CACTUS_WEIGHTS;
   if (envPath) {
     const p = path.resolve(process.cwd(), envPath);
     if (!fs.existsSync(p)) {

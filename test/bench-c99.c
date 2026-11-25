@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <psapi.h>
 #endif
-#include "verisieve.h"
+#include "versieve.h"
 
 int main(int argc, char *argv[]) {
     int n_rows = 1207;
@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     if (argc > 1) n_rows = atoi(argv[1]);
     if (argc > 2) passes = atoi(argv[2]);
 
-    verisieve_gatekeeper_t gk;
+    versieve_gatekeeper_t gk;
     gk.dim = dim;
     gk.bias = 0.05f;
     for (int j = 0; j < dim; j++) {
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     if (passes > 1) {
         for (int i = 0; i < n_rows; i++) {
-            verisieve_decide(&gk, &x[i * dim]);
+            versieve_decide(&gk, &x[i * dim]);
         }
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     float sum_p = 0.0f;
     for (int p = 0; p < passes; p++) {
         for (int i = 0; i < n_rows; i++) {
-            float prob = verisieve_predict_prob(&gk, &x[i * dim]);
+            float prob = versieve_predict_prob(&gk, &x[i * dim]);
             if (prob >= gk.tau_keep) safe_count++;
             sum_p += prob;
         }

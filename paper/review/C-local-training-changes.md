@@ -1,6 +1,6 @@
-# Paper C revision changes (verisieve-local-training-benchmark)
+# Paper C revision changes (versieve-local-training-benchmark)
 
-Scope: `paper/verisieve-local-training-benchmark.tex` and `.bib` only. Applied: EDITOR-RULINGS.md (binding) + all CRITICAL/MAJOR findings from `review/C-local-training-review.md`, plus the revision-agent instructions. Build: `latexmk -pdf -interaction=nonstopmode -f` run twice, exit 0 both times, 10 pages, 0 undefined references/citations, 0 overfull boxes, 0 `---` in .tex and .bib (grep-verified).
+Scope: `paper/versieve-local-training-benchmark.tex` and `.bib` only. Applied: EDITOR-RULINGS.md (binding) + all CRITICAL/MAJOR findings from `review/C-local-training-review.md`, plus the revision-agent instructions. Build: `latexmk -pdf -interaction=nonstopmode -f` run twice, exit 0 both times, 10 pages, 0 undefined references/citations, 0 overfull boxes, 0 `---` in .tex and .bib (grep-verified).
 
 ## 1. Title
 `\mlsystitle`, both `\mlsystitlerunning`, and `\hypersetup{pdftitle}`:
@@ -62,7 +62,7 @@ First use now "$0$ of $210$: three models $\times$ $70$ questions" (abstract and
 - Per ruling 7, the Track C / CAG / canary material (Sections 5.4, 5.5, Tables 3, 5) is NOT cut; this paper is its home. The review's R2 compress-to-pointer instruction is therefore overridden where it conflicts.
 
 ## 13. Artifact availability
-New `\paragraph{Artifact availability.}` at the end of Section 3.3: every table emitted by a checked-in runner in \url{https://github.com/gegearsyah/verisieve}; the recipe-grid sweep JSON and adapter metadata included with the submission. No commit hash, DOI, license, HF revision, or checkpoint-release claim invented.
+New `\paragraph{Artifact availability.}` at the end of Section 3.3: every table emitted by a checked-in runner in \url{https://github.com/gegearsyah/versieve}; the recipe-grid sweep JSON and adapter metadata included with the submission. No commit hash, DOI, license, HF revision, or checkpoint-release claim invented.
 
 ## 14. Fair-shot defined (S5.4)
 Added at the T2-Chat bullet: fair-shot means matched compute and recipe budget across arms, not matched information access (636 rows vs 22,539 indexed chunks that retrieval sees at inference). Added the grid's best strict-judge cell (45.0\%, LFM3 160/1e-4, still below T0+Graph-PPR's 52.5\%) as the explicit rebuttal of an under-training objection.

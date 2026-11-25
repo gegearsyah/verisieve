@@ -7,7 +7,7 @@
  *   1. Section-contextualized long passages (packed_passage, 256-1536 tokens)
  *   2. Diverse section-anchored instruction records (section_instruction)
  *   3. Table-header-bound records (table_grounded)
- *   4. Multi-hop graph-walk Q&A chains (multihop_graph_walk via verisieve_graph.wasm)
+ *   4. Multi-hop graph-walk Q&A chains (multihop_graph_walk via versieve_graph.wasm)
  *   5. AtlasKV / KBLaM-compatible redacted triples.jsonl
  */
 
@@ -249,7 +249,7 @@ function buildTableRecords(graph) {
     const userPrompt = headerNames
       ? `List the structured schedule entries (${headerNames}) documented under "${breadcrumb}" in ${source}.`
       : `Extract the structured table records documented under "${breadcrumb}" in ${source}.`;
-    const systemPrompt = 'Grounded compliance and domain assistant operating strictly over VeriSieve redacted records.';
+    const systemPrompt = 'Grounded compliance and domain assistant operating strictly over Versieve redacted records.';
     const assistantContent = sanitizeField(`[${source} > ${breadcrumb}]\n${body}`);
     const id = `sft:table:${idx++}`;
 
@@ -343,7 +343,7 @@ function buildMultiHopRecords(graph, options = {}) {
       messages: [
         {
           role: 'system',
-          content: 'Multi-hop grounded synthesis assistant operating strictly over VeriSieve redacted graphs and salted pseudonyms.',
+          content: 'Multi-hop grounded synthesis assistant operating strictly over Versieve redacted graphs and salted pseudonyms.',
         },
         { role: 'user', content: userPrompt },
         { role: 'assistant', content: assistantContent },
@@ -522,7 +522,7 @@ export function buildGraphGroundedSft(graphOrInput, options = {}) {
         entityTokens,
         index: idx,
       });
-      const systemPrompt = 'Verified domain assistant grounded in VeriSieve redacted sections and salted pseudonyms.';
+      const systemPrompt = 'Verified domain assistant grounded in Versieve redacted sections and salted pseudonyms.';
       sftRecords.push({
         id,
         mode: 'section_instruction',

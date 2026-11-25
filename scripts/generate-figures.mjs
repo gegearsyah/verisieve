@@ -38,7 +38,7 @@ function generateFigures() {
 
   const body = [];
   body.push(`<rect width="${W}" height="${H}" fill="${SURF}"/>`);
-  body.push(txt(32, 28, 'VeriSieve Core Micro-Benchmarks (LTT False-Alarm, OCR Tiling CER, Training Latency)', { size: 12.5, weight: 'bold', fill: INK }));
+  body.push(txt(32, 28, 'Versieve Core Micro-Benchmarks (LTT False-Alarm, OCR Tiling CER, Training Latency)', { size: 12.5, weight: 'bold', fill: INK }));
   body.push(txt(32, 44, 'Evaluated strictly from live measurements recorded in results/benchmarks.json', { size: 10, fill: MUT }));
 
   // Panel A: FAR Before vs After LTT (%)

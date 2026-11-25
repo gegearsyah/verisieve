@@ -70,7 +70,7 @@ def style_ax(ax, grid_axis="y"):
 
 def build_fig_e0():
     """Architecture schematic accurately showing Detector -> LTT Gate dataflow."""
-    wasm_bytes = (OUT_DIR.parent.parent / "vendor" / "wasm" / "verisieve_media.wasm").stat().st_size
+    wasm_bytes = (OUT_DIR.parent.parent / "vendor" / "wasm" / "versieve_media.wasm").stat().st_size
     wasm_kb = wasm_bytes / 1024.0
 
     fig, ax = plt.subplots(figsize=(7.4, 2.6))
@@ -114,7 +114,7 @@ def build_fig_e0():
     )
 
     draw_box(
-        23.8, 3.8, 27.2, 26.8, f"2. verisieve_media.wasm ({wasm_kb:.0f} KB)",
+        23.8, 3.8, 27.2, 26.8, f"2. versieve_media.wasm ({wasm_kb:.0f} KB)",
         [
             "Rust -> wasm32 (0 host imports)",
             "• Inflate + ZIP/TAR Bomb Guards",
@@ -151,7 +151,7 @@ def build_fig_e0():
     draw_box(
         78.4, 3.8, 19.2, 26.8, "4. Graph & Sandbox UI",
         [
-            "verisieve_graph.wasm",
+            "versieve_graph.wasm",
             "(0 imports, Dual-CSR)",
             "• Cross-Modal GDPR",
             "  Art. 17 Blast (<1 ms)",
@@ -289,7 +289,7 @@ def build_fig_e1(tab):
 
 def build_fig_e2(sap, trk):
     """Panel A: External Secrets (F1 + Steady-State MB/s from 10x batch);
-       Panel B: Unicode Evasion (Unnormalized vs Python NFKC vs verisieve_media.wasm)."""
+       Panel B: Unicode Evasion (Unnormalized vs Python NFKC vs versieve_media.wasm)."""
     sec = sap["expR3_externalSecrets"]
     u_nfkc = sap["expR6_unicodeNfkcBaseline"]
     u_wasm = trk["exp1_piiAndEvasion"]["adversarialUnicodeEvasion"]
@@ -303,7 +303,7 @@ def build_fig_e2(sap, trk):
     style_ax(ax1, "y")
     tools = [
         ("Yelp\ndetect-secrets", sec["yelp_detect_secrets"], TEAL),
-        ("verisieve_\nmedia.wasm", sec["verisieve_media_wasm"], BLUE),
+        ("versieve_\nmedia.wasm", sec["versieve_media_wasm"], BLUE),
         ("Gitleaks\nv8.30.1", sec["gitleaks_v8_30_1"], CORAL),
     ]
     x = np.arange(len(tools))
@@ -346,7 +346,7 @@ def build_fig_e2(sap, trk):
     wb = 0.25
     ax2.bar(xb - wb, raw_v, wb, color=CORAL, label="Unnormalized Regex", zorder=3)
     ax2.bar(xb, nfkc_v, wb, color=SLATE, label="Python NFKC + Regex", zorder=3)
-    ax2.bar(xb + wb, wasm_v, wb, color=BLUE, label="verisieve_media.wasm", zorder=3)
+    ax2.bar(xb + wb, wasm_v, wb, color=BLUE, label="versieve_media.wasm", zorder=3)
 
     for i in range(len(attacks)):
         ax2.text(xb[i] - wb, raw_v[i] + 2.0, f"{raw_v[i]:.0f}%", ha="center", va="bottom", fontsize=6.0, color=CORAL, fontweight="bold")
