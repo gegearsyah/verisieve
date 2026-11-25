@@ -69,7 +69,7 @@ export function extractPmcClinicalSentences(pdfPath) {
   const diag = extractPdfDetailed(buf);
   const unique = [];
   const seen = new Set();
-  for (const s of diag.lines) {
+  for (const s of diag.lines.flatMap((line) => line.split(/(?<=\.)\s*(?=[A-Z])/))) {
     if (s.length >= 25 && s.length <= 160 && !/https?:\/\//i.test(s) && /^[A-Z]/.test(s) && !seen.has(s)) {
       seen.add(s);
       unique.push(s);

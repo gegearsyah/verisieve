@@ -18,6 +18,10 @@ const MANIFEST_PATH = path.join(ROOT, 'fixtures/open-estate-manifest.json');
 const GEN_SCRIPT = path.join(ROOT, 'scripts/gen-open-estate.mjs');
 const BASELINE_SCRIPT = path.join(ROOT, 'scripts/open-estate-baseline.mjs');
 const BASELINE_OUT = path.join(ROOT, 'results/open-estate-baseline.json');
+const QMSUM_DIR = path.join(ROOT, '..', 'open-estate-downloads', 'qmsum', 'QMSum-main', 'data');
+const QMSUM_SKIP = fs.existsSync(QMSUM_DIR)
+  ? false
+  : 'QMSum data directory not present on this machine (external corpus, not committed) - skipping loudly per the founder ruling';
 
 function runGenerator(extraArgs = []) {
   const { OPEN_ESTATE_AMI_DIR: _a, OPEN_ESTATE_QMSUM_DIR: _q, ...env } = process.env;
@@ -66,7 +70,7 @@ function docTextOf(manifest, rel) {
   return fs.readFileSync(path.join(ESTATE_DIR, rel), 'utf8');
 }
 
-test('K6 1: determinism: two generations are byte-identical and the manifest pins its estate SHA-256 over the text fixtures', () => {
+test('K6 1: determinism: two generations are byte-identical and the manifest pins its estate SHA-256 over the text fixtures', { skip: QMSUM_SKIP }, () => {
   const m1 = runGenerator();
   const d1 = textDigest();
   const manifestBytes1 = fs.readFileSync(MANIFEST_PATH);
@@ -86,7 +90,7 @@ test('K6 1: determinism: two generations are byte-identical and the manifest pin
   assert.ok(!fs.existsSync(path.join(ESTATE_DIR, '../open-estate-enron-slice')), 'no Enron-derived slice inside the repository tree');
 });
 
-test('K6 2: coverage: layered estate counts, every overlay person spans >=2 docs and >=2 modalities, both layers labeled on every document', () => {
+test('K6 2: coverage: layered estate counts, every overlay person spans >=2 docs and >=2 modalities, both layers labeled on every document', { skip: QMSUM_SKIP }, () => {
   const m = runGenerator();
 
   assert.equal(m.layerO.world.people.length, 60, '60 overlay-cast people');
@@ -160,7 +164,7 @@ test('K6 2: coverage: layered estate counts, every overlay person spans >=2 docs
   }
 });
 
-test('K6 3: binding trivial-baseline gate on layer O: exact-match pairwise recall <90% and >=1 false merge on the collision pairs; layer R reported ungated', () => {
+test('K6 3: binding trivial-baseline gate on layer O: exact-match pairwise recall <90% and >=1 false merge on the collision pairs; layer R reported ungated', { skip: QMSUM_SKIP }, () => {
   runGenerator();
   const baseline = runBaseline();
 
@@ -183,7 +187,7 @@ test('K6 3: binding trivial-baseline gate on layer O: exact-match pairwise recal
 });
 
 test('K6 4: engine blindness: the generator and scorer import nothing from src/ and fetch nothing', () => {
-  runGenerator(); // generation must not touch src/ to produce the estate
+  if (!QMSUM_SKIP) runGenerator(); // generation must not touch src/ to produce the estate
   const genSource = fs.readFileSync(GEN_SCRIPT, 'utf8');
   const baselineSource = fs.readFileSync(BASELINE_SCRIPT, 'utf8');
   for (const [name, src] of [['gen-open-estate.mjs', genSource], ['open-estate-baseline.mjs', baselineSource]]) {
@@ -198,7 +202,7 @@ test('K6 4: engine blindness: the generator and scorer import nothing from src/ 
   for (const imp of imports2) assert.ok(imp.startsWith('node:'), `the scorer may only import node: builtins, got ${imp}`);
 });
 
-test('K6 5: noise and span completeness on layer O: every recorded mention sits at its recorded span, all N1-N8 occur, roster rows are fully mention-keyed; layer R spans hold with no overlay', () => {
+test('K6 5: noise and span completeness on layer O: every recorded mention sits at its recorded span, all N1-N8 occur, roster rows are fully mention-keyed; layer R spans hold with no overlay', { skip: QMSUM_SKIP }, () => {
   const m = runGenerator();
   const texts = new Map(m.layerO.documents.map((d) => [d.path, docTextOf(m, d.path)]));
 
