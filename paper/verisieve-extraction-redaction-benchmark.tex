@@ -19,29 +19,29 @@
 \makeatother
 
 \hypersetup{
-  pdftitle={Versieve: Benchmarking Deterministic Document Extraction, Data Redaction, and Conformal Gatekeeping},
+  pdftitle={What Training Data Should Lose: Local Extraction, Redaction, and Fail-Closed Gatekeeping},
   pdfauthor={Gege Ardiyansyah},
   pdfsubject={Systems for Machine Learning}
 }
 
-\mlsystitlerunning{Versieve: Benchmarking Document Extraction and Data Redaction}
+\mlsystitlerunning{What Training Data Should Lose: Local Extraction, Redaction, and Fail-Closed Gatekeeping}
 
 \begin{document}
 
 \twocolumn[
-\mlsystitle{Versieve: Benchmarking Deterministic Document Extraction, Data Redaction, and Conformal Gatekeeping}
+\mlsystitle{What Training Data Should Lose: Local Extraction, Redaction, and Fail-Closed Gatekeeping}
 
 \begin{mlsysauthorlist}
 \textbf{Gege Ardiyansyah}
 \end{mlsysauthorlist}
 
-\mlsystitlerunning{Versieve: Benchmarking Document Extraction and Data Redaction}
-\mlsyskeywords{WebAssembly, conformal prediction, Learn-Then-Test, PII de-identification, document curation, Graph-PPR, Cache-Augmented Generation}
+\mlsystitlerunning{What Training Data Should Lose: Local Extraction, Redaction, and Fail-Closed Gatekeeping}
+\mlsyskeywords{WebAssembly, conformal prediction, Learn-Then-Test, PII de-identification, document curation}
 
 \vskip 0.3in
 
 \begin{abstract}
-Preparing institutional documents for AI retrieval or post-training typically requires stripping boilerplate, redacting sensitive fields, and filtering low-quality passages. In clinical, legal, and regulated enterprise settings, raw records cannot be sent to cloud APIs for preprocessing, so the entire pipeline must run deterministically inside a local, auditable sandbox. We present \textbf{Versieve}, a zero-egress document curation, conformal gatekeeping, and local retrieval engine built around zero-import WebAssembly kernels and a single-header C99 core. We evaluate Versieve across a $1{,}207$-document public benchmark suite (ICDAR-2019 FUNSD, PubMedQA, PubMed Central full-text PDFs, and \texttt{ai4privacy-200k}) and a six-model open-weight compliance evaluation on an 8\,GB RTX~4070 Laptop GPU. Deterministic ingestion extracts readable prose from all $8/8$ PMC PDFs ($8{,}134$ lines, $55{,}099$ words in $209.02$\,ms) without raster OCR and preserves $97.38\%$ of FUNSD word boxes under $512{\times}512$ overlapping tiles. Format-validated regular expressions recall $78.6\%$ ($110/140$) of contact, card, and IPv4 spans, $49.6\%$ ($118/238$) of bare person names, and $31.0\%$ ($180/580$) across all $26$ structured PII tags, while a $334$-word exclusion lexicon reduces false-positive Title-Case hits on blind PubMedQA abstracts by $2.72\times$ ($5.46 \to 2.01$ per $1{,}000$ words). Above the regex layer, a 520-dimensional logistic gatekeeper calibrated via Learn-Then-Test (LTT) provides monotonic held-out risk control ($14.63\% \to 0.0\%$ conditional FPR) and fails closed cleanly at $\alpha=0.01$ when the unsafe calibration sample is below the theoretical floor ($n_{\text{cal,unsafe}}=206 < 299$, $\operatorname{BinomCDF}=0.1261 > 0.05$). Across runtime substrates, median process startup is $14.12$\,ms (C99) and $106.22$\,ms (Node+WASM) versus $12{,}917$\,ms for PyTorch+DuckDB. Finally, in downstream compliance QA across \texttt{Qwen2.5-0.5B-Instruct}, size-matched \texttt{Qwen2.5-1.5B-Instruct}, and \texttt{LFM3-1.7B-Base}, zero-training WebAssembly Graph-PPR retrieval (\texttt{verisieve\_graph.wasm}) significantly outperforms fair-shot assistant-only chat LoRA ($p = 0.001$ on blinded \texttt{qwen2.5:7b} judge; $p = 0.0005$ on token F1), while pre-processing PII redaction removes adversarial context extraction ($11/12 \to 0/12$) and lowers $20\times$-canary weight exposure by $4.93$--$5.70$ bits across all three models at zero QA accuracy loss.
+Preparing institutional documents for AI retrieval or post-training typically requires stripping boilerplate, redacting sensitive fields, and filtering low-quality passages. In clinical, legal, and regulated enterprise settings, raw records cannot be sent to cloud APIs for preprocessing, so the entire pipeline must run deterministically inside a local, auditable sandbox. We present \textbf{Versieve}, a document curation and conformal gatekeeping engine with no network egress by default, built around zero-import WebAssembly kernels and a single-header C99 core. We evaluate Versieve across a $1{,}207$-document public benchmark suite (ICDAR-2019 FUNSD, PubMedQA, PubMed Central full-text PDFs, and \texttt{ai4privacy-200k}) and across four runtime substrates on an 8\,GB RTX~4070 Laptop GPU. Deterministic ingestion extracts readable prose from all $8/8$ PMC PDFs ($8{,}134$ lines, $55{,}099$ words in $209.02$\,ms) without raster OCR and preserves $97.38\%$ of FUNSD word boxes under $512{\times}512$ overlapping tiles. Format-validated regular expressions recall $78.6\%$ ($110/140$) of contact, card, and IPv4 spans, $49.6\%$ ($118/238$) of bare person names, and $31.0\%$ ($180/580$) across the $26$ structured PII tags evaluated out of the dataset's $56$ span categories, while a $334$-word exclusion lexicon reduces false-positive Title-Case hits on blind PubMedQA abstracts by $2.72\times$ ($5.46 \to 2.01$ per $1{,}000$ words). Above the regex layer, a 520-dimensional logistic gatekeeper calibrated via Learn-Then-Test (LTT) provides monotonic held-out risk control ($14.63\% \to 0.0\%$ conditional FPR) and fails closed cleanly at $\alpha=0.01$ when the unsafe calibration sample is below the theoretical floor ($n_{\text{cal,unsafe}}=206 < 299$, $\operatorname{BinomCDF}=0.1261 > 0.05$). Across runtime substrates, median process startup is $14.12$\,ms (C99) and $106.22$\,ms (Node+WASM) versus $12{,}917$\,ms for PyTorch+DuckDB. The gate's certificates are relative to the scanner-derived unsafe and safe labels, so they bound what the redaction layer can catch rather than certify independent PII truth.
 \end{abstract}
 ]
 
@@ -81,7 +81,7 @@ Local Substrates & C99 spawn $14.12$\,ms; NumPy wins shared logistic ($0.207$\,m
 \vskip -0.14in
 \end{table}
 
-Table~\ref{tab:scope} summarizes each subsystem alongside its explicit operating boundary, and Figure~\ref{fig:redaction-arch} traces the end-to-end flow of raw documents through ingestion, zero-import cleaning, salted-pseudonym redaction, and fail-closed conformal routing. The rest of this paper evaluates deterministic document ingestion (Section~\ref{sec:ingestion}), the public benchmark suite and testbed (Section~\ref{sec:datasets}), deterministic PII disambiguation and its recall ceiling (Section~\ref{sec:pii}), fail-closed LTT conformal gatekeeping (Section~\ref{sec:ltt}), runtime substrate trade-offs and downstream open-weight LLM adaptation (Section~\ref{sec:substrates}), and limitations (Section~\ref{sec:limitations}).
+Table~\ref{tab:scope} summarizes each subsystem alongside its explicit operating boundary, and Figure~\ref{fig:redaction-arch} traces the end-to-end flow of raw documents through ingestion, zero-import cleaning, salted-pseudonym redaction, and fail-closed conformal routing. The rest of this paper evaluates deterministic document ingestion (Section~\ref{sec:ingestion}), the public benchmark suite and testbed (Section~\ref{sec:datasets}), deterministic PII disambiguation and its recall ceiling (Section~\ref{sec:pii}), fail-closed LTT conformal gatekeeping (Section~\ref{sec:ltt}), runtime substrate trade-offs and training-budget scaling (Section~\ref{sec:substrates}), and limitations (Section~\ref{sec:limitations}).
 
 \begin{figure*}[t]
 \centering
@@ -101,7 +101,7 @@ On the portable ingestion micro-benchmark, Versieve strips raw HTML boilerplate 
 \subsection{Native PDF CMap and Kerning Reconstruction}
 Many scientific and regulatory PDFs embed custom glyph encodings rather than plain ASCII strings. Versieve's native parser (\texttt{extractPdfDiagnostics}) scans each PDF content stream in a single pass, resolves scoped 1-byte and 2-byte \texttt{/ToUnicode} CMap tables (\texttt{beginbfchar} and \texttt{beginbfrange}), and inserts word spaces whenever a PDF \texttt{TJ} operator specifies a negative kerning displacement of $\le -110$ glyph units.
 
-Across all $8$ open-access PubMed Central (PMC) clinical PDFs in our evaluation suite, $7$ contain embedded \texttt{/ToUnicode} CMap streams and $2$ contain hex-encoded strings ($1$ and $57$ hex-decoded lines). Versieve recovers readable prose from all $8/8$ documents---$8{,}134$ lines and $55{,}099$ words---in $209.02$\,ms total ($26.13$\,ms per paper; range $8.42$\,ms to $64.54$\,ms) without invoking raster OCR.
+Across all $8$ open-access PubMed Central (PMC) clinical PDFs in our evaluation suite, $7$ contain embedded \texttt{/ToUnicode} CMap streams and $2$ contain hex-encoded strings ($1$ and $57$ hex-decoded lines). Versieve recovers readable prose from all $8/8$ documents ($8{,}134$ lines and $55{,}099$ words) in $209.02$\,ms total ($26.13$\,ms per paper; range $8.42$\,ms to $64.54$\,ms) without invoking raster OCR.
 
 \subsection{2D Overlapping Tiling for Scanned Forms}
 When documents exist only as page images, naive downscaling destroys small form fields before an OCR model can read them. On all $199$ scanned forms in the ICDAR-2019 FUNSD dataset \citep{jaume2019funsd} ($30{,}595$ annotated word boxes), we evaluate how many word boxes remain geometrically legible ($\ge 8$\,px height and $\ge 4$\,px width after scaling) under five rasterization strategies (Table~\ref{tab:funsd}).
@@ -133,7 +133,7 @@ Untiled $512{\times}512$ downscaling preserves only $20.53\%$ of word boxes, whi
 \section{Evaluation Corpus and Hardware Testbed}
 \label{sec:datasets}
 
-Core curation, PII disambiguation, conformal calibration, and substrate benchmarks run over a unified $1{,}207$-document public corpus combining real archival and biomedical documents with span-annotated synthetic PII records (Table~\ref{tab:datasets}). Under the format-validated scanner, $826$ documents are labeled unsafe and $381$ safe ($68.43\%$ unsafe prevalence).
+Core curation, PII disambiguation, conformal calibration, and substrate benchmarks run over a unified $1{,}207$-document public corpus combining real archival and biomedical documents with span-annotated synthetic PII records (Table~\ref{tab:datasets}). Under the format-validated scanner, $826$ documents are labeled unsafe and $381$ safe ($68.43\%$ unsafe prevalence). These unsafe and safe labels are scanner-derived: they are independent of scanner judgment only where a dataset supplies ground-truth PII spans, namely the \texttt{ai4privacy-200k} records. A conformal certificate in this paper therefore means agreement with the format-validated labeling rule, not independent PII truth, and the $31.0\%$ ($180/580$) all-tag recall of Section~\ref{sec:pii} measures the scanner against \texttt{ai4privacy}'s human labels and bounds what the gate can catch. The \texttt{ai4privacy-200k} dataset annotates $56$ span categories; the evaluation scores the $26$ structured token types the format-valid scanner emits against their ground-truth spans ($180/580$), and the remaining free-form categories are not counted toward the recall denominator.
 
 \begin{table}[t]
 \caption{Public benchmark corpus ($1{,}207$ documents; $826$ unsafe, $381$ safe under format-validated labeling).}
@@ -146,7 +146,7 @@ Core curation, PII disambiguation, conformal calibration, and substrate benchmar
 \textbf{Dataset} & \textbf{Provenance} & \textbf{Docs} & \textbf{Evaluation Role} \\
 \midrule
 ICDAR FUNSD \citep{jaume2019funsd} & Real scanned forms & $199$ & $30{,}595$ word boxes; tiling geometry \\
-\texttt{ai4privacy-200k} \citep{ai4privacy2023} & Synthetic English & $500$ & $56$-tag PII span recall benchmark \\
+\texttt{ai4privacy-200k} \citep{ai4privacy2023} & Synthetic English & $500$ & $56$-tag dataset; $26$ structured tags evaluated \\
 PubMedQA \citep{jin2019pubmedqa} & Real clinical abstracts & $500$ & $250/250$ lexicon split; Needle QA \\
 PMC full text \citep{miu_2017_pmc5773420} & Real clinical PDFs & $8$ & $8{,}134$ lines / $55{,}099$ words \\
 \midrule
@@ -161,6 +161,9 @@ PMC full text \citep{miu_2017_pmc5773420} & Real clinical PDFs & $8$ & $8{,}134$
 \paragraph{Hardware and Software Environment.}
 All benchmarks and GPU ablations ran locally on a single laptop: AMD Ryzen~7 7840HS ($8$ cores / $16$ threads), $31.3$\,GB RAM, NVIDIA GeForce RTX~4070 Laptop GPU ($8$\,GB VRAM), Windows~11 Home, Node.js v24.13.1, GCC~14.2.0 (MSYS2, C99 \texttt{-O3} binary $135{,}025$\,B), Python~3.12.4, NumPy~2.4.3, DuckDB~1.5.5, PyTorch~2.10.0+cpu (CPU substrate trials), and PyTorch~2.10.0+cu128 (local GPU LoRA training and inference).
 
+\paragraph{Artifact availability.}
+Every table in this paper is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/verisieve}) at commit \texttt{1e35603}; the benchmark manifests, prompts, and result JSON files are included with the submission, and the eight PMC identifiers are listed in the benchmark manifest. The PMC publication cited in Table~\ref{tab:datasets} is representative; the manifest carries the identifier for each of the eight PDFs.
+
 \section{PII Disambiguation and the Deterministic Regex Ceiling}
 \label{sec:pii}
 
@@ -173,7 +176,7 @@ All benchmarks and GPU ablations ran locally on a single laptop: AMD Ryzen~7 784
 
 Regular-expression PII scrubbers face a sharp precision--recall trade-off on scientific and legal documents. Aggressive Title-Case rules corrupt domain terminology (such as anatomical names, statistical methods, or statutory headings), whereas overly narrow patterns miss unprefixed human names and loosely formatted identifiers.
 
-Versieve addresses precision in two ways. First, credit-card and financial identifier rules enforce Luhn checksum and Issuer Identification Number (IIN) validation so that arbitrary 16-digit scientific constants or grant IDs are not masked. Second, a pre-committed $334$-word exclusion lexicon (\texttt{EXCLUDED\_NAME\_WORDS}) suppresses common capitalized non-person phrases. On the held-out blind half of PubMedQA ($250$ clinical abstracts, $63{,}739$ words), the exclusion lexicon cuts false-positive Title-Case matches from $348$ ($5.46$ per $1{,}000$ words; $45.2\%$ of documents) down to $128$ ($2.01$ per $1{,}000$ words; $26.0\%$ of documents)---a $2.72\times$ reduction (Figure~\ref{fig:pii}, Panel~B). On the development half ($62{,}620$ words), hits similarly decline from $5.29$ to $1.66$ per $1{,}000$ words ($44.4\% \to 22.8\%$ of documents), and false alarms on a five-item technical lookalike suite drop from $4/5$ to $1/5$.
+Versieve addresses precision in two ways. First, credit-card and financial identifier rules enforce Luhn checksum and Issuer Identification Number (IIN) validation so that arbitrary 16-digit scientific constants or grant IDs are not masked. Second, a pre-committed $334$-word exclusion lexicon (\texttt{EXCLUDED\_NAME\_WORDS}) suppresses common capitalized non-person phrases. On the held-out blind half of PubMedQA ($250$ clinical abstracts, $63{,}739$ words), the exclusion lexicon cuts false-positive Title-Case matches from $348$ ($5.46$ per $1{,}000$ words; $45.2\%$ of documents) down to $128$ ($2.01$ per $1{,}000$ words; $26.0\%$ of documents), a $2.72\times$ reduction (Figure~\ref{fig:pii}, Panel~B). On the development half ($62{,}620$ words), hits similarly decline from $5.29$ to $1.66$ per $1{,}000$ words ($44.4\% \to 22.8\%$ of documents), and false alarms on a five-item technical lookalike suite drop from $4/5$ to $1/5$.
 
 At the same time, evaluating the validated scanner against ground-truth spans on $500$ \texttt{ai4privacy-200k} records exposes a clear recall ceiling (Figure~\ref{fig:pii}, Panel~A): recall is $78.6\%$ ($110/140$) on contact, card, and IPv4 spans, $62.8\%$ ($159/253$) across the eight targeted identifier patterns, $49.6\%$ ($118/238$) on bare unprefixed person names, and $31.0\%$ ($180/580$) across all $26$ structured privacy tags (which include free-form addresses, employers, and usernames). Because deterministic regex alone cannot guarantee zero leakage on unstructured prose, Versieve treats regex as a fast first-pass redactor and places a statistically calibrated gatekeeper above it.
 
@@ -251,10 +254,10 @@ Enterprise curation frequently demands a conjunction of three criteria: \texttt{
 \textbf{Gate Axis} & $\boldsymbol{\tau_{\text{keep}} / \tau_{\text{drop}}}$ & \textbf{Recall} & \textbf{Precision} & \textbf{Abstain} & \textbf{Calibration Outcome} \\
 \midrule
 \texttt{safe} & $0.55 / 0.33$ & $97.1\%$ & $95.7\%$ & $7.3\%$ & Certified safety head \\
-\texttt{useful} & $1.00 / 0.05$ & --- & --- & $79.7\%$ & Fail-closed (insufficient cal) \\
-\texttt{topic} & $1.00 / 0.25$ & --- & --- & $40.0\%$ & Fail-closed (insufficient cal) \\
+\texttt{useful} & $1.00 / 0.05$ & -- & -- & $79.7\%$ & Fail-closed (insufficient cal) \\
+\texttt{topic} & $1.00 / 0.25$ & -- & -- & $40.0\%$ & Fail-closed (insufficient cal) \\
 \midrule
-\textbf{Conjunction} & Combined & $0\%$ kept & --- & $28.3\%$ & \textbf{$0$ kept / $85$ abstain / $215$ drop} \\
+\textbf{Conjunction} & Combined & $0\%$ kept & -- & $28.3\%$ & \textbf{$0$ kept / $85$ abstain / $215$ drop} \\
 \bottomrule
 \end{tabular}%
 }
@@ -262,12 +265,12 @@ Enterprise curation frequently demands a conjunction of three criteria: \texttt{
 \vskip -0.14in
 \end{table}
 
-The \texttt{safe} head certifies cleanly ($\tau_{\text{keep}}=0.55$, $\tau_{\text{drop}}=0.33$), achieving $97.1\%$ recall and $95.7\%$ precision at $7.3\%$ abstention. By contrast, with only $40$ total calibration chunks, the \texttt{useful} and \texttt{topic} heads lack enough negative calibration examples to clear the binomial test and both fail closed ($\tau_{\text{keep}}=1.0$). Consequently, the three-way conjunction conservatively releases $0$ chunks, routes $85$ ($28.3\%$) to human review, and drops $215$. Rather than masking insufficient calibration data behind an unverified threshold, fail-closed LTT forces the operator to supply additional labeled calibration rows before automated release begins.
+The \texttt{safe} head certifies cleanly ($\tau_{\text{keep}}=0.55$, $\tau_{\text{drop}}=0.33$), achieving $97.1\%$ recall and $95.7\%$ precision at $7.3\%$ abstention. By contrast, with only $40$ total calibration chunks, the \texttt{useful} and \texttt{topic} heads lack enough negative calibration examples to clear the binomial test and both fail closed ($\tau_{\text{keep}}=1.0$). The conjunction applies a strict precedence across heads: it drops if any head drops, keeps only if all three heads keep and none abstains, and otherwise abstains (the aggregation implemented in \texttt{src/gatekeeper.js}). Consequently, the three-way conjunction conservatively releases $0$ chunks, routes $85$ ($28.3\%$) to human review, and drops $215$. Fail-closed LTT forces the operator to supply additional labeled calibration rows before automated release begins.
 
-\paragraph{Hierarchical Cluster-Robust Conformal Risk Control (\texttt{HC-CRC}) and Streaming Martingales (\texttt{E-LTT}).}
-When calibration units are multi-paragraph documents $D_m = \{c_{m,1},\dots,c_{m,N_m}\}$ rather than independent abstracts, chunks within the same document exhibit intra-cluster correlation $\rho > 0$, inflating variance by the Cluster Design Effect $\operatorname{DEFF} = 1 + (\bar{N}_u - 1)\rho$. Versieve extends the gatekeeper (\texttt{calibrateClusterRobustGatekeeper} and \texttt{calibrateStreamingEProcessGatekeeper} in \texttt{src/gatekeeper.js}) to define the bounded cluster loss $L_m(\lambda) = |U_m|^{-1} \sum_{c \in U_m} \mathbb{I}[f(c) \ge \lambda] \in [0, 1]$ over the unsafe blocks $U_m \subseteq D_m$ of exchangeable parent documents $m=1,\dots,M_0$, inverting the $\operatorname{DEFF}$-adjusted effective sample size $N_{\text{eff}} = \lfloor n_0 / \operatorname{DEFF} \rfloor$ (\texttt{HC-CRC}) or maintaining the anytime-valid Ville betting supermartingale $\mathcal{E}_t(\lambda) = \prod_{m=1}^t (1 + \gamma_m(\alpha - L_m(\lambda))) \ge 1/\delta$ (\texttt{E-LTT}) for streaming ingestion.
+\paragraph{Clustered and streaming extensions.}
+When calibration units arrive clustered within documents or as a stream rather than as independent chunks, the corresponding cluster-robust and anytime-valid streaming extensions (HC-CRC and E-LTT) are formulated and evaluated in the companion multimodal paper \citep{ardiyansyah2026multimodal}.
 
-\section{Runtime Substrates, Local Retrieval, and Open-Weight Adaptation}
+\section{Runtime Substrates and Training-Budget Scaling}
 \label{sec:substrates}
 
 \begin{figure*}[t]
@@ -278,7 +281,7 @@ When calibration units are multi-paragraph documents $D_m = \{c_{m,1},\dots,c_{m
 \end{figure*}
 
 \subsection{Process Startup vs.\ Warm Kernel Compute}
-Interactive CLI tools, browser extensions, and MCP servers spawn short-lived processes frequently, making cold startup latency and memory footprint first-order design constraints. Table~\ref{tab:substrates} reports the median of seven interleaved OS process spawns across four execution substrates (medians are used because first-boot OS page-cache outliers---$549.9$\,ms on C99 and $41.9$\,s on PyTorch---skew means).
+Interactive CLI tools, browser extensions, and MCP servers spawn short-lived processes frequently, making cold startup latency and memory footprint first-order design constraints. Table~\ref{tab:substrates} reports the median of seven interleaved OS process spawns across four execution substrates (medians are used because first-boot OS page-cache outliers, $549.9$\,ms on C99 and $41.9$\,s on PyTorch, skew means).
 
 \begin{table}[t]
 \caption{Median of $7$ interleaved OS process spawns. Process startup and peak RSS are directly comparable across all rows; warm compute compares the shared $1{,}207{\times}520$ logistic kernel only between C99 and NumPy.}
@@ -290,7 +293,7 @@ Interactive CLI tools, browser extensions, and MCP servers spawn short-lived pro
 \toprule
 \textbf{Substrate} & \textbf{OS Spawn} & \textbf{Warm Work} & \textbf{Init/Import} & \textbf{Peak RSS} & \textbf{Warm Kernel} \\
 \midrule
-C99 header & $\mathbf{14.12}$\,ms & $0.745$\,ms & --- & $\mathbf{6.08}$\,MB & $1{,}207{\times}520$ logistic \\
+C99 header & $\mathbf{14.12}$\,ms & $0.745$\,ms & -- & $\mathbf{6.08}$\,MB & $1{,}207{\times}520$ logistic \\
 Node.js + WASM & $106.22$\,ms & $7.125$\,ms & $1.045$\,ms & $55.97$\,MB & 64-d VeRA predict \\
 Python + NumPy & $388.79$\,ms & $\mathbf{0.207}$\,ms & $187.01$\,ms & $31.49$\,MB & $1{,}207{\times}520$ logistic \\
 Python + Torch + DuckDB & $12{,}917$\,ms & $31.47$\,ms & $11{,}662$\,ms & $432.3$\,MB & Qwen2 step, $100$ rows \\
@@ -316,11 +319,11 @@ Varying the gate training shard size $N_{\text{train}} \in \{100, 300, 607\}$ on
 \toprule
 \textbf{Pipeline ($N_{\text{train}}$)} & \textbf{Gate BCE} & \textbf{Gate Acc} & \textbf{VeRA BCE} & \textbf{PII Exposure} & \textbf{Needle R@5} \\
 \midrule
-Raw unfiltered & --- & $31.4\%$ & --- & $100\%$ & $60.0\%$ \\
-Naive regex scrubber & $0.7833$ & $64.2\%$ & --- & Non-exempt & $60.8\%$ \\
+Raw unfiltered & -- & $31.4\%$ & -- & $100\%$ & $60.0\%$ \\
+Naive regex scrubber & $0.7833$ & $64.2\%$ & -- & Non-exempt & $60.8\%$ \\
 \midrule
-Versieve ($N_{\text{tr}}=100$) & $0.2577$ & $92\%$ & $0.9432$ & $0\%$ & --- \\
-Versieve ($N_{\text{tr}}=300$) & $0.2244$ & $93\%$ & $0.6698$ & $0\%$ & --- \\
+Versieve ($N_{\text{tr}}=100$) & $0.2577$ & $92\%$ & $0.9432$ & $0\%$ & -- \\
+Versieve ($N_{\text{tr}}=300$) & $0.2244$ & $93\%$ & $0.6698$ & $0\%$ & -- \\
 \textbf{Versieve ($N_{\text{tr}}=607$)} & $\mathbf{0.189}$ & $\mathbf{94\%}$ & $\mathbf{0.6141}$ & $\mathbf{1.05\%}$ & $\mathbf{60.0\%}$ \\
 \bottomrule
 \end{tabular}%
@@ -329,72 +332,10 @@ Versieve ($N_{\text{tr}}=300$) & $0.2244$ & $93\%$ & $0.6698$ & $0\%$ & --- \\
 \vskip -0.14in
 \end{table}
 
-\subsection{Local Open-Weight Retrieval, Native CAG, and LoRA Adaptation}
+\subsection{Downstream Value of the Curated Outputs}
 \label{sec:trackc}
 
-To evaluate how Versieve's curated outputs perform with real local LLMs on an 8\,GB RTX~4070 Laptop GPU, we compare two zero-training retrieval architectures---Layer-1 Dual-CSR Graph-PPR (\texttt{verisieve\_graph.wasm}, $54.4$\,KB, $0$ imports) and Layer-2 Native Cache-Augmented Generation (CAG via Ollama KV prefix caching)---alongside local LoRA fine-tuning.
-
-\paragraph{Native CAG vs.\ Graph-PPR Across Three Ollama Models.}
-On a frozen $12$-probe Australian Privacy Principles (OAIC APP) benchmark ($3$ single-hop, $3$ multi-hop, $3$ numeric threshold, and $3$ unanswerable probes; Table~\ref{tab:trackc}), a clear hardware crossover emerges. Whenever the redacted workspace fits untruncated in GPU VRAM (\texttt{lfm3:latest} at $20$k tokens / $1.73$\,GB VRAM and \texttt{llama3.2:3b} at $19$k tokens / $6.08$\,GB VRAM), Native CAG achieves a $100\%$ KV cache hit rate ($94.8\%$--$99.6\%$ cached tokens), $11.8\times$--$16.6\times$ repeat-turn speedups ($4.97$\,s $\to 0.42$\,s and $16.6$\,s $\to 1.00$\,s), $0.0\%$ empty responses, and sub-millisecond GDPR Art.~17 KV-slot eviction via \texttt{verisieve\_graph.wasm} \texttt{blast\_radius}. Once VRAM forces CAG context truncation (\texttt{qwen2.5:7b} capped at $14$k tokens), Layer-1 Graph-PPR ($0.62$\,ms retrieval) outperforms truncated CAG by $33.3$ accuracy points ($75.0\%$ vs.\ $41.7\%$ overall; $100\%$ vs.\ $0\%$ multi-hop).
-
-\begin{table}[t]
-\caption{Zero-training local Ollama evaluation on $12$ frozen OAIC APP probes (RTX~4070, 8\,GB VRAM; $0.0\%$ canary leakage across all arms).}
-\label{tab:trackc}
-\vskip 0.08in
-\begin{center}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{llrrrr}
-\toprule
-\textbf{Model (VRAM)} & \textbf{Arm} & \textbf{Acc} & \textbf{Multi-Hop} & \textbf{F1} & \textbf{Latency} \\
-\midrule
-\texttt{lfm3:latest} (1.7\,GB) & Base / Graph-PPR / TOC & 25--33\% & 0--33\% & 0.28--0.30 & 0.41--0.94\,s \\
-\texttt{lfm3:latest} (1.7\,GB) & \textbf{Native CAG (20k)} & \textbf{58.3\%} & \textbf{66.7\%} & \textbf{0.438} & \textbf{0.42\,s} \\
-\midrule
-\texttt{llama3.2:3b} (6.1\,GB) & Base / TOC & 25--33\% & 0\% & 0.30--0.40 & 0.30--0.69\,s \\
-\texttt{llama3.2:3b} (6.1\,GB) & \textbf{Graph-PPR / Native CAG} & \textbf{58.3\%} & \textbf{33--67\%} & \textbf{0.48 / 0.39} & 1.43 / \textbf{1.00\,s} \\
-\midrule
-\texttt{qwen2.5:7b} (5.3\,GB) & Base / TOC / CAG (14k trunc.) & 25--42\% & 0--33\% & 0.34--0.41 & 0.85--1.21\,s \\
-\texttt{qwen2.5:7b} (5.3\,GB) & \textbf{Graph-PPR (0.62\,ms)} & \textbf{75.0\%} & \textbf{100.0\%} & \textbf{0.557} & 2.10\,s \\
-\bottomrule
-\end{tabular}%
-}
-\end{center}
-\vskip -0.14in
-\end{table}
-
-\paragraph{Cross-Family Local LoRA vs.\ Zero-Training Graph-PPR.}
-We next test whether fair-shot local LoRA fine-tuning outperforms zero-training Graph-PPR across three open-weight models spanning scale and architecture---\texttt{Qwen2.5-0.5B-Instruct}, size-matched \texttt{Qwen2.5-1.5B-Instruct}, and \texttt{LFM3-1.7B-Base}---using matched Raw vs.\ Versieve-Safe pure chat-only SFT ($636$ rows across $89$ disjoint training docs with all $7$ copies of the $3$ held-out eval documents excluded, exact assistant-only loss masking, $10\%$ explicit abstention turns, $104$ Carlini canary rows, $80$ steps, $r=16, \alpha=32$, \texttt{bf16}). Pure chat assistant-only SFT removes the $92.0\%$ immediate-EOS collapse observed in an earlier flat $49.4$-token baseline ($0\%$--$6\%$ empty across all six adapters) and raises closed-book out-of-scope abstention to $90\%$--$100\%$. Nevertheless, across $1{,}050$ anonymized responses graded by a blinded local \texttt{qwen2.5:7b} LLM judge on both the $50$-question held-out suite and a $20$-question paraphrased \emph{seen-document} probe, zero-training \texttt{T0+Graph-PPR} (\texttt{verisieve\_graph.wasm}) significantly outperforms closed-book \texttt{T2-Chat Safe} LoRA on every model (\texttt{Qwen2.5-0.5B}: $55.0\%$ vs.\ $23.0\%$, F1 $0.265$ vs.\ $0.099$; \texttt{Qwen2.5-1.5B}: $69.0\%$ vs.\ $33.0\%$, F1 $0.275$ vs.\ $0.112$; \texttt{LFM3-1.7B}: $62.0\%$ vs.\ $34.0\%$, F1 $0.262$ vs.\ $0.128$; all paired permutation $p = 0.0005$ on F1 and $p = 0.001$ on blinded judge). Error inspection confirms that closed-book small-model LoRA over-refuses in-scope queries ($16$--$19/40$ on \texttt{Qwen2.5-1.5B}) and echoes \texttt{<PII:...>} placeholders ($13/20$ seen queries), whereas zero-training Graph-PPR preserves fluency ($1/40$ false refusals, $0/40$ stray tags).
-
-\paragraph{Controlled PII-Masking A/B and Cross-Family Canary Memorization.}
-Holding Graph-PPR passages identical on \texttt{qwen2.5:7b}, raw unredacted text and Versieve salted-pseudonym text achieve identical compliance QA accuracy ($75.0\%$, $9/12$ each; $\Delta = 0.0\%$), with a $-0.062$ lexical F1 tax ($0.619 \to 0.557$) caused by regex Title-Case over-masking of capitalized legal terms (e.g., \texttt{APP Privacy Policy} $\to$ \texttt{APP <PII:PERSON\_63>}). Under three direct adversarial extraction prompts targeting a retrieved audit note containing synthetic email, SSN, phone, and name canaries, raw \texttt{qwen2.5:7b} leaks $11/12$ secret spans verbatim ($100\%$ probe leak rate), whereas Versieve salted pseudonyms leak $0/12$ ($0.0\%$). Across all three fine-tuned models probed with $12$ Carlini Secret-Sharer canaries (max $9.97$ bits), Raw Chat LoRA memorizes $20\times$-repeated secrets to $8.25$--$8.40$ bits ($3/12$, $5/12$, and $6/12$ Rank-1 memorized on \texttt{Qwen2.5-0.5B}, \texttt{Qwen2.5-1.5B}, and \texttt{LFM3-1.7B}), whereas Versieve pre-training redaction lowers $20\times$ exposure to $2.70$--$3.32$ bits ($-4.93$ to $-5.70$ bits; $0/12$ Rank-1 on \texttt{Qwen2.5-1.5B}). Table~\ref{tab:prompt-comparison} displays verbatim prompt-level outputs comparing raw/base baselines against Versieve across adversarial PII extraction, legal QA, and grounded Graph-PPR retrieval.
-
-\begin{table*}[t]
-\caption{Verbatim prompt-level comparison between raw/base baselines and Versieve (synthetic audit-note canaries on \texttt{qwen2.5:7b}; held-out OAIC compliance probe \texttt{oaic-01} on \texttt{LFM3-1.7B-Base}).}
-\label{tab:prompt-comparison}
-\vskip 0.08in
-\begin{center}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{1.35in}p{2.35in}p{2.55in}}
-\toprule
-\textbf{Prompt (Model)} & \textbf{Raw / Base Baseline Output} & \textbf{Versieve Redacted Output} \\
-\midrule
-\textit{Adversarial PII extraction} (\texttt{qwen2.5:7b}): ``List the exact name, email, phone number, and SSN of the Lead Privacy Officer from the note.'' &
-\textbf{Leaks 4/4 secrets verbatim:} ``Dr.\ Elena Vance (\texttt{elena.vance@clinic-example.test}, phone \texttt{415-555-0192}, SSN \texttt{900-12-3456}).'' &
-\textbf{0/4 raw secrets leaked:} ``Name: Dr.\ \texttt{<PII:PERSON\_03>}; Email: \texttt{<PII:EMAIL\_01>}; Phone: \texttt{<PII:PHONE\_01>}; SSN: \texttt{<PII:SSN\_01>}.'' \\
-\midrule
-\textit{Compliance QA + over-masking} (\texttt{qwen2.5:7b}): ``What does APP~1 require an APP entity to maintain?'' &
-``APP~1 requires an APP entity to maintain a clearly expressed and up-to-date APP Privacy Policy.'' &
-``APP~1 requires an APP entity to maintain a clearly expressed and up-to-date APP \texttt{<PII:PERSON\_04>}.'' \textit{(Illustrates the $-0.062$ Title-Case regex F1 tax.)} \\
-\midrule
-\textit{Grounded compliance QA} (\texttt{LFM3-1.7B-Base}, \texttt{oaic-01}): ``What is the central objective of APP~1?'' &
-\textbf{Base (closed-book):} ``I don't have access to the specific document or context you're referring to when asking about `APP~1'...'' &
-\textbf{T0 + Versieve Graph-PPR:} ``The central objective of APP~1 is to ensure that APP entities manage personal information in an open and transparent way.'' \\
-\bottomrule
-\end{tabular}
-\end{center}
-\vskip -0.14in
-\end{table*}
+Whether local open-weight models answer compliance questions better with fine-tuning on Versieve-curated text or with zero-training retrieval over it, and how pre-processing PII redaction changes QA accuracy, adversarial leakage, and canary memorization on those models, are the downstream questions this curation pipeline raises. Both are measured in the companion local-training study \citep{ardiyansyah2026localtraining}, which reports the full Ollama CAG versus Graph-PPR comparison, the cross-family LoRA evaluation, and the canary-exposure measurements on the same hardware. This paper retains the runtime substrate and training-budget scaling results above, which are the parts unique to the extraction, redaction, and gatekeeping pipeline.
 
 \section{Limitations and Operating Boundaries}
 \label{sec:limitations}
@@ -402,16 +343,16 @@ Holding Graph-PPR passages identical on \texttt{qwen2.5:7b}, raw unredacted text
 Our experiments highlight five concrete boundaries that govern production deployment:
 \begin{itemize}
     \item \textbf{Finite-sample calibration floor:} Certifying conditional LTT risk at $\alpha=0.01$ and $\delta=0.05$ mathematically requires at least $n_{\text{cal,unsafe}} \ge 299$. Smaller calibration sets trigger fail-closed abstention ($\tau_{\text{keep}}=1.0$), which preserves safety guarantees at the cost of automated throughput.
+    \item \textbf{Certificate scope:} The unsafe and safe labels used for risk control are scanner-derived except where a dataset supplies ground-truth PII spans, so a certificate means agreement with the scanner family, not independent PII truth. The $31.0\%$ all-tag recall measures the scanner against \texttt{ai4privacy}'s human labels and bounds what the gate can catch.
     \item \textbf{Exchangeability assumption:} Learn-Then-Test guarantees assume that calibration and deployment shards are exchangeable; domain shifts require recalibration on fresh labeled samples.
     \item \textbf{Geometric survival vs.\ neural OCR accuracy:} The $97.38\%$ FUNSD result measures geometric box legibility under 2D tiling, not end-to-end character error rate from a neural OCR backbone.
-    \item \textbf{Deterministic regex recall ceiling:} Format-validated regex misses roughly half of bare person names ($49.6\%$) and over-masks certain Title-Case legal phrases ($-0.062$ lexical F1 tax). Adding a compact Apache-2.0 local neural span tagger is a clear next step.
-    \item \textbf{Automated compliance metrics:} The compliance ablations measure lexical token F1, key-point recall, out-of-scope abstention, and blinded local \texttt{qwen2.5:7b} rubric scores rather than formal expert legal adjudication.
+    \item \textbf{Deterministic regex recall ceiling:} Format-validated regex misses roughly half of bare person names ($49.6\%$) and over-masks certain Title-Case legal phrases, a cost quantified in the companion training study \citep{ardiyansyah2026localtraining}. Adding a compact Apache-2.0 local neural span tagger is a clear next step.
 \end{itemize}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Versieve demonstrates that deterministic document parsing, salted-pseudonym redaction, finite-sample conformal gatekeeping, and sub-millisecond graph retrieval can run entirely inside a zero-egress client sandbox with millisecond startup latency. Across $1{,}207$ public documents and five local open-weight LLMs on an 8\,GB GPU, three system lessons stand out: (1)~deterministic regex must be paired with a fail-closed conformal gate because format-validated rules hit an inherent recall ceiling on unstructured spans; (2)~zero-training WebAssembly Graph-PPR and KV-cached Native CAG outperform closed-book small-model LoRA on compliance QA accuracy, abstention, and latency; and (3)~pre-processing PII redaction acts as a strong, verifiable security boundary---removing verbatim adversarial context extraction and cutting canary weight exposure by $4.93$--$5.70$ bits---at zero QA accuracy loss.
+Versieve demonstrates that deterministic document parsing, salted-pseudonym redaction, and finite-sample conformal gatekeeping can run entirely inside a local sandbox with millisecond startup latency. Across $1{,}207$ public documents on an 8\,GB GPU, two system lessons stand out: (1)~deterministic regex must be paired with a fail-closed conformal gate because format-validated rules recall only $31.0\%$ of structured PII spans overall, and the gate's certificates are relative to the scanner-derived labels, so they bound what the redaction layer can catch rather than independent PII truth; and (2)~where calibration is insufficient, fail-closed abstention is the correct output, which trades automated throughput for a guarantee that only supported thresholds are certified. The downstream effects of the curated outputs for fine-tuning, retrieval, and canary memorization are measured in the companion local-training study \citep{ardiyansyah2026localtraining}.
 
 \bibliographystyle{mlsys2025}
 \bibliography{verisieve-extraction-redaction-benchmark}
@@ -427,6 +368,6 @@ The local Model Context Protocol server (\texttt{src/mcp-server.js}) exposes $14
     \item \textbf{Redacted knowledge graph and TOC ($6$ tools, \texttt{verisieve\_graph.wasm}):} \texttt{index\_document\_graph}, \texttt{blast\_radius}, \texttt{ppr\_retrieve}, \texttt{trace\_path}, \texttt{get\_document\_tree}, and \texttt{read\_section\_nodes}.
 \end{itemize}
 
-All four WebAssembly modules (\texttt{verisieve\_clean.wasm} at $14{,}633$\,B, \texttt{verisieve\_graph.wasm} at $54{,}402$\,B, \texttt{verisieve\_dl.wasm} at $60{,}096$\,B with $26$ \texttt{mle\_dl\_*} exports, and \texttt{verisieve\_sql.wasm} at $55{,}635$\,B) pass automated SHA-256 provenance and zero-import verification (\texttt{npm run audit-wasm}: \texttt{allVerified = true}). The portable regression suite passes $100/100$ tests ($94$ core/Track~C tests plus $6$ MCP tests), alongside $4/4$ Python trainer unit tests in \texttt{test/verisieve-train.test.py}.
+All four WebAssembly modules (\texttt{verisieve\_clean.wasm} at $14{,}633$\,B, \texttt{verisieve\_graph.wasm} at $54{,}402$\,B, \texttt{verisieve\_dl.wasm} at $60{,}096$\,B with $26$ \texttt{mle\_dl\_*} exports, and \texttt{verisieve\_sql.wasm} at $55{,}635$\,B) pass automated SHA-256 provenance and zero-import verification (\texttt{npm run audit-wasm}: \texttt{allVerified = true}). The portable regression suite passes $100/100$ tests ($94$ core tests plus $6$ MCP tests), alongside $4/4$ Python trainer unit tests in \texttt{test/verisieve-train.test.py}.
 
 \end{document}
