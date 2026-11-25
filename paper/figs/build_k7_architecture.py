@@ -56,7 +56,7 @@ PINK_EDGE = "#e05a6b" # eraseEntity stroke
 GREEN = "#b2f3bb"     # SFT corpora highlight
 RED_X = "#e05a6b"     # cross-out icon
 
-GIF_W, GIF_H = 1160, 796
+GIF_W, GIF_H = 1160, 750
 GIF_FONT = "Comic Sans MS"  # hand-drawn register; falls back if absent
 DASH = (8, 8)               # dash/gap in px
 DASH_PERIOD = 16
@@ -113,9 +113,11 @@ def _arc_pts(cx, cy, r, a0, a1, n=10):
              cy + r * math.sin(math.radians(a0 + (a1 - a0) * k / n))) for k in range(n + 1)]
 
 
-def _txt(ax, x, y, s, size, bold=False, color=INK_G, va="center", ha="center", ls=1.2, z=6):
+def _txt(ax, x, y, s, size, bold=False, color=INK_G, va="center", ha="center", ls=1.2, z=6,
+         rotation=0):
     ax.text(x, y, s, fontsize=size, fontweight="bold" if bold else "normal",
-            color=color, ha=ha, va=va, linespacing=ls, fontname=GIF_FONT, zorder=z)
+            color=color, ha=ha, va=va, linespacing=ls, fontname=GIF_FONT, zorder=z,
+            rotation=rotation)
 
 
 def _badge(ax, x, y, n):
@@ -258,8 +260,22 @@ def draw_scene(seed, dash_off):
         _arrow_head(ax, (xs[i + 1] - 5, mid_y), (1, 0))
         _badge(ax, (xs[i] + NODE_W + xs[i + 1]) / 2, mid_y + 18, n)
 
-    # Consumer fan: source drop, leftward bus, four drops (badges 5..8)
-    BUS_Y, CONS_Y = GIF_H - 424, GIF_H - 560  # canvas rows 424 and 560, mirrored to mpl
+    # Vault branch: salted placeholders by default, readable identity only as an
+    # explicit opt-in. Both modes feed the graph.
+    _node(ax, xs[2], 320, NODE_W, _icon_plates,
+          ["Readable", "opt-in"], ["explicit seam"], fc=SIDE)
+    _dashed(ax, [(centers[2], GIF_H - 320), (centers[2], GIF_H - boxes[2][2] + 3)],
+            dash_off, z=1.5)
+    _arrow_head(ax, (centers[2], GIF_H - 320), (0, -1))
+    _txt(ax, centers[2] + 40, GIF_H - 300, "OPT-IN", 9.3, bold=True, color=TEAL)
+    _dashed(ax, [(xs[3] + NODE_W / 2, GIF_H - boxes[3][2] + 3),
+                 (xs[3] + NODE_W / 2, GIF_H - 390),
+                 (xs[2] + NODE_W + 4, GIF_H - 390)], dash_off, z=1.5)
+    _arrow_head(ax, (xs[3] + NODE_W / 2, GIF_H - boxes[3][2] + 3), (0, 1))
+
+    # Consumer fan: source drop, leftward bus, four drops (badges 5..8), then a
+    # regenerate loop from eraseEntity back into the corpus.
+    BUS_Y = GIF_H - 480
     # Source drop is extended past node 5's bottom border (that tail hides under
     # the box fill, which draws at higher zorder); the per-frame extension e
     # aligns the dash pattern's origin to the border so the visible first dash
@@ -269,7 +285,7 @@ def draw_scene(seed, dash_off):
     e = -((base_len + dash_off) % DASH_PERIOD) % DASH_PERIOD
     _dashed(ax, [(centers[4], BUS_Y - 5), (centers[4], border_y + 3 + e)],
             dash_off, z=1.5)
-    cons_x = [244 + round(j * (NODE_W + 105)) for j in range(4)]
+    cons_x = [244 + j * (NODE_W + 90) for j in range(4)]
     _dashed(ax, [(cons_x[0] + NODE_W / 2, BUS_Y), (centers[4], BUS_Y)], dash_off)
     cons = [
         (_icon_gradcap, ["SFT corpora"], [], GREEN, INK_G, 5),
@@ -277,12 +293,25 @@ def draw_scene(seed, dash_off):
         (_icon_plates, ["CAG caches"], [], FILL, INK_G, 7),
         (_icon_cross, ["eraseEntity"], ["byte-verified", "removal"], PINK, PINK_EDGE, 8),
     ]
+    cons_boxes = []
     for j, (icon, title, sub, fc, ec, n) in enumerate(cons):
         tc_x = cons_x[j] + NODE_W / 2
         _dashed(ax, [(tc_x, GIF_H - 560 - 8), (tc_x, BUS_Y)], dash_off)
         _arrow_head(ax, (tc_x, GIF_H - 560 - 3), (0, -1))
         _badge(ax, tc_x + 17, (BUS_Y + GIF_H - 560) / 2, n)
-        _node(ax, cons_x[j], 560, NODE_W, icon, title, sub, fc=fc, ec=ec)
+        cons_boxes.append(_node(ax, cons_x[j], 560, NODE_W, icon, title, sub, fc=fc, ec=ec))
+    for x, s, col in [(275, "train", INK_G), (665, "ask", INK_G), (988, "erase", RED)]:
+        _txt(ax, x, GIF_H - 515, s, 9.3, bold=True, color=col)
+
+    # Erasure loop: removing one entity regenerates the corpus, byte-verified.
+    b = cons_boxes[3]
+    cy = (b[0] + (GIF_H - b[2])) / 2
+    right = cons_x[3] + NODE_W
+    tip = (1122, GIF_H - boxes[4][2])
+    _dashed(ax, [tip, (1122, cy), (right + 4, cy)], dash_off, z=1.5)
+    _arrow_head(ax, tip, (0, 1))
+    _txt(ax, 1138, GIF_H - 400, "regenerate, byte-diff", 9.3, bold=True, color=RED,
+         rotation=90)
     return fig
 
 

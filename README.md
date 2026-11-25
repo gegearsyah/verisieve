@@ -62,7 +62,7 @@ Three boundaries belong next to those numbers. At `τ=0.50` the ring trades `0.9
 
 ## 🗺️ Architecture, One GIF per Paper
 
-Each animation follows the path its paper measures, including the branches. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, teal `YES` and red `NO` labels mark decisions, and boxes below the main row are the side paths (OCR fallback, abstention, a refused answer that retries retrieval, the next container in a stream). The cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
+Each animation follows the path its paper measures, including the branches. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, colour-coded labels mark decisions (`YES`/`NO`, `OPT-IN`, `train`/`ask`/`erase`), and boxes below the main row are the side paths (OCR fallback, abstention, a refused answer that retries retrieval, the next container in a stream, the readable-identity seam, an erasure regeneration). The cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
 
 **Paper 1: what data should lose.** Source files become deterministic extraction, regex and lexicon redaction, an LTT gate that fails closed, and a clean training handoff.
 
@@ -76,7 +76,7 @@ Each animation follows the path its paper measures, including the branches. Boxe
 
 ![Paper 3 training architecture](docs/architecture-c-training.gif)
 
-**Paper 4: how data should look.** Estate documents become vaulted values and a resolved entity graph, then a deterministic corpus that feeds four consumers, including `eraseEntity`.
+**Paper 4: how data should look.** Estate documents become vaulted values and a resolved entity graph, with readable identity only as an explicit opt-in branch. The deterministic corpus then feeds four consumers in three lanes, `train`, `ask`, and `erase`, and `eraseEntity` loops back into the corpus as a byte-verified regeneration.
 
 ![Paper 4 corpus architecture](docs/verisieve-architecture.gif)
 
