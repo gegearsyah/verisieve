@@ -62,7 +62,7 @@ Three boundaries belong next to those numbers. At `τ=0.50` the ring trades `0.9
 
 ## 🗺️ Architecture, One GIF per Paper
 
-Each animation follows the path its paper measures. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, and the cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
+Each animation follows the path its paper measures, including the branches. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, teal `YES` and red `NO` labels mark decisions, and boxes below the main row are the side paths (OCR fallback, abstention, a refused answer that retries retrieval, the next container in a stream). The cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
 
 **Paper 1: what data should lose.** Source files become deterministic extraction, regex and lexicon redaction, an LTT gate that fails closed, and a clean training handoff.
 
@@ -164,6 +164,44 @@ node bin/verisieve.mjs ingest --input ./scanned-document.pdf --out ./results/ing
 # Run the 108-test portable CI suite
 npm run test:ci
 ```
+
+---
+
+## 📦 What Comes Out, and How You Train on It
+
+`perceive()` and `perceiveMulti()` return more than chunks. Each call returns `perceptionStream` (a `<DOC><BLOCK>` text stream that keeps document structure), `markdown`, `chunks`, `sftJsonl`, `ptlmSftJsonl`, `graph`, and `receipt`. The JSONL is an ordinary chat file, the graph is a by-product you can ignore, and consuming any output is optional.
+
+### The JSONL is an ordinary chat file
+
+Each line is one sample with a system prompt, a user prompt naming the source, and the redacted chunk as the assistant answer:
+
+```json
+{"id":"contracts/msa.pdf#3","source":"contracts/msa.pdf","modality":"document",
+ "messages":[
+  {"role":"system","content":"Answer strictly from the provided sanitized context."},
+  {"role":"user","content":"Summarize the key record from contracts/msa.pdf (body)."},
+  {"role":"assistant","content":"The agreement renews on 2027-03-01. <PII:PERSON_1> signs for the vendor."}]}
+```
+
+`ptlmSftJsonl` adds `ptlm_mask_spans`, `ptlm_placeholder_count`, and `ptlm_unmasked_ratio` to the same row. Those spans mark where a secret was replaced by a placeholder.
+
+### Training is a small LoRA run, not a pipeline to build
+
+Feed either file to any SFT trainer. The recipe this repository measures is in `scripts/run-track-d-fair-lora.py`: a PEFT `LoraConfig`, assistant-only loss (prompt tokens are labeled `-100` so the model is graded only on the answer), 80 steps, seed 42, on `Qwen2.5-0.5B/1.5B` and `LFM3-1.7B`, inside 8 GB of GPU memory. The PT-LM arm also masks placeholder subwords out of the loss and forward-substitutes a same-length surrogate, so the model learns the identity slot without ever learning the value that filled it.
+
+Nothing about that needs the graph. The graph stays separate from training.
+
+### Three ways to consume the same data
+
+| Path | What it is | When to use it |
+|---|---|---|
+| **LoRA SFT** | Train on `sftJsonl` or `ptlmSftJsonl`. | The knowledge must live in the weights (offline, single model, no retrieval). |
+| **Graph-PPR retrieval** | Keep documents on disk, build the entity graph, and answer with `pprRetrieve` contexts at question time. | The knowledge changes, must be attributable to a source, or must be erasable. |
+| **CAG cache prefill** | Prefill a fixed KV cache from per-entity records, then append only the question. | The question population is small and stable and prefill cost must be amortized. |
+
+### The honest part
+
+Paper 4 measured all three on a 115-document noisy estate with 60 questions, one 1.5B model, and a 25,755-token budget. The trained formats did not separate: composed samples reached 11.7% exact match and per-block chunks 10.0% (McNemar p=1.00), against a base of 1.7%. Graph-PPR retrieval with no fine-tuning answered 53.3%, and a plain BM25 control 60.0%, numerically above the graph and within noise at n=60. So the measured win is retrieval, provenance, and byte-verified erasure, not fine-tuning. Train when the model must carry the knowledge itself; retrieve when it can look it up.
 
 ---
 

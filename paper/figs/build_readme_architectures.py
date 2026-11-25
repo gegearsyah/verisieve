@@ -74,8 +74,20 @@ def _link_h(ax, x_left, x_right, y, dash_off, badge):
 
 
 def _link_pts(ax, pts, dash_off, badge=None, badge_at=None):
-    """Dashed polyline source-first; arrowhead on the last segment."""
-    _dashed(ax, list(reversed(pts)), dash_off)
+    """Dashed polyline source-first; arrowhead on the last segment.
+
+    The source end is extended back under the source box by the dash phase so a
+    dash lands flush on the border instead of shimmering with the march (drawn
+    at z=1.5 so the box fill hides the tail, same trick as _vlink).
+    """
+    pts = list(pts)
+    total = sum(abs(b[0] - a[0]) + abs(b[1] - a[1]) for a, b in zip(pts[:-1], pts[1:]))
+    e = -((total + dash_off) % DASH_PERIOD) % DASH_PERIOD
+    dx, dy = pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]
+    L = abs(dx) + abs(dy)
+    if L > 12:
+        pts[0] = (pts[0][0] - dx / L * (3 + e), pts[0][1] - dy / L * (3 + e))
+    _dashed(ax, list(reversed(pts)), dash_off, z=1.5)
     dx = pts[-1][0] - pts[-2][0]
     dy = pts[-1][1] - pts[-2][1]
     _arrow_head(ax, pts[-1], (dx, dy))
@@ -131,20 +143,45 @@ def _details(ax, y_top, cards):
         _detail(ax, x, y_top, title, body)
 
 
+BAD = "#b91c1c"   # NO / abstain branch
+OK = "#0f766e"    # YES / keep branch
+
+
+def _tag(ax, x, y, s, color):
+    _txt(ax, x, y, s, 9.3, bold=True, color=color, z=8)
+
+
 # --- Paper 1: what data should lose ----------------------------------------
 def draw_paper1(seed, dash_off):
     _seed(seed)
-    k7.GIF_H = 520
+    k7.GIF_H = 620
     fig, ax = _canvas()
     _sidebar(ax, "Paper 1", "what data\nshould lose")
-    _pipeline(ax, [
+    boxes = _pipeline(ax, [
         (_icon_envelope, ["Source", "files"], ["PDF, forms,", "text, 1,207 docs"], FILL),
         (_icon_magnifier, ["Deterministic", "extraction"], ["CMap + 512 px", "overlapping tiles"], FILL),
         (_icon_shield, ["Redaction", "layer"], ["regex +", "334-word lexicon"], YELLOW),
         (_icon_lock, ["LTT gate"], ["certified risk,", "fails closed"], FILL),
         (_icon_plates, ["Clean", "handoff"], ["Markdown,", "SFT JSONL"], FILL),
     ], dash_off)
-    _details(ax, 352, [
+    xs = [X0 + i * (NODE_W + NODE_GAP) for i in range(5)]
+
+    # Branch off extraction: no text layer -> OCR, then rejoin redaction.
+    ocr = _node(ax, xs[1], 330, NODE_W, k7._icon_magnifier,
+                ["No text layer?"], ["cactus.wasm OCR"], fc=FILL)
+    _vlink(ax, xs[1] + NODE_W / 2, boxes[1][2], 330, dash_off)
+    _tag(ax, xs[1] + NODE_W / 2 + 25, k7.GIF_H - 312, "NO", BAD)
+    _link_pts(ax, [(xs[1] + NODE_W + 4, _center(ocr)),
+                   (xs[2] + NODE_W / 2, _center(ocr)),
+                   (xs[2] + NODE_W / 2, k7.GIF_H - boxes[2][2])], dash_off)
+
+    # Branch off the gate: no certificate -> abstain instead of hand-off.
+    _node(ax, xs[3], 330, NODE_W, k7._icon_cross, ["ABSTAIN"], ["human review"], fc=FILL)
+    _vlink(ax, xs[3] + NODE_W / 2, boxes[3][2], 330, dash_off)
+    _tag(ax, xs[3] + NODE_W / 2 + 23, k7.GIF_H - 312, "NO", BAD)
+    _tag(ax, (xs[3] + NODE_W + xs[4]) / 2, _center(boxes[0]) - 17, "YES", OK)
+
+    _details(ax, 500, [
         (["enterprise-", "parsers.js"], ["OOXML, .eml,", "RIFF, ISOBMFF"]),
         (["structure-", "extractor.js"], ["CMap tiles,", "cactus.wasm OCR"]),
         (["media.wasm"], ["NFKC, TR39,", "Luhn/IBAN/SSN"]),
@@ -157,17 +194,39 @@ def draw_paper1(seed, dash_off):
 # --- Paper 2 (multimodal): what data should keep out -----------------------
 def draw_paper2(seed, dash_off):
     _seed(seed)
-    k7.GIF_H = 520
+    k7.GIF_H = 660
     fig, ax = _canvas()
     _sidebar(ax, "Paper 2", "what data\nshould keep out")
-    _pipeline(ax, [
+    boxes = _pipeline(ax, [
         (_icon_envelope, ["Enterprise", "containers"], ["mail, Office,", "audio, video"], FILL),
         (_icon_shield, ["media.wasm"], ["zero-import", "parsers + secrets"], FILL),
         (_icon_lock, ["SR-MP ring"], ["512 salted", "sketch anchors"], YELLOW),
         (_icon_graph, ["HC-CRC gate"], ["cluster-robust", "risk bound"], SIDE),
         (_icon_plates, ["Release", "decision"], ["redacted media,", "certificate"], FILL),
     ], dash_off)
-    _details(ax, 352, [
+    xs = [X0 + i * (NODE_W + NODE_GAP) for i in range(5)]
+
+    # Branches under the stages that make decisions.
+    _node(ax, xs[0], 330, NODE_W, _icon_plates,
+          ["Archive paths"], ["sanitize_archive_path"], fc=FILL)
+    _vlink(ax, xs[0] + NODE_W / 2, boxes[0][2], 330, dash_off)
+    _node(ax, xs[2], 330, NODE_W, k7._icon_lock, ["Ring hit?"], ["reuse HMAC id"], fc=YELLOW)
+    _vlink(ax, xs[2] + NODE_W / 2, boxes[2][2], 330, dash_off)
+    _tag(ax, xs[2] + NODE_W / 2 + 25, k7.GIF_H - 312, "YES", OK)
+    _node(ax, xs[3], 330, NODE_W, k7._icon_cross, ["ABSTAIN"], ["no certificate"], fc=FILL)
+    _vlink(ax, xs[3] + NODE_W / 2, boxes[3][2], 330, dash_off)
+    _tag(ax, xs[3] + NODE_W / 2 + 24, k7.GIF_H - 312, "NO", BAD)
+    _tag(ax, (xs[3] + NODE_W + xs[4]) / 2, _center(boxes[0]) - 17, "YES", OK)
+
+    # Streaming loop: the next container re-enters the kernel from below, on the
+    # open lane under the branch boxes, so it crosses neither box nor arrow.
+    _link_pts(ax, [(xs[4] + NODE_W / 2, k7.GIF_H - boxes[4][2]),
+                   (xs[4] + NODE_W / 2, k7.GIF_H - 470),
+                   (xs[1] + NODE_W / 2, k7.GIF_H - 470),
+                   (xs[1] + NODE_W / 2, k7.GIF_H - boxes[1][2])], dash_off)
+    _tag(ax, 700, k7.GIF_H - 482, "next container", BAD)
+
+    _details(ax, 500, [
         (["enterprise-", "parsers.js"], [".msg, .pptx,", ".xlsx, ISOBMFF"]),
         (["media.wasm"], ["DEFLATE, Zip-Slip,", "PPRL signature"]),
         (["srmp_seed_", "anchor"], ["512 slots,", "128-bit sketch"]),
@@ -180,7 +239,7 @@ def draw_paper2(seed, dash_off):
 # --- Paper 3: what data should carry ---------------------------------------
 def draw_paper3(seed, dash_off):
     _seed(seed)
-    k7.GIF_H = 640
+    k7.GIF_H = 720
     fig, ax = _canvas()
     _sidebar(ax, "Paper 3", "what data\nshould carry")
 
@@ -212,7 +271,16 @@ def draw_paper3(seed, dash_off):
                    (xs[0] + NODE_W / 2, k7.GIF_H - 325),
                    (xs[2] + NODE_W / 2, k7.GIF_H - 325),
                    (xs[2] + NODE_W / 2, k7.GIF_H - 350)], dash_off)
-    _details(ax, 520, [
+    _tag(ax, 365, k7.GIF_H - 300, "NO RETRAIN", OK)
+
+    # Judge refuses the answer: rewrite the query and retrieve again.
+    _link_pts(ax, [(1000, k7.GIF_H - qa[2]),
+                   (1000, k7.GIF_H - 540),
+                   (740, k7.GIF_H - 540),
+                   (740, k7.GIF_H - ret[2])], dash_off)
+    _tag(ax, 870, k7.GIF_H - 552, "NO: re-query", BAD)
+
+    _details(ax, 570, [
         (["matched pairs"], ["assistant-only", "loss"]),
         (["computePtlm", "MaskedSpans"], ["labels[t] = -100", "+ surrogates"]),
         (["PEFT LoRA"], ["80 steps,", "seed 42"]),
