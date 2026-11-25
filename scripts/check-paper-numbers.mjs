@@ -290,7 +290,7 @@ ok('ptlm:rowsRawSafe', comma(TD.train_metas.qwen05b_raw.train_rows), L);
 const ptlmEchoTotal = Object.values(MODELS)
   .reduce((n, m) => n + m.heldout_50q_summary.T2_CHAT_PTLM_LORA.pii_tag_echo_count
     + m.seen_20q_summary.T2_CHAT_PTLM_LORA.pii_tag_echo_count, 0);
-ok('ptlm:zeroEchoDenominator', `0/210`, L);
+ok('ptlm:zeroEchoDenominator', '$0$ of $210$', L);
 if (ptlmEchoTotal !== 0) { fails++; console.error(`FAIL [ptlm:zeroEcho] PT-LM echo count sum = ${ptlmEchoTotal}, expected 0`); }
 checks++;
 // hyperparameters verified against the checked-in trainer and quoted in tex
@@ -323,7 +323,8 @@ ok('sweep:canaryTrainedRange', `${f2(Math.min(...SW.map(c => c.canary_exposure.a
 ok('sweep:strictJudgeRange', `${P(f1(Math.min(...SW.map(c => c.summaries.heldout_50q.judge_in_pct))))}$--$${P(f1(Math.max(...SW.map(c => c.summaries.heldout_50q.judge_in_pct))))}`, L);
 ok('sweep:llamaJudgeRange', `${P(f1(Math.min(...SW.map(c => c.summaries.heldout_50q.llama_judge_in_pct))))}$--$${P(f1(Math.max(...SW.map(c => c.summaries.heldout_50q.llama_judge_in_pct))))}`, L);
 const nonzeroOos = SW.map(c => c.summaries.heldout_50q.oos_abstention_pct).filter(v => v > 0);
-ok('sweep:oosRange', `${P(f1(Math.min(...nonzeroOos)))}$--$${P(f1(Math.max(...nonzeroOos)))}`, L);
+// The paper quotes the peak, not the uneven nonzero minimum.
+ok('sweep:oosMax', `reaches up to $${P(f1(Math.max(...nonzeroOos)))}$ at $240$ steps`, L);
 // dual-judge row-level agreement on the partial-credit threshold (score >= 1 of 0-2)
 const agreePct = SW.map(c => {
   let a = 0, n = 0;
@@ -352,18 +353,11 @@ const drops = Object.values(MODELS).flatMap(m => [
 ]);
 ok('canary:dropMin', f2(Math.min(...drops)), L);
 ok('canary:dropMax', f2(Math.max(...drops)), L);
-// Paper 2 (abstract + §trackc): raw-vs-safe drops (4.93--5.70)
-const dropsSafe = Object.values(MODELS).map(m =>
-  m.canary_exposure.T2_CHAT_RAW_LORA.rep_20x_bits - m.canary_exposure.T2_CHAT_SAFE_LORA.rep_20x_bits);
-ok('canary:bitsSavedMin', f2(Math.min(...dropsSafe)), E);
-ok('canary:bitsSavedMax', f2(Math.max(...dropsSafe)), E);
-// Paper 2 error-inspection counts on Qwen2.5-1.5B
+// Paper 2 delegates downstream QA and canary measurements to the companion
+// local-training study. The raw-vs-safe drop range is checked against L above.
 const q15 = MODELS.qwen15b;
-ok('td:q15.t0.refusalCount', `${q15.heldout_50q_summary.T0_BASE_PLUS_GRAPH_PPR.in_scope_false_refusal_count}/40`, E);
-ok('td:q15.t0.echoCount', `${q15.heldout_50q_summary.T0_BASE_PLUS_GRAPH_PPR.pii_tag_echo_count}/40`, E);
-ok('td:q15.refusalRange', `${q15.heldout_50q_summary.T2_CHAT_RAW_LORA.in_scope_false_refusal_count}$--$${q15.heldout_50q_summary.T2_CHAT_SAFE_LORA.in_scope_false_refusal_count}/40`, E);
-ok('td:q15.safe.refusalCount', `${q15.heldout_50q_summary.T2_CHAT_SAFE_LORA.in_scope_false_refusal_count}/40`, E);
-ok('td:q15.safe.seenEchoCount', `${q15.seen_20q_summary.T2_CHAT_SAFE_LORA.pii_tag_echo_count}/20`, E);
+ok('td:q15.safe.refusalPct', P(f1(100 * q15.heldout_50q_summary.T2_CHAT_SAFE_LORA.in_scope_false_refusal_count / 40)), L);
+ok('td:q15.safe.seenEchoCount', `${q15.seen_20q_summary.T2_CHAT_SAFE_LORA.pii_tag_echo_count}/20`, L);
 
 /* ---------------- Paper 2 (extraction/redaction): idea_1 micro ---------------- */
 const I1 = SC.idea_1_text_capture_bench;
@@ -591,7 +585,8 @@ const CG = tex('versieve-graph-grounded-enterprise-corpus.tex');
 
   const W = APB.workspaces;
   const w1 = W.W1.metrics;
-  ok('corpus:argon.w1', `${f0(w1.diagramEdgeF1Pct.baseline)} / ${f0(w1.chartSeriesMatchPct.baseline)} & ${f0(w1.diagramEdgeF1Pct.versieve)} / ${f0(w1.chartSeriesMatchPct.versieve)}`, CG);
+  ok('corpus:argon.w1.edge', `diagram-edge F1 (\\%) & ${f0(w1.diagramEdgeF1Pct.baseline)} & ${f0(w1.diagramEdgeF1Pct.versieve)}`, CG);
+  ok('corpus:argon.w1.chart', `chart-series match (\\%) & ${f0(w1.chartSeriesMatchPct.baseline)} & ${f0(w1.chartSeriesMatchPct.versieve)}`, CG);
   const w2 = W.W2.metrics;
   ok('corpus:argon.w2.relerr', f4(w2.chartMeanRelErrPct.versieve), CG);
   ok('corpus:argon.w2.within2', `${f0(w2.chartRelErrWithin2pct.baseline)} & ${f0(w2.chartRelErrWithin2pct.versieve)}`, CG);
@@ -603,7 +598,8 @@ const CG = tex('versieve-graph-grounded-enterprise-corpus.tex');
   const w5 = W.W5.metrics;
   ok('corpus:argon.w5', `${f0(w5.sqlExactMatchPct.baseline)} & ${f0(w5.sqlExactMatchPct.versieve)}`, CG);
   const w6 = W.W6.metrics;
-  ok('corpus:argon.w6', `${f0(w6.crossModalEntityLinkPct.baseline)} / ${f0(w6.multiHopQaParityPct.baseline)} & ${f0(w6.crossModalEntityLinkPct.versieve)} / ${f0(w6.multiHopQaParityPct.versieve)}`, CG);
+  ok('corpus:argon.w6.link', `cross-modal link (\\%) & ${f0(w6.crossModalEntityLinkPct.baseline)} & ${f0(w6.crossModalEntityLinkPct.versieve)}`, CG);
+  ok('corpus:argon.w6.qa', `multi-hop QA (\\%) & ${f0(w6.multiHopQaParityPct.baseline)} & ${f0(w6.multiHopQaParityPct.versieve)}`, CG);
 }
 
 /* ---------------- Paper 4: K3 head-to-head, K4 failure modes, K6 open estate ---------------- */
@@ -652,7 +648,7 @@ const K7X = j('track-k7-bm25-contexts.json');
 
   // K3 reading paragraph
   const ratio = emOf(KH.arms.retrieval) / emOf(KH.arms.composed);
-  ok('k3:ratio', `$${f1(ratio)}$ times the best trained arm`, CG);
+  ok('k3:ratio', `$${f1(ratio)}$ times the composed arm's $${P(f1(emOf(KH.arms.composed)))}$`, CG);
   ok('k3:retrieval.q2', `and $${P(f1(emOf(KH.arms.retrieval, 'Q2')))}$ on the cross-document stratum`, CG);
   const PA = KH.budget.perArm;
   ok('k3:pairs.displaced', `only $${comma(PA.composed_pairs.post.rows)}$ rows with $${comma(PA.composed_pairs.post.learnableTokens)}$ learnable tokens survived (against $${comma(PA.composed.post.rows)}$ rows and $${comma(PA.composed.post.learnableTokens)}$ learnable tokens for composed alone)`, CG);
@@ -685,9 +681,9 @@ const K7X = j('track-k7-bm25-contexts.json');
   }
   // budget truncation coverage needles (design paragraph + tab:k3 caption)
   ok('k3:coverage.tokens', `flat $${comma(PA.flat.post.totalTokens)}$, per-block $${comma(PA.per_block.post.totalTokens)}$, composed $${comma(PA.composed.post.totalTokens)}$, composed-plus-pairs $${comma(PA.composed_pairs.post.totalTokens)}$, vaulted $${comma(PA.per_block_vaulted.post.totalTokens)}$ tokens`, CG);
-  ok('k3:coverage.rows', `flat keeps $${f0(PA.flat.post.rows)}$ of $${f0(PA.flat.pre.rows)}$ rows, per-block $${f0(PA.per_block.post.rows)}$ of $${f0(PA.per_block.pre.rows)}$, composed $${f0(PA.composed.post.rows)}$ of $${comma(PA.composed.pre.rows)}$ ($${f1(100 * PA.composed.post.rows / PA.composed.pre.rows)}\\%$), composed-plus-pairs $${f0(PA.composed_pairs.post.rows)}$ of $${comma(PA.composed_pairs.pre.rows)}$, and vaulted all $${f0(PA.per_block_vaulted.post.rows)}$`, CG);
+  ok('k3:coverage.rows', `flat keeps $${f0(PA.flat.post.rows)}$ of $${f0(PA.flat.pre.rows)}$ rows, per-block $${f0(PA.per_block.post.rows)}$ of $${f0(PA.per_block.pre.rows)}$, composed $${f0(PA.composed.post.rows)}$ of $${comma(PA.composed.pre.rows)}$ ($${f1(100 * PA.composed.post.rows / PA.composed.pre.rows)}\\%$; a separate receipted build`, CG);
   ok('k3:coverage.entities', `composed keeps $${comma(PA.composed.keptEntities)}$ distinct entities against per-block's $${comma(PA.per_block.keptEntities)}$`, CG);
-  ok('k3:coverage.caption', `kept rows per arm: flat $${f0(PA.flat.post.rows)}/${f0(PA.flat.pre.rows)}$, per-block $${f0(PA.per_block.post.rows)}/${f0(PA.per_block.pre.rows)}$, composed $${f0(PA.composed.post.rows)}/${f0(PA.composed.pre.rows)}$, composed-plus-pairs $${f0(PA.composed_pairs.post.rows)}/${f0(PA.composed_pairs.pre.rows)}$, vaulted $${f0(PA.per_block_vaulted.post.rows)}/${f0(PA.per_block_vaulted.pre.rows)}$`, CG);
+  ok('k3:coverage.caption', `kept rows per arm: flat $${f0(PA.flat.post.rows)}/${f0(PA.flat.pre.rows)}$, per-block $${f0(PA.per_block.post.rows)}/${f0(PA.per_block.pre.rows)}$, composed $${f0(PA.composed.post.rows)}/${comma(PA.composed.pre.rows)}$, composed-plus-pairs $${f0(PA.composed_pairs.post.rows)}/${comma(PA.composed_pairs.pre.rows)}$, vaulted $${f0(PA.per_block_vaulted.post.rows)}/${f0(PA.per_block_vaulted.pre.rows)}$`, CG);
   checks++;
   if (PA.flat.keptEntities !== 0) { fails++; console.error(`FAIL [k3:coverage.flatEntities] flat should carry no entity list, got ${PA.flat.keptEntities}`); }
 
@@ -700,7 +696,7 @@ const K7X = j('track-k7-bm25-contexts.json');
   const occ = FR.filter(x => x.rate > 0).map(x => x.perBlock.falseIdentityOccurrences);
   ok('k4:falseId.range', `($${comma(Math.min(...occ))}$ to $${comma(Math.max(...occ))}$ occurrences across the ladder)`, CG);
   const HD = FM.hubDuplication;
-  ok('k4:hub.samples', `($${comma(HD.analyzedSamples)}$ samples`, CG);
+  ok('k4:hub.samples', `carries $${comma(HD.analyzedSamples)}$ samples`, CG);
   ok('k4:hub.pairs', `$${comma(HD.overall.nearDuplicatePairs)}$ near-duplicate pairs of which $${comma(HD.overall.exactDuplicatePairs)}$ are exact duplicates`, CG);
   ok('k4:hub.fraction', `(fraction $${f1(HD.overall.nearDuplicateSampleFraction)}$)`, CG);
   ok('k4:hub.cap.prose', 'samples truncated by the hub cap are the near-duplicate-free ones', CG);
@@ -729,31 +725,31 @@ const K7X = j('track-k7-bm25-contexts.json');
   // K7 non-training arms (BM25 lexical control and CAG over composed records)
   const B7 = K7.arms.bm25_retrieval, C7 = K7.arms.cag, H7 = K7.arms.cag_hybrid;
   const k7 = (a, s) => a.eval[s].exactMatchPct;
-  ok('k7:caption', 'The three arms added by the second run (BM25, fixed-cache CAG, per-question hybrid routing) train nothing and were scored by exact match only', CG);
-  ok('k7:row.bm25', `BM25 retrieval & ${f1(k7(B7, 'Q1'))} & ${f1(k7(B7, 'Q2'))} & ${f1(k7(B7, 'Q3'))} & ${f1(k7(B7, 'all'))} & -- & -- \\\\`, CG);
-  ok('k7:row.cag', `CAG over composed records & ${f1(k7(C7, 'Q1'))} & ${f1(k7(C7, 'Q2'))} & ${f1(k7(C7, 'Q3'))} & ${f1(k7(C7, 'all'))} & -- & -- \\\\`, CG);
+  ok('k7:caption', 'BM25, fixed-cache CAG, and the per-question hybrid routing arms train nothing; as a design choice they are scored by exact match only', CG);
+  ok('k7:row.bm25', `BM25 retrieval & ${f1(k7(B7, 'Q1'))} & ${f1(k7(B7, 'Q2'))} & ${f1(k7(B7, 'Q3'))} & ${f1(k7(B7, 'all'))} & -- & -- & EM \\\\`, CG);
+  ok('k7:row.cag', `CAG set-cover$^{\\ast}$ & ${f1(k7(C7, 'Q1'))} & ${f1(k7(C7, 'Q2'))} & ${f1(k7(C7, 'Q3'))} & ${f1(k7(C7, 'all'))} & -- & -- & EM \\\\`, CG);
   ok('k7:bm25.topK', `feeding top-${K7X.bm25.topK} contexts`, CG);
   ok('k7:bm25.prose', `$${P(f1(k7(B7, 'all')))}$ overall ($${P(f1(k7(B7, 'Q1')))}$ Q1, $${P(f1(k7(B7, 'Q2')))}$ Q2, $${P(f1(k7(B7, 'Q3')))}$ Q3)`, CG);
   const graphEm = emOf(KH.arms.retrieval);
-  ok('k7:graph.overall', `the graph retriever's $${P(f1(graphEm))}$ within noise at $n{=}${K7.estate.questions}$`, CG);
+  ok('k7:graph.overall', `numerically above the graph retriever's $${P(f1(graphEm))}$ and within noise at $n{=}${K7.estate.questions}$`, CG);
   ok('k7:graph.honest', `on this estate the graph's contribution is not retrieval quality`, CG);
   ok('k7:strata.prose', `at stratum sizes of $${B7.eval.Q1.n}$, $${B7.eval.Q2.n}$, and $${B7.eval.Q3.n}$`, CG);
   ok('k7:q3.bm25', `BM25 answers $${B7.q3Disambiguation.exactMatchCount}$ of $${B7.q3Disambiguation.n}$`, CG);
   const gq3 = KH.arms.retrieval.rows.filter(r => r.stratum === 'Q3');
   ok('k7:q3.graph', `Graph-PPR $${gq3.filter(r => r.exact_match).length}$ of $${gq3.length}$`, CG);
   ok('k7:q3.cag', `the cache arm $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$`, CG);
-  ok('k7:cache.unit', `$${K7.cacheUnit.selectedRecords}$ composed per-entity records selected by greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons and $${K7.cacheUnit.prefillTokens}$ prefill tokens`, CG);
+  ok('k7:cache.unit', `$${K7.cacheUnit.selectedRecords}$ composed per-entity records selected by greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons and $${comma(K7.cacheUnit.prefillTokens)}$ prefill tokens`, CG);
   ok('k7:cag.overall', `$${P(f1(k7(C7, 'all')))}$ against $${P(f1(graphEm))}$ and $${P(f1(k7(B7, 'all')))}$`, CG);
   ok('k7:cag.q3', `leads on disambiguation ($${P(f1(k7(C7, 'Q3')))}$, $${C7.q3Disambiguation.exactMatchCount}$ of $${C7.q3Disambiguation.n}$)`, CG);
   ok('k7:cag.q1', `trails on single-document questions ($${P(f1(k7(C7, 'Q1')))}$ against BM25's $${P(f1(k7(B7, 'Q1')))}$)`, CG);
-  ok('k7:tokens.amortization', `appends $${C7.tokenAccounting.appendedTokensMean}$ mean tokens after the one-time prefill, against $${f0(B7.tokenAccounting.promptTokensMean)}$ mean prompt tokens`, CG);
+  ok('k7:tokens.amortization', `appends $${C7.tokenAccounting.appendedTokensMean}$ mean tokens after the one-time prefill, against $${comma(f0(B7.tokenAccounting.promptTokensMean))}$ mean prompt tokens`, CG);
   const hsel = H7.rows.map(r => r.selectedRecords);
-  ok('k7:row.hybrid', `CAG hybrid routing & ${f1(k7(H7, 'Q1'))} & ${f1(k7(H7, 'Q2'))} & ${f1(k7(H7, 'Q3'))} & ${f1(k7(H7, 'all'))} & -- & -- \\\\`, CG);
+  ok('k7:row.hybrid', `CAG hybrid routing & ${f1(k7(H7, 'Q1'))} & ${f1(k7(H7, 'Q2'))} & ${f1(k7(H7, 'Q3'))} & ${f1(k7(H7, 'all'))} & -- & -- & EM \\\\`, CG);
   ok('k7:q3.hybrid', `and the hybrid routing arm $${H7.q3Disambiguation.exactMatchCount}$ of $${H7.q3Disambiguation.n}$`, CG);
   ok('k7:hybrid.records', `the person's $${Math.min(...hsel)}$ or $${Math.max(...hsel)}$ subject records`, CG);
   ok('k7:hybrid.overall', `$${P(f1(k7(H7, 'all')))}$ overall ($${P(f1(k7(H7, 'Q1')))}$ Q1, $${P(f1(k7(H7, 'Q2')))}$ Q2, $${P(f1(k7(H7, 'Q3')))}$ Q3, $${H7.q3Disambiguation.exactMatchCount}$ of $${H7.q3Disambiguation.n}$ disambiguation)`, CG);
   ok('k7:hybrid.hedge', `at $n{=}${K7.estate.questions}$ this is one estate's measurement`, CG);
-  ok('k7:hybrid.prefill', `a mean of $${f0(H7.tokenAccounting.prefillTokensMean)}$ prefill tokens rebuilds the cache per question`, CG);
+  ok('k7:hybrid.prefill', `a mean of $${comma(f0(H7.tokenAccounting.prefillTokensMean))}$ prefill tokens rebuilds the cache per question`, CG);
   ok('k7:hybrid.appended', `still appends only $${H7.tokenAccounting.appendedTokensMean}$ mean tokens`, CG);
 
   // Exact binomial (Clopper-Pearson) 95% intervals, computed from committed rows
@@ -768,18 +764,18 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k7:ci.ppr', `Graph-PPR $${P(emAll(KH.arms.retrieval))}$ ($${plo}$ to $${phi}$)`, CG);
   ok('k7:ci.bm25', `BM25 $${P(f1(k7(B7, 'all')))}$ ($${blo}$ to $${bhi}$)`, CG);
   ok('k7:ci.cag', `CAG $${P(k7(C7, 'all'))}$ ($${clo}$ to $${chi}$)`, CG);
-  ok('k7:ci.hybrid', `hybrid routing $${P(k7(H7, 'all'))}$ ($${hlo}$ to $${hhi}$), composed`, CG);
+  ok('k7:ci.hybrid', `hybrid routing $${P(k7(H7, 'all'))}$ ($${hlo}$ to $${hhi}$; routing given a correctly resolved identity), composed`, CG);
   ok('k7:ci.composed', `composed $${P(emAll(KH.arms.composed))}$ ($${mlo}$ to $${mhi}$), per-block`, CG);
   ok('k7:ci.perblock', `per-block $${P(emAll(KH.arms.per_block))}$ ($${pblo}$ to $${pbhi}$), flat`, CG);
   ok('k7:ci.flat', `flat $${P(emAll(KH.arms.flat))}$ ($${flo}$ to $${fhi}$), and base`, CG);
   ok('k7:ci.base', `base $${P(emAll(KH.arms.base))}$ ($${baslo}$ to $${bashi}$). Interval overlap`, CG);
-  ok('k7:bm25.params', `(Okapi BM25, $k_1{=}${K7X.bm25.k1}$, $b{=}${K7X.bm25.b}$, $${K7X.pool.passages}$ passages`, CG);
+  ok('k7:bm25.params', `(Okapi BM25~\\cite{robertson2009bm25}, $k_1{=}${K7X.bm25.k1}$, $b{=}${K7X.bm25.b}$, $${K7X.pool.passages}$ passages`, CG);
   ok('k7:setcover', `greedy set-cover over the $${K7.cacheUnit.questionPersons}$ unique question persons`, CG);
-  ok('k7:abstract.controls', `retrieval over the entity graph, with no fine-tuning, answers $${P(emAll(KH.arms.retrieval))}$ of questions exactly ($${P(f1(emOf(KH.arms.retrieval, 'Q2')))}$ on the 24-question cross-document stratum), and a lexical BM25 control ties it at $${P(f1(k7(B7, 'all')))}$ within noise at $n{=}${K7.estate.questions}$`, CG);
+  ok('k7:abstract.controls', `Retrieval over the entity graph, with no fine-tuning, answers $${P(emAll(KH.arms.retrieval))}$ exactly ($${P(f1(emOf(KH.arms.retrieval, 'Q2')))}$ on the 24-question cross-document stratum); a lexical BM25 control answers $${P(f1(k7(B7, 'all')))}$, numerically above it and within noise at $n{=}${K7.estate.questions}$`, CG);
   ok('k7:abstract.cag', `It ties the retrieval arms overall, within noise at $n{=}${K7.estate.questions}$ ($${P(f1(k7(C7, 'all')))}$ against $${P(f1(graphEm))}$ and $${P(f1(k7(B7, 'all')))}$)`, CG);
-  ok('k7:abstract.hybrid', `answers $${P(k7(H7, 'all'))}$, the strongest arm measured`, CG);
+  ok('k7:abstract.hybrid', `answers $${P(k7(H7, 'all'))}$; that is an upper bound on the router`, CG);
   ok('k7:abstract.router', `the graph pays off as a retrieval index, not as a training format`, CG);
-  ok('k7:conclusion.router', `and, in the strongest measured arm, as a router ($${P(k7(H7, 'all'))}$ when each question's cache is prefilled from the asked person's own records, given a correctly resolved identity rather than doing retrieval, against $${P(f1(k7(B7, 'all')))}$ for the lexical control)`, CG);
+  ok('k7:conclusion.router', `and, in the routing upper bound, as a router ($${P(k7(H7, 'all'))}$ when each question's cache is prefilled from the asked person's own records, given a correctly resolved identity rather than doing retrieval, against $${P(f1(k7(B7, 'all')))}$ for the lexical control)`, CG);
 
   // Exact McNemar over the committed per-question rows, Holm-corrected per claim family
   const mcnemarP = (Aa, Bb) => {
