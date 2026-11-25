@@ -1,8 +1,11 @@
 """README architecture GIFs for Papers 1-3 in the hand-drawn register.
 
 Paper 4's animation is build_k7_architecture.build_gif(). This module reuses
-that file's primitives so all four read as one set: same canvas, same wobbly
-stroke, same dash-march loop. Seeded, reproducible.
+that file's primitives so all four read as one set: same canvas width, same
+wobbly stroke, same dash-march loop. Seeded, reproducible.
+
+Each scene is a pipeline plus a receipts row of measured values, so the canvas
+height is per-scene and hugs the content instead of leaving empty space.
 """
 from pathlib import Path
 import random
@@ -18,7 +21,7 @@ from build_k7_architecture import (
     _node, _dashed, _badge, _arrow_head, _txt,
     _icon_envelope, _icon_shield, _icon_lock, _icon_graph, _icon_db,
     _icon_gradcap, _icon_magnifier, _icon_plates,
-    BG, FILL, SIDE, YELLOW, GIF_W, GIF_H, DASH_PERIOD,
+    BG, FILL, SIDE, YELLOW, DASH_PERIOD,
 )
 
 OUT_DIR = Path(__file__).resolve().parent
@@ -37,27 +40,27 @@ def _seed(seed):
 
 
 def _canvas():
-    fig, ax = plt.subplots(figsize=(GIF_W / 100, GIF_H / 100), dpi=100)
+    fig, ax = plt.subplots(figsize=(k7.GIF_W / 100, k7.GIF_H / 100), dpi=100)
     fig.patch.set_facecolor(BG)
-    ax.set_xlim(0, GIF_W)
-    ax.set_ylim(0, GIF_H)
+    ax.set_xlim(0, k7.GIF_W)
+    ax.set_ylim(0, k7.GIF_H)
     ax.set_position([0, 0, 1, 1])
     ax.axis("off")
     return fig, ax
 
 
 def _sidebar(ax, title, sub):
-    ax.add_patch(FancyBboxPatch((14, 14), 198, GIF_H - 28,
+    ax.add_patch(FancyBboxPatch((14, 14), 198, k7.GIF_H - 28,
                                 boxstyle="round,pad=0,rounding_size=16",
                                 facecolor=SIDE, edgecolor="none", zorder=2))
-    _txt(ax, 113, GIF_H - 122, title, 19.0, bold=True)
-    _txt(ax, 113, GIF_H - 165, sub, 11.5, ls=1.35)
+    _txt(ax, 113, k7.GIF_H - 122, title, 19.0, bold=True)
+    _txt(ax, 113, k7.GIF_H - 165, sub, 11.5, ls=1.35)
 
 
 def _center(box):
     """Vertical centre in mpl coords for a _node return tuple."""
     mpl_top, _canvas_top, canvas_bottom, _h = box
-    return (mpl_top + (GIF_H - canvas_bottom)) / 2
+    return (mpl_top + (k7.GIF_H - canvas_bottom)) / 2
 
 
 def _link_h(ax, x_left, x_right, y, dash_off, badge):
@@ -90,9 +93,32 @@ def _pipeline(ax, nodes, dash_off):
     return boxes
 
 
+def _card(ax, x, y_top, value, label, fc=FILL, w=NODE_W):
+    """Receipt card: one measured value over its caption."""
+    pad = 12
+    n_lines = len(label) if isinstance(label, list) else label.count("\n") + 1
+    h = pad + 22 + 7 + 15.5 * n_lines + pad
+    y = k7.GIF_H - y_top - h
+    ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                boxstyle="round,pad=0,rounding_size=9",
+                                facecolor=fc, edgecolor="none", zorder=2))
+    k7._stroke(ax, k7._rrect_pts(x, y, w, h, 9), lw=1.6, close=True)
+    _txt(ax, x + w / 2, y + h - pad, value, 14.0, bold=True, va="top")
+    _txt(ax, x + w / 2, y + pad - 1,
+         label if isinstance(label, str) else "\n".join(label), 8.6, va="bottom")
+    return y + h, y_top, y_top + h, h
+
+
+def _receipts(ax, y_top, cards):
+    xs = [X0 + i * (NODE_W + NODE_GAP) for i in range(len(cards))]
+    for x, (value, label) in zip(xs, cards):
+        _card(ax, x, y_top, value, label)
+
+
 # --- Paper 1: what data should lose ----------------------------------------
 def draw_paper1(seed, dash_off):
     _seed(seed)
+    k7.GIF_H = 520
     fig, ax = _canvas()
     _sidebar(ax, "Paper 1", "what data\nshould lose")
     _pipeline(ax, [
@@ -102,12 +128,20 @@ def draw_paper1(seed, dash_off):
         (_icon_lock, ["LTT gate"], ["certified risk,", "fails closed"], FILL),
         (_icon_plates, ["Clean", "handoff"], ["Markdown,", "SFT JSONL"], FILL),
     ], dash_off)
+    _receipts(ax, 352, [
+        ("1,207 docs", "FUNSD, PMC,\nPubMedQA, ai4privacy"),
+        ("8/8 PDFs", "209.02 ms,\nno raster OCR"),
+        ("2.72x", "fewer Title-Case\nfalse positives"),
+        ("0.0%", "conditional FPR\n(14.63% before)"),
+        ("0 B", "network egress\nper run"),
+    ])
     return fig
 
 
 # --- Paper 2 (multimodal): what data should keep out -----------------------
 def draw_paper2(seed, dash_off):
     _seed(seed)
+    k7.GIF_H = 520
     fig, ax = _canvas()
     _sidebar(ax, "Paper 2", "what data\nshould keep out")
     _pipeline(ax, [
@@ -117,12 +151,20 @@ def draw_paper2(seed, dash_off):
         (_icon_graph, ["HC-CRC gate"], ["cluster-robust", "risk bound"], SIDE),
         (_icon_plates, ["Release", "decision"], ["redacted media,", "certificate"], FILL),
     ], dash_off)
+    _receipts(ax, 352, [
+        ("TAB", "127 ECHR\nrulings"),
+        ("204,031 B", "29 exports,\n0 imports"),
+        ("16 KB", "512 salted\nslots"),
+        ("8.19%", "held-out FPR,\nα = 10%"),
+        ("8.25%", "audio leak,\nwas 94.85%"),
+    ])
     return fig
 
 
 # --- Paper 3: what data should carry ---------------------------------------
 def draw_paper3(seed, dash_off):
     _seed(seed)
+    k7.GIF_H = 640
     fig, ax = _canvas()
     _sidebar(ax, "Paper 3", "what data\nshould carry")
 
@@ -145,14 +187,20 @@ def draw_paper3(seed, dash_off):
 
     ret = _node(ax, xs[2], 350, NODE_W, _icon_magnifier,
                 ["Graph-PPR", "retrieval"], ["no training,", "stronger default"], fc=SIDE)
-    _link_pts(ax, [(xs[2] + NODE_W / 2, GIF_H - 350),
-                   (950, GIF_H - qa[2])], dash_off, badge=4,
-              badge_at=(820, (GIF_H - 350 + GIF_H - qa[2]) / 2 + 12))
+    _link_pts(ax, [(xs[2] + NODE_W + 4, _center(ret)),
+                   (950, _center(ret)),
+                   (950, k7.GIF_H - qa[2])], dash_off, badge=4,
+              badge_at=(950, (_center(ret) + k7.GIF_H - qa[2]) / 2))
     # Corpus feeds retrieval directly: the zero-training arm skips PT-LM and SFT.
-    _link_pts(ax, [(xs[0] + NODE_W / 2, GIF_H - boxes[0][2]),
-                   (xs[0] + NODE_W / 2, 270),
-                   (xs[2] + NODE_W / 2, 270),
-                   (xs[2] + NODE_W / 2, GIF_H - ret[2] - 4)], dash_off)
+    _link_pts(ax, [(xs[0] + NODE_W / 2, k7.GIF_H - boxes[0][2]),
+                   (xs[0] + NODE_W / 2, k7.GIF_H - 325),
+                   (xs[2] + NODE_W / 2, k7.GIF_H - 325),
+                   (xs[2] + NODE_W / 2, k7.GIF_H - 350)], dash_off)
+    _receipts(ax, 520, [
+        ("0/210", "placeholder echoes\nafter PT-LM"),
+        ("+0.194", "seen-doc F1,\nQwen 0.5B"),
+        ("p=0.0005", "Graph-PPR beats\nevery LoRA arm"),
+    ])
     return fig
 
 
@@ -168,8 +216,8 @@ def _check(fig):
     rend = fig.canvas.get_renderer()
     for t in fig.axes[0].texts:
         bb = t.get_window_extent(rend)
-        assert bb.x0 >= 0 and bb.x1 <= GIF_W, f"text off canvas: {t.get_text()!r}"
-        assert bb.y0 >= 0 and bb.y1 <= GIF_H, f"text off canvas: {t.get_text()!r}"
+        assert bb.x0 >= 0 and bb.x1 <= k7.GIF_W, f"text off canvas: {t.get_text()!r}"
+        assert bb.y0 >= 0 and bb.y1 <= k7.GIF_H, f"text off canvas: {t.get_text()!r}"
         if t.get_fontsize() <= 10.9:
             assert bb.width <= TEXT_MAX, \
                 f"text wider than node: {t.get_text()!r} {bb.width:.1f}px"
@@ -195,7 +243,7 @@ def build(name, draw):
     qims[0].save(dest, save_all=True, append_images=qims[1:],
                  duration=[DUR_MS] * FRAMES, loop=0, optimize=True, disposal=2)
     shutil.rmtree(frames_dir)
-    print(f"Wrote docs/{name} ({dest.stat().st_size} B)")
+    print(f"Wrote docs/{name} ({dest.stat().st_size} B, {k7.GIF_W}x{k7.GIF_H})")
 
 
 if __name__ == "__main__":
