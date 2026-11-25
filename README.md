@@ -7,6 +7,10 @@
 
 **The premise.** A company's knowledge is scattered across drives, mailboxes, wikis, ticket queues, call recordings, and slide decks. Versieve takes all of it, perceives every format locally, resolves the people and organizations across documents into one entity graph, and emits corpora, retrieval indexes, and cache contexts built on that identity. The goal is a model that understands the whole company because the data under it was understood and connected before training started.
 
+**End to end.** Twelve file types enter one `perceiveMulti()` call, each format runs its own parser, and the four moats all draw on the same resolved estate. The call returns the full output set, and those outputs plug into a model three ways: as LoRA training data (`sftJsonl`, `ptlmSftJsonl`), as Graph-PPR retrieval over the dual-CSR graph, and as CAG key-value cache prefill (`buildCagDossier`). `eraseEntity` regenerates the corpus and loops back with a byte-verified diff.
+
+![Versieve end to end: documents in, one model out](docs/end-to-end-pipeline.gif)
+
 ---
 
 ## 🚀 Use It Now
@@ -461,9 +465,10 @@ python paper/figs/build_track_e_figures.py
 python scripts/run-track-d-fair-lora.py
 python paper/figs/build_track_d_results_fig.py
 
-# 6. Rebuild the four README architecture animations
+# 6. Rebuild the README architecture animations
 python paper/figs/build_k7_architecture.py
 python paper/figs/build_readme_architectures.py
+python paper/figs/build_end_to_end.py
 ```
 
 For security policies and zero-egress threat boundaries, see [SECURITY.md](SECURITY.md).
