@@ -20,3 +20,4 @@ export * from './video-redactor.js';
 export * from './perceive.js';
 export * from './amnesiac-corpus.js';
 export * from './vault-restore.js';
+export * from './exporters.js';
