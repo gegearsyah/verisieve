@@ -96,7 +96,7 @@ In the companion RTIO Next.js workbench (\url{https://www.rtio.io/sandbox}), \te
 \section{Benchmark Suite and Methodology}
 \label{sec:datasets}
 
-All experiments ran locally on a Windows~11 laptop (Node.js~v24.13.1, Python~3.12 CPU ONNX Runtime, Rust~1.99.1). Table~\ref{tab:datasets} distinguishes real human-annotated corpora, external mixed/synthetic corpora, and locally synthesized audio/evasion suites transparently. Every number printed in the tables below is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/versieve}) at commit \texttt{1e35603}, whose result JSON files record the corpus identifiers and run outputs behind this paper. The TAB benchmark runner fixes the resampling seed at 42, with $1{,}000$ bootstrap resamples and $5{,}000$ paired permutations; seeds for the other suites are not recorded in the result JSON.
+All experiments ran locally on a Windows~11 laptop (Node.js~v24.13.1, Python~3.12 CPU ONNX Runtime, Rust~1.99.1). Table~\ref{tab:datasets} distinguishes real human-annotated corpora, external mixed/synthetic corpora, and locally synthesized audio/evasion suites transparently. Every number printed in the tables below is emitted by a checked-in runner in the project repository (\url{https://github.com/gegearsyah/versieve}) at commit \texttt{1e35603}, whose result JSON files record the corpus identifiers and run outputs behind this paper. The TAB benchmark runner fixes the resampling and two-layer subsampling seed at 42, with $1{,}000$ bootstrap resamples, $5{,}000$ paired permutations, and $200$ repeated-subsampling draws; the remaining suites execute deterministically over fixed ordered fixtures and salts without invoking a pseudo-random generator, and per-corpus licenses (MIT for TAB ECHR and \texttt{pstu-synthetic-secrets}, Apache-2.0 for \texttt{detect-secrets} and \texttt{gliner-pii-edge-v1.0}, CC-BY-4.0 for \texttt{MBPP}, public-domain FERC Enron for \texttt{aeslc}, and the AI4Privacy dual license for \texttt{pii-masking-200k}) are recorded in the checked-in result JSON.
 
 \begin{table}[t]
 \caption{Benchmarks evaluated, noting real human vs.\ external synthetic vs.\ locally synthesized data provenance.}
@@ -154,7 +154,7 @@ Vanilla GLiNER-Edge ($\tau{=}0.50$) & $65.39$ & $85.39$ & $74.06$ \scriptsize{[6
 Dev-Filtered GLiNER ($\tau{=}0.50$) & $65.60$ & $85.39$ & $74.20$ \scriptsize{[68.9, 78.8]} & $89.82$ \\
 Dumb Same-Doc Name Propagation & $47.28$ & $86.22$ & $61.07$ \scriptsize{[53.6, 67.7]} & $89.82$ \\
 \textbf{WASM \texttt{SR-MP} + GLiNER ($\tau{=}0.50$)} & $62.56$ & $\mathbf{88.41}$ & $73.27$ \scriptsize{[67.7, 77.9]} & $\mathbf{91.15}$ \\
-WASM \texttt{SR-MP} + GLiNER ($\tau{=}0.70$) & $91.94$ & $26.20$ & $40.78$ \scriptsize{--} & $45.13$ \\
+WASM \texttt{SR-MP} + GLiNER ($\tau{=}0.70$) & $91.94$ & $26.20$ & $40.78$ \scriptsize{[33.4, 47.3]} & $45.13$ \\
 \textbf{Presidio \texttt{en\_core\_web\_lg} ($401$\,MB)} & $\mathbf{80.60}$ & $\mathbf{92.80}$ & $\mathbf{86.27}$ \scriptsize{[82.7, 89.3]} & $\mathbf{98.23}$ \\
 \bottomrule
 \end{tabular}%
@@ -221,6 +221,59 @@ $0.20$ & \textbf{Streaming Martingale \texttt{E-LTT}} & $\mathbf{15.77\%}$ & $\m
 \end{table}
 
 Table~\ref{tab:gt-ltt} confirms both predictions: (i)~\textbf{\texttt{HC-CRC} removes intra-document correlation overshoot across every budget}, holding Conditional FPR strictly below $\alpha$ ($0.18\% \le 1\%$, $0.92\% \le 2\%$, $2.53\% \le 5\%$, $8.19\% \le 10\%$, $12.57\% \le 15\%$, and $15.77\% \le 20\%$) while retaining $65.16\%$ Safe Yield at $\alpha{=}0.10$ and certifying at $\alpha{=}0.01$ as well ($0.18\%$ FPR, $32.98\%$ Safe Yield) on the held-out paragraphs; and (ii)~\textbf{Streaming \texttt{E-LTT}} crosses the anytime-valid Ville wealth barrier $\mathcal{E}_t \ge 20.0$ at cluster $t{=}64/67$ ($\alpha{=}0.05$, $\mathcal{E}_{\max}{=}23.76$, $0.18\%$ FPR) and $t{=}60/67$ ($\alpha{=}0.10$, $\mathcal{E}_{\max}{=}26.84$, $5.73\%$ FPR), while \emph{failing to certify at $\alpha \le 0.02$} (its wealth never leaves $E_{\max}{=}1$, so nothing is auto-released), providing continuous optional-stopping safety guarantees for streaming ingestion.
+
+\begin{table}[t]
+\caption{Guarantee-backed hierarchical conformal baselines vs.\ heuristic \texttt{HC-CRC} on the exact same $67$ unsafe calibration rulings ($916$ unsafe paragraphs) and $127$ held-out rulings ($1{,}999$ paragraphs: $1{,}623$ unsafe, $376$ safe; $\delta{=}0.05$). Dunn et al.\ \citep{dunn2022hierarchical} uses seed $42$ ($1$-draw and $B{=}200$ valid $2\bar{p} \le \delta$ pooling); Lee et al.\ \citep{lee2023hierarchical} uses equal cluster weights ($\mathbb{E}[L] \le \alpha$ split and $1{-}\delta$ Hoeffding--Bentkus); \texttt{HG-CRC} \citep{salem2026hgcrc} enforces simultaneous bounds across the global root ($M_0{=}67$) and observable calibration-median ruling-length strata ($N_m \le 18$, $M{=}38$; $N_m > 18$, $M{=}29$).}
+\label{tab:hier-baselines}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{$\alpha$} & \textbf{Hierarchical Regime} & \textbf{$\hat{\lambda}$} & \textbf{FPR} & \textbf{Auto-Rel.} & \textbf{Safe Yld} & \textbf{E2E Leak} \\
+\midrule
+$0.01$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.38$ & $0.18\%$ & $6.35\%$ & $32.98\%$ & $2.36\%$ ($3$) \\
+$0.01$ & Dunn / Lee / \texttt{HG-CRC} (all 5) & -- & \multicolumn{4}{l}{\emph{not certified} ($M_0{=}67$; zero auto-release)} \\
+\midrule
+$0.02$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.36$ & $0.92\%$ & $7.45\%$ & $35.64\%$ & $10.07\%$ ($15$) \\
+$0.02$ & Lee Cluster-Weighted Split & $0.37$ & $0.55\%$ & $6.90\%$ & $34.31\%$ & $6.52\%$ ($9$) \\
+$0.02$ & Dunn ($1$-draw, pool) / Lee HB / \texttt{HG-CRC} & -- & \multicolumn{4}{l}{\emph{not certified} (zero auto-release)} \\
+\midrule
+$0.05$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.34$ & $2.53\%$ & $9.55\%$ & $39.89\%$ & $21.47\%$ ($41$) \\
+$0.05$ & Dunn Two-Layer ($1$-draw, seed $42$) & $0.37$ & $0.55\%$ & $6.90\%$ & $34.31\%$ & $6.52\%$ ($9$) \\
+$0.05$ & Dunn Pooled ($B{=}200$, $2\bar{p} \le \delta$) & -- & \multicolumn{4}{l}{\emph{not certified} ($2\bar{p} > 0.05$; zero auto-release)} \\
+$0.05$ & Lee Cluster-Weighted Split & $0.33$ & $4.19\%$ & $11.41\%$ & $42.55\%$ & $29.82\%$ ($68$) \\
+$0.05$ & Lee Cluster-Weighted HB ($1{-}\delta$) & $0.38$ & $0.18\%$ & $6.35\%$ & $32.98\%$ & $2.36\%$ ($3$) \\
+$0.05$ & \texttt{HG-CRC} Group-Conditional & $0.35$ & $1.54\%$ & $8.20\%$ & $36.97\%$ & $15.24\%$ ($25$) \\
+\midrule
+$0.10$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.28$ & $8.19\%$ & $18.91\%$ & $65.16\%$ & $35.19\%$ ($133$) \\
+$0.10$ & Dunn Two-Layer ($1$-draw, seed $42$) & $0.28$ & $8.19\%$ & $18.91\%$ & $65.16\%$ & $35.19\%$ ($133$) \\
+$0.10$ & Dunn Pooled ($B{=}200$, $2\bar{p} \le \delta$) & $0.35$ & $1.54\%$ & $8.20\%$ & $36.97\%$ & $15.24\%$ ($25$) \\
+$0.10$ & Lee Cluster-Weighted Split & $0.28$ & $8.19\%$ & $18.91\%$ & $65.16\%$ & $35.19\%$ ($133$) \\
+$0.10$ & Lee Cluster-Weighted HB ($1{-}\delta$) & $0.35$ & $1.54\%$ & $8.20\%$ & $36.97\%$ & $15.24\%$ ($25$) \\
+$0.10$ & \texttt{HG-CRC} Group-Conditional & $0.29$ & $6.47\%$ & $16.61\%$ & $60.37\%$ & $31.63\%$ ($105$) \\
+\midrule
+$0.15$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.20$ & $12.57\%$ & $23.46\%$ & $70.48\%$ & $40.72\%$ ($191$) \\
+$0.15$ & Dunn Two-Layer ($1$-draw, seed $42$) & $0.21$ & $10.10\%$ & $20.91\%$ & $67.55\%$ & $38.52\%$ ($161$) \\
+$0.15$ & Dunn Pooled ($B{=}200$, $2\bar{p} \le \delta$) & $0.32$ & $4.62\%$ & $12.91\%$ & $48.67\%$ & $29.07\%$ ($75$) \\
+$0.15$ & Lee Cluster-Weighted Split & $0.20$ & $12.57\%$ & $23.46\%$ & $70.48\%$ & $40.72\%$ ($191$) \\
+$0.15$ & Lee Cluster-Weighted HB ($1{-}\delta$) & $0.30$ & $5.73\%$ & $15.16\%$ & $55.85\%$ & $30.69\%$ ($93$) \\
+$0.15$ & \texttt{HG-CRC} Group-Conditional & $0.21$ & $10.10\%$ & $20.91\%$ & $67.55\%$ & $38.52\%$ ($161$) \\
+\midrule
+$0.20$ & \textbf{Heuristic \texttt{HC-CRC}} ($N_{\text{eff}}{=}350$) & $0.19$ & $15.77\%$ & $26.51\%$ & $72.87\%$ & $44.72\%$ ($237$) \\
+$0.20$ & Dunn Two-Layer ($1$-draw, seed $42$) & $0.19$ & $15.77\%$ & $26.51\%$ & $72.87\%$ & $44.72\%$ ($237$) \\
+$0.20$ & Dunn Pooled ($B{=}200$, $2\bar{p} \le \delta$) & $0.28$ & $8.19\%$ & $18.91\%$ & $65.16\%$ & $35.19\%$ ($133$) \\
+$0.20$ & Lee Cluster-Weighted Split & $0.19$ & $15.77\%$ & $26.51\%$ & $72.87\%$ & $44.72\%$ ($237$) \\
+$0.20$ & Lee Cluster-Weighted HB ($1{-}\delta$) & $0.28$ & $8.19\%$ & $18.91\%$ & $65.16\%$ & $35.19\%$ ($133$) \\
+$0.20$ & \texttt{HG-CRC} Group-Conditional & $0.19$ & $15.77\%$ & $26.51\%$ & $72.87\%$ & $44.72\%$ ($237$) \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+Table~\ref{tab:hier-baselines} quantifies the exact efficiency-versus-guarantee tradeoff against formal hierarchical conformal baselines on the same $67$ calibration and $127$ held-out rulings: (i)~at $\alpha{=}0.01$, all five guarantee-backed cluster baselines fail closed ($0\%$ auto-release) because $M_0{=}67$ clusters cannot certify a $1\%$ risk floor ($1/(M_0{+}1){=}1.47\% > 1\%$ and $0.99^{67}{=}0.510 > \delta$), confirming that \texttt{HC-CRC}'s $\alpha{=}0.01$ release ($32.98\%$ Safe Yield, $0.18\%$ FPR) relies on its heuristic $N_{\text{eff}}{=}350$ effective count rather than a cluster-level bound; (ii)~from $\alpha \ge 0.10$, Lee et al.'s equal-cluster-weight split ($\mathbb{E}[L] \le \alpha$) selects the exact same thresholds as \texttt{HC-CRC} ($\hat{\lambda}{=}0.28, 0.20, 0.19$, matching $8.19\%$, $12.57\%$, and $15.77\%$ FPR at $65.16\%$--$72.87\%$ Safe Yield) while also certifying $\alpha{=}0.02$ ($0.55\%$ FPR, $34.31\%$ Safe Yield); (iii)~Dunn et al.'s single-draw two-layer split ($\text{seed}{=}42$) certifies from $\alpha \ge 0.05$ ($0.55\%$ FPR / $34.31\%$ Safe Yield at $\alpha{=}0.05$, $200$-draw median $1.54\%$ FPR / $36.97\%$ Safe Yield; $8.19\%$ FPR / $65.16\%$ Safe Yield at $\alpha{=}0.10$, $200$-draw median $4.62\%$ FPR / $48.67\%$ Safe Yield), whereas $200$-draw $2\bar{p} \le \delta$ pooling and cluster-level $1{-}\delta$ Hoeffding--Bentkus pay a factor-of-two or concentration slack ($36.97\%$ Safe Yield at $\alpha{=}0.10$); and (iv)~\texttt{HG-CRC} controls risk across both short ($N_m \le 18$) and long ($N_m > 18$) rulings simultaneously from $\alpha \ge 0.05$, holding worst-subgroup held-out FPR to $3.14\% \le 5\%$ ($\alpha{=}0.05$), $8.48\% \le 10\%$ ($\alpha{=}0.10$, $60.37\%$ Safe Yield), $11.15\% \le 15\%$ ($\alpha{=}0.15$), and $18.05\% \le 20\%$ ($\alpha{=}0.20$).
 
 \subsection{Exp.~3: External Secret Scanning (Steady-State Timing) and Unicode NFKC Baseline}
 \label{sec:exp3}
@@ -322,7 +375,7 @@ Graph GDPR Blast Radius & $5{,}000$ blocks / $20{,}200$ edges ($5$ modalities, W
 
 \begin{enumerate}
     \item \textbf{Edge vs.\ Server NER Gap:} On TAB legal rulings, Microsoft Presidio (\texttt{en\_core\_web\_lg} + ECHR code regex, $400.7$\,MB) outperforms our $45.8$\,MB edge GLiNER pipeline by $+33.35$\,F1 on All-Maskable entities ($79.26\%$ vs.\ the Hybrid edge system's $45.91\%$) and by $+12.07$\,F1 on \texttt{PERSON} ($86.27\%$ vs.\ Dev-Filtered GLiNER's $74.20\%$), and adding $45.8$\,MB GLiNER to Stage~3A+Code lowers All-Maskable F1 ($51.67\% \to 45.91\%$).
-    \item \textbf{Modest Overall Gate Automation, Heuristic Cluster Correction \& Detector-Closed Scope:} On PII-dense TAB rulings ($81.2\%$ unsafe, $\operatorname{DEFF}{=}2.62$), Document-Clustered \texttt{HC-CRC} removes the $\alpha{=}0.10$ FPR overshoot ($8.19\% \le 10\%$, $18.91\%$ overall auto-release) and certifies $2.53\% \le 5\%$ at $\alpha{=}0.05$ ($9.55\%$ auto-release) as well as $0.18\% \le 1\%$ at $\alpha{=}0.01$; its cluster-robustness rests on a survey-sampling design-effect heuristic (Sec.~\ref{sec:exp2}), and it is the streaming \texttt{E-LTT} martingale that fails closed at $\alpha \le 0.02$ ($E_{\max}{=}1$, zero auto-release). Moreover, because scrubbed text can still leak private attributes to inference attacks \citep{lukas2023pii,staab2024beyond}, detector-closed gating must be paired with adversary-aware auditing \citep{cpa2026auditing} when quasi-identifier singling-out is in scope.
+    \item \textbf{Modest Overall Gate Automation, Heuristic Cluster Correction \& Detector-Closed Scope:} On PII-dense TAB rulings ($81.2\%$ unsafe, $\operatorname{DEFF}{=}2.62$), Document-Clustered \texttt{HC-CRC} removes the $\alpha{=}0.10$ FPR overshoot ($8.19\% \le 10\%$, $18.91\%$ overall auto-release) and certifies $2.53\% \le 5\%$ at $\alpha{=}0.05$ ($9.55\%$ auto-release) as well as $0.18\% \le 1\%$ at $\alpha{=}0.01$; its cluster-robustness rests on a survey-sampling design-effect heuristic compared directly against guarantee-backed Dunn, Lee, and \texttt{HG-CRC} baselines in Sec.~\ref{sec:exp2} (Table~\ref{tab:hier-baselines}), where all formal cluster bounds fail closed at $\alpha{=}0.01$ under $M_0{=}67$ and streaming \texttt{E-LTT} fails closed at $\alpha \le 0.02$ ($E_{\max}{=}1$, zero auto-release). Moreover, because scrubbed text can still leak private attributes to inference attacks \citep{lukas2023pii,staab2024beyond}, detector-closed gating must be paired with adversary-aware auditing \citep{cpa2026auditing} when quasi-identifier singling-out is in scope.
     \item \textbf{Audio, Secrets, and PPRL Scope:} Exp.~4 uses locally synthesized TTS audio ($25$ calls in clean synthetic speech; $8.25\%$ residual leakage under self-seeded \texttt{SR-MP} vs.\ $20.62\%$ isolated, under \texttt{small.en}) rather than noisy telephony speech; Exp.~3 uses short \texttt{MBPP} scripts and synthetic external credentials; and $128$-bit Bloom+Soundex PPRL is English-centric and vulnerable to frequency attacks if exported externally \citep{christen2018bloomattack}.
     \item \textbf{Portable Runtime Split:} Stage~3A WASM (secrets, anti-evasion, containers, PPRL, \texttt{SR-MP} ring, WAV/canvas redaction) runs live in the RTIO browser sandbox today, while Stage~3B ONNX GLiNER and local Whisper ASR currently execute in Node/Python and fail closed without local weights; OCR on dark stylized slides also benefits from modern ONNX OCR \citep{cui2025paddleocr,ibm2025granitedocling}.
 \end{enumerate}

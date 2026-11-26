@@ -960,5 +960,55 @@ for (const [name, body] of ALL_DOCS) {
   }
 }
 
+/* ---------------- T7 (#34): Paper D guarantee baselines, tau=0.70 CI, licenses and seeds ---------------- */
+{
+  const T7B = TAB.t7GuaranteeBaselines;
+  const T7T = TAB.t7Tau070SrmpBootstrap;
+  const T7L = TAB.t7CorpusLicensesAndSeeds;
+  // tau=0.70 SR-MP bootstrap interval fills the former placeholder
+  const ci70 = T7T.srmpPerson.f1Bootstrap95CI;
+  ok('t7:tau70.ci', `$${f2(T7T.srmpPerson.f1Pct)}$ \\scriptsize{[${f1(ci70[0])}, ${f1(ci70[1])}]}`, M);
+  checks++;
+  if (T7T.seed !== 42 || T7T.bootstrapResamples !== 1000 || T7T.permutationResamplesPreserved !== 5000) {
+    fails++; console.error('FAIL [t7:tau70.params] expected seed 42, 1000 bootstrap, 5000 permutations');
+  }
+  checks++;
+  if (!/\\scriptsize\{--\}/.test(M)) {} else { fails++; console.error('FAIL [t7:tau70.placeholder] -- placeholder still present'); }
+  checks++;
+  if (T7T.srmpPerson.f1Pct !== TAB.prCurves.srmpPerson[5].f1Pct) { fails++; console.error('FAIL [t7:tau70.f1] re-run point estimate differs from committed'); }
+  checks++;
+  if (T7T.srmpPerson.perDocTp.length !== 127 || T7T.srmpPerson.perDocFp.length !== 127 || T7T.srmpPerson.perDocFn.length !== 127) {
+    fails++; console.error('FAIL [t7:tau70.perDoc] per-document TP/FP/FN arrays must have 127 entries');
+  }
+  ok('t7:perm.5000', '$5{,}000$ paired permutations', M);
+  // baseline table rows: every certified row is printed, uncertified rows print no numbers
+  for (const key of ['dunnSubsamplingSingleDraw', 'dunnRepeatedSubsamplingPooling', 'leeClusterWeightedSplit', 'leeClusterWeightedHighProbHb', 'hgCrcGroupConditional']) {
+    for (const e of T7B[key]) {
+      if (!e.certified) continue;
+      const row = `$${f2(e.threshold)}$ & $${f2(e.testConditionalFprPct)}\\%$ & $${f2(e.overallAutoReleasePct)}\\%$ & $${f2(e.testSafeYieldPct)}\\%$ & $${f2(e.e2eResidualLeakOfReleasedPct)}\\%$ ($${e.e2eResidualLeakCount}$)`;
+      ok(`t7:${key}.a${e.alpha}`, row, M);
+    }
+  }
+  ok('t7:hier.label', '\\label{tab:hier-baselines}', M);
+  for (const k of ['dunn2022hierarchical', 'lee2023hierarchical', 'salem2026hgcrc']) ok(`t7:cite.${k}`, k, M);
+  ok('t7:hier.splits', `$M_0{=}${T7B.methodology.calibrationSplit.nUnsafeClusters}$`, M);
+  const hgS = T7B.methodology.hgCrcHierarchy;
+  ok('t7:hg.short', `$N_m \\le ${hgS.calibrationMedianParagraphs}$, $M{=}${hgS.calClusterCounts.short_ruling}$`, M);
+  ok('t7:hg.long', `$N_m > ${hgS.calibrationMedianParagraphs}$, $M{=}${hgS.calClusterCounts.long_ruling}$`, M);
+  // HG-CRC worst-subgroup held-out FPR quoted in prose
+  for (const e of T7B.hgCrcGroupConditional) {
+    if (e.certified) ok(`t7:hg.worstSg.a${e.alpha}`, `$${f2(e.worstSubgroupTestFprPct)}\\% \\le ${f0(e.alpha * 100)}\\%$`, M);
+  }
+  // seeds and licenses recorded in the artifact and referenced in the paper
+  checks++;
+  if (T7B.methodology.subsamplingSeed !== 42 || T7L.seedsByExperiment.exp1_tabEchrBootstrapAndPermutation.seed !== 42) {
+    fails++; console.error('FAIL [t7:seeds] expected recorded seed 42');
+  }
+  checks++;
+  if (Object.keys(T7L.corporaAndModels).length < 10) { fails++; console.error('FAIL [t7:licenses] too few recorded corpus licenses'); }
+  ok('t7:license.paragraph', 'per-corpus licenses (MIT for TAB ECHR', M);
+  ok('t7:draws', `$${T7B.methodology.repeatedSubsamplingDraws}$ repeated-subsampling draws`, M);
+}
+
 console.log(`\n${checks} paper-number checks, ${fails} failure${fails === 1 ? '' : 's'}`);
 process.exit(fails ? 1 : 0);

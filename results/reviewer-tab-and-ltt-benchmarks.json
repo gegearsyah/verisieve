@@ -1429,5 +1429,4334 @@
         "e2eResidualLeakOfUnsafePct": 14.6
       }
     ]
+  },
+  "t7GuaranteeBaselines": {
+    "generatedAt": "2026-11-26T01:47:46Z",
+    "methodology": {
+      "baseScore": "Detector-Informed Hybrid 520-d Gatekeeper (identical weights & scores to documentClusteredHcCrc)",
+      "calibrationSplit": {
+        "nRulings": 67,
+        "nUnsafeClusters": 67,
+        "nTotalParagraphs": 1150,
+        "nUnsafeParagraphs": 916,
+        "nSafeParagraphs": 234
+      },
+      "heldOutTestSplit": {
+        "nRulings": 127,
+        "nTotalParagraphs": 1999,
+        "nUnsafeParagraphs": 1623,
+        "nSafeParagraphs": 376
+      },
+      "alphas": [
+        0.01,
+        0.02,
+        0.05,
+        0.1,
+        0.15,
+        0.2
+      ],
+      "delta": 0.05,
+      "thresholdGrid": "0.01..0.99 (step 0.01), fail-closed if uncertified",
+      "subsamplingSeed": 42,
+      "repeatedSubsamplingDraws": 200,
+      "hgCrcHierarchy": {
+        "levels": [
+          "global",
+          "short_ruling",
+          "long_ruling"
+        ],
+        "splitRule": "observable document paragraph count split at calibration median (<= 18 vs > 18)",
+        "calibrationMedianParagraphs": 18,
+        "calClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testRulingCounts": {
+          "global": 127,
+          "short_ruling": 94,
+          "long_ruling": 33
+        }
+      },
+      "references": {
+        "dunn2022hierarchical": "Dunn, Wasserman, & Ramdas (2022, JASA / arXiv:1809.07441) two-layer subsampling & repeated-subsampling 2*mean(p) <= delta pooling",
+        "lee2023hierarchical": "Lee, Barber, & Willett (2023, arXiv:2306.06342) hierarchical cluster-weighted conformal risk control (equal weight per cluster, E[L] <= alpha) + Hoeffding-Bentkus 1-delta variant",
+        "salem2026hgcrc": "Salem et al. (2026, arXiv:2607.24562) Hierarchical Group-Conditional Conformal Risk Control (simultaneous global + observable subgroup bounds)"
+      }
+    },
+    "dunnSubsamplingSingleDraw": [
+      {
+        "alpha": 0.01,
+        "certified": false,
+        "threshold": null,
+        "calPValue": null,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 0.0,
+        "mcMedianFprPct": 0.0,
+        "mcMeanFprPct": 0.0,
+        "mcIqrFprPct": [
+          0.0,
+          0.0
+        ],
+        "mcMedianSafeYieldPct": 0.0,
+        "mcMeanSafeYieldPct": 0.0,
+        "mcIqrSafeYieldPct": [
+          0.0,
+          0.0
+        ],
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "certified": false,
+        "threshold": null,
+        "calPValue": null,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 0.0,
+        "mcMedianFprPct": 0.0,
+        "mcMeanFprPct": 0.0,
+        "mcIqrFprPct": [
+          0.0,
+          0.0
+        ],
+        "mcMedianSafeYieldPct": 0.0,
+        "mcMeanSafeYieldPct": 0.0,
+        "mcIqrSafeYieldPct": [
+          0.0,
+          0.0
+        ],
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "certified": true,
+        "threshold": 0.37,
+        "calPValue": 0.03217,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 100.0,
+        "mcMedianFprPct": 1.54,
+        "mcMeanFprPct": 1.45,
+        "mcIqrFprPct": [
+          0.55,
+          1.54
+        ],
+        "mcMedianSafeYieldPct": 36.97,
+        "mcMeanSafeYieldPct": 37.18,
+        "mcIqrSafeYieldPct": [
+          34.31,
+          36.97
+        ],
+        "testConditionalFprPct": 0.55,
+        "testSafeYieldPct": 34.31,
+        "overallAutoReleasePct": 6.9,
+        "autoReleasedCount": 138,
+        "keptUnsafe": 9,
+        "keptSafe": 129,
+        "e2eResidualLeakCount": 9,
+        "e2eResidualLeakOfReleasedPct": 6.52,
+        "e2eResidualLeakOfUnsafePct": 0.55
+      },
+      {
+        "alpha": 0.1,
+        "certified": true,
+        "threshold": 0.28,
+        "calPValue": 0.03072,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 100.0,
+        "mcMedianFprPct": 4.62,
+        "mcMeanFprPct": 4.53,
+        "mcIqrFprPct": [
+          1.54,
+          5.73
+        ],
+        "mcMedianSafeYieldPct": 48.67,
+        "mcMeanSafeYieldPct": 49.18,
+        "mcIqrSafeYieldPct": [
+          36.97,
+          55.85
+        ],
+        "testConditionalFprPct": 8.19,
+        "testSafeYieldPct": 65.16,
+        "overallAutoReleasePct": 18.91,
+        "autoReleasedCount": 378,
+        "keptUnsafe": 133,
+        "keptSafe": 245,
+        "e2eResidualLeakCount": 133,
+        "e2eResidualLeakOfReleasedPct": 35.19,
+        "e2eResidualLeakOfUnsafePct": 8.19
+      },
+      {
+        "alpha": 0.15,
+        "certified": true,
+        "threshold": 0.21,
+        "calPValue": 0.02031,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 100.0,
+        "mcMedianFprPct": 6.47,
+        "mcMeanFprPct": 7.29,
+        "mcIqrFprPct": [
+          5.64,
+          8.19
+        ],
+        "mcMedianSafeYieldPct": 60.37,
+        "mcMeanSafeYieldPct": 59.18,
+        "mcIqrSafeYieldPct": [
+          55.39,
+          65.16
+        ],
+        "testConditionalFprPct": 10.1,
+        "testSafeYieldPct": 67.55,
+        "overallAutoReleasePct": 20.91,
+        "autoReleasedCount": 418,
+        "keptUnsafe": 164,
+        "keptSafe": 254,
+        "e2eResidualLeakCount": 161,
+        "e2eResidualLeakOfReleasedPct": 38.52,
+        "e2eResidualLeakOfUnsafePct": 9.92
+      },
+      {
+        "alpha": 0.2,
+        "certified": true,
+        "threshold": 0.19,
+        "calPValue": 0.02917,
+        "nUnsafeClusters": 67,
+        "mcDraws": 200,
+        "mcCertifiedRatePct": 100.0,
+        "mcMedianFprPct": 11.34,
+        "mcMeanFprPct": 11.42,
+        "mcIqrFprPct": [
+          8.19,
+          15.77
+        ],
+        "mcMedianSafeYieldPct": 69.02,
+        "mcMeanSafeYieldPct": 67.99,
+        "mcIqrSafeYieldPct": [
+          65.16,
+          72.87
+        ],
+        "testConditionalFprPct": 15.77,
+        "testSafeYieldPct": 72.87,
+        "overallAutoReleasePct": 26.51,
+        "autoReleasedCount": 530,
+        "keptUnsafe": 256,
+        "keptSafe": 274,
+        "e2eResidualLeakCount": 237,
+        "e2eResidualLeakOfReleasedPct": 44.72,
+        "e2eResidualLeakOfUnsafePct": 14.6
+      }
+    ],
+    "dunnRepeatedSubsamplingPooling": [
+      {
+        "alpha": 0.01,
+        "certified": false,
+        "threshold": null,
+        "pooledValidPValue": null,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "certified": false,
+        "threshold": null,
+        "pooledValidPValue": null,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "certified": false,
+        "threshold": null,
+        "pooledValidPValue": null,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.1,
+        "certified": true,
+        "threshold": 0.35,
+        "pooledValidPValue": 0.02149,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 1.54,
+        "testSafeYieldPct": 36.97,
+        "overallAutoReleasePct": 8.2,
+        "autoReleasedCount": 164,
+        "keptUnsafe": 25,
+        "keptSafe": 139,
+        "e2eResidualLeakCount": 25,
+        "e2eResidualLeakOfReleasedPct": 15.24,
+        "e2eResidualLeakOfUnsafePct": 1.54
+      },
+      {
+        "alpha": 0.15,
+        "certified": true,
+        "threshold": 0.32,
+        "pooledValidPValue": 0.03381,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 4.62,
+        "testSafeYieldPct": 48.67,
+        "overallAutoReleasePct": 12.91,
+        "autoReleasedCount": 258,
+        "keptUnsafe": 75,
+        "keptSafe": 183,
+        "e2eResidualLeakCount": 75,
+        "e2eResidualLeakOfReleasedPct": 29.07,
+        "e2eResidualLeakOfUnsafePct": 4.62
+      },
+      {
+        "alpha": 0.2,
+        "certified": true,
+        "threshold": 0.28,
+        "pooledValidPValue": 0.0403,
+        "nUnsafeClusters": 67,
+        "nSubsampleDraws": 200,
+        "testConditionalFprPct": 8.19,
+        "testSafeYieldPct": 65.16,
+        "overallAutoReleasePct": 18.91,
+        "autoReleasedCount": 378,
+        "keptUnsafe": 133,
+        "keptSafe": 245,
+        "e2eResidualLeakCount": 133,
+        "e2eResidualLeakOfReleasedPct": 35.19,
+        "e2eResidualLeakOfUnsafePct": 8.19
+      }
+    ],
+    "leeClusterWeightedSplit": [
+      {
+        "alpha": 0.01,
+        "certified": false,
+        "threshold": null,
+        "clusterWeightedRiskUpperBound": null,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "certified": true,
+        "threshold": 0.37,
+        "clusterWeightedRiskUpperBound": 0.01773,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 0.55,
+        "testSafeYieldPct": 34.31,
+        "overallAutoReleasePct": 6.9,
+        "autoReleasedCount": 138,
+        "keptUnsafe": 9,
+        "keptSafe": 129,
+        "e2eResidualLeakCount": 9,
+        "e2eResidualLeakOfReleasedPct": 6.52,
+        "e2eResidualLeakOfUnsafePct": 0.55
+      },
+      {
+        "alpha": 0.05,
+        "certified": true,
+        "threshold": 0.33,
+        "clusterWeightedRiskUpperBound": 0.04773,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 4.19,
+        "testSafeYieldPct": 42.55,
+        "overallAutoReleasePct": 11.41,
+        "autoReleasedCount": 228,
+        "keptUnsafe": 68,
+        "keptSafe": 160,
+        "e2eResidualLeakCount": 68,
+        "e2eResidualLeakOfReleasedPct": 29.82,
+        "e2eResidualLeakOfUnsafePct": 4.19
+      },
+      {
+        "alpha": 0.1,
+        "certified": true,
+        "threshold": 0.28,
+        "clusterWeightedRiskUpperBound": 0.08458,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 8.19,
+        "testSafeYieldPct": 65.16,
+        "overallAutoReleasePct": 18.91,
+        "autoReleasedCount": 378,
+        "keptUnsafe": 133,
+        "keptSafe": 245,
+        "e2eResidualLeakCount": 133,
+        "e2eResidualLeakOfReleasedPct": 35.19,
+        "e2eResidualLeakOfUnsafePct": 8.19
+      },
+      {
+        "alpha": 0.15,
+        "certified": true,
+        "threshold": 0.2,
+        "clusterWeightedRiskUpperBound": 0.12601,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 12.57,
+        "testSafeYieldPct": 70.48,
+        "overallAutoReleasePct": 23.46,
+        "autoReleasedCount": 469,
+        "keptUnsafe": 204,
+        "keptSafe": 265,
+        "e2eResidualLeakCount": 191,
+        "e2eResidualLeakOfReleasedPct": 40.72,
+        "e2eResidualLeakOfUnsafePct": 11.77
+      },
+      {
+        "alpha": 0.2,
+        "certified": true,
+        "threshold": 0.19,
+        "clusterWeightedRiskUpperBound": 0.15373,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 15.77,
+        "testSafeYieldPct": 72.87,
+        "overallAutoReleasePct": 26.51,
+        "autoReleasedCount": 530,
+        "keptUnsafe": 256,
+        "keptSafe": 274,
+        "e2eResidualLeakCount": 237,
+        "e2eResidualLeakOfReleasedPct": 44.72,
+        "e2eResidualLeakOfUnsafePct": 14.6
+      }
+    ],
+    "leeClusterWeightedHighProbHb": [
+      {
+        "alpha": 0.01,
+        "certified": false,
+        "threshold": null,
+        "hoeffdingBentkusPValue": null,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "certified": false,
+        "threshold": null,
+        "hoeffdingBentkusPValue": null,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "certified": true,
+        "threshold": 0.38,
+        "hoeffdingBentkusPValue": 0.03217,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 0.18,
+        "testSafeYieldPct": 32.98,
+        "overallAutoReleasePct": 6.35,
+        "autoReleasedCount": 127,
+        "keptUnsafe": 3,
+        "keptSafe": 124,
+        "e2eResidualLeakCount": 3,
+        "e2eResidualLeakOfReleasedPct": 2.36,
+        "e2eResidualLeakOfUnsafePct": 0.18
+      },
+      {
+        "alpha": 0.1,
+        "certified": true,
+        "threshold": 0.35,
+        "hoeffdingBentkusPValue": 0.00952,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 1.54,
+        "testSafeYieldPct": 36.97,
+        "overallAutoReleasePct": 8.2,
+        "autoReleasedCount": 164,
+        "keptUnsafe": 25,
+        "keptSafe": 139,
+        "e2eResidualLeakCount": 25,
+        "e2eResidualLeakOfReleasedPct": 15.24,
+        "e2eResidualLeakOfUnsafePct": 1.54
+      },
+      {
+        "alpha": 0.15,
+        "certified": true,
+        "threshold": 0.3,
+        "hoeffdingBentkusPValue": 0.03221,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 5.73,
+        "testSafeYieldPct": 55.85,
+        "overallAutoReleasePct": 15.16,
+        "autoReleasedCount": 303,
+        "keptUnsafe": 93,
+        "keptSafe": 210,
+        "e2eResidualLeakCount": 93,
+        "e2eResidualLeakOfReleasedPct": 30.69,
+        "e2eResidualLeakOfUnsafePct": 5.73
+      },
+      {
+        "alpha": 0.2,
+        "certified": true,
+        "threshold": 0.28,
+        "hoeffdingBentkusPValue": 0.01165,
+        "nUnsafeClusters": 67,
+        "testConditionalFprPct": 8.19,
+        "testSafeYieldPct": 65.16,
+        "overallAutoReleasePct": 18.91,
+        "autoReleasedCount": 378,
+        "keptUnsafe": 133,
+        "keptSafe": 245,
+        "e2eResidualLeakCount": 133,
+        "e2eResidualLeakOfReleasedPct": 35.19,
+        "e2eResidualLeakOfUnsafePct": 8.19
+      }
+    ],
+    "hgCrcGroupConditional": [
+      {
+        "alpha": 0.01,
+        "certified": false,
+        "threshold": null,
+        "worstGroupCalRiskUpperBound": null,
+        "perGroupCalRiskUpperBounds": null,
+        "subgroupTestFprPct": {
+          "long_ruling": 0.0,
+          "short_ruling": 0.0
+        },
+        "worstSubgroupTestFprPct": 0.0,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "certified": false,
+        "threshold": null,
+        "worstGroupCalRiskUpperBound": null,
+        "perGroupCalRiskUpperBounds": null,
+        "subgroupTestFprPct": {
+          "long_ruling": 0.0,
+          "short_ruling": 0.0
+        },
+        "worstSubgroupTestFprPct": 0.0,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 0.0,
+        "testSafeYieldPct": 0.0,
+        "overallAutoReleasePct": 0.0,
+        "autoReleasedCount": 0,
+        "keptUnsafe": 0,
+        "keptSafe": 0,
+        "e2eResidualLeakCount": 0,
+        "e2eResidualLeakOfReleasedPct": 0.0,
+        "e2eResidualLeakOfUnsafePct": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "certified": true,
+        "threshold": 0.35,
+        "worstGroupCalRiskUpperBound": 0.04101,
+        "perGroupCalRiskUpperBounds": {
+          "global": 0.02534,
+          "short_ruling": 0.03827,
+          "long_ruling": 0.04101
+        },
+        "subgroupTestFprPct": {
+          "long_ruling": 3.14,
+          "short_ruling": 0.51
+        },
+        "worstSubgroupTestFprPct": 3.14,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 1.54,
+        "testSafeYieldPct": 36.97,
+        "overallAutoReleasePct": 8.2,
+        "autoReleasedCount": 164,
+        "keptUnsafe": 25,
+        "keptSafe": 139,
+        "e2eResidualLeakCount": 25,
+        "e2eResidualLeakOfReleasedPct": 15.24,
+        "e2eResidualLeakOfUnsafePct": 1.54
+      },
+      {
+        "alpha": 0.1,
+        "certified": true,
+        "threshold": 0.29,
+        "worstGroupCalRiskUpperBound": 0.09153,
+        "perGroupCalRiskUpperBounds": {
+          "global": 0.07499,
+          "short_ruling": 0.09153,
+          "long_ruling": 0.08431
+        },
+        "subgroupTestFprPct": {
+          "long_ruling": 8.48,
+          "short_ruling": 5.17
+        },
+        "worstSubgroupTestFprPct": 8.48,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 6.47,
+        "testSafeYieldPct": 60.37,
+        "overallAutoReleasePct": 16.61,
+        "autoReleasedCount": 332,
+        "keptUnsafe": 105,
+        "keptSafe": 227,
+        "e2eResidualLeakCount": 105,
+        "e2eResidualLeakOfReleasedPct": 31.63,
+        "e2eResidualLeakOfUnsafePct": 6.47
+      },
+      {
+        "alpha": 0.15,
+        "certified": true,
+        "threshold": 0.21,
+        "worstGroupCalRiskUpperBound": 0.1336,
+        "perGroupCalRiskUpperBounds": {
+          "global": 0.11091,
+          "short_ruling": 0.1336,
+          "long_ruling": 0.11105
+        },
+        "subgroupTestFprPct": {
+          "long_ruling": 11.15,
+          "short_ruling": 9.43
+        },
+        "worstSubgroupTestFprPct": 11.15,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 10.1,
+        "testSafeYieldPct": 67.55,
+        "overallAutoReleasePct": 20.91,
+        "autoReleasedCount": 418,
+        "keptUnsafe": 164,
+        "keptSafe": 254,
+        "e2eResidualLeakCount": 161,
+        "e2eResidualLeakOfReleasedPct": 38.52,
+        "e2eResidualLeakOfUnsafePct": 9.92
+      },
+      {
+        "alpha": 0.2,
+        "certified": true,
+        "threshold": 0.19,
+        "worstGroupCalRiskUpperBound": 0.18126,
+        "perGroupCalRiskUpperBounds": {
+          "global": 0.15373,
+          "short_ruling": 0.18126,
+          "long_ruling": 0.14615
+        },
+        "subgroupTestFprPct": {
+          "long_ruling": 18.05,
+          "short_ruling": 14.3
+        },
+        "worstSubgroupTestFprPct": 18.05,
+        "groupClusterCounts": {
+          "global": 67,
+          "short_ruling": 38,
+          "long_ruling": 29
+        },
+        "testConditionalFprPct": 15.77,
+        "testSafeYieldPct": 72.87,
+        "overallAutoReleasePct": 26.51,
+        "autoReleasedCount": 530,
+        "keptUnsafe": 256,
+        "keptSafe": 274,
+        "e2eResidualLeakCount": 237,
+        "e2eResidualLeakOfReleasedPct": 44.72,
+        "e2eResidualLeakOfUnsafePct": 14.6
+      }
+    ]
+  },
+  "t7Tau070SrmpBootstrap": {
+    "generatedAt": "2026-11-26T01:47:41Z",
+    "threshold": 0.7,
+    "seed": 42,
+    "bootstrapResamples": 1000,
+    "permutationResamplesPreserved": 5000,
+    "srmpVsDevFilteredTau070P": 0.0002,
+    "srmpVsDumbPropagationTau070P": 0.0002,
+    "srmpPerson": {
+      "precisionPct": 91.94,
+      "recallPct": 26.2,
+      "f1Pct": 40.78,
+      "directRecallPct": 45.13,
+      "tp": 251,
+      "fp": 22,
+      "fn": 707,
+      "directTp": 102,
+      "directTotal": 226,
+      "f1Bootstrap95CI": [
+        33.42,
+        47.29
+      ],
+      "perDocTp": [
+        0,
+        12,
+        1,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        1,
+        0,
+        2,
+        0,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        0,
+        0,
+        11,
+        1,
+        0,
+        6,
+        7,
+        2,
+        1,
+        0,
+        17,
+        8,
+        1,
+        1,
+        2,
+        0,
+        1,
+        0,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        4,
+        0,
+        0,
+        1,
+        0,
+        0,
+        2,
+        5,
+        0,
+        1,
+        4,
+        2,
+        13,
+        0,
+        0,
+        0,
+        0,
+        0,
+        17,
+        5,
+        3,
+        1,
+        5,
+        1,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        11,
+        0,
+        3,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        0,
+        4,
+        4,
+        0,
+        1,
+        1,
+        5,
+        3,
+        9,
+        0,
+        7,
+        14,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        4
+      ],
+      "perDocFp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        11,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "perDocFn": [
+        5,
+        4,
+        2,
+        1,
+        3,
+        3,
+        2,
+        3,
+        4,
+        29,
+        1,
+        1,
+        1,
+        2,
+        21,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        2,
+        3,
+        18,
+        1,
+        2,
+        1,
+        4,
+        1,
+        1,
+        2,
+        35,
+        16,
+        1,
+        1,
+        0,
+        40,
+        1,
+        3,
+        1,
+        2,
+        5,
+        2,
+        4,
+        3,
+        1,
+        1,
+        11,
+        2,
+        2,
+        2,
+        4,
+        2,
+        2,
+        1,
+        2,
+        26,
+        1,
+        1,
+        2,
+        4,
+        10,
+        5,
+        19,
+        2,
+        5,
+        14,
+        2,
+        10,
+        15,
+        3,
+        13,
+        1,
+        5,
+        2,
+        2,
+        3,
+        3,
+        3,
+        6,
+        14,
+        22,
+        2,
+        3,
+        1,
+        2,
+        2,
+        1,
+        3,
+        1,
+        2,
+        3,
+        2,
+        2,
+        4,
+        11,
+        4,
+        4,
+        6,
+        1,
+        1,
+        20,
+        13,
+        10,
+        17,
+        21,
+        5,
+        3,
+        2,
+        4,
+        1,
+        6,
+        17,
+        2,
+        4,
+        20,
+        8,
+        3,
+        1,
+        7,
+        0,
+        2,
+        2,
+        1,
+        1,
+        18
+      ],
+      "perDocTpFpFn": [
+        {
+          "doc_id": "001-61807",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-61253",
+          "tp": 12,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-66929",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-159913",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61227",
+          "tp": 3,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90749",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-79346",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61744",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60735",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57899",
+          "tp": 0,
+          "fp": 11,
+          "fn": 29
+        },
+        {
+          "doc_id": "001-89821",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-59527",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91059",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-110271",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-170347",
+          "tp": 2,
+          "fp": 0,
+          "fn": 21
+        },
+        {
+          "doc_id": "001-95382",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61177",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84289",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-93304",
+          "tp": 1,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-91290",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-89128",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79069",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79713",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61454",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-57871",
+          "tp": 11,
+          "fp": 0,
+          "fn": 18
+        },
+        {
+          "doc_id": "001-68512",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94975",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68178",
+          "tp": 6,
+          "fp": 5,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-114240",
+          "tp": 7,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-72664",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-83625",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-88836",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-57990",
+          "tp": 17,
+          "fp": 0,
+          "fn": 35
+        },
+        {
+          "doc_id": "001-57642",
+          "tp": 8,
+          "fp": 0,
+          "fn": 16
+        },
+        {
+          "doc_id": "001-67085",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94744",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-96264",
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        {
+          "doc_id": "001-78293",
+          "tp": 0,
+          "fp": 0,
+          "fn": 40
+        },
+        {
+          "doc_id": "001-79434",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-92090",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-78447",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-95777",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-59853",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-60793",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90967",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-87466",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-94421",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-82750",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79415",
+          "tp": 0,
+          "fp": 0,
+          "fn": 11
+        },
+        {
+          "doc_id": "001-93654",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-77991",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94000",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-73360",
+          "tp": 4,
+          "fp": 4,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-84379",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-95199",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90569",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-60694",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-58458",
+          "tp": 0,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-79398",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-87626",
+          "tp": 5,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-78429",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-150778",
+          "tp": 1,
+          "fp": 2,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-58409",
+          "tp": 4,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-90250",
+          "tp": 2,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-57849",
+          "tp": 13,
+          "fp": 0,
+          "fn": 19
+        },
+        {
+          "doc_id": "001-76746",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-67071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-78427",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-85728",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-158475",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-76453",
+          "tp": 17,
+          "fp": 0,
+          "fn": 15
+        },
+        {
+          "doc_id": "001-92767",
+          "tp": 5,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-58410",
+          "tp": 3,
+          "fp": 0,
+          "fn": 13
+        },
+        {
+          "doc_id": "001-90575",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80478",
+          "tp": 5,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-83335",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-85661",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-84580",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-119229",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87512",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90234",
+          "tp": 5,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-90200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-57874",
+          "tp": 11,
+          "fp": 0,
+          "fn": 22
+        },
+        {
+          "doc_id": "001-86343",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-105434",
+          "tp": 3,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-91088",
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91092",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-91096",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-92425",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61332",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-76766",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84582",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-82370",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87456",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-83404",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-79030",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-61080",
+          "tp": 4,
+          "fp": 0,
+          "fn": 11
+        },
+        {
+          "doc_id": "001-60649",
+          "tp": 4,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-60736",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-59098",
+          "tp": 1,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-147679",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-76303",
+          "tp": 5,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-57886",
+          "tp": 3,
+          "fp": 0,
+          "fn": 20
+        },
+        {
+          "doc_id": "001-57867",
+          "tp": 9,
+          "fp": 0,
+          "fn": 13
+        },
+        {
+          "doc_id": "001-67200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-61680",
+          "tp": 7,
+          "fp": 0,
+          "fn": 17
+        },
+        {
+          "doc_id": "001-58086",
+          "tp": 14,
+          "fp": 0,
+          "fn": 21
+        },
+        {
+          "doc_id": "001-60309",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-79071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60737",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-75894",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-81069",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80398",
+          "tp": 0,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-58095",
+          "tp": 0,
+          "fp": 0,
+          "fn": 17
+        },
+        {
+          "doc_id": "001-101231",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-59863",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57901",
+          "tp": 7,
+          "fp": 0,
+          "fn": 20
+        },
+        {
+          "doc_id": "001-68075",
+          "tp": 0,
+          "fp": 0,
+          "fn": 8
+        },
+        {
+          "doc_id": "001-59857",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-66782",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-58838",
+          "tp": 0,
+          "fp": 0,
+          "fn": 7
+        },
+        {
+          "doc_id": "001-81110",
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        {
+          "doc_id": "001-83331",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94119",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68506",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79501",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79392",
+          "tp": 4,
+          "fp": 0,
+          "fn": 18
+        }
+      ]
+    },
+    "devFilteredPerson": {
+      "precisionPct": 96.89,
+      "recallPct": 16.28,
+      "f1Pct": 27.88,
+      "directRecallPct": 21.24,
+      "tp": 156,
+      "fp": 5,
+      "fn": 802,
+      "directTp": 48,
+      "directTotal": 226,
+      "f1Bootstrap95CI": [
+        23.0,
+        33.24
+      ],
+      "perDocTp": [
+        0,
+        7,
+        1,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        0,
+        0,
+        3,
+        1,
+        0,
+        5,
+        5,
+        2,
+        1,
+        0,
+        7,
+        4,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        0,
+        0,
+        2,
+        2,
+        0,
+        1,
+        2,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        3,
+        1,
+        1,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        9,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        0,
+        3,
+        2,
+        0,
+        1,
+        1,
+        4,
+        2,
+        3,
+        0,
+        4,
+        7,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        2
+      ],
+      "perDocFp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "perDocFn": [
+        5,
+        9,
+        2,
+        1,
+        3,
+        3,
+        2,
+        3,
+        4,
+        29,
+        1,
+        1,
+        1,
+        2,
+        22,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        2,
+        3,
+        26,
+        1,
+        2,
+        2,
+        6,
+        1,
+        1,
+        2,
+        45,
+        20,
+        1,
+        1,
+        1,
+        40,
+        1,
+        3,
+        1,
+        3,
+        5,
+        2,
+        4,
+        3,
+        1,
+        1,
+        11,
+        2,
+        2,
+        2,
+        5,
+        2,
+        2,
+        1,
+        2,
+        26,
+        1,
+        4,
+        2,
+        4,
+        12,
+        5,
+        29,
+        2,
+        5,
+        14,
+        2,
+        10,
+        23,
+        5,
+        15,
+        1,
+        8,
+        2,
+        2,
+        3,
+        3,
+        3,
+        7,
+        14,
+        24,
+        2,
+        5,
+        1,
+        2,
+        2,
+        1,
+        3,
+        1,
+        2,
+        3,
+        2,
+        2,
+        4,
+        12,
+        6,
+        4,
+        6,
+        1,
+        2,
+        21,
+        19,
+        10,
+        20,
+        28,
+        5,
+        3,
+        2,
+        4,
+        1,
+        6,
+        17,
+        2,
+        4,
+        23,
+        8,
+        3,
+        1,
+        7,
+        0,
+        2,
+        2,
+        1,
+        1,
+        20
+      ],
+      "perDocTpFpFn": [
+        {
+          "doc_id": "001-61807",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-61253",
+          "tp": 7,
+          "fp": 0,
+          "fn": 9
+        },
+        {
+          "doc_id": "001-66929",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-159913",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61227",
+          "tp": 3,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90749",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-79346",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61744",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60735",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57899",
+          "tp": 0,
+          "fp": 1,
+          "fn": 29
+        },
+        {
+          "doc_id": "001-89821",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-59527",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91059",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-110271",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-170347",
+          "tp": 1,
+          "fp": 0,
+          "fn": 22
+        },
+        {
+          "doc_id": "001-95382",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61177",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84289",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-93304",
+          "tp": 1,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-91290",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-89128",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79069",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79713",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61454",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-57871",
+          "tp": 3,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-68512",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94975",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68178",
+          "tp": 5,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-114240",
+          "tp": 5,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-72664",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-83625",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-88836",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-57990",
+          "tp": 7,
+          "fp": 0,
+          "fn": 45
+        },
+        {
+          "doc_id": "001-57642",
+          "tp": 4,
+          "fp": 0,
+          "fn": 20
+        },
+        {
+          "doc_id": "001-67085",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94744",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-96264",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-78293",
+          "tp": 0,
+          "fp": 0,
+          "fn": 40
+        },
+        {
+          "doc_id": "001-79434",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-92090",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-78447",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-95777",
+          "tp": 1,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-59853",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-60793",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90967",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-87466",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-94421",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-82750",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79415",
+          "tp": 0,
+          "fp": 0,
+          "fn": 11
+        },
+        {
+          "doc_id": "001-93654",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-77991",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94000",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-73360",
+          "tp": 3,
+          "fp": 2,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-84379",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-95199",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90569",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-60694",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-58458",
+          "tp": 0,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-79398",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-87626",
+          "tp": 2,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-78429",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-150778",
+          "tp": 1,
+          "fp": 2,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-58409",
+          "tp": 2,
+          "fp": 0,
+          "fn": 12
+        },
+        {
+          "doc_id": "001-90250",
+          "tp": 2,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-57849",
+          "tp": 3,
+          "fp": 0,
+          "fn": 29
+        },
+        {
+          "doc_id": "001-76746",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-67071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-78427",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-85728",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-158475",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-76453",
+          "tp": 9,
+          "fp": 0,
+          "fn": 23
+        },
+        {
+          "doc_id": "001-92767",
+          "tp": 3,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-58410",
+          "tp": 1,
+          "fp": 0,
+          "fn": 15
+        },
+        {
+          "doc_id": "001-90575",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80478",
+          "tp": 2,
+          "fp": 0,
+          "fn": 8
+        },
+        {
+          "doc_id": "001-83335",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-85661",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-84580",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-119229",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87512",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90234",
+          "tp": 4,
+          "fp": 0,
+          "fn": 7
+        },
+        {
+          "doc_id": "001-90200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-57874",
+          "tp": 9,
+          "fp": 0,
+          "fn": 24
+        },
+        {
+          "doc_id": "001-86343",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-105434",
+          "tp": 1,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-91088",
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91092",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-91096",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-92425",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61332",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-76766",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84582",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-82370",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87456",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-83404",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-79030",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-61080",
+          "tp": 3,
+          "fp": 0,
+          "fn": 12
+        },
+        {
+          "doc_id": "001-60649",
+          "tp": 2,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-60736",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-59098",
+          "tp": 1,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-147679",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-76303",
+          "tp": 4,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-57886",
+          "tp": 2,
+          "fp": 0,
+          "fn": 21
+        },
+        {
+          "doc_id": "001-57867",
+          "tp": 3,
+          "fp": 0,
+          "fn": 19
+        },
+        {
+          "doc_id": "001-67200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-61680",
+          "tp": 4,
+          "fp": 0,
+          "fn": 20
+        },
+        {
+          "doc_id": "001-58086",
+          "tp": 7,
+          "fp": 0,
+          "fn": 28
+        },
+        {
+          "doc_id": "001-60309",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-79071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60737",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-75894",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-81069",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80398",
+          "tp": 0,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-58095",
+          "tp": 0,
+          "fp": 0,
+          "fn": 17
+        },
+        {
+          "doc_id": "001-101231",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-59863",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57901",
+          "tp": 4,
+          "fp": 0,
+          "fn": 23
+        },
+        {
+          "doc_id": "001-68075",
+          "tp": 0,
+          "fp": 0,
+          "fn": 8
+        },
+        {
+          "doc_id": "001-59857",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-66782",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-58838",
+          "tp": 0,
+          "fp": 0,
+          "fn": 7
+        },
+        {
+          "doc_id": "001-81110",
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        {
+          "doc_id": "001-83331",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94119",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68506",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79501",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79392",
+          "tp": 2,
+          "fp": 0,
+          "fn": 20
+        }
+      ]
+    },
+    "dumbPropagationPerson": {
+      "precisionPct": 96.05,
+      "recallPct": 17.75,
+      "f1Pct": 29.96,
+      "directRecallPct": 25.66,
+      "tp": 170,
+      "fp": 7,
+      "fn": 788,
+      "directTp": 58,
+      "directTotal": 226,
+      "f1Bootstrap95CI": [
+        24.98,
+        35.17
+      ],
+      "perDocTp": [
+        0,
+        7,
+        1,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        1,
+        0,
+        2,
+        0,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        0,
+        0,
+        3,
+        1,
+        0,
+        5,
+        6,
+        2,
+        1,
+        0,
+        11,
+        5,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        4,
+        0,
+        0,
+        1,
+        0,
+        0,
+        2,
+        2,
+        0,
+        1,
+        2,
+        2,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        3,
+        1,
+        1,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        9,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        0,
+        3,
+        2,
+        0,
+        1,
+        1,
+        4,
+        2,
+        3,
+        0,
+        5,
+        8,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        2
+      ],
+      "perDocFp": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "perDocFn": [
+        5,
+        9,
+        2,
+        1,
+        3,
+        3,
+        2,
+        3,
+        4,
+        29,
+        1,
+        1,
+        1,
+        2,
+        21,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        2,
+        3,
+        26,
+        1,
+        2,
+        2,
+        5,
+        1,
+        1,
+        2,
+        41,
+        19,
+        1,
+        1,
+        1,
+        40,
+        1,
+        3,
+        1,
+        3,
+        5,
+        2,
+        4,
+        3,
+        1,
+        1,
+        11,
+        2,
+        2,
+        2,
+        4,
+        2,
+        2,
+        1,
+        2,
+        26,
+        1,
+        4,
+        2,
+        4,
+        12,
+        5,
+        26,
+        2,
+        5,
+        14,
+        2,
+        10,
+        22,
+        5,
+        15,
+        1,
+        8,
+        2,
+        2,
+        3,
+        3,
+        3,
+        7,
+        14,
+        24,
+        2,
+        5,
+        1,
+        2,
+        2,
+        1,
+        3,
+        1,
+        2,
+        3,
+        2,
+        2,
+        4,
+        12,
+        6,
+        4,
+        6,
+        1,
+        2,
+        21,
+        19,
+        10,
+        19,
+        27,
+        5,
+        3,
+        2,
+        4,
+        1,
+        6,
+        17,
+        2,
+        4,
+        23,
+        8,
+        3,
+        1,
+        7,
+        0,
+        2,
+        2,
+        1,
+        1,
+        20
+      ],
+      "perDocTpFpFn": [
+        {
+          "doc_id": "001-61807",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-61253",
+          "tp": 7,
+          "fp": 0,
+          "fn": 9
+        },
+        {
+          "doc_id": "001-66929",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-159913",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61227",
+          "tp": 3,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90749",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-79346",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61744",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60735",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57899",
+          "tp": 0,
+          "fp": 1,
+          "fn": 29
+        },
+        {
+          "doc_id": "001-89821",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-59527",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91059",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-110271",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-170347",
+          "tp": 2,
+          "fp": 0,
+          "fn": 21
+        },
+        {
+          "doc_id": "001-95382",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61177",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84289",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-93304",
+          "tp": 1,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-91290",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-89128",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79069",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79713",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-61454",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-57871",
+          "tp": 3,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-68512",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94975",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68178",
+          "tp": 5,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-114240",
+          "tp": 6,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-72664",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-83625",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-88836",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-57990",
+          "tp": 11,
+          "fp": 0,
+          "fn": 41
+        },
+        {
+          "doc_id": "001-57642",
+          "tp": 5,
+          "fp": 0,
+          "fn": 19
+        },
+        {
+          "doc_id": "001-67085",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-94744",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-96264",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-78293",
+          "tp": 0,
+          "fp": 0,
+          "fn": 40
+        },
+        {
+          "doc_id": "001-79434",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-92090",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-78447",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-95777",
+          "tp": 1,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-59853",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-60793",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90967",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-87466",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-94421",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-82750",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79415",
+          "tp": 0,
+          "fp": 0,
+          "fn": 11
+        },
+        {
+          "doc_id": "001-93654",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-77991",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94000",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-73360",
+          "tp": 4,
+          "fp": 4,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-84379",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-95199",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-90569",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-60694",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-58458",
+          "tp": 0,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-79398",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-87626",
+          "tp": 2,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-78429",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-150778",
+          "tp": 1,
+          "fp": 2,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-58409",
+          "tp": 2,
+          "fp": 0,
+          "fn": 12
+        },
+        {
+          "doc_id": "001-90250",
+          "tp": 2,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-57849",
+          "tp": 6,
+          "fp": 0,
+          "fn": 26
+        },
+        {
+          "doc_id": "001-76746",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-67071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-78427",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-85728",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-158475",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-76453",
+          "tp": 10,
+          "fp": 0,
+          "fn": 22
+        },
+        {
+          "doc_id": "001-92767",
+          "tp": 3,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-58410",
+          "tp": 1,
+          "fp": 0,
+          "fn": 15
+        },
+        {
+          "doc_id": "001-90575",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80478",
+          "tp": 2,
+          "fp": 0,
+          "fn": 8
+        },
+        {
+          "doc_id": "001-83335",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-85661",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-84580",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-119229",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87512",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-90234",
+          "tp": 4,
+          "fp": 0,
+          "fn": 7
+        },
+        {
+          "doc_id": "001-90200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 14
+        },
+        {
+          "doc_id": "001-57874",
+          "tp": 9,
+          "fp": 0,
+          "fn": 24
+        },
+        {
+          "doc_id": "001-86343",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-105434",
+          "tp": 1,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-91088",
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-91092",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-91096",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-92425",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-61332",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-76766",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-84582",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-82370",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-87456",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-83404",
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-79030",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-61080",
+          "tp": 3,
+          "fp": 0,
+          "fn": 12
+        },
+        {
+          "doc_id": "001-60649",
+          "tp": 2,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-60736",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-59098",
+          "tp": 1,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-147679",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-76303",
+          "tp": 4,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-57886",
+          "tp": 2,
+          "fp": 0,
+          "fn": 21
+        },
+        {
+          "doc_id": "001-57867",
+          "tp": 3,
+          "fp": 0,
+          "fn": 19
+        },
+        {
+          "doc_id": "001-67200",
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        {
+          "doc_id": "001-61680",
+          "tp": 5,
+          "fp": 0,
+          "fn": 19
+        },
+        {
+          "doc_id": "001-58086",
+          "tp": 8,
+          "fp": 0,
+          "fn": 27
+        },
+        {
+          "doc_id": "001-60309",
+          "tp": 0,
+          "fp": 0,
+          "fn": 5
+        },
+        {
+          "doc_id": "001-79071",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-60737",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-75894",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-81069",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-80398",
+          "tp": 0,
+          "fp": 0,
+          "fn": 6
+        },
+        {
+          "doc_id": "001-58095",
+          "tp": 0,
+          "fp": 0,
+          "fn": 17
+        },
+        {
+          "doc_id": "001-101231",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-59863",
+          "tp": 0,
+          "fp": 0,
+          "fn": 4
+        },
+        {
+          "doc_id": "001-57901",
+          "tp": 4,
+          "fp": 0,
+          "fn": 23
+        },
+        {
+          "doc_id": "001-68075",
+          "tp": 0,
+          "fp": 0,
+          "fn": 8
+        },
+        {
+          "doc_id": "001-59857",
+          "tp": 0,
+          "fp": 0,
+          "fn": 3
+        },
+        {
+          "doc_id": "001-66782",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-58838",
+          "tp": 0,
+          "fp": 0,
+          "fn": 7
+        },
+        {
+          "doc_id": "001-81110",
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        {
+          "doc_id": "001-83331",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-94119",
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        {
+          "doc_id": "001-68506",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79501",
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        {
+          "doc_id": "001-79392",
+          "tp": 2,
+          "fp": 0,
+          "fn": 20
+        }
+      ]
+    }
+  },
+  "t7CorpusLicensesAndSeeds": {
+    "recordedBy": "scripts/run-reviewer-tab-and-ltt.py (--t7-append-only)",
+    "corporaAndModels": {
+      "tabEchr": {
+        "identifier": "NorskRegnesentral/text-anonymization-benchmark (TAB ECHR)",
+        "license": "MIT License (annotations & repository; underlying ECHR HUDOC rulings public domain)",
+        "usedIn": "Paper D Exp. 1 & Exp. 2 (127 dev + 127 test rulings; 1,999 held-out paragraphs)"
+      },
+      "pstuSyntheticSecrets": {
+        "identifier": "Hodfa71/pstu-synthetic-secrets",
+        "license": "MIT License",
+        "usedIn": "Paper D Exp. 3 external secret scanning (positive synthetic credentials)"
+      },
+      "yelpDetectSecretsTestData": {
+        "identifier": "Yelp/detect-secrets test_data",
+        "license": "Apache-2.0",
+        "usedIn": "Paper D Exp. 3 external secret scanning (official positive/clean fixtures)"
+      },
+      "mbpp": {
+        "identifier": "google-research-datasets/mbpp",
+        "license": "CC-BY-4.0",
+        "usedIn": "Paper D Exp. 3 external secret scanning (clean Python negative files)"
+      },
+      "enronAeslc": {
+        "identifier": "Yale-LILY/aeslc (Enron email corpus)",
+        "license": "Public-domain FERC Enron release (HuggingFace dataset card license unspecified; research use)",
+        "usedIn": "Paper D Table 4 micro-benchmark (500 corporate emails)"
+      },
+      "ai4privacy200k": {
+        "identifier": "ai4privacy/pii-masking-200k",
+        "license": "AI4Privacy Dual License (free for independent/small-business <=2-3 employees; commercial license for larger organizations)",
+        "usedIn": "Paper D Exp. 3 Unicode evasion (47 email seeds) and companion Paper A"
+      },
+      "funsd": {
+        "identifier": "FUNSD (Form Understanding in Noisy Scanned Documents)",
+        "license": "Non-commercial research license (FUNSD dataset terms)",
+        "usedIn": "Companion Paper A scanned-form OCR seam benchmark (shared repository suite)"
+      },
+      "libriSpeech": {
+        "identifier": "LibriSpeech ASR Corpus (OpenSLR SLR12)",
+        "license": "CC-BY-4.0",
+        "usedIn": "Track E spoken-audio throughput/VAD validation (40 real utterances, 16 kHz)"
+      },
+      "localSyntheticAudioTts": {
+        "identifier": "Local Windows SAPI TTS 25-call customer-service suite (AUDIO_SCRIPTS_25)",
+        "license": "MIT License (repository-authored synthetic fixtures in scripts/run-reviewer-secrets-audio-pprl.py)",
+        "usedIn": "Paper D Exp. 4 cross-model audio redaction (25 calls, 97 planted PII tokens)"
+      },
+      "localSyntheticPprlAndUnicodeAndGcCrc": {
+        "identifier": "Local PPRL Dev/Test/500-Name, Unicode Evasion (174 cases), and GC-CRC (60 cases) fixtures",
+        "license": "MIT License (repository-authored synthetic fixtures)",
+        "usedIn": "Paper D Exp. 3, Exp. 5, and Table 4"
+      },
+      "glinerPiiEdge": {
+        "identifier": "knowledgator/gliner-pii-edge-v1.0 (onnx/model_quint8.onnx, 45.8 MB)",
+        "license": "Apache-2.0",
+        "usedIn": "Paper D Exp. 1, Exp. 2, Exp. 4 Stage 3B local neural NER"
+      },
+      "microsoftPresidioAndSpacy": {
+        "identifier": "Microsoft Presidio + spaCy en_core_web_lg (400.7 MB)",
+        "license": "MIT License",
+        "usedIn": "Paper D Exp. 1 server baseline"
+      },
+      "fasterWhisper": {
+        "identifier": "faster-whisper base.en (defender) & small.en (attacker), OpenAI Whisper weights",
+        "license": "MIT License",
+        "usedIn": "Paper D Exp. 4 cross-model audio benchmark"
+      }
+    },
+    "seedsByExperiment": {
+      "exp1_tabEchrBootstrapAndPermutation": {
+        "stochastic": true,
+        "seed": 42,
+        "bootstrapResamples": 1000,
+        "pairedPermutations": 5000,
+        "runner": "scripts/run-reviewer-tab-and-ltt.py"
+      },
+      "exp2_tabGtLttAndGuaranteeBaselines": {
+        "stochastic": true,
+        "gatekeeperTrainSeed": 42,
+        "dunnSubsamplingSeed": 42,
+        "dunnRepeatedSubsamplingDraws": 200,
+        "leeAndHgCrcDeterministic": true,
+        "runner": "scripts/run-reviewer-tab-and-ltt.py + scripts/tab-node-helper.mjs"
+      },
+      "exp3_externalSecretsAndUnicodeNfkc": {
+        "stochastic": false,
+        "seed": null,
+        "determinismNote": "Deterministic full pass over fixed ordered files/fixtures (no PRNG invoked).",
+        "runner": "scripts/run-reviewer-secrets-audio-pprl.py"
+      },
+      "exp4_audio25CallCrossModel": {
+        "stochastic": false,
+        "seed": null,
+        "determinismNote": "Deterministic scripts (AUDIO_SCRIPTS_25), SAPI rate -1, greedy CPU INT8 Whisper decoding, fixed per-call salt audio-srmp-call_XX (no PRNG invoked).",
+        "runner": "scripts/run-reviewer-secrets-audio-pprl.py"
+      },
+      "exp5_pprlAndGcCrcStressSuite": {
+        "stochastic": false,
+        "seed": null,
+        "determinismNote": "Deterministic pair lists and 25x20=500 names with fixed salts (pprl-v2-salt, pprl-scale-salt, gccrc-<idx>); no PRNG invoked.",
+        "runner": "scripts/run-reviewer-secrets-audio-pprl.py + scripts/eval-gccrc-benchmark.mjs"
+      },
+      "table4_kernelMicroBenchmarks": {
+        "stochastic": false,
+        "seed": null,
+        "determinismNote": "Deterministic fixed containers, Enron 500 emails, ZIP-bomb, and 5,000-block graph inputs (no PRNG invoked).",
+        "runner": "scripts/run-track-e-paper-benchmarks.mjs"
+      }
+    }
   }
 }
