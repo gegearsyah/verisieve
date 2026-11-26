@@ -1,0 +1,1090 @@
+{
+  "schemaVersion": "versieve.t9.competitor-benchmarks.v1",
+  "generatedAt": "2026-11-26T23:39:07.765Z",
+  "seed": 42,
+  "environment": {
+    "nodeVersion": "v24.13.1",
+    "platform": "Windows_NT 10.0.26300 (win32/x64)",
+    "cpuModel": "AMD Ryzen 7 7840HS w/ Radeon 780M Graphics",
+    "cpuLogicalCores": 16,
+    "totalMemoryBytes": 33595191296
+  },
+  "licenses": {
+    "versieve": "MIT",
+    "deterministicSpecimens": "MIT (synthetic deterministic fixtures created in-repo; zero private bytes)",
+    "glinerPiiEdgeOptionalWeights": "Apache-2.0 (knowledgator/gliner-pii-edge-v1.0)",
+    "screenleakLeaderboardCitations": "Public vendor-reported benchmark citations (tagged self-reported-leaderboard)"
+  },
+  "screenleak": {
+    "protocol": {
+      "seed": 42,
+      "iouThreshold": 0.3,
+      "note": "Local deterministic multi-modal screen-capture specimen suite evaluated via Versieve perceive() and computeBoxIoU(). External leaderboard figures below are self-reported on screenpipe/screenleak and are not equated with local specimen runs."
+    },
+    "localRuns": {
+      "versieve_builtin_wasm": {
+        "id": "versieve_builtin_wasm",
+        "label": "Versieve Out-of-the-Box (5 Zero-Import WASM Kernels + Blind OCR/BBox)",
+        "sourceType": "reproduced-local",
+        "zeroEgress": true,
+        "requiresExternalWeights": false,
+        "failClosedCheckPassed": true,
+        "text": {
+          "totalSpecimens": 14,
+          "piiBearingSpecimens": 12,
+          "benignSpecimens": 2,
+          "totalGroundTruthSpans": 36,
+          "tp": 35,
+          "fp": 6,
+          "fn": 1,
+          "specimenZeroLeakCount": 11,
+          "specimenZeroLeakRatePct": 91.67,
+          "zeroLeakWilson95CI": [
+            64.61,
+            98.51
+          ],
+          "spanRecallPct": 97.22,
+          "spanPrecisionPct": 85.37,
+          "spanF1Pct": 90.91,
+          "perSpecimen": [
+            {
+              "id": "sl-txt-01-ssh-env",
+              "domain": "terminal",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-02-db-trace",
+              "domain": "terminal",
+              "groundTruthCount": 2,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-03-ide-dotenv",
+              "domain": "ide_ui",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-04-crm-profile",
+              "domain": "browser_crm",
+              "groundTruthCount": 4,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-05-checkout-modal",
+              "domain": "browser_checkout",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-06-ehr-banner",
+              "domain": "clinical_ui",
+              "groundTruthCount": 5,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-07-slack-incident",
+              "domain": "chat_ui",
+              "groundTruthCount": 4,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-08-jwt-curl",
+              "domain": "terminal",
+              "groundTruthCount": 1,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-09-au-payroll",
+              "domain": "browser_hr",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-10-uk-nhs-intake",
+              "domain": "clinical_ui",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-11-evaded-terminal",
+              "domain": "terminal_evasion",
+              "groundTruthCount": 2,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-12-lowercase-chat-hard",
+              "domain": "chat_ui_hard",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 1,
+              "zeroLeak": false
+            },
+            {
+              "id": "sl-txt-13-benign-git-log",
+              "domain": "benign_terminal",
+              "groundTruthCount": 0,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-14-benign-telemetry",
+              "domain": "benign_ui",
+              "groundTruthCount": 0,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            }
+          ]
+        },
+        "image": {
+          "iouThreshold": 0.3,
+          "totalFrames": 8,
+          "totalGroundTruthBoxes": 19,
+          "matchedGroundTruthBoxes": 18,
+          "totalPredictedBoxes": 22,
+          "zeroLeakFrameCount": 7,
+          "imageZeroLeakRatePct": 87.5,
+          "imageZeroLeakWilson95CI": [
+            52.91,
+            97.76
+          ],
+          "regionRecallAtIou030Pct": 94.74,
+          "regionPrecisionAtIou030Pct": 81.82,
+          "regionF1AtIou030Pct": 87.81,
+          "meanMatchedIou": 1,
+          "pixelRedactionVerified": true,
+          "scopeNote": "Built-in zero-import WASM + blind OCR locates on-screen text PII boxes (7/7 text-only frames zero-leak) and intentionally misses non-textual face/avatar regions without a plugged visual detector.",
+          "perFrameResults": [
+            {
+              "id": "sl-img-01-ssh-console",
+              "groundTruthBoxCount": 3,
+              "predictedBoxCount": 4,
+              "matchedCount": 3,
+              "missedCount": 0,
+              "maskedPixels": 21744,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 276,
+                    "y1": 109,
+                    "x2": 722,
+                    "y2": 127
+                  },
+                  "predictedBox": {
+                    "x": 276,
+                    "y": 109,
+                    "width": 446,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "SECRET",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 222,
+                    "y1": 149,
+                    "x2": 578,
+                    "y2": 167
+                  },
+                  "predictedBox": {
+                    "x": 222,
+                    "y": 149,
+                    "width": 356,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "IPV4",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 222,
+                    "y1": 189,
+                    "x2": 452,
+                    "y2": 207
+                  },
+                  "predictedBox": {
+                    "x": 222,
+                    "y": 189,
+                    "width": 230,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-02-ehr-chart",
+              "groundTruthBoxCount": 3,
+              "predictedBoxCount": 3,
+              "matchedCount": 3,
+              "missedCount": 0,
+              "maskedPixels": 16308,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 186,
+                    "y1": 122,
+                    "x2": 632,
+                    "y2": 140
+                  },
+                  "predictedBox": {
+                    "x": 186,
+                    "y": 122,
+                    "width": 446,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "SSN",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 150,
+                    "y1": 162,
+                    "x2": 344,
+                    "y2": 180
+                  },
+                  "predictedBox": {
+                    "x": 150,
+                    "y": 162,
+                    "width": 194,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "PHONE",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 186,
+                    "y1": 202,
+                    "x2": 452,
+                    "y2": 220
+                  },
+                  "predictedBox": {
+                    "x": 186,
+                    "y": 202,
+                    "width": 266,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-03-billing-card",
+              "groundTruthBoxCount": 2,
+              "predictedBoxCount": 2,
+              "matchedCount": 2,
+              "missedCount": 0,
+              "maskedPixels": 17244,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "CREDIT_CARD",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 168,
+                    "y1": 100,
+                    "x2": 506,
+                    "y2": 118
+                  },
+                  "predictedBox": {
+                    "x": 168,
+                    "y": 100,
+                    "width": 338,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 276,
+                    "y1": 140,
+                    "x2": 896,
+                    "y2": 158
+                  },
+                  "predictedBox": {
+                    "x": 276,
+                    "y": 140,
+                    "width": 620,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-04-crm-ticket",
+              "groundTruthBoxCount": 2,
+              "predictedBoxCount": 2,
+              "matchedCount": 2,
+              "missedCount": 0,
+              "maskedPixels": 13140,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 258,
+                    "y1": 109,
+                    "x2": 776,
+                    "y2": 127
+                  },
+                  "predictedBox": {
+                    "x": 258,
+                    "y": 109,
+                    "width": 518,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "PHONE",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 240,
+                    "y1": 149,
+                    "x2": 452,
+                    "y2": 167
+                  },
+                  "predictedBox": {
+                    "x": 240,
+                    "y": 149,
+                    "width": 212,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-05-wire-iban",
+              "groundTruthBoxCount": 2,
+              "predictedBoxCount": 2,
+              "matchedCount": 2,
+              "missedCount": 0,
+              "maskedPixels": 15408,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "IBAN",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 168,
+                    "y1": 100,
+                    "x2": 650,
+                    "y2": 118
+                  },
+                  "predictedBox": {
+                    "x": 168,
+                    "y": 100,
+                    "width": 482,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 240,
+                    "y1": 140,
+                    "x2": 614,
+                    "y2": 158
+                  },
+                  "predictedBox": {
+                    "x": 240,
+                    "y": 140,
+                    "width": 374,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-06-hr-roster",
+              "groundTruthBoxCount": 2,
+              "predictedBoxCount": 3,
+              "matchedCount": 2,
+              "missedCount": 0,
+              "maskedPixels": 18036,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "SSN",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 150,
+                    "y1": 100,
+                    "x2": 344,
+                    "y2": 118
+                  },
+                  "predictedBox": {
+                    "x": 150,
+                    "y": 100,
+                    "width": 194,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 348,
+                    "y1": 140,
+                    "x2": 920,
+                    "y2": 158
+                  },
+                  "predictedBox": {
+                    "x": 348,
+                    "y": 140,
+                    "width": 572,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-07-pharmacy-dea",
+              "groundTruthBoxCount": 2,
+              "predictedBoxCount": 3,
+              "matchedCount": 2,
+              "missedCount": 0,
+              "maskedPixels": 13392,
+              "zeroLeakAtIou030": true,
+              "matchedPairs": [
+                {
+                  "entityType": "DEA",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 348,
+                    "y1": 100,
+                    "x2": 506,
+                    "y2": 118
+                  },
+                  "predictedBox": {
+                    "x": 348,
+                    "y": 100,
+                    "width": 158,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 384,
+                    "y1": 140,
+                    "x2": 686,
+                    "y2": 158
+                  },
+                  "predictedBox": {
+                    "x": 384,
+                    "y": 140,
+                    "width": 302,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": []
+            },
+            {
+              "id": "sl-img-08-video-call-with-avatar",
+              "groundTruthBoxCount": 3,
+              "predictedBoxCount": 3,
+              "matchedCount": 2,
+              "missedCount": 1,
+              "maskedPixels": 15984,
+              "zeroLeakAtIou030": false,
+              "matchedPairs": [
+                {
+                  "entityType": "EMAIL",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 276,
+                    "y1": 100,
+                    "x2": 722,
+                    "y2": 118
+                  },
+                  "predictedBox": {
+                    "x": 276,
+                    "y": 100,
+                    "width": 446,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                },
+                {
+                  "entityType": "PHONE",
+                  "modality": "screen_text_region",
+                  "groundTruthBox": {
+                    "x1": 402,
+                    "y1": 140,
+                    "x2": 668,
+                    "y2": 158
+                  },
+                  "predictedBox": {
+                    "x": 402,
+                    "y": 140,
+                    "width": 266,
+                    "height": 18,
+                    "normalized": false
+                  },
+                  "iou": 1
+                }
+              ],
+              "missedBoxes": [
+                {
+                  "entityType": "FACE_AVATAR",
+                  "modality": "visual_non_text_region",
+                  "groundTruthBox": {
+                    "x1": 820,
+                    "y1": 240,
+                    "x2": 884,
+                    "y2": 304
+                  },
+                  "bestIou": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "versieve_plus_gliner_pii_edge_onnx": {
+        "sourceType": "reproduced-local",
+        "available": true,
+        "status": "EXECUTED_LOCAL_ONNX_CPU",
+        "failClosedCheckPassed": true,
+        "failClosedErrorCode": null,
+        "modelId": "knowledgator/gliner-pii-edge-v1.0",
+        "license": "Apache-2.0",
+        "onnxBytes": 45820894,
+        "onnxSha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4",
+        "zeroEgress": true,
+        "text": {
+          "totalSpecimens": 14,
+          "piiBearingSpecimens": 12,
+          "benignSpecimens": 2,
+          "totalGroundTruthSpans": 36,
+          "tp": 35,
+          "fp": 8,
+          "fn": 1,
+          "specimenZeroLeakCount": 11,
+          "specimenZeroLeakRatePct": 91.67,
+          "zeroLeakWilson95CI": [
+            64.61,
+            98.51
+          ],
+          "spanRecallPct": 97.22,
+          "spanPrecisionPct": 81.4,
+          "spanF1Pct": 88.61,
+          "perSpecimen": [
+            {
+              "id": "sl-txt-01-ssh-env",
+              "domain": "terminal",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-02-db-trace",
+              "domain": "terminal",
+              "groundTruthCount": 2,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-03-ide-dotenv",
+              "domain": "ide_ui",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-04-crm-profile",
+              "domain": "browser_crm",
+              "groundTruthCount": 4,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-05-checkout-modal",
+              "domain": "browser_checkout",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-06-ehr-banner",
+              "domain": "clinical_ui",
+              "groundTruthCount": 5,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-07-slack-incident",
+              "domain": "chat_ui",
+              "groundTruthCount": 4,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-08-jwt-curl",
+              "domain": "terminal",
+              "groundTruthCount": 1,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-09-au-payroll",
+              "domain": "browser_hr",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-10-uk-nhs-intake",
+              "domain": "clinical_ui",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-11-evaded-terminal",
+              "domain": "terminal_evasion",
+              "groundTruthCount": 2,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-12-lowercase-chat-hard",
+              "domain": "chat_ui_hard",
+              "groundTruthCount": 3,
+              "leakedSpanCount": 1,
+              "zeroLeak": false
+            },
+            {
+              "id": "sl-txt-13-benign-git-log",
+              "domain": "benign_terminal",
+              "groundTruthCount": 0,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            },
+            {
+              "id": "sl-txt-14-benign-telemetry",
+              "domain": "benign_ui",
+              "groundTruthCount": 0,
+              "leakedSpanCount": 0,
+              "zeroLeak": true
+            }
+          ]
+        }
+      }
+    },
+    "citedExternalBaselines": [
+      {
+        "id": "screenpipe_local_models",
+        "label": "Screenpipe Local PII Models (transformers.js text + onnxruntime-web image)",
+        "sourceType": "self-reported-leaderboard",
+        "comparableToLocalRun": false,
+        "selfReportedTextZeroLeakPct": 86.7,
+        "selfReportedImageZeroLeakIou030Pct": 98.9,
+        "iouThreshold": 0.3,
+        "citationSource": "screenpipe/screenleak public leaderboard (cited in 2026-11-26 landscape audit §3.2 Lane 2.1)",
+        "provenanceNote": "Self-reported vendor leaderboard score on screenleak dataset; split and visual object classes differ from local deterministic specimen suite."
+      },
+      {
+        "id": "microsoft_presidio_on_screenleak",
+        "label": "Microsoft Presidio Baseline (as reported on screenleak leaderboard)",
+        "sourceType": "self-reported-leaderboard",
+        "comparableToLocalRun": false,
+        "selfReportedTextZeroLeakPct": 35.4,
+        "selfReportedImageZeroLeakIou030Pct": 0.5,
+        "iouThreshold": 0.3,
+        "citationSource": "screenpipe/screenleak public leaderboard (cited in 2026-11-25 backlog §2.1)",
+        "provenanceNote": "Third-party leaderboard baseline reported by screenpipe; not executed on identical screenleak raw image corpus locally."
+      }
+    ]
+  },
+  "unmaskerSpecimens": {
+    "sourceType": "reproduced-local",
+    "competitorReference": "osint-shifu/unmasker (27-detector forensic taxonomy)",
+    "externalCliAvailable": false,
+    "externalCliPath": null,
+    "externalCliProbeCommand": "where.exe unmasker",
+    "externalCliResults": null,
+    "totalCategories": 27,
+    "detectedCount": 27,
+    "missedCount": 0,
+    "coveragePct": 100,
+    "detectedCategories": [
+      "pdf_covered_text_under_black_bar",
+      "pdf_incremental_revision_leak",
+      "pdf_rendering_mode_3",
+      "pdf_white_on_white_text",
+      "pdf_tiny_sublegible_font",
+      "pdf_off_page_text",
+      "pdf_metadata",
+      "docx_vanish_text",
+      "docx_white_text",
+      "docx_tiny_text",
+      "docx_comments_and_revisions",
+      "xlsx_very_hidden_sheet",
+      "xlsx_pivot_cache",
+      "xlsx_comments",
+      "pptx_speaker_notes",
+      "pptx_hidden_slides",
+      "eml_tracking_headers",
+      "eml_nested_zip_eml_attachments",
+      "msg_cfbf_streams",
+      "unicode_zero_width",
+      "unicode_bidi_controls",
+      "unicode_homoglyphs",
+      "unicode_fullwidth",
+      "exif_jpeg_metadata",
+      "png_text_itxt_metadata",
+      "wav_riff_info_metadata",
+      "mp4_udta_meta_metadata"
+    ],
+    "missedCategories": [],
+    "specimens": [
+      {
+        "category": "pdf_covered_text_under_black_bar",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "PDF_TEXT_UNDER_OPAQUE_OVERLAY"
+      },
+      {
+        "category": "pdf_incremental_revision_leak",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "PDF_INCREMENTAL_REVISION_LEAK"
+      },
+      {
+        "category": "pdf_rendering_mode_3",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "PDF_INVISIBLE_RENDER_MODE_3"
+      },
+      {
+        "category": "pdf_white_on_white_text",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "INVISIBLE_WHITE_ON_WHITE_TEXT"
+      },
+      {
+        "category": "pdf_tiny_sublegible_font",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "INVISIBLE_SUBLEGIBLE_FONT"
+      },
+      {
+        "category": "pdf_off_page_text",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "PDF_OFF_PAGE_TEXT"
+      },
+      {
+        "category": "pdf_metadata",
+        "family": "pdf",
+        "detected": true,
+        "evidenceCode": "pdf_info_and_xmp_metadata_strings"
+      },
+      {
+        "category": "docx_vanish_text",
+        "family": "docx",
+        "detected": true,
+        "evidenceCode": "DOCX_VANISH_HIDDEN_TEXT"
+      },
+      {
+        "category": "docx_white_text",
+        "family": "docx",
+        "detected": true,
+        "evidenceCode": "INVISIBLE_WHITE_ON_WHITE_TEXT"
+      },
+      {
+        "category": "docx_tiny_text",
+        "family": "docx",
+        "detected": true,
+        "evidenceCode": "INVISIBLE_SUBLEGIBLE_FONT"
+      },
+      {
+        "category": "docx_comments_and_revisions",
+        "family": "docx",
+        "detected": true,
+        "evidenceCode": "docx_comments+docx_tracked_change_deletions"
+      },
+      {
+        "category": "xlsx_very_hidden_sheet",
+        "family": "xlsx",
+        "detected": true,
+        "evidenceCode": "xlsx_hidden_sheet:veryHidden"
+      },
+      {
+        "category": "xlsx_pivot_cache",
+        "family": "xlsx",
+        "detected": true,
+        "evidenceCode": "xlsx_pivot_cache_hidden_records"
+      },
+      {
+        "category": "xlsx_comments",
+        "family": "xlsx",
+        "detected": true,
+        "evidenceCode": "xlsx_cell_comments"
+      },
+      {
+        "category": "pptx_speaker_notes",
+        "family": "pptx",
+        "detected": true,
+        "evidenceCode": "pptx_speaker_notes"
+      },
+      {
+        "category": "pptx_hidden_slides",
+        "family": "pptx",
+        "detected": true,
+        "evidenceCode": "pptx_hidden_slide"
+      },
+      {
+        "category": "eml_tracking_headers",
+        "family": "email",
+        "detected": true,
+        "evidenceCode": "email_received_headers+bcc_extracted"
+      },
+      {
+        "category": "eml_nested_zip_eml_attachments",
+        "family": "email",
+        "detected": true,
+        "evidenceCode": "recursive_eml_zip_eml_txt_extracted"
+      },
+      {
+        "category": "msg_cfbf_streams",
+        "family": "email",
+        "detected": true,
+        "evidenceCode": "wasm_cfbf_ole2_headers_body_attachments"
+      },
+      {
+        "category": "unicode_zero_width",
+        "family": "unicode",
+        "detected": true,
+        "evidenceCode": "wasm_evasion_zwsp_stripped"
+      },
+      {
+        "category": "unicode_bidi_controls",
+        "family": "unicode",
+        "detected": true,
+        "evidenceCode": "bidi_override_stripped"
+      },
+      {
+        "category": "unicode_homoglyphs",
+        "family": "unicode",
+        "detected": true,
+        "evidenceCode": "wasm_homoglyph_folded"
+      },
+      {
+        "category": "unicode_fullwidth",
+        "family": "unicode",
+        "detected": true,
+        "evidenceCode": "wasm_fullwidth_nfkc_folded"
+      },
+      {
+        "category": "exif_jpeg_metadata",
+        "family": "media_metadata",
+        "detected": true,
+        "evidenceCode": "JPEG_APP1_EXIF+JPEG_COM"
+      },
+      {
+        "category": "png_text_itxt_metadata",
+        "family": "media_metadata",
+        "detected": true,
+        "evidenceCode": "PNG_tEXt+PNG_iTXt"
+      },
+      {
+        "category": "wav_riff_info_metadata",
+        "family": "media_metadata",
+        "detected": true,
+        "evidenceCode": "WAV_RIFF_LIST_INFO"
+      },
+      {
+        "category": "mp4_udta_meta_metadata",
+        "family": "media_metadata",
+        "detected": true,
+        "evidenceCode": "MP4_udta+MP4_meta"
+      }
+    ]
+  },
+  "mat2MetadataParity": {
+    "sourceType": "reproduced-local",
+    "competitorReference": "MAT2 (Metadata Anonymisation Toolkit 2)",
+    "externalMat2CliAvailable": false,
+    "externalMat2CliPath": null,
+    "externalMat2CliProbeCommand": "where.exe mat2",
+    "externalMat2CliResults": null,
+    "totalFixtures": 7,
+    "zeroResidualCount": 7,
+    "allZeroResidualVerified": true,
+    "fixtures": [
+      {
+        "format": "pdf",
+        "scrubberPath": "versieve sanitize CLI (sanitizePdfBuffer + verifyPdfRedactionIrreversibility)",
+        "beforeBytes": 1023,
+        "afterBytes": 1051,
+        "beforeSha256": "9c321681c381db9480c808007dd4888d73a779ff858384d71a92bc107849114d",
+        "afterSha256": "6750782cf228a6618820a61897ecf5ded09eb41a26d8ad1aafe1ce3297508d9c",
+        "beforeMetadataResidualBytes": 68,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "PDF_Info:/Author",
+          "PDF_Info:/Subject",
+          "PDF_Info:/Creator",
+          "PDF_Metadata:XMP_XML"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "png",
+        "scrubberPath": "versieve_media.wasm scrubMediaMetadata",
+        "beforeBytes": 365,
+        "afterBytes": 268,
+        "beforeSha256": "84450c20a813077ff0f68484a0d2319ef18b57e68607f54a31f955e0b531ca00",
+        "afterSha256": "d95e5bb1b9f2a4b8424978244e42a8ecdfae2630a88d9d0b567eccc971c0d883",
+        "beforeMetadataResidualBytes": 54,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "PNG_tEXt",
+          "PNG_iTXt"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "jpeg",
+        "scrubberPath": "versieve_media.wasm scrubMediaMetadata",
+        "beforeBytes": 91,
+        "afterBytes": 16,
+        "beforeSha256": "3425d83a580e4f6f8be17a97d4c511863d1a7381683d9aa3234a884a44735300",
+        "afterSha256": "149f945858c3cc4520e9a19c8c2ef4678fb7573b4725a9af66a6b862f18dceb2",
+        "beforeMetadataResidualBytes": 60,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "JPEG_APP1_EXIF",
+          "JPEG_COM"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "wav",
+        "scrubberPath": "versieve_media.wasm redactWavBuffer (RIFF LIST/INFO scrubber)",
+        "beforeBytes": 3326,
+        "afterBytes": 3244,
+        "beforeSha256": "20e9406429128e5003a5f061d571c21b7fabdc2f493c3940890a3631d7c1dd9b",
+        "afterSha256": "6fdb9c046d6c6fde31e4ca71ba8542fea54fa1e90e0131df4c86d6f129795c94",
+        "beforeMetadataResidualBytes": 51,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "RIFF_LIST"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "mp4",
+        "scrubberPath": "versieve_media.wasm scrubMediaMetadata (O(1) ISOBMFF atom zeroing)",
+        "beforeBytes": 149,
+        "afterBytes": 149,
+        "beforeSha256": "0a5478540143d20461e61be71d259c94f7eecf78983167bf2cd7cc3ecf7b2ba3",
+        "afterSha256": "23c67e28bee0f149889b435616d7c9ba3983a3932ba905732647f0b297527bbd",
+        "beforeMetadataResidualBytes": 57,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "MP4_udta",
+          "MP4_meta"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "docx",
+        "scrubberPath": "versieve sanitize CLI (clean OOXML rebuild without docProps)",
+        "beforeBytes": 653,
+        "afterBytes": 318,
+        "beforeSha256": "a5d32e3cba17965f736da78169ae3d8a9daa875a62749ddabd3012c655a18bb4",
+        "afterSha256": "67eeb1e54cc697611500ca29fb541510e6185a37954211247f813f03e3fbfa66",
+        "beforeMetadataResidualBytes": 69,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "docProps/core.xml:dc:creator",
+          "docProps/core.xml:cp:lastModifiedBy",
+          "docProps/app.xml:Company",
+          "docProps/app.xml:Manager"
+        ],
+        "zeroResidualVerified": true
+      },
+      {
+        "format": "eml",
+        "scrubberPath": "versieve sanitize CLI (RFC 5322 header & PII sanitizer)",
+        "beforeBytes": 419,
+        "afterBytes": 158,
+        "beforeSha256": "81b4b71bcb8df9579a7321fca89817c76b7b9c71875b6ab2d46b8b1489c8aae4",
+        "afterSha256": "4ec74c5645622a79a210e918177d152d37b010a91fb373fffb710d9eca61a382",
+        "beforeMetadataResidualBytes": 104,
+        "afterMetadataResidualBytes": 0,
+        "strippedFields": [
+          "Received",
+          "X-Originating-IP",
+          "Bcc",
+          "User-Agent",
+          "Message-ID"
+        ],
+        "zeroResidualVerified": true
+      }
+    ]
+  }
+}

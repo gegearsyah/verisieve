@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "versieve.t9.ease-benchmark.v1",
+  "generatedAt": "2026-11-26T23:32:32.817Z",
+  "seed": 42,
+  "sourceType": "reproduced-local",
+  "hardware": {
+    "cpuModel": "AMD Ryzen 7 7840HS w/ Radeon 780M Graphics",
+    "cpuLogicalCores": 16,
+    "totalMemBytes": 33595191296,
+    "platform": "Windows_NT 10.0.26300 (win32/x64)"
+  },
+  "versions": {
+    "node": "v24.13.1",
+    "python": "3.12.4",
+    "packages": {
+      "presidio_analyzer": "2.2.366",
+      "spacy": "3.8.18",
+      "en_core_web_lg": "3.8.0",
+      "detect_secrets": "1.5.0"
+    }
+  },
+  "licenses": {
+    "versieve": "MIT",
+    "presidioAnalyzer": "MIT",
+    "spacy": "MIT",
+    "enCoreWebLg": "MIT",
+    "detectSecrets": "Apache-2.0"
+  },
+  "versieve": {
+    "label": "Versieve Out-of-the-Box (Node.js + 5 Zero-Import WASM Kernels)",
+    "wasmKernelCount": 5,
+    "wasmAllZeroImports": true,
+    "kernels": [
+      {
+        "file": "versieve_clean.wasm",
+        "byteLength": 14633,
+        "importCount": 0,
+        "sha256": "5cb584edd7816590b77b22eab405bd28508063467750c9ccbc62cdc71892c409"
+      },
+      {
+        "file": "versieve_sql.wasm",
+        "byteLength": 55635,
+        "importCount": 0,
+        "sha256": "45cdead846e35b00dd93e9674c6deafd3c37f0b702c58624139fec82092609bd"
+      },
+      {
+        "file": "versieve_graph.wasm",
+        "byteLength": 54402,
+        "importCount": 0,
+        "sha256": "3313ab505b1dda887deda6b79037224125872232db3ab7ad819d8f212a3d0907"
+      },
+      {
+        "file": "versieve_dl.wasm",
+        "byteLength": 60096,
+        "importCount": 0,
+        "sha256": "2ff6e7756acafb31a97ac365d7bfeb9911654d751126c603a9cdeda8f2e314d2"
+      },
+      {
+        "file": "versieve_media.wasm",
+        "byteLength": 204031,
+        "importCount": 0,
+        "sha256": "c4758922e3a6f2af7981c67dbc0828564bbd4987fec6f34a8da1d87e19a1263f"
+      }
+    ],
+    "installFootprint": {
+      "wasmBytes": 388797,
+      "jsSrcBytes": 1170401,
+      "jsSrcFileCount": 33,
+      "totalCoreBytes": 1559198
+    },
+    "requiredExternalRuntimesCount": 1,
+    "requiredExternalRuntimes": [
+      "Node.js >= 22"
+    ],
+    "minimalSnippet": {
+      "loc": 3,
+      "code": "import { perceive } from './src/perceive.js';\nconst res = await perceive(\"Customer Ada Lovelace (ada.lovelace@acme.com, SSN 123-45-6789) leaked AWS key AKIAIOSFODNN7X9K2M4P.\");\nconsole.log(JSON.stringify({ markdown: res.markdown, receiptSha256: res.receipt.receiptSha256 }));",
+      "liveExecutionVerified": true,
+      "redactedPiiLeakCount": 0,
+      "receiptSha256": "774245fc8893d6a2e580a7aa93feaa3d5c33e5704bb5f223809926adfb7652c5"
+    },
+    "coldStart": {
+      "runs": 5,
+      "samplesMs": [
+        118.37,
+        111.31,
+        115.67,
+        112.03,
+        116.11
+      ],
+      "minMs": 111.31,
+      "medianMs": 115.67,
+      "p95Ms": 118.37,
+      "maxMs": 118.37
+    }
+  },
+  "stitchedPythonStack": {
+    "label": "Stitched Open-Source Stack (Python 3.12 + Presidio + spaCy en_core_web_lg + detect-secrets)",
+    "available": true,
+    "installFootprint": {
+      "packages": {
+        "presidio_analyzer": {
+          "version": "2.2.366",
+          "bytes": 1615326
+        },
+        "spacy": {
+          "version": "3.8.18",
+          "bytes": 96725226
+        },
+        "en_core_web_lg": {
+          "version": "3.8.0",
+          "bytes": 445143525
+        },
+        "detect_secrets": {
+          "version": "1.5.0",
+          "bytes": 581252
+        }
+      },
+      "totalBytes": 544065329
+    },
+    "requiredExternalRuntimesCount": 4,
+    "requiredExternalRuntimes": [
+      "Node.js >= 22 (application host)",
+      "Python 3.12.4",
+      "spaCy en_core_web_lg (3.8.0)",
+      "Yelp detect-secrets (1.5.0) + separate forensic/PDF tools"
+    ],
+    "minimalSnippet": {
+      "loc": 26,
+      "code": "import hashlib, json, tempfile\nfrom presidio_analyzer import AnalyzerEngine\nfrom detect_secrets import SecretsCollection\nfrom detect_secrets.settings import default_settings\ntext = \"Customer Ada Lovelace (ada.lovelace@acme.com, SSN 123-45-6789) leaked AWS key AKIAIOSFODNN7X9K2M4P.\"\nanalyzer = AnalyzerEngine()\npii_hits = analyzer.analyze(text=text, language=\"en\")\nspans = [(r.start, r.end, f\"<PII:{r.entity_type}>\") for r in pii_hits]\nwith tempfile.NamedTemporaryFile(\"w\", suffix=\".txt\", delete=False, encoding=\"utf-8\") as tmp:\n    tmp.write(text); tmp_path = tmp.name\nsecrets = SecretsCollection()\nwith default_settings():\n    secrets.scan_file(tmp_path)\nfor _, item_list in secrets.data.items():\n    for sec in item_list:\n        if sec.secret_value and sec.secret_value in text:\n            idx = text.index(sec.secret_value)\n            spans.append((idx, idx + len(sec.secret_value), \"<SECRET:DETECTED>\"))\nspans.sort(key=lambda s: (s[0], -(s[1] - s[0])))\nout, cursor = [], 0\nfor s, e, tag in spans:\n    if s >= cursor:\n        out.append(text[cursor:s]); out.append(tag); cursor = e\nmasked = \"\".join(out) + text[cursor:]\nreceipt = hashlib.sha256(masked.encode(\"utf-8\")).hexdigest()\nprint(json.dumps({\"markdown\": masked, \"receiptSha256\": receipt}))",
+      "liveExecutionVerified": true,
+      "redactedPiiLeakCount": 1,
+      "receiptSha256": "67c8c81ee3f51d6408eaf533c359805deca1a9aa752f23c8d043116f2e07522f"
+    },
+    "coldStart": {
+      "runs": 5,
+      "samplesMs": [
+        31341.34,
+        14789.56,
+        14741.38,
+        14653.46,
+        14745.83
+      ],
+      "minMs": 14653.46,
+      "medianMs": 14745.83,
+      "p95Ms": 31341.34,
+      "maxMs": 31341.34
+    }
+  },
+  "ratios": {
+    "footprintRatio": 348.9,
+    "wasmOnlyFootprintRatio": 1399.4,
+    "coldStartSpeedup": 127.48,
+    "locReductionFactor": 8.7
+  },
+  "markdownTable": "| Metric | Versieve (`perceive` Out-of-the-Box) | Stitched Local Stack (`Presidio` + `en_core_web_lg` + `detect-secrets`) |\n|---|---|---|\n| **On-disk core footprint** | **388,797 B (5 WASM kernels) + 1,170,401 B JS (1.49 MB total)** | 518.86 MB (544,065,329 B across Presidio + spaCy + en_core_web_lg + detect-secrets; 348.9x larger) |\n| **Required external runtimes** | **1** (`Node.js >= 22`) | 4 (`Node.js`, `Python 3.12`, `spaCy` model, separate secret/forensic tools) |\n| **Lines of code to redacted + receipted output** | **3 LOC** | 26 LOC (8.7x more glue code) |\n| **Measured one-shot cold-start latency** | **115.67 ms median (5 runs)** | 14745.83 ms median (5 runs; 127.48x slower) |\n| **Load-time zero-import WASM audit** | **5/5 kernels (`imports.length === 0`)** | Host policy only (multi-language native/Python C extensions) |\n| **Built-in conformal gate & erasure receipt** | **`HC-CRC` / `E-LTT` + `eraseEntity` byte-diff receipt** | Separate custom glue required |"
+}
