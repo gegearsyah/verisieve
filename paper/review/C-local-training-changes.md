@@ -102,3 +102,10 @@ Section 5.2 lead said "Four findings emerge" while enumerating three items; chan
 ## Post-review artifact fill (coordinator)
 
 Item 3 is closed: the three derived percentages were replaced with exact absolute F1 deltas ($+0.194$, $+0.087$, $+0.117$), avoiding the unrounded-denominator ambiguity. The artifact paragraph now also states the repository commit `1e35603` and the training seed 42. Item 5 remains open for framework versions and QA-turn provenance.
+
+## T1 Reconciliation Pass (Issue #28, 2026-11-26)
+
+- Added primary-source verified loss-masking, surrogate-substitution, and inference-privacy citations in Section 2 and `.bib`: `lin2024rho1` (`arXiv:2404.07965`), `hans2024goldfish` (`arXiv:2406.10209`), `wang2025slung` (`arXiv:2505.03052`), `joshi2025rmft` (`arXiv:2512.03310`), `tyagi2026surprise` (`arXiv:2610.22988`), `albanese2026anonymous` (`arXiv:2603.17217`), and `staab2024beyond` (`arXiv:2310.07298`).
+- Narrowed `PT-LM` positioning in Section 2 to mitigating placeholder-token tag echo and in-scope false refusal on `0.5B--1.7B` LoRA adapters via bundled `-100` placeholder masking + grammatical-role forward surrogates, noting pending masking-only vs. surrogate-only ablation.
+- Added explicit caveats in Section 5 and Section 6: (a) `Qwen2.5-1.5B` `PT-LM` seen-doc token F1 (`0.190`) remains below the untrained base (`0.202`), and (b) the 12 planted canaries use scanner-detectable formats (emails, phones, SSNs, structured names), not scanner-missed formats.
+- All measured numbers remain unchanged.

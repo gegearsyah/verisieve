@@ -76,3 +76,11 @@ No measured number was corrected. All printed numbers in the retained sections w
 ## Post-review artifact fill (coordinator)
 
 The artifact paragraph now states the repository commit `1e35603`. The remaining identifier gap is the submission package's actual inclusion of the manifests, not the commit.
+
+## T1 Reconciliation Pass (Issue #28, 2026-11-26)
+
+- Reconciled WASM kernel count in Section 1 and Appendix A from 4 to all 5 zero-import WASM modules (`388,797 B` combined, adding `versieve_media.wasm` at `204,031 B` / `29` exports, evaluated in the companion multimodal paper).
+- Reconciled MCP tool count in Appendix A from 14 to 18 tools (adding `ingest_enterprise_bundle`, `scan_enterprise_secrets`, `redact_audio_call`, and `audit_forensic_leaks` from `src/mcp-server.js`).
+- Reconciled Node.js portable CI test count in Appendix A from `100/100` (`94` core + `6` MCP) to `181` tests across `31` portable CI test files (`175` core + `6` MCP, verified directly from `package.json` `test:ci`).
+- Added primary-source verified prior-art citations in Section 1 and `.bib`: `lukas2023pii` (`arXiv:2302.00539`), `staab2024beyond` (`arXiv:2310.07298`), `abbasiyadkori2024abstention` (`arXiv:2405.01563`), `bhattacharjee2026curatorkit` (`arXiv:2606.21631`), `redakto2026incognito` (`arXiv:2608.18260`), and `cpa2026auditing` (`arXiv:2609.21340`). Clarified zero-egress scope (user bytes vs. offline-cached local weights).
+- All previously measured benchmark numbers remain unchanged.

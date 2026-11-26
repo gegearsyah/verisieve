@@ -131,3 +131,10 @@ Also (ME-6): caption adds one clause — rows sharing an identical numeric quadr
 ## Post-review artifact fill (coordinator)
 
 Item 3 is half closed: the paired permutation count is now printed at Fig. 1 (5,000 permutations), but the tau=0.70 SR-MP F1 CI is still absent from the artifact and remains a placeholder. Item 4 is partly closed: the artifact paragraph now states commit `1e35603`, the TAB resampling seed 42, 1,000 bootstrap resamples, and 5,000 paired permutations. Per-corpus licenses and non-TAB seeds remain unrecorded.
+
+## T1 Reconciliation Pass (Issue #28, 2026-11-26)
+
+- Removed duplicated companion Paper A BibTeX entry (`ardiyansyah2026extraction` duplicating `ardiyansyah2026versieve`, which caused 2026a/2026b in the bibliography) and unified all in-text citations to `ardiyansyah2026versieve`.
+- Reconciled Node.js portable CI test count in Appendix A from `108/108` to `181` tests across `31` files (matching Paper A, `README.md`, and `package.json` `test:ci`).
+- Added primary-source verified prior-art citations in Sections 1, 4.2 (`Exp. 2`), 5 (`Limitations`), and `.bib`: `barber2023beyond` (`arXiv:2202.13415`), `lukas2023pii` (`arXiv:2302.00539`), `staab2024beyond` (`arXiv:2310.07298`), `abbasiyadkori2024abstention` (`arXiv:2405.01563`), `gauthier2025evalues` (`arXiv:2503.13050`), `wang2025safer` (`arXiv:2510.10193`), `chowdhury2026conformal` (`arXiv:2602.03787`), `hultberg2026anytime` (`arXiv:2602.04364`), `salem2026hgcrc` (`arXiv:2607.24562`), `redakto2026incognito` (`arXiv:2608.18260`), and `cpa2026auditing` (`arXiv:2609.21340`).
+- All measured benchmark numbers remain unchanged.

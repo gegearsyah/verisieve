@@ -112,3 +112,9 @@ Added to the .bib (and cited at first use): `angelopoulos2021ltt` (arXiv:2110.01
 ## Post-review artifact fill (coordinator)
 
 The Section 5 artifact paragraph now carries the repository commit `1e35603`, all five kernel sizes, their SHA-256 prefixes, and the Qwen2.5-1.5B-Instruct and judge identifiers. Item 1 is closed except that the submission package should still list the full digests; they are reproducible with `sha256sum vendor/wasm/*.wasm` at that commit.
+
+## T1 Reconciliation Pass (Issue #28, 2026-11-26)
+
+- Softened unverified "To our knowledge no prior artifact" claim in Section 2 (`Entity-centric objectives versus composed units`) to a concrete contrast against synthetic generators and retrieval-grouped pretraining.
+- Added primary-source verified prior-art citations in Section 2 and `.bib`: `bhattacharjee2026curatorkit` (`arXiv:2606.21631`, CuratorKIT), `xu2025reversibility` (`arXiv:2505.16831`, ICML 2025 reversibility of parameter-level unlearning), `eisenhofer2022verifiable` (`arXiv:2210.09126`), `maheri2025edge` (`arXiv:2506.20037`), `chase2024anonymisation` (`arXiv:2410.12418`), and `staab2024beyond` (`arXiv:2310.07298`).
+- All measured numbers remain unchanged.

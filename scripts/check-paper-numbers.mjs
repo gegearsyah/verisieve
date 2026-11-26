@@ -828,18 +828,135 @@ const K7X = j('track-k7-bm25-contexts.json');
   ok('k7:mcn.f4', 'every retrieval or cache arm separates from every trained arm (adjusted $p < 10^{-4}$)', CG);
 }
 
-/* ---------------- Word bans (founder rule, all three papers) ---------------- */
-for (const [name, body] of [['M', M], ['L', L], ['E', E], ['CG', CG]]) {
+/* ---------------- README & cross-paper reconciliation (T1 / #28) ---------------- */
+const README = readFileSync(new URL('README.md', ROOT), 'utf8');
+const PKG = JSON.parse(readFileSync(new URL('package.json', ROOT), 'utf8'));
+const BIB_E = tex('versieve-extraction-redaction-benchmark.bib');
+const BIB_M = tex('versieve-multimodal-sanitization-benchmark.bib');
+const BIB_L = tex('versieve-local-training-benchmark.bib');
+const BIB_CG = tex('versieve-graph-grounded-enterprise-corpus.bib');
+const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
+
+{
+  // 1. README conformal gate table (including E2E leak of released column)
+  ok('readme:gate.header', 'E2E Leak (of Released)', README);
+  const commaPlain = v => f0(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const readmeGateRows = [
+    ['naive10', GT.detectorInformedHybridLtt.find(e => e.alpha === 0.10)],
+    ['hc01', hcByA(0.01)],
+    ['hc02', hcByA(0.02)],
+    ['hc05', hcByA(0.05)],
+    ['hc10', hcByA(0.10)],
+    ['hc15', hcByA(0.15)],
+    ['hc20', hcByA(0.20)],
+    ['eltt05', eLtt05],
+    ['eltt10', eLtt10],
+  ];
+  for (const [tag, row] of readmeGateRows) {
+    ok(`readme:gate.${tag}.fpr`, `${f2(row.testConditionalFprPct)}%`, README);
+    ok(`readme:gate.${tag}.yield`, `${f2(row.testSafeYieldPct)}%`, README);
+    ok(`readme:gate.${tag}.autoRel`, `${f2(row.overallAutoReleasePct)}%`, README);
+    ok(`readme:gate.${tag}.e2eLeak`, `${f2(row.e2eResidualLeakOfReleasedPct)}%`, README);
+    ok(`readme:gate.${tag}.e2eCount`, `(\`${row.e2eResidualLeakCount}\`)`, README);
+  }
+
+  // 2. Reconciled 5 WASM kernels, 18 MCP tools, 174 Unicode cases, CI test count
+  const wasmFiles = ['versieve_clean', 'versieve_media', 'versieve_graph', 'versieve_dl', 'versieve_sql'];
+  let wasmTotal = 0;
+  for (const mod of wasmFiles) {
+    const sz = statSync(new URL(`vendor/wasm/${mod}.wasm`, ROOT)).size;
+    wasmTotal += sz;
+    ok(`readme:wasm.${mod}`, `${commaPlain(sz)} B`, README);
+    ok(`paperA:wasm.${mod}`, `${comma(sz)}$\\,B`, E);
+  }
+  ok('readme:wasm.total', `${commaPlain(wasmTotal)} B`, README);
+  ok('paperA:wasm.total', `$${comma(wasmTotal)}$\\,B`, E);
+  ok('paperA:wasm.five', 'Five standalone WASM binaries', E);
+  ok('paperA:wasm.allFive', 'All five WebAssembly modules', E);
+
+  const mcpSrc = readFileSync(new URL('src/mcp-server.js', ROOT), 'utf8');
+  const mcpCount = [...mcpSrc.matchAll(/name:\s*'([a-z0-9_]+)'/g)].length;
+  checks++;
+  if (mcpCount !== 18) { fails++; console.error(`FAIL [mcp:count] expected 18 MCP tools in src/mcp-server.js, got ${mcpCount}`); }
+  ok('readme:mcp.count', `**MCP server, ${mcpCount} tools.**`, README);
+  ok('paperA:mcp.count', `exposes $${mcpCount}$ JSON-RPC tools`, E);
+  ok('paperD:mcp.count', `exposes $${mcpCount}$ tools`, M);
+
+  const unicodeTotal = EU.zwsp.total + EU.homoglyph.total + EU.fullwidth.total;
+  ok('readme:unicode.total', `\`${unicodeTotal}\` adversarial cases`, README);
+  ok('paperD:unicode.total', `$${unicodeTotal}$ cases`, M);
+
+  const ciTestFiles = [...PKG.scripts['test:ci'].matchAll(/test\/[a-zA-Z0-9._-]+\.test\.js/g)].map(m => m[0]);
+  const ciTestCount = ciTestFiles.reduce((n, tf) => {
+    const src = readFileSync(new URL(tf, ROOT), 'utf8');
+    return n + (src.match(/^\s*(?:await\s+)?(?:test|it)\s*\(/gm) || []).length;
+  }, 0);
+  ok('readme:tests.count', `${ciTestCount} portable CI tests across ${ciTestFiles.length} files`, README);
+  ok('paperA:tests.count', `runs $${ciTestCount}$ tests across $${ciTestFiles.length}$ test files`, E);
+  ok('paperD:tests.count', `Node.js CI $${ciTestCount}$ tests across $${ciTestFiles.length}$ files`, M);
+
+  // 3. README required disclosures: policy mapping, PyTorch+DuckDB comparator, caveats
+  ok('readme:policy.keep', '`KEEP` | `allow`', README);
+  ok('readme:policy.abstain', '`ABSTAIN` | `redact` / review', README);
+  ok('readme:policy.drop', '`DROP` | `deny`', README);
+  ok('readme:stitch.comparator', '`PyTorch+DuckDB` (NOT Presidio)', README);
+  ok('readme:caveat.canaries', 'scanner-detectable formats', README);
+  ok('readme:caveat.qwen15b', 'remains below the untrained base (`0.202`)', README);
+
+  // 4. No duplicate 2026a/2026b companion reference in Paper D bib
+  checks++;
+  if (BIB_M.includes('@misc{ardiyansyah2026extraction') && BIB_M.includes('@misc{ardiyansyah2026versieve')) {
+    fails++;
+    console.error('FAIL [paperD:bib-dup] duplicate ardiyansyah2026extraction and ardiyansyah2026versieve entries');
+  }
+
+  // 5. All 18 primary-source verified prior-art arXiv citations present in paper/*.bib
+  const REQUIRED_ARXIV = [
+    '2404.07965', '2406.10209', '2505.03052', '2512.03310', '2610.22988', '2603.17217',
+    '2606.21631', '2607.24562', '2608.18260', '2609.21340', '2503.13050', '2602.04364',
+    '2505.16831', '2210.09126', '2506.20037', '2410.12418', '2310.07298', '2302.00539',
+  ];
+  for (const id of REQUIRED_ARXIV) {
+    ok(`bib:arxiv:${id}`, id, ALL_BIBS);
+  }
+}
+
+/* ---------------- Word bans, em-dash bans & rejected tools (README + all papers) ---------------- */
+const ALL_DOCS = [
+  ['README', README],
+  ['M', M], ['L', L], ['E', E], ['CG', CG],
+  ['BIB_M', BIB_M], ['BIB_L', BIB_L], ['BIB_E', BIB_E], ['BIB_CG', BIB_CG],
+];
+for (const [name, body] of ALL_DOCS) {
   for (const [label, re] of [
     ['mathematically grounded', /mathematically\s+grounded/i],
-    ['eliminates/eliminating', /eliminat/i],
+    ['mathematically certified', /mathematically\s+certified/i],
+    ['eliminates/eliminating', /\beliminat(?:e|es|ed|ing)\b/i],
     ['novelty "first"', /\b(?:first to|the first|for the first time|our first)\b/i],
+    ['unverified no-prior claim', /\b(?:to our knowledge[,\s]+no prior|not aware of a prior corpus)\b/i],
+    ['unqualified 100% WASM tagline', /100%\s+locally\s+in\s+WebAssembly/i],
+    ['rejected unverified tool', /\b(?:Cloak|OSpipe|open-redactor|ALDS|mask-llm)\b/i],
+    ['unicode em-dash', /\u2014/],
   ]) {
     checks++;
     if (re.test(body)) {
       fails++;
-      console.error(`FAIL [${name}:word-ban] banned phrase: ${label}`);
+      console.error(`FAIL [${name}:ban] prohibited pattern: ${label}`);
     }
+  }
+  // Zero LaTeX --- em-dashes in .tex/.bib and zero prose --- in README (excluding Markdown horizontal rules & table dividers)
+  checks++;
+  if (name === 'README') {
+    const proseTripleDash = body.split(/\r?\n/).some(line =>
+      line.includes('---') && !/^\s*---\s*$/.test(line) && !/^\|[\s|:-]+\|$/.test(line.trim())
+    );
+    if (proseTripleDash) {
+      fails++;
+      console.error('FAIL [README:em-dash] prose triple-hyphen em-dash found');
+    }
+  } else if (body.includes('---')) {
+    fails++;
+    console.error(`FAIL [${name}:em-dash] LaTeX --- em-dash found`);
   }
 }
 
