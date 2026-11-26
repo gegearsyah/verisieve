@@ -10,6 +10,7 @@
 import { loadMediaWasmSync } from './media-wasm.js';
 import { scanRecordsForPII } from './clean-and-tokenize.js';
 import { SaltedPseudonymVault } from './graph-wasm.js';
+import { compileTermList, findTermMatches, isSpanWhitelisted } from './term-matcher.js';
 
 const TITLE_PREFIX_RX = /\b(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss|Prof\.?|Hon\.?|Justice|Judge|Capt\.?|Sgt\.?)\s+([A-Z][a-z]{2,24})\b/g;
 
@@ -175,10 +176,39 @@ export function redactEnterpriseText(text, options = {}) {
   const vault = options.vault || new SaltedPseudonymVault(options.workspaceSalt || 'versieve-enterprise-v1');
   const scan = scanEnterprisePiiAndSecrets(raw, options);
 
+  // Whitelist = never redact (exempt); blacklist = always redact (wins on overlap).
+  // Both use deterministic structural breakdown (email <-> name/handle, separator & phone normalization).
+  const compiledAllow = compileTermList(options.whitelist);
+  const compiledDeny = compileTermList(options.blacklist);
+  const allowSpans =
+    compiledAllow.length > 0 ? findTermMatches(raw, compiledAllow, { mode: 'whitelist' }) : [];
+  const spans =
+    compiledAllow.length > 0
+      ? scan.spans.filter((sp) => !isSpanWhitelisted(sp, raw, compiledAllow, allowSpans))
+      : [...scan.spans];
+  if (compiledDeny.length > 0) {
+    const denyMatches = findTermMatches(raw, compiledDeny, { mode: 'blacklist' });
+    for (const m of denyMatches) {
+      if (spans.some((s) => m.start < s.end && m.end > s.start)) continue;
+      spans.push({
+        type: 'CUSTOM',
+        category: 'pii',
+        start: m.start,
+        end: m.end,
+        value: m.value,
+        confidence: 0.99,
+        entropy: 0,
+        evasionNormalized: false,
+        source: 'blacklist',
+      });
+    }
+    spans.sort((a, b) => a.start - b.start);
+  }
+
   // Build surname -> full-name coreference map from detected PERSON / NAME_LIKELY spans
   const surnameToCanonical = new Map();
   if (options.enableCoref !== false) {
-    for (const sp of scan.spans) {
+    for (const sp of spans) {
       const kind = normalizeVaultKind(sp.type, sp.category);
       if (kind !== 'PERSON') continue;
       const tokens = sp.value.trim().split(/\s+/).filter(Boolean);
@@ -193,7 +223,7 @@ export function redactEnterpriseText(text, options = {}) {
 
   // Detect titled surname coreferences ("Ms. Vance", "Dr. Chen") — both linking already-detected
   // PERSON spans AND adding newly matched titled surname spans so both map to the same canonical entityId!
-  const allSpans = [...scan.spans];
+  const allSpans = [...spans];
   if (surnameToCanonical.size > 0) {
     for (const sp of allSpans) {
       if (sp.category !== 'pii') continue;

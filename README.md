@@ -42,7 +42,29 @@ console.log(estate.sftJsonl);   // chat rows ready for LoRA SFT
 | Named object | `{ name: 'decks/board.pptx', bytes: pptxBytes }` |
 | Video frames | `{ name: 'demo.mp4', frames: [...] }` |
 
-`perceive(input, options?)` is the single-item form and returns the same shape. You do not label text versus bytes. A string is a path only if it exists, otherwise it is ingested as literal text, so check the path before passing a folder. Unnamed bytes are typed from magic bytes (PDF, PNG, JPEG, WAV, Office/ZIP, TAR, GZIP) and named `inline.<ext>`. Pass `{ recursive: false }` to read only the top level of a folder. Every input in one call shares a single GC-CRC anchor pool and entity graph, so a noisy later mention resolves to the same `<PII:PERSON_1>`:
+`perceive(input, options?)` is the single-item form and returns the same shape. You do not label text versus bytes. A string is a path only if it exists, otherwise it is ingested as literal text, so check the path before passing a folder. Unnamed bytes are typed from magic bytes (PDF, PNG, JPEG, WAV, Office/ZIP, TAR, GZIP) and named `inline.<ext>`.
+
+Common `options`:
+
+| Option | Example | Effect |
+|---|---|---|
+| `recursive` | `false` | Read only the top level of a folder (default `true`) |
+| `whitelist` | `['john.doe@example.com']` or `'./allow.txt'` | Never redact matching values; stays domain-scoped when an email includes a domain |
+| `blacklist` | `'Project Nebula, Qwzzv'` or `'./deny.txt'` | Always redact matching values (wins over `whitelist` on overlap) |
+| `keywords` | `['Elena Vance', 'AMBER']` or `'./topics.txt'` | Scope outputs (`markdown`, `chunks`, SFT, `graph`) to matching blocks after full-estate redaction |
+
+`whitelist`, `blacklist`, and `keywords` each accept an array, a comma/newline-separated string, or a `.txt` file path (one term per line). Matching is deterministic with structural breakdown—emails, names, and handles match both ways (`elena.vance@acme.com` ↔ `Elena Vance` ↔ `@elena_vance`, plus honorifics), alongside separator variants (`ORG-2271` ↔ `ORG 2271`), diacritics, and digit-normalized phone numbers—without fuzzy guessing.
+
+```javascript
+const scoped = await perceiveMulti('./company-drive', {
+  whitelist: ['public.contact@acme.com'],
+  blacklist: './deny.txt',
+  keywords: ['Elena Vance', 'AMBER'],
+});
+console.log(scoped.redactedValues); // [{ value, token, type, category }, ...]
+```
+
+Every input in one call shares a single GC-CRC anchor pool and entity graph, so a noisy later mention resolves to the same `<PII:PERSON_1>`:
 
 ```javascript
 const workspace = await perceiveMulti([
@@ -55,7 +77,7 @@ const workspace = await perceiveMulti([
 console.log(workspace.markdown);
 ```
 
-Each call returns `perceptionStream` (`<DOC><BLOCK>` structure), `markdown`, `chunks`, `sftJsonl`, `ptlmSftJsonl`, `graph`, and `receipt`. The section below, What Comes Out, shows how to consume them.
+Each call returns `perceptionStream` (`<DOC><BLOCK>` structure), `markdown`, `chunks`, `redactedValues`, `sftJsonl`, `ptlmSftJsonl`, `graph`, and `receipt`. The section below, What Comes Out, shows how to consume them.
 
 **MCP server, 18 tools.** Clone the repo, run `npm install`, then `npm run mcp` starts a stdio JSON-RPC server. Register it in your MCP client:
 

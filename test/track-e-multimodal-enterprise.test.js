@@ -1012,3 +1012,144 @@ test('perceiveMulti detects unnamed bytes and walks a folder', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('perceive: blacklist forces redaction and reports the redacted value list', async () => {
+  const res = await perceive('Handover note: Qwzzv approved the budget.', {
+    blacklist: 'Qwzzv',
+    workspaceSalt: 'term-list-test',
+  });
+  assert.doesNotMatch(res.markdown, /Qwzzv/);
+  assert.ok(
+    res.redactedValues.some((r) => r.value === 'Qwzzv' && r.token.startsWith('<PII:')),
+    'redactedValues must list the forced term and its pseudonym token'
+  );
+});
+
+test('perceive: whitelist exempts a detected value from redaction', async () => {
+  const res = await perceive('Contact john.doe@example.com for details.', {
+    whitelist: ['john.doe@example.com'],
+    workspaceSalt: 'term-list-test',
+  });
+  assert.match(res.markdown, /john\.doe@example\.com/);
+  assert.equal(res.redactedValues.some((r) => r.value.includes('john.doe@example.com')), false);
+});
+
+test('perceive: blacklist accepts a .txt file path with one term per line', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'versieve-terms-'));
+  try {
+    const termsFile = path.join(dir, 'deny.txt');
+    fs.writeFileSync(termsFile, 'Qwzzv\nFrobnicator\n');
+    const res = await perceive('Frobnicator and Qwzzv met.', {
+      blacklist: termsFile,
+      workspaceSalt: 'term-list-test',
+    });
+    assert.doesNotMatch(res.markdown, /Frobnicator|Qwzzv/);
+    assert.deepEqual(
+      res.redactedValues.map((r) => r.value).sort(),
+      ['Frobnicator', 'Qwzzv']
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('perceive: keywords scope the extraction to matching blocks', async () => {
+  const res = await perceiveMulti(
+    [
+      { name: 'a.txt', text: 'Project AMBER ships in May.' },
+      { name: 'c.txt', text: 'The lunch menu is out.' },
+      { name: 'b.txt', text: 'Project PEBBLE slips to June.' },
+    ],
+    { keywords: 'AMBER', workspaceSalt: 'term-list-test' }
+  );
+  assert.deepEqual([...new Set(res.blocks.map((b) => b.source))], ['a.txt']);
+  assert.doesNotMatch(res.markdown, /PEBBLE|lunch menu/);
+  assert.ok(res.blocks.every((b) => b.matchedKeywords.includes('amber')));
+  assert.ok(res.receipt.sourceBlockCount > res.receipt.blockCount);
+});
+
+test('perceive: whitelist breaks down email <-> name and respects domain & generic-role guards', async () => {
+  // Email -> Name (+ title) while staying domain-scoped for other email domains
+  const fromEmail = await perceive(
+    'Dr. John Doe (john.doe@example.com) forwarded from john.doe@other.org.',
+    {
+      whitelist: ['john.doe@example.com'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.match(fromEmail.markdown, /John Doe/);
+  assert.match(fromEmail.markdown, /john\.doe@example\.com/);
+  assert.doesNotMatch(fromEmail.markdown, /john\.doe@other\.org/);
+
+  // Name -> Email (dotted + concatenated) and phone digit normalization
+  const fromName = await perceive(
+    'Contact John Doe at john.doe@example.com or johndoe@corp.io, tel +44-20-7946-0900.',
+    {
+      whitelist: ['John Doe', '+44 20 7946 0900'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.match(fromName.markdown, /John Doe/);
+  assert.match(fromName.markdown, /john\.doe@example\.com/);
+  assert.match(fromName.markdown, /johndoe@corp\.io/);
+  assert.match(fromName.markdown, /\+44-20-7946-0900/);
+
+  // Generic role & single-word email local parts must NOT over-exempt unrelated people
+  const guarded = await perceive(
+    'Elena Vance emailed elena@example.com and no-reply@example.com.',
+    {
+      whitelist: ['elena@example.com', 'no-reply@example.com'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.match(guarded.markdown, /elena@example\.com/);
+  assert.doesNotMatch(guarded.markdown, /Elena Vance/);
+});
+
+test('perceive: blacklist breaks down email <-> name, diacritics, separators, phones, and beats whitelist', async () => {
+  const fromEmail = await perceive(
+    'Handover from Qwzzv Frob (qwzzv_frob) on ORG 2271 and tel +44-20-7946-0906.',
+    {
+      blacklist: ['qwzzv.frob@acme.com', 'ORG-2271', '+44 20 7946 0906'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.doesNotMatch(fromEmail.markdown, /Qwzzv Frob|qwzzv_frob|ORG 2271|\+44-20-7946-0906/);
+
+  const fromName = await perceive(
+    'Signed by Ondřej Novák (ondrej.novak@northfield-ltd.example) and qwzzv.frob@internal.local.',
+    {
+      blacklist: ['Ondrej Novak', 'Qwzzv Frob'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.doesNotMatch(fromName.markdown, /Ondřej Novák|ondrej\.novak@northfield-ltd\.example|qwzzv\.frob@internal\.local/);
+
+  // Blacklist wins over whitelist on overlap
+  const overlap = await perceive('Owner: John Doe (john.doe@example.com).', {
+    whitelist: ['john.doe@example.com'],
+    blacklist: ['John Doe'],
+    workspaceSalt: 'term-breakdown-test',
+  });
+  assert.doesNotMatch(overlap.markdown, /John Doe|john\.doe@example\.com/);
+});
+
+test('perceive: keywords match bidirectional email <-> name, handles, diacritics, and respect word boundaries', async () => {
+  const res = await perceiveMulti(
+    [
+      { name: 'email-only.txt', text: 'Send escalation to ondrej.novak@northfield-ltd.example.' },
+      { name: 'name-only.txt', text: 'Ondřej Novák signed the change order.' },
+      { name: 'handle-only.txt', text: 'Ping @elena_vance for sign-off.' },
+      { name: 'substring-noise.txt', text: 'The chamber acoustics were tested yesterday.' },
+    ],
+    {
+      keywords: ['Ondrej Novak', 'elena.vance@acme.com', 'AMBER'],
+      workspaceSalt: 'term-breakdown-test',
+    }
+  );
+  assert.deepEqual(
+    [...new Set(res.blocks.map((b) => b.source))].sort(),
+    ['email-only.txt', 'handle-only.txt', 'name-only.txt']
+  );
+  assert.doesNotMatch(res.markdown, /chamber/);
+});

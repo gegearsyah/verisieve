@@ -144,7 +144,13 @@ export async function redactVideoKeyframes(source, frames = [], options = {}) {
     for (const line of ocrLines || []) {
       const text = String(line.text || '').trim();
       if (!text) continue;
-      const red = redactEnterpriseText(text, { vault, neuralSpans: line.neuralSpans });
+      const red = redactEnterpriseText(text, {
+        vault,
+        neuralSpans: line.neuralSpans,
+        domainConfig: options.domainConfig,
+        whitelist: options.whitelist,
+        blacklist: options.blacklist,
+      });
       redactedLines.push(red.maskedText);
       for (const e of red.entities) entityIds.add(e.entityId);
 

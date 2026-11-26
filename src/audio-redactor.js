@@ -263,6 +263,8 @@ export async function redactAudioCall(source, wavBytes, options = {}) {
     vault,
     neuralSpans,
     domainConfig: options.domainConfig,
+    whitelist: options.whitelist,
+    blacklist: options.blacklist,
   });
 
   // Step 4: Map every detected PII/secret character span back to original audio [startMs, endMs]

@@ -13,6 +13,7 @@ export * from './cag-dossier.js';
 export * from './media-wasm.js';
 export * from './enterprise-parsers.js';
 export * from './secret-scanner.js';
+export * from './term-matcher.js';
 export * from './audio-redactor.js';
 export * from './neural-pii-onnx.js';
 export * from './video-redactor.js';

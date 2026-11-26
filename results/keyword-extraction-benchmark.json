@@ -1,0 +1,433 @@
+{
+  "kind": "keyword-extraction-benchmark",
+  "antiCircularityNote": "Ground truth is manifest entity -> files, read only by this scorer. The engine path never sees the manifest.",
+  "workspaceSaltSha256": "a66b3c78840ab595b03f85e16fb271cda49fa74f23801fee6cd5b225c5f81595",
+  "estateFiles": 11,
+  "entitiesScored": 24,
+  "micro": {
+    "precision": 1,
+    "recall": 0.9916,
+    "f1": 0.9958,
+    "truePositives": 118,
+    "extractedFiles": 118,
+    "expectedFiles": 119
+  },
+  "missDecomposition": {
+    "filterBug": 0,
+    "ingestGap": 1,
+    "otherValueOnly": 0,
+    "spokenOnly": 0,
+    "note": "filterBug must stay 0; ingestGap is a parser/attachment coverage limit; otherValueOnly and spokenOnly are keyword-choice limits."
+  },
+  "graphDocCountMismatches": 0,
+  "runs": [
+    {
+      "entityId": "person:priya-sharma",
+      "keyword": "Priya Sharma",
+      "expectedFiles": 6,
+      "extractedFiles": 6,
+      "truePositives": 6,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 6,
+      "wallclockMs": 52.67
+    },
+    {
+      "entityId": "person:marcus-bell",
+      "keyword": "Marcus Bell",
+      "expectedFiles": 3,
+      "extractedFiles": 3,
+      "truePositives": 3,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 3,
+      "wallclockMs": 21.09
+    },
+    {
+      "entityId": "person:ondrej-novak",
+      "keyword": "Ondrej Novak",
+      "expectedFiles": 4,
+      "extractedFiles": 4,
+      "truePositives": 4,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 4,
+      "wallclockMs": 18.27
+    },
+    {
+      "entityId": "person:hana-ito",
+      "keyword": "Hana Ito",
+      "expectedFiles": 4,
+      "extractedFiles": 4,
+      "truePositives": 4,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 4,
+      "wallclockMs": 17.41
+    },
+    {
+      "entityId": "person:lena-weber",
+      "keyword": "Lena Weber",
+      "expectedFiles": 6,
+      "extractedFiles": 6,
+      "truePositives": 6,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 6,
+      "wallclockMs": 16.89
+    },
+    {
+      "entityId": "person:kwame-asante",
+      "keyword": "Kwame Asante",
+      "expectedFiles": 3,
+      "extractedFiles": 3,
+      "truePositives": 3,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 3,
+      "wallclockMs": 15.73
+    },
+    {
+      "entityId": "person:tomas-vidal",
+      "keyword": "Tomas Vidal",
+      "expectedFiles": 5,
+      "extractedFiles": 5,
+      "truePositives": 5,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 5,
+      "wallclockMs": 14.84
+    },
+    {
+      "entityId": "person:ines-duarte",
+      "keyword": "Ines Duarte",
+      "expectedFiles": 7,
+      "extractedFiles": 7,
+      "truePositives": 7,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 7,
+      "wallclockMs": 15.76
+    },
+    {
+      "entityId": "person:elena-vance",
+      "keyword": "Elena Vance",
+      "expectedFiles": 8,
+      "extractedFiles": 7,
+      "truePositives": 7,
+      "precision": 1,
+      "recall": 0.875,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 1,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 7,
+      "wallclockMs": 14.35
+    },
+    {
+      "entityId": "person:ravi-chandra",
+      "keyword": "Ravi Chandra",
+      "expectedFiles": 6,
+      "extractedFiles": 6,
+      "truePositives": 6,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 6,
+      "wallclockMs": 15.83
+    },
+    {
+      "entityId": "person:sarah-kwon",
+      "keyword": "Sarah Kwon",
+      "expectedFiles": 8,
+      "extractedFiles": 8,
+      "truePositives": 8,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 8,
+      "wallclockMs": 19.29
+    },
+    {
+      "entityId": "person:daniel-petrov",
+      "keyword": "Daniel Petrov",
+      "expectedFiles": 6,
+      "extractedFiles": 6,
+      "truePositives": 6,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 6,
+      "wallclockMs": 12.65
+    },
+    {
+      "entityId": "person:nadia-farouk",
+      "keyword": "Nadia Farouk",
+      "expectedFiles": 3,
+      "extractedFiles": 3,
+      "truePositives": 3,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 3,
+      "wallclockMs": 13.16
+    },
+    {
+      "entityId": "person:victor-adeyemi",
+      "keyword": "Victor Adeyemi",
+      "expectedFiles": 4,
+      "extractedFiles": 4,
+      "truePositives": 4,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 4,
+      "wallclockMs": 13.72
+    },
+    {
+      "entityId": "person:grace-okonkwo",
+      "keyword": "Grace Okonkwo",
+      "expectedFiles": 3,
+      "extractedFiles": 3,
+      "truePositives": 3,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 3,
+      "wallclockMs": 14.17
+    },
+    {
+      "entityId": "person:felix-marchetti",
+      "keyword": "Felix Marchetti",
+      "expectedFiles": 2,
+      "extractedFiles": 2,
+      "truePositives": 2,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 2,
+      "wallclockMs": 13.81
+    },
+    {
+      "entityId": "org:org-2271",
+      "keyword": "ORG-2271",
+      "expectedFiles": 5,
+      "extractedFiles": 5,
+      "truePositives": 5,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 5,
+      "wallclockMs": 15.41
+    },
+    {
+      "entityId": "org:org-3174",
+      "keyword": "ORG-3174",
+      "expectedFiles": 3,
+      "extractedFiles": 3,
+      "truePositives": 3,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 3,
+      "wallclockMs": 17.09
+    },
+    {
+      "entityId": "org:org-4402",
+      "keyword": "ORG-4402",
+      "expectedFiles": 5,
+      "extractedFiles": 5,
+      "truePositives": 5,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 5,
+      "wallclockMs": 15.31
+    },
+    {
+      "entityId": "org:org-8115",
+      "keyword": "ORG-8115",
+      "expectedFiles": 4,
+      "extractedFiles": 4,
+      "truePositives": 4,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 4,
+      "wallclockMs": 13.25
+    },
+    {
+      "entityId": "project:amber",
+      "keyword": "AMBER",
+      "expectedFiles": 8,
+      "extractedFiles": 8,
+      "truePositives": 8,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 8,
+      "wallclockMs": 18.04
+    },
+    {
+      "entityId": "project:lantern",
+      "keyword": "LANTERN",
+      "expectedFiles": 5,
+      "extractedFiles": 5,
+      "truePositives": 5,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 5,
+      "wallclockMs": 15.29
+    },
+    {
+      "entityId": "project:pebble",
+      "keyword": "PEBBLE",
+      "expectedFiles": 5,
+      "extractedFiles": 5,
+      "truePositives": 5,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 5,
+      "wallclockMs": 12.77
+    },
+    {
+      "entityId": "project:quarry",
+      "keyword": "QUARRY",
+      "expectedFiles": 6,
+      "extractedFiles": 6,
+      "truePositives": 6,
+      "precision": 1,
+      "recall": 1,
+      "missBreakdown": {
+        "filterBug": 0,
+        "ingestGap": 0,
+        "otherValueOnly": 0,
+        "spokenOnly": 0
+      },
+      "graphDocCount": 6,
+      "wallclockMs": 12.99
+    }
+  ]
+}

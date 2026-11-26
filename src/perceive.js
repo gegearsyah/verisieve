@@ -36,6 +36,7 @@ import {
 } from './graph-wasm.js';
 import { parseEnterpriseBuffer } from './enterprise-parsers.js';
 import { redactEnterpriseText } from './secret-scanner.js';
+import { compileTermList, matchTermKeysInText } from './term-matcher.js';
 import { redactAudioCall } from './audio-redactor.js';
 import { redactVideoKeyframes } from './video-redactor.js';
 import { extractPdfDetailed } from './pdf-parser.js';
@@ -151,6 +152,8 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
       vault,
       neuralSpans: highNeural,
       domainConfig: options.domainConfig,
+      whitelist: options.whitelist,
+      blacklist: options.blacklist,
     });
 
     for (const ent of red.entities) {
@@ -292,6 +295,8 @@ export function runGraphCoupledConformalRedaction(blocks, options = {}) {
             vault,
             neuralSpans: promotedSpans,
             domainConfig: options.domainConfig,
+            whitelist: options.whitelist,
+            blacklist: options.blacklist,
           })
         : p1.red;
 
@@ -492,6 +497,16 @@ function detectName(name, buf) {
   return `${name || 'inline'}${ext}`;
 }
 
+/** Accept an array, a comma/newline-separated string, or a `.txt` file path (one term per line). */
+function readTermList(input) {
+  if (Array.isArray(input)) return input;
+  if (typeof input !== 'string' || !input.trim()) return [];
+  const s = input.trim();
+  return /\.txt$/i.test(s) && fs.existsSync(s)
+    ? fs.readFileSync(s, 'utf8').split(/\r?\n/)
+    : s.split(/[\r\n,]+/);
+}
+
 /** Expand directory inputs into their files, in deterministic order. */
 function expandInputs(inputs, recursive) {
   const out = [];
@@ -542,11 +557,26 @@ export async function perceive(input, options = {}) {
  * `options.recursive === false`), raw bytes (format sniffed from magic bytes),
  * raw text, or `{ name?, bytes?, text?, frames? }` objects. A bare string that
  * is not an existing path is treated as text.
+ *
+ * `options.whitelist` values are never redacted; `options.blacklist` values are
+ * always redacted. Both accept an array, a comma/newline-separated string, or a
+ * `.txt` file path (one term per line), and apply deterministic structural breakdown
+ * (email <-> name/handle, honorifics, separator variants, diacritics, and phone digits).
+ * `options.keywords` (same forms and breakdown) scopes the extraction: only blocks
+ * whose source text matches a keyword reach markdown, chunks, SFT, and the graph.
+ * Redaction still runs over every block first, so scoping never leaves a dropped
+ * block's PII unredacted in the returned artifacts.
+ * `perceive()` is just `perceiveMulti([input])`.
  */
 export async function perceiveMulti(inputs = [], options = {}) {
   const inputList = Array.isArray(inputs) ? inputs : [inputs];
   const workspaceSalt = options.workspaceSalt || 'versieve-perceive-v1';
   const vault = options.vault || new SaltedPseudonymVault(workspaceSalt);
+  const perceptionOptions = {
+    ...options,
+    whitelist: compileTermList(readTermList(options.whitelist)),
+    blacklist: compileTermList(readTermList(options.blacklist)),
+  };
   const cleanEngine = loadCleanWasmSync();
   const maxTokensPerChunk = options.maxTokensPerChunk ?? 256;
   const overlapTokens = options.overlapTokens ?? 24;
@@ -590,7 +620,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
     // Audio WAV perception + Spoken ITN + waveform redaction
     if (lower.endsWith('.wav') && buf) {
       const audioRes = await redactAudioCall(name, buf, {
-        ...options,
+        ...perceptionOptions,
         vault,
         workspaceSalt,
       });
@@ -604,7 +634,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
     // Video keyframe sequence perception
     if (item && Array.isArray(item.frames)) {
       const vidRes = await redactVideoKeyframes(name, item.frames, {
-        ...options,
+        ...perceptionOptions,
         vault,
         workspaceSalt,
       });
@@ -703,10 +733,24 @@ export async function perceiveMulti(inputs = [], options = {}) {
 
   // Run Graph-Coupled Cross-Modal Conformal Redaction (GC-CRC) across all perceived blocks
   const gccrc = runGraphCoupledConformalRedaction(rawBlocks, {
-    ...options,
+    ...perceptionOptions,
     vault,
     workspaceSalt,
   });
+
+  // Optional keyword scoping: keep only blocks whose source text matches a keyword
+  // (with deterministic structural breakdown: email <-> name/handle, separators, phone digits).
+  const compiledKeywords = compileTermList(readTermList(options.keywords));
+  const keywordTerms = compiledKeywords.map((t) => t.key);
+  const extractedBlocks = [];
+  for (const blk of gccrc.blocks) {
+    const matchedKeywords =
+      compiledKeywords.length > 0
+        ? matchTermKeysInText(String(blk.originalText), compiledKeywords, { mode: 'keywords' })
+        : [];
+    if (compiledKeywords.length > 0 && matchedKeywords.length === 0) continue;
+    extractedBlocks.push({ ...blk, matchedKeywords });
+  }
 
   // Build Unlimited-OCR-style structured perception tag stream & token-windowed training chunks
   cleanEngine.dedupReset();
@@ -714,8 +758,8 @@ export async function perceiveMulti(inputs = [], options = {}) {
   const chunks = [];
   const markdownLines = [];
 
-  for (let i = 0; i < gccrc.blocks.length; i++) {
-    const blk = gccrc.blocks[i];
+  for (let i = 0; i < extractedBlocks.length; i++) {
+    const blk = extractedBlocks[i];
     const src = blk.source || 'document';
     if (!docTagsBySource.has(src)) docTagsBySource.set(src, []);
     docTagsBySource.get(src).push(formatPerceptionBlockTag(blk, i));
@@ -782,13 +826,13 @@ export async function perceiveMulti(inputs = [], options = {}) {
     })
     .join('\n');
 
-  const sceneTimeline = buildOmnimodalSceneTimeline(gccrc.blocks);
+  const sceneTimeline = buildOmnimodalSceneTimeline(extractedBlocks);
 
   // Index into zero-import Dual-CSR versieve_graph.wasm for <1ms PPR & GDPR Art. 17 erasure
   const graphIndex = new PortableDocumentGraph({ workspaceSalt });
   const docsForGraph = Array.from(docTagsBySource.keys()).map((src) => ({
     source: src,
-    blocks: gccrc.blocks
+    blocks: extractedBlocks
       .filter((b) => (b.source || 'document') === src)
       .map((b) => ({
         text: b.maskedText,
@@ -805,7 +849,9 @@ export async function perceiveMulti(inputs = [], options = {}) {
 
   const receiptPayload = {
     engine: 'versieve-gccrc-v1',
-    blockCount: gccrc.blocks.length,
+    blockCount: extractedBlocks.length,
+    sourceBlockCount: gccrc.blocks.length,
+    keywords: keywordTerms,
     chunkCount: chunks.length,
     anchorPoolSize: gccrc.anchorPoolSize,
     propagatedSpansCount: gccrc.propagatedSpansCount,
@@ -813,14 +859,28 @@ export async function perceiveMulti(inputs = [], options = {}) {
     perceptionSha256: sha256Hex(perceptionStream),
   };
 
+  // Inventory of every masked span so callers can audit what was (and was not) redacted.
+  const seen = new Set();
+  const redactedValues = [];
+  for (const blk of extractedBlocks) {
+    for (const e of blk.entities || []) {
+      const value = blk.originalText.slice(e.start, e.end);
+      const key = `${e.token}\u0000${value}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      redactedValues.push({ value, token: e.token, type: e.type, category: e.category });
+    }
+  }
+
   return {
     perceptionStream,
     markdown,
     chunks,
+    redactedValues,
     sftJsonl,
     ptlmSftJsonl,
     sceneTimeline,
-    blocks: gccrc.blocks,
+    blocks: extractedBlocks,
     anchorPoolSize: gccrc.anchorPoolSize,
     propagatedSpansCount: gccrc.propagatedSpansCount,
     forensicFindings,
