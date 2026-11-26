@@ -1,0 +1,2190 @@
+{
+  "kind": "track-k-retrieval-engine",
+  "stage": "K3-DA1",
+  "dryRun": false,
+  "generatedAt": "2026-11-27T00:13:23",
+  "seed": 42,
+  "hardware": {
+    "python": "3.12.4",
+    "torch": "2.10.0+cu128",
+    "cudaAvailable": true,
+    "gpuName": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpuVramMiB": 8188,
+    "transformers": "5.23.0",
+    "peft": "0.21.3"
+  },
+  "models": {
+    "generator": {
+      "modelId": "Qwen/Qwen2.5-1.5B-Instruct",
+      "modelLabel": "Qwen2.5-1.5B-Instruct",
+      "decoding": {
+        "doSample": false,
+        "maxNewTokens": 128
+      }
+    },
+    "judges": {
+      "qwen2.5:7b": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "sizeBytes": 4683087332,
+        "parameterSize": "7.6B",
+        "quantizationLevel": "Q4_K_M"
+      },
+      "llama3.2:3b": {
+        "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+        "sizeBytes": 2019393189,
+        "parameterSize": "3.2B",
+        "quantizationLevel": "Q4_K_M"
+      }
+    }
+  },
+  "inputs": {
+    "manifest": "fixtures/noisy-estate-manifest.json",
+    "manifestSha256": "37a70233bf5b91ad11d83bcbe72913c56b7a914e037564fa22a1128d0944d1f1",
+    "composedCorpus": "results/track-k-corpus-composed.jsonl",
+    "composedCorpusSha256": "059b6311f0588ca6e5bd6a1fb1d525ed5d8de9dea59fc67acc9d387d9bc1a8f1",
+    "composedRecordCount": 1106
+  },
+  "routerRule": "Purely engine-side per-question routing over buildAmnesiacCorpus composed records (no oracle manifest world/personId/collisionWith/docs read at routing time). Given only the question string and the engine-produced composed corpus (canary rows excluded), find all engine target entity IDs ent:<kind>:<value> (kind in {person, email, phone}, len(value) >= 3) that match the question string case-insensitively at alphanumeric word boundaries; retain the longest matched target length (selecting full-name entity IDs over single-token surname/given-name splits) and collect all composed records whose target is in that matched set, ordered by (target, id) ascending. If no direct target matches, fall back to composed records whose entities list contains a matched engine entity ID, ordered by id ascending. Selected record texts (assistant turn content) are joined with blank lines up to the 32768 - 1024 = 31744 token budget (identical to the oracle cag_hybrid cap); record text is never shortened.",
+  "zeroOracleNote": "End-to-end engine-resolution router: routing reads ONLY q['question'] and buildAmnesiacCorpus engine-produced composed records (target/entities/messages). No manifest personId, world.people, collisionWith, docs, or expectedValue enters routing. The 81.7% cag_hybrid arm in results/track-k7-cag-vs-rag-vs-bm25.json remains the conditional upper bound given oracle identity resolution.",
+  "estate": {
+    "manifest": "fixtures/noisy-estate-manifest.json",
+    "documentCount": 115,
+    "questions": 60,
+    "strata": {
+      "Q1": 24,
+      "Q2": 24,
+      "Q3": 12
+    }
+  },
+  "arm": {
+    "kind": "retrieval_engine",
+    "eval": {
+      "Q1": {
+        "n": 24,
+        "exactMatchPct": 83.3,
+        "abstentionPct": 4.2,
+        "placeholderEchoCount": 0,
+        "judgeMean": 1.6667,
+        "judgeGe1Pct": 83.3,
+        "judgeEq2Pct": 83.3,
+        "llamaJudgeMean": 1.6667,
+        "llamaGe1Pct": 95.8,
+        "llamaEq2Pct": 70.8
+      },
+      "Q2": {
+        "n": 24,
+        "exactMatchPct": 62.5,
+        "abstentionPct": 12.5,
+        "placeholderEchoCount": 0,
+        "judgeMean": 1.2083,
+        "judgeGe1Pct": 62.5,
+        "judgeEq2Pct": 58.3,
+        "llamaJudgeMean": 1.375,
+        "llamaGe1Pct": 100.0,
+        "llamaEq2Pct": 37.5
+      },
+      "Q3": {
+        "n": 12,
+        "exactMatchPct": 50.0,
+        "abstentionPct": 8.3,
+        "placeholderEchoCount": 0,
+        "judgeMean": 0.9167,
+        "judgeGe1Pct": 50.0,
+        "judgeEq2Pct": 41.7,
+        "llamaJudgeMean": 1.25,
+        "llamaGe1Pct": 100.0,
+        "llamaEq2Pct": 25.0
+      },
+      "all": {
+        "n": 60,
+        "exactMatchPct": 68.3,
+        "abstentionPct": 8.3,
+        "placeholderEchoCount": 0,
+        "judgeMean": 1.3333,
+        "judgeGe1Pct": 68.3,
+        "judgeEq2Pct": 65.0,
+        "llamaJudgeMean": 1.4667,
+        "llamaGe1Pct": 98.3,
+        "llamaEq2Pct": 48.3
+      }
+    },
+    "clopperPearson95CI": {
+      "Q1": [
+        62.6,
+        95.3
+      ],
+      "Q2": [
+        40.6,
+        81.2
+      ],
+      "Q3": [
+        21.1,
+        78.9
+      ],
+      "all": [
+        55.0,
+        79.7
+      ]
+    },
+    "q3Disambiguation": {
+      "n": 12,
+      "exactMatchCount": 6,
+      "exactMatchPct": 50.0,
+      "note": "disambiguation under engine-produced entity IDs (same-name collision pairs share one engine target entity ID without oracle manifest identity)"
+    },
+    "tokenAccounting": {
+      "questions": 60,
+      "contextTokensTotal": 72648,
+      "contextTokensMean": 1210.8,
+      "promptTokensTotal": 76804,
+      "promptTokensMean": 1280.1,
+      "promptTokensMin": 88,
+      "promptTokensMax": 2949,
+      "tokenBudget": 31744,
+      "capHits": 0
+    },
+    "routingTelemetry": {
+      "questionsRouted": 60,
+      "questionsWithMatchedRecords": 60,
+      "questionsUsingFallback": 0,
+      "selectedRecordsMin": 1,
+      "selectedRecordsMax": 1,
+      "selectedRecordsMean": 1.0,
+      "contextTokensTotal": 72648,
+      "contextTokensMean": 1210.8,
+      "contextTokensMin": 21,
+      "contextTokensMax": 2876,
+      "capHits": 0
+    },
+    "rows": [
+      {
+        "qid": "q-01",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Sarah Horvath work in?",
+        "expectedValue": "Sales",
+        "answer": "Sarah Horvath works in the Sales department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1456.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Sarah Horvath"
+        ],
+        "selectedRecordIds": [
+          "02e6a3f49c7cb07f10d6d00d6c90e9b061719c13bddb553c8808a38415db6c4f"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-30.txt",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1247,
+        "promptTokens": 1316,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-02",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Victor Fontaine work in?",
+        "expectedValue": "Finance",
+        "answer": "Victor Fontaine works in the Finance department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 572.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Victor Fontaine"
+        ],
+        "selectedRecordIds": [
+          "5f4efa032b126854d75b92505d90eb49ff8cf9247f0a11804390666ab74fe30d"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1031,
+        "promptTokens": 1099,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-03",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Daniel Kovacs work in?",
+        "expectedValue": "Engineering",
+        "answer": "According to the provided data, Daniel Kovacs works in Engineering.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 643.6,
+        "matchedEngineEntityIds": [
+          "ent:person:Daniel Kovacs"
+        ],
+        "selectedRecordIds": [
+          "ccc9bc645280c890fc14dc1f6c6854ac1617a3f5da32355f2e6b5d8e980a29d1"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-02.csv"
+        ],
+        "contextTokens": 781,
+        "promptTokens": 849,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-04",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Emil Farkas work in?",
+        "expectedValue": "Legal",
+        "answer": "Based on the information provided, Emil Farkas works in the Legal department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 766.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Emil Farkas"
+        ],
+        "selectedRecordIds": [
+          "0ec7809d70fd6756578ebb5c25eaf1449cd3c16fa9e22b48152a4339646b50e2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-39.eml",
+          "rosters/roster-06.csv"
+        ],
+        "contextTokens": 830,
+        "promptTokens": 900,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-05",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Nadia Kim work in?",
+        "expectedValue": "Research",
+        "answer": "According to the roster data provided, Nadia Kim works in Research.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 712.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Nadia Kim"
+        ],
+        "selectedRecordIds": [
+          "c0f3266e5449095e5f95556b40d2e9ce4e3795001325cb47a348e6f3c9198a7c"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-09.txt",
+          "rosters/roster-06.csv"
+        ],
+        "contextTokens": 962,
+        "promptTokens": 1030,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-06",
+        "stratum": "Q1",
+        "attr": "worksIn",
+        "question": "Which department does Ines Duarte work in?",
+        "expectedValue": "Legal",
+        "answer": "Based on the information provided in the excerpts, Ines Duarte works in the Legal department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1677.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Ines Duarte"
+        ],
+        "selectedRecordIds": [
+          "50c86b1acdcbc8088ca4b0668db5af2d333fb72903bcfc3b591037177e91f827"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-08.txt",
+          "chat/chat-14.txt",
+          "chat/chat-15.txt",
+          "chat/chat-23.txt",
+          "rosters/roster-05.csv",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 2876,
+        "promptTokens": 2945,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-07",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Richard Nakamura own?",
+        "expectedValue": "CINDER",
+        "answer": "Richard Nakamura owns the INDIGO project.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 764.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Richard Nakamura"
+        ],
+        "selectedRecordIds": [
+          "a5a336a5c6c28964043ef7b52dd26b8f54e458e4d4f1867b15d310c18f0f8f2d"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-11.vtt",
+          "chat/chat-13.txt",
+          "rosters/roster-03.csv",
+          "rosters/roster-06.csv"
+        ],
+        "contextTokens": 1799,
+        "promptTokens": 1867,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-08",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Grace Tanaka own?",
+        "expectedValue": "INDIGO",
+        "answer": "Based on the information provided:\n\nGrace Tanaka owns project INDIGO.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 730.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Grace Tanaka"
+        ],
+        "selectedRecordIds": [
+          "beee1c16db29327a0b8b25983e54bff5621d3201bce2613fab3ce70be464f92b"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-15.vtt",
+          "chat/chat-24.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 1063,
+        "promptTokens": 1130,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-09",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Petra Petrov own?",
+        "expectedValue": "BASALT",
+        "answer": "BASALT",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 275.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Petra Petrov"
+        ],
+        "selectedRecordIds": [
+          "67052566dedc3d736ab23f3eaa86249d33c04bc8ee84c1bda79b405a4d0c9817"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-20.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 865,
+        "promptTokens": 932,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-10",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Petra Salazar own?",
+        "expectedValue": "LANTERN",
+        "answer": "Based on the information provided in the verified excerpts:\n\nPetra Salazar owns the project **LANTERN**.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1074.6,
+        "matchedEngineEntityIds": [
+          "ent:person:Petra Salazar"
+        ],
+        "selectedRecordIds": [
+          "598051c6870f7318dccafa44786cd5776f339e0f4a7bae017a3dfd00f2c470c2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-07.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 1037,
+        "promptTokens": 1104,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-11",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Ondrej Paredes own?",
+        "expectedValue": "HARVEST",
+        "answer": "Based on the information provided in the verified excerpts:\n\nOndrej Paredes owns the \"HARVEST\" project.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1227.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Ondrej Paredes"
+        ],
+        "selectedRecordIds": [
+          "7703ffd1041cfe3d841cb9459a45839398edd1e634e518b4a9d7dfeb6c36a9eb"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-07.txt",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1154,
+        "promptTokens": 1225,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-12",
+        "stratum": "Q1",
+        "attr": "ownsProject",
+        "question": "Which project does Petra Ferreira own?",
+        "expectedValue": "DELTIC",
+        "answer": "DELTIC",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 308.5,
+        "matchedEngineEntityIds": [
+          "ent:person:Petra Ferreira"
+        ],
+        "selectedRecordIds": [
+          "de05adc7e280bcc025ff4cd82095a8a2f7eca55534d1d796df17583ce4c2ebd9"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1023,
+        "promptTokens": 1090,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-13",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Luca Toth hold currently?",
+        "expectedValue": "Officer",
+        "answer": "Luca Toth holds the title \"People\" according to the verified excerpts.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 747.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Luca Toth"
+        ],
+        "selectedRecordIds": [
+          "252e90edc3fdd187abe9c15a4fe961b6fea1d744f5ae88bf3071d3c385d6fc48"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-11.eml",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 785,
+        "promptTokens": 853,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 0
+      },
+      {
+        "qid": "q-14",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Elena Vance hold currently?",
+        "expectedValue": "Engineer",
+        "answer": "Elena Vance holds the title of Engineer.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 614.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Elena Vance"
+        ],
+        "selectedRecordIds": [
+          "0d91b5e98ca7b5e27220ca6554942478933aeb3209bd6d8573c1dea9f5e51b3b"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-09.vtt",
+          "chat/chat-15.txt",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1336,
+        "promptTokens": 1403,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-15",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Noor Salazar hold currently?",
+        "expectedValue": "Specialist",
+        "answer": "According to the provided information, Noor Salazar holds the title of Specialist and has been serving since May 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1297.1,
+        "matchedEngineEntityIds": [
+          "ent:person:Noor Salazar"
+        ],
+        "selectedRecordIds": [
+          "4aab8f9f640c15dd1d4b6644f8408eedb98c7a7f0bd36863451b952d1b07a8a1"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-18.txt",
+          "rosters/roster-10.sql"
+        ],
+        "contextTokens": 1274,
+        "promptTokens": 1343,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-16",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Elena Kimani hold currently?",
+        "expectedValue": "Manager",
+        "answer": "Elena Kimani holds the title of Manager.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 640.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Elena Kimani"
+        ],
+        "selectedRecordIds": [
+          "c23a65ba4f53ee5824a32197268280c99c5a145c57829912f568f24882eec41b"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-04.vtt",
+          "chat/chat-11.txt",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1259,
+        "promptTokens": 1327,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-17",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Petra Petrov hold currently?",
+        "expectedValue": "Specialist",
+        "answer": "Petra Petrov holds the title of Research.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 547.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Petra Petrov"
+        ],
+        "selectedRecordIds": [
+          "67052566dedc3d736ab23f3eaa86249d33c04bc8ee84c1bda79b405a4d0c9817"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-20.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 865,
+        "promptTokens": 933,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-18",
+        "stratum": "Q1",
+        "attr": "titled",
+        "question": "What title does Marcus Zhang hold currently?",
+        "expectedValue": "Officer",
+        "answer": "Marcus Zhang serves as Officer.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 400.1,
+        "matchedEngineEntityIds": [
+          "ent:person:Marcus Zhang"
+        ],
+        "selectedRecordIds": [
+          "d72636779459f05eba6f4bb2ae3db405c61394497bf06cf4b366f287a10bfe17"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-03.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 861,
+        "promptTokens": 928,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-19",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Milan Park join the company?",
+        "expectedValue": "November 2025",
+        "answer": "According to the roster data provided, Milan Park joined the company in November 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 982.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Milan Park"
+        ],
+        "selectedRecordIds": [
+          "0b5bc01f1d6593f1cb79ece32565bffd02a4d5af46db8989c036f84923868e1f"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-06.txt",
+          "mail/thread-02.eml",
+          "rosters/roster-02.csv"
+        ],
+        "contextTokens": 1120,
+        "promptTokens": 1188,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-20",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Katherine Weber join the company?",
+        "expectedValue": "February 2025",
+        "answer": "According to the verified excerpts, Katherine Weber joined the company in February 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1018.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Katherine Weber"
+        ],
+        "selectedRecordIds": [
+          "9dd291d0b7d74924be81be558905a72d8c490fb5859c1f337a33b1ede47053ab"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-01.txt",
+          "memos/memo-04.txt",
+          "rosters/roster-10.sql"
+        ],
+        "contextTokens": 1374,
+        "promptTokens": 1441,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-21",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Emil Ferreira join the company?",
+        "expectedValue": "September 2025",
+        "answer": "The information provided does not cover when Emil Ferreira joined the company.",
+        "is_empty": false,
+        "is_abstention": true,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 817.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Emil Ferreira"
+        ],
+        "selectedRecordIds": [
+          "db5307cad3c670ebe0ca362c487cedbc25da523413ae523171a39e15f59e811b"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-23.txt",
+          "mail/thread-13.eml",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 1103,
+        "promptTokens": 1172,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-22",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Alexandra Renard join the company?",
+        "expectedValue": "April 2025",
+        "answer": "Alexandra Renard joined the company in April 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 661.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Alexandra Renard"
+        ],
+        "selectedRecordIds": [
+          "59c726e561f1f1e82f97fcd965ab76993fe2ced164e176f10217f2cf53a8301e"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-38.eml"
+        ],
+        "contextTokens": 21,
+        "promptTokens": 89,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-23",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Marcus Bell join the company?",
+        "expectedValue": "March 2025",
+        "answer": "March 2025",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 883.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Marcus Bell"
+        ],
+        "selectedRecordIds": [
+          "d506e134741bf7a2eb0ae72a7d01a51839c010f694556d5948029770133eecd6"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-02.txt",
+          "chat/chat-04.txt",
+          "chat/chat-10.txt",
+          "rosters/roster-06.csv",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 2305,
+        "promptTokens": 2372,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-24",
+        "stratum": "Q1",
+        "attr": "joinedOn",
+        "question": "When did Sofia Tanaka join the company?",
+        "expectedValue": "July 2025",
+        "answer": "Sofia Tanaka joined the company in July 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 800.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Sofia Tanaka"
+        ],
+        "selectedRecordIds": [
+          "88f6e1b22b2bde1376c9b997f435b357ff52d81d884b7938c57864f603c55ecf"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-07.txt",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 900,
+        "promptTokens": 968,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-25",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Patricia Cortez join the company?",
+        "expectedValue": "May 2025",
+        "answer": "Patricia Cortez joined the company in May 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 719.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Patricia Cortez"
+        ],
+        "selectedRecordIds": [
+          "e56c3f5d1c8e6ef7bcb52e3502edb1b8705e7a8259a50a7dcb4a5cccfdf5e58c"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-02.vtt",
+          "rosters/roster-01.csv"
+        ],
+        "contextTokens": 812,
+        "promptTokens": 880,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-26",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Victor Adeyemi join the company?",
+        "expectedValue": "December 2025",
+        "answer": "December 2025",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 637.5,
+        "matchedEngineEntityIds": [
+          "ent:person:Victor Adeyemi"
+        ],
+        "selectedRecordIds": [
+          "29f0187196fa658978172dbb9feb28a8d0e7de5df604829476fbf60e278115b2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-04.vtt",
+          "mail/thread-14.eml",
+          "rosters/roster-02.csv",
+          "rosters/roster-03.csv"
+        ],
+        "contextTokens": 1666,
+        "promptTokens": 1736,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-27",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Patricia Bauer join the company?",
+        "expectedValue": "September 2025",
+        "answer": "September 2025",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 393.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Patricia Bauer"
+        ],
+        "selectedRecordIds": [
+          "8e44f6f1e8837e73cd5828e31f20eabba2890c28ca72b14da06e70a45a2adfbe"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-04.txt",
+          "rosters/roster-06.csv"
+        ],
+        "contextTokens": 856,
+        "promptTokens": 923,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-28",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Daniel Horvath join the company?",
+        "expectedValue": "May 2025",
+        "answer": "According to the roster data provided, Daniel Horvath joined the company on April 13, 2026.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 1151.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Daniel Horvath"
+        ],
+        "selectedRecordIds": [
+          "a24aa24becbbd95dc280755aef2686be21afcc075262c62d0d47f0630a81afcc"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-02.csv"
+        ],
+        "contextTokens": 781,
+        "promptTokens": 850,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-29",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Nadia Farouk join the company?",
+        "expectedValue": "January 2025",
+        "answer": "January 2025",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 757.2,
+        "matchedEngineEntityIds": [
+          "ent:person:NADIA FAROUK"
+        ],
+        "selectedRecordIds": [
+          "e1dd25b6ca995c647f9016c011596d12bf91d7c879f21e5c1b62539e9161681d"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-08.eml",
+          "memos/memo-06.txt",
+          "rosters/roster-02.csv",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 2019,
+        "promptTokens": 2090,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-30",
+        "stratum": "Q2",
+        "attr": "joinedOn",
+        "question": "When did Tomas Marchetti join the company?",
+        "expectedValue": "July 2025",
+        "answer": "Tomas Marchetti joined the company in July 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 633.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Tomas Marchetti"
+        ],
+        "selectedRecordIds": [
+          "58bf2dc20eceef5c859e630b7689648474567901cb270b7854a0baaa5d0bc132"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-05.eml",
+          "mail/thread-24.eml"
+        ],
+        "contextTokens": 85,
+        "promptTokens": 154,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-31",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Michael Farrell work in?",
+        "expectedValue": "Engineering",
+        "answer": "Based on the information provided in the excerpts:\n\nMichael Farrell works in Operations.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 942.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Michael Farrell"
+        ],
+        "selectedRecordIds": [
+          "ead0e9e998781483aa9f422dcd42635d20aeabd783c2bcd773471baa2d6fe924"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-06.vtt",
+          "rosters/roster-01.csv",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 1580,
+        "promptTokens": 1647,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-32",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Hana Sharma work in?",
+        "expectedValue": "Legal",
+        "answer": "Hana Sharma works in Legal.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 508.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Hana Sharma"
+        ],
+        "selectedRecordIds": [
+          "aea114ed5b0216795d82e69fc4d922f2a3f272e10d682c49d4368d86630554aa"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-05.vtt",
+          "memos/memo-16.txt",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1188,
+        "promptTokens": 1256,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-33",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Elena Asante work in?",
+        "expectedValue": "Legal",
+        "answer": "The department where Elena Asante works is Legal.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 595.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Elena Asante"
+        ],
+        "selectedRecordIds": [
+          "714974cf51729b6b63e7e2516ac15df18a266a179753e3efc8f12b61949e6057"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1023,
+        "promptTokens": 1091,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-34",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Alexandra Sibanda work in?",
+        "expectedValue": "Research",
+        "answer": "The excerpt does not cover this information.",
+        "is_empty": false,
+        "is_abstention": true,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 508.6,
+        "matchedEngineEntityIds": [
+          "ent:person:Alexandra Sibanda"
+        ],
+        "selectedRecordIds": [
+          "d9f2fd04f2b1f94950108fc7a57fa7c977370bca123b8c501abf31d52a04b82f"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1031,
+        "promptTokens": 1100,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-35",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Marcus Demir work in?",
+        "expectedValue": "Research",
+        "answer": "Based on the information provided, Marcus Demir works in Research. The relevant excerpt states:\n\n\"marcus.demir@corp.example, 555-097-5933, 'Research', NULL)\"",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 2008.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Marcus Demir"
+        ],
+        "selectedRecordIds": [
+          "04422ed82d2b14be868b86252f8e2c581a3f5c5891684dd832f9764c228af6a5"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-10.eml",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1050,
+        "promptTokens": 1118,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-36",
+        "stratum": "Q2",
+        "attr": "worksIn",
+        "question": "Which department does Patricia Bauer work in?",
+        "expectedValue": "Legal",
+        "answer": "Based on the information provided in the verified excerpts:\n\nPatricia Bauer joined in September 2025 and works in the Legal department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1219.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Patricia Bauer"
+        ],
+        "selectedRecordIds": [
+          "8e44f6f1e8837e73cd5828e31f20eabba2890c28ca72b14da06e70a45a2adfbe"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "memos/memo-04.txt",
+          "rosters/roster-06.csv"
+        ],
+        "contextTokens": 856,
+        "promptTokens": 923,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-37",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Noor Salazar own?",
+        "expectedValue": "GRANITE",
+        "answer": "Based on the information provided:\n\nNoor Salazar owns the \"GRANITE\" project.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 970.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Noor Salazar"
+        ],
+        "selectedRecordIds": [
+          "4aab8f9f640c15dd1d4b6644f8408eedb98c7a7f0bd36863451b952d1b07a8a1"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-18.txt",
+          "rosters/roster-10.sql"
+        ],
+        "contextTokens": 1274,
+        "promptTokens": 1342,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-38",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Hana Zulu own?",
+        "expectedValue": "JUNIPER",
+        "answer": "Not covered in the provided documents.",
+        "is_empty": false,
+        "is_abstention": true,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 409.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Hana Zulu"
+        ],
+        "selectedRecordIds": [
+          "c558b95c303acee7c91baebe8b897b4bd23643eddff21c6be2ccb23303c7bc62"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-02.csv"
+        ],
+        "contextTokens": 781,
+        "promptTokens": 849,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-39",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Susan Dubois own?",
+        "expectedValue": "CINDER",
+        "answer": "Based on the information provided:\n\n- Susan Dubois is flagged as serving as a Specialist.\n- She joined in March 2025.\n\nThe excerpt does not provide specific details about which projects Susan Dubois owns or manages. Therefore, the answer cannot be determined solely from the given text.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 2437.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Susan Dubois"
+        ],
+        "selectedRecordIds": [
+          "b1fa59df6acd314c62289f2f991497e8ec7b03cf3c9e158f3c643b6da5cf4cb4"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-22.txt",
+          "rosters/roster-07.csv"
+        ],
+        "contextTokens": 1009,
+        "promptTokens": 1077,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-40",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Victor Adeyemi own?",
+        "expectedValue": "KESTREL",
+        "answer": "Based on the information provided:\n\nVictor Adeyemi owns the \"KESTREL\" project.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1144.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Victor Adeyemi"
+        ],
+        "selectedRecordIds": [
+          "29f0187196fa658978172dbb9feb28a8d0e7de5df604829476fbf60e278115b2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-04.vtt",
+          "mail/thread-14.eml",
+          "rosters/roster-02.csv",
+          "rosters/roster-03.csv"
+        ],
+        "contextTokens": 1666,
+        "promptTokens": 1735,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-41",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Alexandra Renard own?",
+        "expectedValue": "LANTERN",
+        "answer": "Not covered in the provided documents.",
+        "is_empty": false,
+        "is_abstention": true,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 313.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Alexandra Renard"
+        ],
+        "selectedRecordIds": [
+          "59c726e561f1f1e82f97fcd965ab76993fe2ced164e176f10217f2cf53a8301e"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-38.eml"
+        ],
+        "contextTokens": 21,
+        "promptTokens": 88,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-42",
+        "stratum": "Q2",
+        "attr": "ownsProject",
+        "question": "Which project does Sofia Banda own?",
+        "expectedValue": "GRANITE",
+        "answer": "According to the information provided, Sofia Banda serves as an Administrator and owns the project GRANITE.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1149.0,
+        "matchedEngineEntityIds": [
+          "ent:person:Sofia Banda"
+        ],
+        "selectedRecordIds": [
+          "4b352d7685733c21b1794c874d1a62f2bcda266f8595f107fd18e800049edb9a"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-05.txt",
+          "chat/chat-07.txt",
+          "rosters/roster-10.sql"
+        ],
+        "contextTokens": 1554,
+        "promptTokens": 1621,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 1,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-43",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does Patricia Vasquez hold currently?",
+        "expectedValue": "Officer",
+        "answer": "Patricia Vasquez holds the title of Officer.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 587.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Patricia Vasquez"
+        ],
+        "selectedRecordIds": [
+          "88fee92b4172b84b566fb77a512b85a338f373db1b3c31a4c87afd871cb0b5b2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-27.txt",
+          "rosters/roster-04.csv"
+        ],
+        "contextTokens": 1034,
+        "promptTokens": 1102,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-44",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does Bruno Adebayo hold currently?",
+        "expectedValue": "Coordinator",
+        "answer": "Bruno Adebayo serves as an Assistant Director.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 563.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Bruno Adebayo"
+        ],
+        "selectedRecordIds": [
+          "0ddae90b87a42884c4374f9c4214e5d3b5b33a01fd3f106842abc3f3c8b6a6ff"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "mail/thread-16.eml",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 789,
+        "promptTokens": 858,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-45",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does Noor Dumitru hold currently?",
+        "expectedValue": "Analyst",
+        "answer": "Noor Dumitru serves as a Specialist.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 449.1,
+        "matchedEngineEntityIds": [
+          "ent:person:Noor Dumitru"
+        ],
+        "selectedRecordIds": [
+          "31723ca5637be81c7272196632398c00b220ca0189560d50d303766b05783b71"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-03.txt"
+        ],
+        "contextTokens": 303,
+        "promptTokens": 374,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-46",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does Chidi Okonkwo hold currently?",
+        "expectedValue": "Team Lead",
+        "answer": "Chidi Okonkwo holds the title of Administrator.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 631.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Chidi Okonkwo"
+        ],
+        "selectedRecordIds": [
+          "57ce0fb9f4ec3c1375256b6e45b443cb8176e21e57d7ace042aa200b098e8c5a"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-07.vtt",
+          "rosters/roster-03.csv"
+        ],
+        "contextTokens": 811,
+        "promptTokens": 882,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-47",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does James Gallo hold currently?",
+        "expectedValue": "Director of Ops",
+        "answer": "James Gallo holds the title of \"Director of Ops\" currently.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 826.6,
+        "matchedEngineEntityIds": [
+          "ent:person:James Gallo"
+        ],
+        "selectedRecordIds": [
+          "b49335107a0e0a2cdf7a56b63a9842a4c24d8fcf0931bdf659cc9149f48ebc98"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-05.txt",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1284,
+        "promptTokens": 1352,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-48",
+        "stratum": "Q2",
+        "attr": "titled",
+        "question": "What title does Petra Virtanen hold currently?",
+        "expectedValue": "Director of Ops",
+        "answer": "Petra Virtanen holds the title of Director of Ops.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 703.5,
+        "matchedEngineEntityIds": [
+          "ent:person:Petra Virtanen"
+        ],
+        "selectedRecordIds": [
+          "d4d1db663396c40a945d2fb95032a9e5a6646bff4d8256506971681d12e0cd71"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-08.vtt",
+          "chat/chat-29.txt",
+          "rosters/roster-03.csv"
+        ],
+        "contextTokens": 1038,
+        "promptTokens": 1107,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-49",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Thomas Beringer (the Analyst) work in?",
+        "expectedValue": "People",
+        "answer": "Thomas Beringer works in Research at HARVEST.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 564.1,
+        "matchedEngineEntityIds": [
+          "ent:person:Thomas Beringer"
+        ],
+        "selectedRecordIds": [
+          "919f8e26af298e0eb9087b80649c99b7315628ee45c5f481796a7e7b85fa0d0c"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-07.csv"
+        ],
+        "contextTokens": 766,
+        "promptTokens": 840,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-50",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Jennifer Odell (the Asst. Director) work in?",
+        "expectedValue": "Sales",
+        "answer": "Based on the information provided:\n\nJennifer Odell works in the Sales department. This can be inferred from her full name \"jennifer.odell@corp.example\" and the fact that she is listed under the Sales category in the roster data.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 2283.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Jennifer Odell"
+        ],
+        "selectedRecordIds": [
+          "49e86219557690b5dc22d2b8f90ad269a8a2bea31e2190b27c1a8b2e08bfdabc"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-14.vtt",
+          "rosters/roster-02.csv",
+          "rosters/roster-10.sql"
+        ],
+        "contextTokens": 1831,
+        "promptTokens": 1907,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-51",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Sarah Okafor (the Analyst) work in?",
+        "expectedValue": "Finance",
+        "answer": "Sarah Okafor works in the Sales department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 852.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Sarah Okafor"
+        ],
+        "selectedRecordIds": [
+          "2cce8192fd91ef50fb421b68c9755c47a808ddb8bda01676ceecb6e6f7beceee"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-01.vtt",
+          "captions/meeting-11.vtt",
+          "rosters/roster-02.csv",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1861,
+        "promptTokens": 1935,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-52",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Ines Duarte (the Engineer) work in?",
+        "expectedValue": "Legal",
+        "answer": "Based on the information provided:\n\nINES DUARTE works in the **Operations** department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 1643.6,
+        "matchedEngineEntityIds": [
+          "ent:person:Ines Duarte"
+        ],
+        "selectedRecordIds": [
+          "50c86b1acdcbc8088ca4b0668db5af2d333fb72903bcfc3b591037177e91f827"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-08.txt",
+          "chat/chat-14.txt",
+          "chat/chat-15.txt",
+          "chat/chat-23.txt",
+          "rosters/roster-05.csv",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 2876,
+        "promptTokens": 2949,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-53",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Victor Adeyemi (the Administrator) work in?",
+        "expectedValue": "Support",
+        "answer": "Victor Adeyemi works in the Engineering department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 801.3,
+        "matchedEngineEntityIds": [
+          "ent:person:Victor Adeyemi"
+        ],
+        "selectedRecordIds": [
+          "29f0187196fa658978172dbb9feb28a8d0e7de5df604829476fbf60e278115b2"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-04.vtt",
+          "mail/thread-14.eml",
+          "rosters/roster-02.csv",
+          "rosters/roster-03.csv"
+        ],
+        "contextTokens": 1666,
+        "promptTokens": 1740,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-54",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Elena Vance (the Engineer) work in?",
+        "expectedValue": "Support",
+        "answer": "Elena Vance works in the Support department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 613.4,
+        "matchedEngineEntityIds": [
+          "ent:person:Elena Vance"
+        ],
+        "selectedRecordIds": [
+          "0d91b5e98ca7b5e27220ca6554942478933aeb3209bd6d8573c1dea9f5e51b3b"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-09.vtt",
+          "chat/chat-15.txt",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1336,
+        "promptTokens": 1407,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-55",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Marcus Bell (the Specialist) work in?",
+        "expectedValue": "Finance",
+        "answer": "According to the provided information, Marcus Bell worked in Sales before joining Finance in March 2025.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1495.1,
+        "matchedEngineEntityIds": [
+          "ent:person:Marcus Bell"
+        ],
+        "selectedRecordIds": [
+          "d506e134741bf7a2eb0ae72a7d01a51839c010f694556d5948029770133eecd6"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-02.txt",
+          "chat/chat-04.txt",
+          "chat/chat-10.txt",
+          "rosters/roster-06.csv",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 2305,
+        "promptTokens": 2376,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 1,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-56",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Michael Farrell (the Director of Ops) work in?",
+        "expectedValue": "Engineering",
+        "answer": "Michael Farrell works in Operations.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 591.7,
+        "matchedEngineEntityIds": [
+          "ent:person:Michael Farrell"
+        ],
+        "selectedRecordIds": [
+          "ead0e9e998781483aa9f422dcd42635d20aeabd783c2bcd773471baa2d6fe924"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-06.vtt",
+          "rosters/roster-01.csv",
+          "rosters/roster-05.csv"
+        ],
+        "contextTokens": 1580,
+        "promptTokens": 1653,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-57",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Margaret Alvi (the Analyst) work in?",
+        "expectedValue": "Engineering",
+        "answer": "Based on the information provided:\n\n1. The first CSV file lists departments for employees.\n2. In the \"Department\" column, we can see that Margaret Alvi works in Engineering.\n\nTherefore, Margaret Alvi works in the Engineering department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 2209.8,
+        "matchedEngineEntityIds": [
+          "ent:person:Margaret Alvi"
+        ],
+        "selectedRecordIds": [
+          "afdcc671451b939a37347dba97e81e2605462328d68b95f85b7482a95473d7ef"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-02.vtt",
+          "rosters/roster-01.csv",
+          "rosters/roster-07.csv"
+        ],
+        "contextTokens": 1569,
+        "promptTokens": 1642,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 1
+      },
+      {
+        "qid": "q-58",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Grace Okonkwo (the Manager) work in?",
+        "expectedValue": "People",
+        "answer": "Grace Okonkwo works in the \"People\" department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 783.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Grace Okonkwo"
+        ],
+        "selectedRecordIds": [
+          "d2c09fbd0432f7310cc5537c4fd287f731e4c976822f2343363ebafe91113698"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "chat/chat-08.txt",
+          "mail/thread-34.eml",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1347,
+        "promptTokens": 1422,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-59",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Felix Marchetti (the Manager) work in?",
+        "expectedValue": "Legal",
+        "answer": "Based on the information provided:\n\n- Felix Marchetti is listed under \"Legal\" in the roster.\n\nTherefore, Felix Marchetti works in the Legal department.",
+        "is_empty": false,
+        "is_abstention": false,
+        "exact_match": true,
+        "has_placeholder_echo": false,
+        "latency_ms": 1448.9,
+        "matchedEngineEntityIds": [
+          "ent:person:Felix Marchetti"
+        ],
+        "selectedRecordIds": [
+          "38c52cc251e32145ed8b007f06e8b994b4cd06e8b6380db036766ba068083092"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "captions/meeting-09.vtt",
+          "chat/chat-06.txt",
+          "rosters/roster-08.sql"
+        ],
+        "contextTokens": 1331,
+        "promptTokens": 1404,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 2,
+        "llama_judge_score": 2
+      },
+      {
+        "qid": "q-60",
+        "stratum": "Q3",
+        "attr": "worksIn",
+        "question": "Which department does Katherine Ito (the Manager) work in?",
+        "expectedValue": "Engineering",
+        "answer": "The excerpt [rosters/roster-09.sql] contains information about employees' departments but does not specify which employee is referred to as \"Katherine Ito.\" Therefore, the question cannot be answered based on the given data.",
+        "is_empty": false,
+        "is_abstention": true,
+        "exact_match": false,
+        "has_placeholder_echo": false,
+        "latency_ms": 2345.2,
+        "matchedEngineEntityIds": [
+          "ent:person:Katherine Ito"
+        ],
+        "selectedRecordIds": [
+          "b122701a258e1c445e88ac90258bcb206623b2777a0ed28d64ddffbc8cf80a7d"
+        ],
+        "selectedRecords": 1,
+        "sourceDocs": [
+          "rosters/roster-07.csv",
+          "rosters/roster-09.sql"
+        ],
+        "contextTokens": 1798,
+        "promptTokens": 1870,
+        "budgetDroppedRecords": 0,
+        "fallbackUsed": false,
+        "judge_score": 0,
+        "llama_judge_score": 1
+      }
+    ]
+  },
+  "judgeAgreement": {
+    "rowAgreementPct": 53.3,
+    "partialCreditThresholdAgreementPct": 70.0,
+    "n": 60
+  },
+  "comparisons": {
+    "flat": {
+      "comparatorExactMatchPct": 6.7,
+      "engineMinusComparatorPp": 61.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 38,
+        "bOnlyCorrect": 1,
+        "discordant": 39,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.6167,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "per_block": {
+      "comparatorExactMatchPct": 10.0,
+      "engineMinusComparatorPp": 58.3,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 35,
+        "bOnlyCorrect": 0,
+        "discordant": 35,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.5833,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "composed": {
+      "comparatorExactMatchPct": 11.7,
+      "engineMinusComparatorPp": 56.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 35,
+        "bOnlyCorrect": 1,
+        "discordant": 36,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.5667,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "composed_pairs": {
+      "comparatorExactMatchPct": 1.7,
+      "engineMinusComparatorPp": 66.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 40,
+        "bOnlyCorrect": 0,
+        "discordant": 40,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.6667,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "per_block_vaulted": {
+      "comparatorExactMatchPct": 1.7,
+      "engineMinusComparatorPp": 66.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 40,
+        "bOnlyCorrect": 0,
+        "discordant": 40,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.6667,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "retrieval": {
+      "comparatorExactMatchPct": 53.3,
+      "engineMinusComparatorPp": 15.0,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 19,
+        "bOnlyCorrect": 10,
+        "discordant": 29,
+        "pValue": 0.136046,
+        "holmAdjustedNonTrainingFamily": 0.272092
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.15,
+        "pValue": 0.132934,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "base": {
+      "comparatorExactMatchPct": 1.7,
+      "engineMinusComparatorPp": 66.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 41,
+        "bOnlyCorrect": 1,
+        "discordant": 42,
+        "pValue": 0.0,
+        "holmAdjustedTrainedFamily": 0.0
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.6667,
+        "pValue": 0.0005,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "bm25_retrieval": {
+      "comparatorExactMatchPct": 60.0,
+      "engineMinusComparatorPp": 8.3,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 16,
+        "bOnlyCorrect": 11,
+        "discordant": 27,
+        "pValue": 0.442068,
+        "holmAdjustedNonTrainingFamily": 0.442068
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.0833,
+        "pValue": 0.428786,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "cag": {
+      "comparatorExactMatchPct": 51.7,
+      "engineMinusComparatorPp": 16.6,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 16,
+        "bOnlyCorrect": 6,
+        "discordant": 22,
+        "pValue": 0.052479,
+        "holmAdjustedNonTrainingFamily": 0.157437
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": 0.1667,
+        "pValue": 0.047476,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    },
+    "cag_hybrid": {
+      "comparatorExactMatchPct": 81.7,
+      "engineMinusComparatorPp": -13.4,
+      "mcnemar": {
+        "n": 60,
+        "aOnlyCorrect": 2,
+        "bOnlyCorrect": 10,
+        "discordant": 12,
+        "pValue": 0.038574,
+        "holmAdjustedNonTrainingFamily": 0.154296
+      },
+      "pairedPermutation": {
+        "n": 60,
+        "meanDiff": -0.1333,
+        "pValue": 0.033983,
+        "nPerm": 2000,
+        "seed": 42
+      }
+    }
+  }
+}

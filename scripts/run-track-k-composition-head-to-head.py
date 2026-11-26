@@ -39,22 +39,107 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import math
 import os
+import platform
 import random
 import re
 import string
+import sys
 import time
 import urllib.request
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import torch
-from datasets import Dataset
-from peft import LoraConfig, PeftModel, get_peft_model
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+torch: Any = None
+Dataset: Any = None
+LoraConfig: Any = None
+PeftModel: Any = None
+get_peft_model: Any = None
+AutoModelForCausalLM: Any = None
+AutoTokenizer: Any = None
+Trainer: Any = None
+TrainingArguments: Any = None
+
+
+def _ensure_ml_imports() -> list[str]:
+    global torch, Dataset, LoraConfig, PeftModel, get_peft_model
+    global AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+    missing = []
+    if torch is None:
+        try:
+            import torch as _torch
+            torch = _torch
+        except ImportError:
+            missing.append("torch")
+    if AutoModelForCausalLM is None or AutoTokenizer is None:
+        try:
+            from transformers import (
+                AutoModelForCausalLM as _AM,
+                AutoTokenizer as _AT,
+                Trainer as _Tr,
+                TrainingArguments as _TA,
+            )
+            AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments = _AM, _AT, _Tr, _TA
+        except ImportError:
+            missing.append("transformers")
+    if Dataset is None:
+        try:
+            from datasets import Dataset as _DS
+            Dataset = _DS
+        except ImportError:
+            pass
+    if PeftModel is None:
+        try:
+            from peft import LoraConfig as _LC, PeftModel as _PM, get_peft_model as _gpm
+            LoraConfig, PeftModel, get_peft_model = _LC, _PM, _gpm
+        except ImportError:
+            pass
+    return missing
+
+
+def _inference_mode_decorator():
+    def _wrap(fn):
+        def _inner(*args, **kwargs):
+            if torch is not None:
+                with torch.inference_mode():
+                    return fn(*args, **kwargs)
+            return fn(*args, **kwargs)
+        return _inner
+    return _wrap
+
+
+def require_gpu_runtime(require_cuda: bool = True) -> dict[str, Any]:
+    """Fail closed loudly if required ML/GPU runtime packages or CUDA are missing."""
+    missing = _ensure_ml_imports()
+    if missing:
+        raise RuntimeError(f"Missing required runtime package(s): {', '.join(missing)}")
+    cuda_ok = bool(torch.cuda.is_available())
+    if require_cuda and not cuda_ok:
+        raise RuntimeError("CUDA GPU required for live run, but torch.cuda.is_available() is False")
+    hw: dict[str, Any] = {
+        "python": platform.python_version(),
+        "torch": getattr(torch, "__version__", None),
+        "cudaAvailable": cuda_ok,
+    }
+    if cuda_ok:
+        props = torch.cuda.get_device_properties(0)
+        hw["gpuName"] = props.name
+        hw["gpuVramMiB"] = int(round(props.total_memory / (1024 * 1024)))
+    try:
+        import transformers as _tf
+        hw["transformers"] = getattr(_tf, "__version__", None)
+    except Exception:
+        pass
+    try:
+        import peft as _peft
+        hw["peft"] = getattr(_peft, "__version__", None)
+    except Exception:
+        pass
+    return hw
 
 REPO = Path(__file__).resolve().parents[1]
 RESULTS_DIR = REPO / "results"
@@ -485,7 +570,7 @@ def normalize_value(s: str) -> str:
     return re.sub(r"\s+", " ", str(s or "")).strip().lower()
 
 
-@torch.inference_mode()
+@_inference_mode_decorator()
 def generate_answer(model, tok, question: str, context: str | None = None, max_new_tokens: int = 128) -> tuple[str, float]:
     user_content = (
         f"{RETRIEVAL_PROMPT_PREFIX}{context}\n\nQuestion: {question}" if context else question
@@ -607,7 +692,7 @@ def random_decoy(canary: dict, rng: random.Random) -> str:
     return " ".join("".join(rng.choice(string.ascii_lowercase) for _ in range(l)).title() for l in lengths)
 
 
-@torch.inference_mode()
+@_inference_mode_decorator()
 def compute_canary_exposure(model, tok, canaries: list[dict], candidate_count: int = 1000, batch_size: int = CANARY_BATCH) -> dict:
     device = model.get_input_embeddings().weight.device
     pad_id = tok.pad_token_id
@@ -669,7 +754,7 @@ def compute_canary_exposure(model, tok, canaries: list[dict], candidate_count: i
 
 
 # ---- Fluency probe: perplexity + placeholder-emission rate on held-out clean text ----
-@torch.inference_mode()
+@_inference_mode_decorator()
 def fluency_probe(model, tok) -> dict:
     text = "\n\n".join(CLEAN_PROBE_PARAGRAPHS)
     ids = tok.encode(text, add_special_tokens=False)
@@ -887,6 +972,656 @@ def finalize(artifact: dict, questions: list[dict]) -> None:
     write_artifact(artifact, args.out)
 
 
+# ---- Paper B DA1: End-to-End Engine-Resolution Router (retrieval_engine arm) ----
+ENGINE_ROUTER_CONTEXT_LIMIT = 32768
+ENGINE_ROUTER_HEADROOM_TOKENS = 1024
+ENGINE_ROUTER_TOKEN_BUDGET = ENGINE_ROUTER_CONTEXT_LIMIT - ENGINE_ROUTER_HEADROOM_TOKENS
+
+ENGINE_ROUTER_RULE = (
+    "Purely engine-side per-question routing over buildAmnesiacCorpus composed records "
+    "(no oracle manifest world/personId/collisionWith/docs read at routing time). "
+    "Given only the question string and the engine-produced composed corpus (canary rows excluded), "
+    "find all engine target entity IDs ent:<kind>:<value> (kind in {person, email, phone}, len(value) >= 3) "
+    "that match the question string case-insensitively at alphanumeric word boundaries; retain the longest "
+    "matched target length (selecting full-name entity IDs over single-token surname/given-name splits) and "
+    "collect all composed records whose target is in that matched set, ordered by (target, id) ascending. "
+    "If no direct target matches, fall back to composed records whose entities list contains a matched "
+    "engine entity ID, ordered by id ascending. Selected record texts (assistant turn content) are joined "
+    "with blank lines up to the 32768 - 1024 = 31744 token budget (identical to the oracle cag_hybrid cap); "
+    "record text is never shortened."
+)
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _portable_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(REPO.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def _estimate_tokens_fallback(text: str) -> int:
+    return max(1, (len(text) + 3) // 4) if text else 0
+
+
+def _count_tokens(text: str, tok=None) -> int:
+    if tok is not None:
+        return len(tok.encode(text, add_special_tokens=False))
+    return _estimate_tokens_fallback(text)
+
+
+def _extract_engine_target(rec: dict) -> tuple[str, str, str] | None:
+    target = str(rec.get("target", ""))
+    parts = target.split(":", 2)
+    if len(parts) != 3 or parts[0] != "ent":
+        return None
+    kind, value = parts[1].strip().lower(), parts[2].strip()
+    if kind not in ("person", "email", "phone") or len(value) < 3:
+        return None
+    return target, kind, value
+
+
+def _record_readable_text(rec: dict) -> str:
+    msgs = rec.get("messages") or []
+    return str(msgs[-1]["content"]).strip() if msgs else ""
+
+
+def resolve_engine_entities_for_question(
+    question_text: str,
+    composed_records: list[dict],
+    max_context_tokens: int = ENGINE_ROUTER_TOKEN_BUDGET,
+    tok=None,
+) -> dict[str, Any]:
+    """Zero-oracle router: resolves question_text purely against buildAmnesiacCorpus engine entity IDs."""
+    q_low = re.sub(r"\s+", " ", str(question_text or "")).strip().lower()
+    direct_hits: list[tuple[int, str, dict]] = []
+    for rec in composed_records:
+        parsed = _extract_engine_target(rec)
+        if parsed is None:
+            continue
+        target, _kind, val = parsed
+        v_low = val.lower()
+        if re.search(r"(?<![a-z0-9])" + re.escape(v_low) + r"(?![a-z0-9])", q_low):
+            direct_hits.append((len(v_low), target, rec))
+
+    fallback_used = False
+    if direct_hits:
+        max_len = max(h[0] for h in direct_hits)
+        chosen = [h for h in direct_hits if h[0] == max_len]
+        chosen.sort(key=lambda h: (h[1], str(h[2].get("id", ""))))
+        matched_targets = sorted({h[1] for h in chosen})
+        candidate_recs = [h[2] for h in chosen]
+    else:
+        fallback_used = True
+        ent_hits: list[tuple[int, str, dict]] = []
+        for rec in composed_records:
+            for eid in rec.get("entities") or []:
+                parts = str(eid).split(":", 2)
+                if len(parts) != 3 or parts[0] != "ent":
+                    continue
+                kind, val = parts[1].strip().lower(), parts[2].strip()
+                if kind not in ("person", "email", "phone") or len(val) < 3:
+                    continue
+                v_low = val.lower()
+                if re.search(r"(?<![a-z0-9])" + re.escape(v_low) + r"(?![a-z0-9])", q_low):
+                    ent_hits.append((len(v_low), str(eid), rec))
+        if ent_hits:
+            max_len = max(h[0] for h in ent_hits)
+            chosen_fb = [h for h in ent_hits if h[0] == max_len]
+            matched_targets = sorted({h[1] for h in chosen_fb})
+            seen_ids: set[str] = set()
+            candidate_recs = []
+            for _, _, rec in sorted(chosen_fb, key=lambda h: str(h[2].get("id", ""))):
+                rid = str(rec.get("id", ""))
+                if rid not in seen_ids:
+                    seen_ids.add(rid)
+                    candidate_recs.append(rec)
+        else:
+            matched_targets = []
+            candidate_recs = []
+
+    selected_recs: list[dict] = []
+    texts: list[str] = []
+    used = 0
+    budget_dropped = 0
+    for rec in candidate_recs:
+        txt = _record_readable_text(rec)
+        add = _count_tokens(txt, tok) + (2 if texts else 0)
+        if used + add > max_context_tokens:
+            budget_dropped += 1
+            continue
+        selected_recs.append(rec)
+        texts.append(txt)
+        used += add
+
+    context = "\n\n".join(texts)
+    context_tokens = _count_tokens(context, tok) if context else 0
+    source_docs = sorted({
+        str(src.get("source"))
+        for rec in selected_recs
+        for src in (rec.get("sources") or [])
+        if isinstance(src, dict) and src.get("source")
+    })
+    return {
+        "matchedEngineEntityIds": matched_targets,
+        "selectedRecordIds": [str(r.get("id", "")) for r in selected_recs],
+        "selectedRecords": len(selected_recs),
+        "candidateRecords": len(candidate_recs),
+        "budgetDroppedRecords": budget_dropped,
+        "fallbackUsed": fallback_used,
+        "sourceDocs": source_docs,
+        "context": context,
+        "contextTokens": context_tokens,
+    }
+
+
+def build_engine_router_plan(
+    questions: list[dict],
+    composed_records: list[dict],
+    max_context_tokens: int = ENGINE_ROUTER_TOKEN_BUDGET,
+    tok=None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    plans: dict[str, dict[str, Any]] = {}
+    for q in questions:
+        plans[q["qid"]] = resolve_engine_entities_for_question(
+            q["question"], composed_records, max_context_tokens=max_context_tokens, tok=tok
+        )
+    matched_q = sum(1 for p in plans.values() if p["selectedRecords"] > 0)
+    fallback_q = sum(1 for p in plans.values() if p["fallbackUsed"])
+    sel_counts = [p["selectedRecords"] for p in plans.values()]
+    ctx_toks = [p["contextTokens"] for p in plans.values()]
+    telemetry = {
+        "questionsRouted": len(plans),
+        "questionsWithMatchedRecords": matched_q,
+        "questionsUsingFallback": fallback_q,
+        "selectedRecordsMin": min(sel_counts) if sel_counts else 0,
+        "selectedRecordsMax": max(sel_counts) if sel_counts else 0,
+        "selectedRecordsMean": round(sum(sel_counts) / max(1, len(sel_counts)), 2),
+        "contextTokensTotal": sum(ctx_toks),
+        "contextTokensMean": round(sum(ctx_toks) / max(1, len(ctx_toks)), 1),
+        "contextTokensMin": min(ctx_toks) if ctx_toks else 0,
+        "contextTokensMax": max(ctx_toks) if ctx_toks else 0,
+        "capHits": sum(p["budgetDroppedRecords"] for p in plans.values()),
+    }
+    return plans, telemetry
+
+
+def _binom_cdf(k: int, n: int, p: float) -> float:
+    if k >= n:
+        return 1.0
+    if k < 0:
+        return 0.0
+    if p <= 0.0:
+        return 1.0
+    if p >= 1.0:
+        return 0.0
+    total = 0.0
+    log_p = math.log(p)
+    log_1mp = math.log(1.0 - p)
+    for i in range(k + 1):
+        log_term = (
+            math.lgamma(n + 1) - math.lgamma(i + 1) - math.lgamma(n - i + 1)
+            + i * log_p + (n - i) * log_1mp
+        )
+        total += math.exp(log_term)
+    return min(1.0, max(0.0, total))
+
+
+def _solve_binom_p(k: int, n: int, target: float) -> float:
+    lo, hi = 0.0, 1.0
+    for _ in range(200):
+        mid = (lo + hi) / 2.0
+        if _binom_cdf(k, n, mid) > target:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def clopper_pearson_ci95(k: int, n: int) -> list[float]:
+    if n <= 0:
+        return [0.0, 0.0]
+    lo = 0.0 if k == 0 else _solve_binom_p(k - 1, n, 0.975)
+    hi = 1.0 if k == n else _solve_binom_p(k, n, 0.025)
+    return [round(100.0 * lo, 1), round(100.0 * hi, 1)]
+
+
+def mcnemar_exact_test(rows_a: list[dict], rows_b: list[dict]) -> dict[str, Any]:
+    map_a = {r["qid"]: bool(r["exact_match"]) for r in rows_a}
+    b_only_a = 0
+    c_only_b = 0
+    shared = 0
+    for r in rows_b:
+        qid = r["qid"]
+        if qid not in map_a:
+            continue
+        shared += 1
+        a_ok = map_a[qid]
+        b_ok = bool(r["exact_match"])
+        if a_ok and not b_ok:
+            b_only_a += 1
+        elif not a_ok and b_ok:
+            c_only_b += 1
+    discordant = b_only_a + c_only_b
+    if discordant == 0:
+        p_val = 1.0
+    else:
+        p_val = min(1.0, max(0.0, 2.0 * _binom_cdf(min(b_only_a, c_only_b), discordant, 0.5)))
+    return {
+        "n": shared,
+        "aOnlyCorrect": b_only_a,
+        "bOnlyCorrect": c_only_b,
+        "discordant": discordant,
+        "pValue": round(p_val, 6),
+    }
+
+
+def paired_permutation_test(
+    rows_a: list[dict],
+    rows_b: list[dict],
+    field: str = "exact_match",
+    n_perm: int = 2000,
+    seed: int = 42,
+) -> dict[str, Any]:
+    map_a = {r["qid"]: float(r[field]) for r in rows_a if field in r}
+    diffs = [map_a[r["qid"]] - float(r[field]) for r in rows_b if r["qid"] in map_a and field in r]
+    if not diffs:
+        return {"n": 0, "meanDiff": 0.0, "pValue": 1.0, "nPerm": n_perm, "seed": seed}
+    mean_diff = sum(diffs) / len(diffs)
+    obs = abs(mean_diff)
+    if obs == 0.0:
+        return {"n": len(diffs), "meanDiff": 0.0, "pValue": 1.0, "nPerm": n_perm, "seed": seed}
+    rng = random.Random(seed)
+    ge = 0
+    for _ in range(n_perm):
+        s = sum(d if rng.random() < 0.5 else -d for d in diffs) / len(diffs)
+        if abs(s) >= obs - 1e-12:
+            ge += 1
+    p_val = (ge + 1) / (n_perm + 1)
+    return {
+        "n": len(diffs),
+        "meanDiff": round(mean_diff, 4),
+        "pValue": round(p_val, 6),
+        "nPerm": n_perm,
+        "seed": seed,
+    }
+
+
+def holm_bonferroni(pvals: list[float]) -> list[float]:
+    m = len(pvals)
+    indexed = sorted(enumerate(pvals), key=lambda pair: pair[1])
+    out = [0.0] * m
+    running = 0.0
+    for rank, (orig_idx, p) in enumerate(indexed):
+        running = max(running, (m - rank) * p)
+        out[orig_idx] = round(min(1.0, running), 6)
+    return out
+
+
+def verify_ollama_judges(judge_models: list[str], base_url: str = "http://127.0.0.1:11434") -> dict[str, dict[str, Any]]:
+    """Fail-closed check that localhost Ollama is reachable and carries every required judge model."""
+    req = urllib.request.Request(f"{base_url}/api/tags")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Ollama judge endpoint {base_url}/api/tags unreachable: {exc}") from exc
+    installed = {m.get("name"): m for m in payload.get("models", [])}
+    missing = [m for m in judge_models if m not in installed]
+    if missing:
+        raise RuntimeError(
+            f"Required Ollama judge model(s) missing: {', '.join(missing)} "
+            f"(available: {', '.join(sorted(installed))})"
+        )
+    digests = {}
+    for m in judge_models:
+        info = installed[m]
+        details = info.get("details") or {}
+        digests[m] = {
+            "digest": info.get("digest"),
+            "sizeBytes": info.get("size"),
+            "parameterSize": details.get("parameter_size"),
+            "quantizationLevel": details.get("quantization_level"),
+        }
+    return digests
+
+
+def call_ollama_judge_strict(question: str, ref: str, ans: str, judge_model: str) -> int:
+    """Fail-closed Ollama judge call (raises RuntimeError on transport error instead of returning 0)."""
+    if is_effectively_empty(ans):
+        return 0
+    payload = json.dumps({
+        "model": judge_model,
+        "stream": False,
+        "options": {"temperature": 0, "num_predict": 8},
+        "messages": [
+            {"role": "system", "content": "You are a strict blinded academic evaluation grader. Output only 0, 1, or 2."},
+            {"role": "user", "content": _judge_rubric_prompt(question, ref, ans)},
+        ],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "http://127.0.0.1:11434/api/chat",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                txt = (json.loads(resp.read().decode("utf-8")).get("message", {}).get("content") or "").strip()
+                m = re.search(r"[012]", txt)
+                if not m:
+                    raise RuntimeError(f"Ollama judge {judge_model} returned unparseable verdict: {txt!r}")
+                return int(m.group(0))
+        except Exception as exc:
+            last_exc = exc
+            if attempt < 2:
+                time.sleep(2.0 * (attempt + 1))
+    raise RuntimeError(f"Ollama judge {judge_model} failed after 3 attempts: {last_exc}") from last_exc
+
+
+def _compute_da1_comparisons(
+    engine_rows: list[dict],
+    k3_path: Path,
+    k7_path: Path,
+    seed: int,
+) -> dict[str, Any]:
+    baselines: dict[str, list[dict]] = {}
+    if k3_path.exists():
+        k3 = json.loads(k3_path.read_text(encoding="utf-8"))
+        for arm_name, entry in (k3.get("arms") or {}).items():
+            if isinstance(entry, dict) and entry.get("rows"):
+                baselines[arm_name] = entry["rows"]
+    if k7_path.exists():
+        k7 = json.loads(k7_path.read_text(encoding="utf-8"))
+        for arm_name, entry in (k7.get("arms") or {}).items():
+            if isinstance(entry, dict) and entry.get("rows"):
+                baselines[arm_name] = entry["rows"]
+
+    per_comparator: dict[str, Any] = {}
+    for name, comp_rows in baselines.items():
+        mcn = mcnemar_exact_test(engine_rows, comp_rows)
+        perm = paired_permutation_test(engine_rows, comp_rows, field="exact_match", n_perm=2000, seed=seed)
+        comp_em = round(100.0 * sum(1 for r in comp_rows if r["exact_match"]) / max(1, len(comp_rows)), 1)
+        eng_em = round(100.0 * sum(1 for r in engine_rows if r["exact_match"]) / max(1, len(engine_rows)), 1)
+        per_comparator[name] = {
+            "comparatorExactMatchPct": comp_em,
+            "engineMinusComparatorPp": round(eng_em - comp_em, 1),
+            "mcnemar": mcn,
+            "pairedPermutation": perm,
+        }
+
+    non_training_family = [k for k in ("cag_hybrid", "bm25_retrieval", "retrieval", "cag") if k in per_comparator]
+    if non_training_family:
+        raw_ps = [per_comparator[k]["mcnemar"]["pValue"] for k in non_training_family]
+        adj_ps = holm_bonferroni(raw_ps)
+        for k, adj in zip(non_training_family, adj_ps):
+            per_comparator[k]["mcnemar"]["holmAdjustedNonTrainingFamily"] = adj
+
+    trained_family = [k for k in ("flat", "per_block", "composed", "composed_pairs", "per_block_vaulted", "base") if k in per_comparator]
+    if trained_family:
+        raw_ps = [per_comparator[k]["mcnemar"]["pValue"] for k in trained_family]
+        adj_ps = holm_bonferroni(raw_ps)
+        for k, adj in zip(trained_family, adj_ps):
+            per_comparator[k]["mcnemar"]["holmAdjustedTrainedFamily"] = adj
+
+    return per_comparator
+
+
+def run_retrieval_engine_mode(args) -> None:
+    manifest_path = Path(args.manifest)
+    composed_path = Path(args.composed_corpus)
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing estate manifest: {manifest_path}")
+    if not composed_path.exists():
+        raise FileNotFoundError(f"Missing buildAmnesiacCorpus composed corpus: {composed_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    all_questions = manifest["questions"]
+    questions = all_questions[: args.limit] if args.limit and args.limit > 0 else all_questions
+    composed_rows = load_jsonl(composed_path)
+    estate_records = [r for r in composed_rows if r.get("kind") != "chat_canary"]
+
+    out_path = Path(args.out)
+    seed = int(args.seed)
+
+    if args.dry_run:
+        plans, telemetry = build_engine_router_plan(
+            questions, estate_records, max_context_tokens=ENGINE_ROUTER_TOKEN_BUDGET, tok=None
+        )
+        dry_rows = []
+        for q in questions:
+            p = plans[q["qid"]]
+            dry_rows.append({
+                "qid": q["qid"],
+                "stratum": q["stratum"],
+                "attr": q.get("attr"),
+                "question": q["question"],
+                "matchedEngineEntityIds": p["matchedEngineEntityIds"],
+                "selectedRecordIds": p["selectedRecordIds"],
+                "selectedRecords": p["selectedRecords"],
+                "sourceDocs": p["sourceDocs"],
+                "contextTokensEstimated": p["contextTokens"],
+                "budgetDroppedRecords": p["budgetDroppedRecords"],
+                "fallbackUsed": p["fallbackUsed"],
+            })
+        artifact = {
+            "kind": "track-k-retrieval-engine",
+            "stage": "K3-DA1",
+            "dryRun": True,
+            "seed": seed,
+            "model": {"modelId": MODEL_ID, "modelLabel": MODEL_LABEL, "loaded": False},
+            "inputs": {
+                "manifest": str(manifest_path),
+                "manifestSha256": sha256_file(manifest_path),
+                "composedCorpus": str(composed_path),
+                "composedCorpusSha256": sha256_file(composed_path),
+                "composedRecordCount": len(estate_records),
+            },
+            "routerRule": ENGINE_ROUTER_RULE,
+            "zeroOracleNote": "Routing reads only q['question'] and buildAmnesiacCorpus engine-produced composed records (target/entities/messages); no manifest personId, world.people, collisionWith, docs, or expectedValue enters routing.",
+            "estate": {
+                "documentCount": len(manifest.get("documents", [])),
+                "questions": len(questions),
+                "strata": dict(Counter(q["stratum"] for q in questions)),
+            },
+            "arm": {
+                "kind": "retrieval_engine",
+                "routingTelemetry": telemetry,
+                "rows": dry_rows,
+            },
+        }
+        write_artifact(artifact, out_path)
+        print(f"[track-k] retrieval_engine dry-run complete ({len(dry_rows)} questions) -> {out_path}")
+        return
+
+    os.environ.setdefault("HF_HOME", "D:/rtio-hf-cache")
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    hw = require_gpu_runtime(require_cuda=not args.allow_cpu)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+    judge_digests: dict[str, Any] = {}
+    if not args.skip_judge:
+        judge_digests = verify_ollama_judges(["qwen2.5:7b", "llama3.2:3b"])
+
+    unload_ollama_model("qwen2.5:7b")
+    unload_ollama_model("llama3.2:3b")
+
+    tok = AutoTokenizer.from_pretrained(MODEL_ID)
+    configure_tokenizer(tok)
+    plans, telemetry = build_engine_router_plan(
+        questions, estate_records, max_context_tokens=ENGINE_ROUTER_TOKEN_BUDGET, tok=tok
+    )
+
+    prior_rows_by_qid: dict[str, dict[str, Any]] = {}
+    if out_path.exists():
+        try:
+            prior_doc = json.loads(out_path.read_text(encoding="utf-8"))
+            if not prior_doc.get("dryRun") and isinstance((prior_doc.get("arm") or {}).get("rows"), list):
+                prior_rows_by_qid = {
+                    r["qid"]: r for r in prior_doc["arm"]["rows"] if isinstance(r, dict) and "answer" in r
+                }
+        except Exception:
+            prior_rows_by_qid = {}
+
+    missing_gen = [q for q in questions if q["qid"] not in prior_rows_by_qid]
+    rows: list[dict[str, Any]] = []
+    if missing_gen:
+        model = load_base_model(tok)
+        for q in questions:
+            if q["qid"] in prior_rows_by_qid:
+                rows.append(prior_rows_by_qid[q["qid"]])
+                continue
+            p = plans[q["qid"]]
+            ctx = p["context"]
+            ans, ms = generate_answer(model, tok, q["question"], context=ctx)
+            user_content = f"{RETRIEVAL_PROMPT_PREFIX}{ctx}\n\nQuestion: {q['question']}"
+            prompt_str = render_chat_prompt(
+                tok,
+                [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}],
+                add_gen=True,
+            )
+            rows.append({
+                "qid": q["qid"],
+                "stratum": q["stratum"],
+                "attr": q.get("attr"),
+                "question": q["question"],
+                "expectedValue": q["expectedValue"],
+                "answer": ans,
+                "is_empty": is_effectively_empty(ans),
+                "is_abstention": is_abstention(ans),
+                "exact_match": exact_match(ans, q["expectedValue"]),
+                "has_placeholder_echo": bool(PLACEHOLDER_ECHO_RE.search(ans or "")),
+                "latency_ms": round(ms, 1),
+                "matchedEngineEntityIds": p["matchedEngineEntityIds"],
+                "selectedRecordIds": p["selectedRecordIds"],
+                "selectedRecords": p["selectedRecords"],
+                "sourceDocs": p["sourceDocs"],
+                "contextTokens": p["contextTokens"],
+                "promptTokens": len(tok.encode(prompt_str, add_special_tokens=False)),
+                "budgetDroppedRecords": p["budgetDroppedRecords"],
+                "fallbackUsed": p["fallbackUsed"],
+            })
+            print(
+                f"[track-k] retrieval_engine {q['qid']} ({q['stratum']}): em={rows[-1]['exact_match']} "
+                f"targets={p['matchedEngineEntityIds']} toks={rows[-1]['promptTokens']} ans={ans!r}"
+            )
+        del model
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        write_artifact({"kind": "track-k-retrieval-engine", "dryRun": False, "arm": {"rows": rows}}, out_path)
+    else:
+        rows = [prior_rows_by_qid[q["qid"]] for q in questions]
+        print(f"[track-k] Resumed {len(rows)} generated rows from {out_path}")
+
+    if not args.skip_judge:
+        expected_map = {q["qid"]: q["expectedValue"] for q in questions}
+        for field, model_name, label in (
+            ("judge_score", "qwen2.5:7b", "strict qwen2.5:7b"),
+            ("llama_judge_score", "llama3.2:3b", "cross-family generous llama3.2:3b"),
+        ):
+            todo_rows = [r for r in rows if field not in r]
+            if not todo_rows:
+                continue
+            print(f"[track-k] retrieval_engine judging {len(todo_rows)} rows with {label}...")
+            for idx, r in enumerate(todo_rows, 1):
+                r[field] = call_ollama_judge_strict(r["question"], expected_map[r["qid"]], r["answer"], model_name)
+                if idx % 20 == 0 or idx == len(todo_rows):
+                    write_artifact({"kind": "track-k-retrieval-engine", "dryRun": False, "arm": {"rows": rows}}, out_path)
+                    print(f"[track-k] {label}: {idx}/{len(todo_rows)}")
+            unload_ollama_model(model_name)
+
+    eval_summary = summarize_rows(rows)
+    cp_ci: dict[str, list[float]] = {}
+    for s in STRATA:
+        sub = rows if s == "all" else [r for r in rows if r["stratum"] == s]
+        if sub:
+            cp_ci[s] = clopper_pearson_ci95(sum(1 for r in sub if r["exact_match"]), len(sub))
+
+    q3_rows = [r for r in rows if r["stratum"] == "Q3"]
+    agreement = judge_agreement(rows)
+    comparisons = _compute_da1_comparisons(rows, Path(args.k3_baseline), Path(args.k7_baseline), seed=seed)
+
+    prompt_toks = [r["promptTokens"] for r in rows]
+    artifact = {
+        "kind": "track-k-retrieval-engine",
+        "stage": "K3-DA1",
+        "dryRun": False,
+        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "seed": seed,
+        "hardware": hw,
+        "models": {
+            "generator": {
+                "modelId": MODEL_ID,
+                "modelLabel": MODEL_LABEL,
+                "decoding": {"doSample": False, "maxNewTokens": 128},
+            },
+            "judges": judge_digests,
+        },
+        "inputs": {
+            "manifest": _portable_path(manifest_path),
+            "manifestSha256": sha256_file(manifest_path),
+            "composedCorpus": _portable_path(composed_path),
+            "composedCorpusSha256": sha256_file(composed_path),
+            "composedRecordCount": len(estate_records),
+        },
+        "routerRule": ENGINE_ROUTER_RULE,
+        "zeroOracleNote": (
+            "End-to-end engine-resolution router: routing reads ONLY q['question'] and "
+            "buildAmnesiacCorpus engine-produced composed records (target/entities/messages). "
+            "No manifest personId, world.people, collisionWith, docs, or expectedValue enters routing. "
+            "The 81.7% cag_hybrid arm in results/track-k7-cag-vs-rag-vs-bm25.json remains the "
+            "conditional upper bound given oracle identity resolution."
+        ),
+        "estate": {
+            "manifest": "fixtures/noisy-estate-manifest.json",
+            "documentCount": len(manifest.get("documents", [])),
+            "questions": len(questions),
+            "strata": dict(Counter(q["stratum"] for q in questions)),
+        },
+        "arm": {
+            "kind": "retrieval_engine",
+            "eval": eval_summary,
+            "clopperPearson95CI": cp_ci,
+            "q3Disambiguation": {
+                "n": len(q3_rows),
+                "exactMatchCount": sum(1 for r in q3_rows if r["exact_match"]),
+                "exactMatchPct": round(100.0 * sum(1 for r in q3_rows if r["exact_match"]) / max(1, len(q3_rows)), 1),
+                "note": "disambiguation under engine-produced entity IDs (same-name collision pairs share one engine target entity ID without oracle manifest identity)",
+            },
+            "tokenAccounting": {
+                "questions": len(rows),
+                "contextTokensTotal": sum(r["contextTokens"] for r in rows),
+                "contextTokensMean": round(sum(r["contextTokens"] for r in rows) / max(1, len(rows)), 1),
+                "promptTokensTotal": sum(prompt_toks),
+                "promptTokensMean": round(sum(prompt_toks) / max(1, len(prompt_toks)), 1),
+                "promptTokensMin": min(prompt_toks) if prompt_toks else 0,
+                "promptTokensMax": max(prompt_toks) if prompt_toks else 0,
+                "tokenBudget": ENGINE_ROUTER_TOKEN_BUDGET,
+                "capHits": telemetry["capHits"],
+            },
+            "routingTelemetry": telemetry,
+            "rows": rows,
+        },
+        "judgeAgreement": agreement,
+        "comparisons": comparisons,
+    }
+    write_artifact(artifact, out_path)
+    print("\n================ TRACK K DA1 (retrieval_engine) SUMMARY ================")
+    print(json.dumps(eval_summary, indent=2))
+    print("Clopper-Pearson 95% CI:", json.dumps(cp_ci))
+    print("Judge Agreement:", json.dumps(agreement))
+    print("Comparisons (McNemar + Permutation):", json.dumps(comparisons, indent=2))
+
+
 def main() -> None:
     global args
     parser = argparse.ArgumentParser()
@@ -895,9 +1630,63 @@ def main() -> None:
     parser.add_argument("--arms", default="", help="comma-separated arm subset")
     parser.add_argument("--skip-judge", action="store_true")
     parser.add_argument("--cooldown-s", type=int, default=5)
-    parser.add_argument("--out", default=str(RESULTS_DIR / "track-k-composition-head-to-head.json"))
+    parser.add_argument("--out", default=None)
+    # Flag-gated Paper B DA1 end-to-end engine-resolution router options
+    parser.add_argument(
+        "--retrieval-engine",
+        action="store_true",
+        help="Paper B DA1: run end-to-end engine-resolution router arm (buildAmnesiacCorpus entity IDs, zero oracle)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="CPU-safe deterministic dry-run for retrieval_engine routing and schema validation (no GPU/Ollama)",
+    )
+    parser.add_argument(
+        "--composed-corpus",
+        default=str(RESULTS_DIR / CORPUS_FILES["composed"]),
+        help="Path to buildAmnesiacCorpus composed JSONL for retrieval_engine",
+    )
+    parser.add_argument(
+        "--manifest",
+        default=str(MANIFEST_PATH),
+        help="Path to estate manifest JSON for retrieval_engine",
+    )
+    parser.add_argument(
+        "--k3-baseline",
+        default=str(RESULTS_DIR / "track-k-composition-head-to-head.json"),
+        help="Path to K3 baseline JSON for McNemar/permutation comparisons",
+    )
+    parser.add_argument(
+        "--k7-baseline",
+        default=str(RESULTS_DIR / "track-k7-cag-vs-rag-vs-bm25.json"),
+        help="Path to K7 baseline JSON for McNemar/permutation comparisons",
+    )
+    parser.add_argument("--seed", type=int, default=TRAIN_SEED, help="Deterministic seed (default: 42)")
+    parser.add_argument("--limit", type=int, default=0, help="Optional limit on questions for retrieval_engine (0 = all)")
+    parser.add_argument("--allow-cpu", action="store_true", help="Allow CPU inference if CUDA is unavailable")
     args = parser.parse_args()
+
+    arm_list = [a.strip() for a in args.arms.split(",") if a.strip()]
+    if args.retrieval_engine or arm_list == ["retrieval_engine"]:
+        if args.out is None:
+            args.out = str(RESULTS_DIR / "track-k-retrieval-engine.json")
+        try:
+            run_retrieval_engine_mode(args)
+        except Exception as exc:
+            print(f"[track-k] ERROR (fail-closed): {exc}", file=sys.stderr)
+            sys.exit(2)
+        return
+
+    if args.out is None:
+        args.out = str(RESULTS_DIR / "track-k-composition-head-to-head.json")
     out_path = Path(args.out)
+
+    try:
+        require_gpu_runtime(require_cuda=not args.allow_cpu)
+    except Exception as exc:
+        print(f"[track-k] ERROR (fail-closed): {exc}", file=sys.stderr)
+        sys.exit(2)
 
     os.environ.setdefault("HF_HOME", "D:/rtio-hf-cache")
     receipts = json.loads(RECEIPTS_PATH.read_text(encoding="utf-8"))

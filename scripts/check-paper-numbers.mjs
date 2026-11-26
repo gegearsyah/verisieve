@@ -1066,5 +1066,84 @@ for (const [name, body] of ALL_DOCS) {
   }
 }
 
+/* ---------------- T10 (#37): Paper B DA1 retrieval_engine & Paper C R4 3-seed ablation ---------------- */
+{
+  // 1. Paper B DA1: End-to-End Engine-Resolution Router (results/track-k-retrieval-engine.json)
+  const KRE = j('track-k-retrieval-engine.json');
+  const RE_ARM = KRE.arm;
+  const RE_EV = RE_ARM.eval;
+  const RE_CI = RE_ARM.clopperPearson95CI;
+  const RE_CMP = KRE.comparisons;
+  ok(
+    't10:paperB.row.engine',
+    `Engine-resolved router & ${f1(RE_EV.Q1.exactMatchPct)} & ${f1(RE_EV.Q2.exactMatchPct)} & ${f1(RE_EV.Q3.exactMatchPct)} & ${f1(RE_EV.all.exactMatchPct)} & ${f2(RE_EV.all.judgeMean)} & ${f2(RE_EV.all.llamaJudgeMean)} & EM$+$J \\\\`,
+    CG
+  );
+  ok('t10:paperB.abstract.em', `entity identifiers answers $${P(f1(RE_EV.all.exactMatchPct))}$ ($${P(f1(RE_EV.Q1.exactMatchPct))}$ Q1, $${P(f1(RE_EV.Q2.exactMatchPct))}$ Q2, $${P(f1(RE_EV.Q3.exactMatchPct))}$ Q3`, CG);
+  ok('t10:paperB.prose.q3Count', `$${RE_ARM.q3Disambiguation.exactMatchCount}$ of $${RE_ARM.q3Disambiguation.n}$ disambiguation`, CG);
+  ok('t10:paperB.prose.ctxToks', `$${comma(Math.floor(RE_ARM.tokenAccounting.contextTokensMean))}.${String(f1(RE_ARM.tokenAccounting.contextTokensMean)).split('.')[1]}$ mean context tokens`, CG);
+  ok('t10:paperB.prose.promptToks', `$${comma(Math.floor(RE_ARM.tokenAccounting.promptTokensMean))}.${String(f1(RE_ARM.tokenAccounting.promptTokensMean)).split('.')[1]}$ mean prompt tokens`, CG);
+  ok('t10:paperB.prose.agree', `row agreement $${P(f1(KRE.judgeAgreement.rowAgreementPct))}$`, CG);
+  ok('t10:paperB.ci.all', `$${P(f1(RE_EV.all.exactMatchPct))}$ ($${f1(RE_CI.all[0])}$ to $${f1(RE_CI.all[1])}$ overall`, CG);
+  ok('t10:paperB.mcn.hybrid', `raw McNemar $p{=}${f4(RE_CMP.cag_hybrid.mcnemar.pValue)}$`, CG);
+  ok('t10:paperB.perm.hybrid', `paired permutation $p{=}${f4(RE_CMP.cag_hybrid.pairedPermutation.pValue)}$`, CG);
+  ok('t10:paperB.holm.hybrid', `Holm-adjusted $p{=}${f4(RE_CMP.cag_hybrid.mcnemar.holmAdjustedNonTrainingFamily)}$`, CG);
+  ok('t10:paperB.mcn.bm25', `BM25 (raw McNemar $p{=}${f4(RE_CMP.bm25_retrieval.mcnemar.pValue)}$`, CG);
+  ok('t10:paperB.mcn.ppr', `Graph-PPR (raw $p{=}${f4(RE_CMP.retrieval.mcnemar.pValue)}$`, CG);
+  ok('t10:paperB.mcn.cag', `fixed-cache CAG (raw $p{=}${f4(RE_CMP.cag.mcnemar.pValue)}$`, CG);
+
+  // 2. Paper C R4: Multi-Seed PT-LM Mechanism Ablation (results/track-d-ptlm-multiseed-ablation.json)
+  const R4M = j('track-d-ptlm-multiseed-ablation.json');
+  checks++;
+  if (!Array.isArray(R4M.seeds) || R4M.seeds.length < 3 || !R4M.seeds.includes(42)) {
+    fails++;
+    console.error('FAIL [t10:paperC.seeds] expected >=3 seeds including 42 in track-d-ptlm-multiseed-ablation.json');
+  }
+  const R4_ARM_LABELS = {
+    safe: '\\texttt{Safe}',
+    masking_only: '\\texttt{Masking-only}',
+    surrogate_only: '\\texttt{Surrogate-only}',
+    ptlm: '\\texttt{PT-LM}',
+  };
+  for (const [mk, mod] of Object.entries(R4M.models)) {
+    for (const [ak, label] of Object.entries(R4_ARM_LABELS)) {
+      const a = mod.arms[ak];
+      ok(`t10:r4.${mk}.${ak}.rows`, `${label} ($${a.trainRows}$)`, L);
+      ok(`t10:r4.${mk}.${ak}.echoSeen`, P(f2(a.seen_pii_tag_echo_pct.mean)), L);
+      ok(`t10:r4.${mk}.${ak}.echoHeld`, P(f2(a.heldout_pii_tag_echo_pct.mean)), L);
+      ok(`t10:r4.${mk}.${ak}.falseRef`, P(f2(a.in_scope_false_refusal_pct.mean)), L);
+      ok(
+        `t10:r4.${mk}.${ak}.falseRefCI`,
+        `[${f2(a.in_scope_false_refusal_pct.bootstrapCi95[0])}, ${f2(a.in_scope_false_refusal_pct.bootstrapCi95[1])}]`,
+        L
+      );
+      ok(`t10:r4.${mk}.${ak}.oos`, P(f2(a.oos_abstention_pct.mean)), L);
+      ok(`t10:r4.${mk}.${ak}.seenF1`, f4(a.seen_in_f1.mean), L);
+      ok(
+        `t10:r4.${mk}.${ak}.seenF1CI`,
+        `[${f4(a.seen_in_f1.bootstrapCi95[0])}, ${f4(a.seen_in_f1.bootstrapCi95[1])}]`,
+        L
+      );
+      ok(`t10:r4.${mk}.${ak}.heldF1`, f4(a.heldout_in_f1.mean), L);
+      ok(
+        `t10:r4.${mk}.${ak}.heldF1CI`,
+        `[${f4(a.heldout_in_f1.bootstrapCi95[0])}, ${f4(a.heldout_in_f1.bootstrapCi95[1])}]`,
+        L
+      );
+      ok(`t10:r4.${mk}.${ak}.canary`, f2(a.canary_all_12_bits.mean), L);
+      ok(
+        `t10:r4.${mk}.${ak}.canaryCI`,
+        `[${f2(a.canary_all_12_bits.bootstrapCi95[0])}, ${f2(a.canary_all_12_bits.bootstrapCi95[1])}]`,
+        L
+      );
+      ok(`t10:r4.${mk}.${ak}.qwenJudge`, P(f1(a.judge_heldout_in_pct.mean)), L);
+      ok(`t10:r4.${mk}.${ak}.llamaJudge`, P(f1(a.llama_judge_heldout_all_pct.mean)), L);
+    }
+  }
+  ok('t10:r4.q05.maskVsPtlmP', f4(R4M.models.qwen05b.paired_permutation_tests_seed_mean_f1.seen_ptlm_vs_masking_only_f1_p), L);
+  ok('t10:r4.q15.maskVsPtlmP', f4(R4M.models.qwen15b.paired_permutation_tests_seed_mean_f1.seen_ptlm_vs_masking_only_f1_p), L);
+  ok('t10:r4.lfm3.ptlmVsSafeP', f4(R4M.models.lfm3.paired_permutation_tests_seed_mean_f1.seen_ptlm_vs_safe_f1_p), L);
+}
+
 console.log(`\n${checks} paper-number checks, ${fails} failure${fails === 1 ? '' : 's'}`);
 process.exit(fails ? 1 : 0);

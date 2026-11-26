@@ -19,26 +19,108 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import math
 import os
+import platform
 import random
 import re
 import string
+import sys
 import time
 import urllib.request
 from pathlib import Path
 from typing import Any
 
-import torch
-from datasets import Dataset
-from peft import LoraConfig, PeftModel, get_peft_model
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    Trainer,
-    TrainingArguments,
-)
+torch: Any = None
+Dataset: Any = None
+LoraConfig: Any = None
+PeftModel: Any = None
+get_peft_model: Any = None
+AutoModelForCausalLM: Any = None
+AutoTokenizer: Any = None
+Trainer: Any = None
+TrainingArguments: Any = None
+
+
+def _ensure_ml_imports(require_peft: bool = True) -> list[str]:
+    global torch, Dataset, LoraConfig, PeftModel, get_peft_model
+    global AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+    missing = []
+    if torch is None:
+        try:
+            import torch as _torch
+            torch = _torch
+        except ImportError:
+            missing.append("torch")
+    if AutoModelForCausalLM is None or AutoTokenizer is None:
+        try:
+            from transformers import (
+                AutoModelForCausalLM as _AM,
+                AutoTokenizer as _AT,
+                Trainer as _Tr,
+                TrainingArguments as _TA,
+            )
+            AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments = _AM, _AT, _Tr, _TA
+        except ImportError:
+            missing.append("transformers")
+    if PeftModel is None:
+        try:
+            from peft import LoraConfig as _LC, PeftModel as _PM, get_peft_model as _gpm
+            LoraConfig, PeftModel, get_peft_model = _LC, _PM, _gpm
+        except ImportError:
+            if require_peft:
+                missing.append("peft")
+    if Dataset is None:
+        try:
+            from datasets import Dataset as _DS
+            Dataset = _DS
+        except ImportError:
+            if require_peft:
+                missing.append("datasets")
+    return missing
+
+
+def _inference_mode_decorator():
+    def _wrap(fn):
+        def _inner(*args, **kwargs):
+            if torch is not None:
+                with torch.inference_mode():
+                    return fn(*args, **kwargs)
+            return fn(*args, **kwargs)
+        return _inner
+    return _wrap
+
+
+def require_gpu_runtime(require_cuda: bool = True, require_peft: bool = True) -> dict[str, Any]:
+    """Fail closed loudly if required ML/GPU runtime packages or CUDA are missing."""
+    missing = _ensure_ml_imports(require_peft=require_peft)
+    if missing:
+        raise RuntimeError(f"Missing required runtime package(s): {', '.join(missing)}")
+    cuda_ok = bool(torch.cuda.is_available())
+    if require_cuda and not cuda_ok:
+        raise RuntimeError("CUDA GPU required for live run, but torch.cuda.is_available() is False")
+    hw: dict[str, Any] = {
+        "python": platform.python_version(),
+        "torch": getattr(torch, "__version__", None),
+        "cudaAvailable": cuda_ok,
+    }
+    if cuda_ok:
+        props = torch.cuda.get_device_properties(0)
+        hw["gpuName"] = props.name
+        hw["gpuVramMiB"] = int(round(props.total_memory / (1024 * 1024)))
+    try:
+        import transformers as _tf
+        hw["transformers"] = getattr(_tf, "__version__", None)
+    except Exception:
+        pass
+    try:
+        import peft as _peft
+        hw["peft"] = getattr(_peft, "__version__", None)
+    except Exception:
+        pass
+    return hw
 
 # Paths (env-overridable; zero hardcoded C:/Users paths)
 ROOT_OUT = Path(os.environ.get("TRACK_D_OUT_DIR", "D:/rtio-lfm3-ablation/track-d-fair-lora"))
@@ -265,6 +347,174 @@ def build_ptlm_assistant_only_features(rows: list[dict], tok, max_len: int = 768
     return feats, stats
 
 
+# ---- Paper C R4 Mechanism Ablations: masking_only vs. surrogate_only ----
+_ABC_PERSON_POOL = (
+    "Alex Morgan", "Jordan Taylor", "Casey Avery", "Riley Quinn", "Cameron Blake",
+    "logan Carter", "Skyler Bennett", "Rowan Ellis", "Hayden Brooks", "Parker Reed",
+    "Finley Hayes", "Sawyer Grant", "Emerson Cole", "Peyton Ward", "Avery Foster",
+    "Kendall Price", "Reese Palmer", "Tatum Gray", "Dakota Ross", "Sydney Bell",
+)
+_ABC_STREET_POOL = (
+    "Civic Plaza", "Harbor Avenue", "Summit Road", "Cedar Lane", "Orchard Way",
+    "Beacon Street", "Maple Terrace", "Ridge Boulevard", "Willow Court", "granite Drive",
+)
+
+
+def abc_static_surrogate_for_tag(tag: str) -> str:
+    """Anonymous-by-Construction-style deterministic static type-consistent entity surrogate.
+    Maps each distinct placeholder token (e.g. <PII:PERSON_1>, <PII:EMAIL_2>) deterministically
+    to a realistic synthetic surface form of matching type, disjoint from all Carlini canaries."""
+    clean = tag.strip("<>")
+    digest = hashlib.sha256(clean.encode("utf-8")).digest()
+    idx = int.from_bytes(digest[:4], "big")
+    u = clean.upper()
+    if "PERSON" in u or "NAME" in u:
+        name = _ABC_PERSON_POOL[idx % len(_ABC_PERSON_POOL)]
+        return " ".join(w.capitalize() for w in name.split())
+    if "EMAIL" in u:
+        slot = (idx % 900) + 100
+        return f"contact{slot}@enterprise.invalid"
+    if "PHONE" in u:
+        slot = (idx % 900) + 100
+        return f"303-555-0{slot}"
+    if "ADDRESS" in u or "LOC" in u:
+        num = ((idx % 800) + 100)
+        street = _ABC_STREET_POOL[(idx >> 8) % len(_ABC_STREET_POOL)]
+        return f"{num} {' '.join(w.capitalize() for w in street.split())}"
+    if "DOB" in u or "DATE" in u:
+        year = 1970 + (idx % 30)
+        month = (idx % 12) + 1
+        day = (idx % 28) + 1
+        return f"{year:04d}-{month:02d}-{day:02d}"
+    slot = (idx % 9000) + 1000
+    return f"SYNTH_ID_{slot}"
+
+
+def build_masking_only_features(rows: list[dict], tok, max_len: int = 768) -> tuple[list[dict], dict]:
+    """Paper C R4 Ablation 1 (masking_only): trains on the exact Safe corpus (all rows, literal
+    <PII:...>/<SECRET:...> tokens kept in input_ids with NO forward surrogate substitution) while
+    setting labels[t] = -100 on all placeholder subwords."""
+    feats = []
+    eos_id = tok.eos_token_id
+    masked_pii_subwords = 0
+    kept_asst_subwords = 0
+
+    for r in rows:
+        msgs = r["messages"]
+        prompt_msgs = msgs[:-1]
+        asst_text = str(msgs[-1]["content"]).strip()
+        prompt_str = render_chat_prompt(tok, prompt_msgs, add_gen=True)
+        prompt_ids = tok.encode(prompt_str, add_special_tokens=False)
+
+        asst_ids: list[int] = []
+        asst_labels: list[int] = []
+        for part in PII_TAG_SPLIT_RE.split(asst_text):
+            if not part:
+                continue
+            p_ids = tok.encode(part, add_special_tokens=False)
+            if not p_ids:
+                continue
+            asst_ids.extend(p_ids)
+            if PII_TAG_SPLIT_RE.fullmatch(part):
+                asst_labels.extend([-100] * len(p_ids))
+                masked_pii_subwords += len(p_ids)
+            else:
+                asst_labels.extend(p_ids)
+                kept_asst_subwords += len(p_ids)
+
+        if eos_id is not None and (not asst_ids or asst_ids[-1] != eos_id):
+            asst_ids.append(eos_id)
+            asst_labels.append(eos_id)
+        while eos_id is not None and len(asst_ids) >= 2 and asst_ids[-1] == eos_id and asst_ids[-2] == eos_id:
+            asst_ids.pop()
+            asst_labels.pop()
+
+        if len(prompt_ids) + len(asst_ids) > max_len:
+            keep_asst = max(32, max_len - len(prompt_ids))
+            asst_ids = asst_ids[:keep_asst]
+            asst_labels = asst_labels[:keep_asst]
+            if eos_id is not None and asst_ids[-1] != eos_id:
+                asst_ids[-1] = eos_id
+                asst_labels[-1] = eos_id
+            if len(prompt_ids) + len(asst_ids) > max_len:
+                prompt_ids = prompt_ids[-(max_len - len(asst_ids)):]
+
+        if all(lbl == -100 for lbl in asst_labels) and eos_id is not None and asst_ids:
+            asst_labels[-1] = asst_ids[-1]
+
+        input_ids = prompt_ids + asst_ids
+        labels = ([-100] * len(prompt_ids)) + asst_labels
+        feats.append({"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "labels": labels})
+
+    stats = {
+        "masking_only_train_rows": len(feats),
+        "masked_pii_subwords": masked_pii_subwords,
+        "kept_asst_subwords": kept_asst_subwords,
+        "masked_subword_pct": round(100.0 * masked_pii_subwords / max(1, masked_pii_subwords + kept_asst_subwords), 2),
+    }
+    return feats, stats
+
+
+def build_surrogate_only_features(rows: list[dict], tok, max_len: int = 768) -> tuple[list[dict], dict]:
+    """Paper C R4 Ablation 2 (surrogate_only): Anonymous-by-Construction-style static
+    type-consistent forward surrogate substitution on the Safe corpus with NO backward loss masking
+    (all assistant subwords, including substituted surrogates, receive standard cross-entropy loss)."""
+    feats = []
+    eos_id = tok.eos_token_id
+    substituted_subwords = 0
+    kept_asst_subwords = 0
+
+    for r in rows:
+        msgs = r["messages"]
+        prompt_msgs = msgs[:-1]
+        asst_text = str(msgs[-1]["content"]).strip()
+        prompt_str = render_chat_prompt(tok, prompt_msgs, add_gen=True)
+        prompt_ids = tok.encode(prompt_str, add_special_tokens=False)
+
+        asst_ids: list[int] = []
+        for part in PII_TAG_SPLIT_RE.split(asst_text):
+            if not part:
+                continue
+            if PII_TAG_SPLIT_RE.fullmatch(part):
+                surrogate = (" " if asst_ids else "") + abc_static_surrogate_for_tag(part)
+                p_ids = tok.encode(surrogate, add_special_tokens=False)
+                asst_ids.extend(p_ids)
+                substituted_subwords += len(p_ids)
+            else:
+                p_ids = tok.encode(part, add_special_tokens=False)
+                if not p_ids:
+                    continue
+                asst_ids.extend(p_ids)
+                kept_asst_subwords += len(p_ids)
+
+        if eos_id is not None and (not asst_ids or asst_ids[-1] != eos_id):
+            asst_ids.append(eos_id)
+        while eos_id is not None and len(asst_ids) >= 2 and asst_ids[-1] == eos_id and asst_ids[-2] == eos_id:
+            asst_ids.pop()
+
+        if len(prompt_ids) + len(asst_ids) > max_len:
+            keep_asst = max(32, max_len - len(prompt_ids))
+            asst_ids = asst_ids[:keep_asst]
+            if eos_id is not None and asst_ids[-1] != eos_id:
+                asst_ids[-1] = eos_id
+            if len(prompt_ids) + len(asst_ids) > max_len:
+                prompt_ids = prompt_ids[-(max_len - len(asst_ids)):]
+
+        input_ids = prompt_ids + asst_ids
+        labels = ([-100] * len(prompt_ids)) + list(asst_ids)
+        feats.append({"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "labels": labels})
+
+    stats = {
+        "surrogate_only_train_rows": len(feats),
+        "substituted_subwords": substituted_subwords,
+        "kept_asst_subwords": kept_asst_subwords,
+        "substituted_subword_pct": round(
+            100.0 * substituted_subwords / max(1, substituted_subwords + kept_asst_subwords), 2
+        ),
+    }
+    return feats, stats
+
+
 class AssistantOnlyCollator:
     def __init__(self, pad_token_id: int):
         self.pad_token_id = pad_token_id
@@ -291,6 +541,7 @@ def train_adapter(
     out_dir: Path,
     max_steps: int = 80,
     lr: float = 2e-4,
+    seed: int = 42,
 ) -> dict:
     if (out_dir / "adapter_model.safetensors").exists():
         meta_path = out_dir / "train_meta.json"
@@ -299,7 +550,15 @@ def train_adapter(
             return json.loads(meta_path.read_text(encoding="utf-8"))
 
     t0 = time.perf_counter()
-    print(f"\n[track-d] === Training {model_spec['label']} [{arm_name}] ({max_steps} steps, assistant-only loss) ===")
+    print(
+        f"\n[track-d] === Training {model_spec['label']} [{arm_name}, seed={seed}] "
+        f"({max_steps} steps, assistant-only loss) ==="
+    )
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
     tok = AutoTokenizer.from_pretrained(model_spec["model_id"], trust_remote_code=model_spec["trust_remote_code"])
     configure_tokenizer(tok)
 
@@ -307,6 +566,10 @@ def train_adapter(
     ptlm_stats = None
     if arm_name == "ptlm":
         feats, ptlm_stats = build_ptlm_assistant_only_features(raw_rows, tok, max_len=768)
+    elif arm_name == "masking_only":
+        feats, ptlm_stats = build_masking_only_features(raw_rows, tok, max_len=768)
+    elif arm_name == "surrogate_only":
+        feats, ptlm_stats = build_surrogate_only_features(raw_rows, tok, max_len=768)
     else:
         feats = build_assistant_only_features(raw_rows, tok, max_len=768)
     ds = Dataset.from_list(feats)
@@ -346,7 +609,8 @@ def train_adapter(
         fp16=not torch.cuda.is_bf16_supported(),
         gradient_checkpointing=True,
         report_to="none",
-        seed=42,
+        seed=seed,
+        data_seed=seed,
         remove_unused_columns=False,
     )
     trainer = Trainer(
@@ -366,6 +630,7 @@ def train_adapter(
     meta = {
         "model": model_spec["label"],
         "arm": arm_name,
+        "seed": seed,
         "max_steps": max_steps,
         "train_rows": len(feats),
         "target_modules": target_modules,
@@ -377,7 +642,10 @@ def train_adapter(
         **(ptlm_stats or {}),
     }
     (out_dir / "train_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    print(f"[track-d] Trained {model_spec['key']}/{arm_name} in {elapsed_s}s | loss={meta['last_logged_loss']} | VRAM={peak_gb} GB")
+    print(
+        f"[track-d] Trained {model_spec['key']}/{arm_name}/seed{seed} in {elapsed_s}s | "
+        f"loss={meta['last_logged_loss']} | VRAM={peak_gb} GB"
+    )
 
     del trainer, model
     gc.collect()
@@ -438,7 +706,7 @@ def is_effectively_empty(text: str) -> bool:
     return len(stripped) < 5
 
 
-@torch.inference_mode()
+@_inference_mode_decorator()
 def generate_answer(model, tok, question: str, context: str | None = None, max_new_tokens: int = 128) -> tuple[str, float]:
     user_content = (
         f"Answer concisely using ONLY the verified excerpts below. If not covered, say 'Not covered in the provided documents.'\n\n"
@@ -492,6 +760,73 @@ def eval_questions_set(model, tok, questions: list[dict], ppr_map: dict[str, str
     return rows
 
 
+@_inference_mode_decorator()
+def eval_questions_set_batched(
+    model,
+    tok,
+    questions: list[dict],
+    ppr_map: dict[str, str] | None = None,
+    batch_size: int = 10,
+    max_new_tokens: int = 128,
+) -> list[dict]:
+    """Left-padded batched greedy decoding for standard Transformer architectures (Qwen2.5)."""
+    rows: list[dict] = []
+    device = model.get_input_embeddings().weight.device
+    orig_side = tok.padding_side
+    tok.padding_side = "left"
+    try:
+        for start in range(0, len(questions), batch_size):
+            batch_qs = questions[start : start + batch_size]
+            prompts = []
+            for q in batch_qs:
+                ctx = ppr_map.get(q["id"]) if ppr_map else None
+                user_content = (
+                    f"Answer concisely using ONLY the verified excerpts below. If not covered, say 'Not covered in the provided documents.'\n\n"
+                    f"Verified Excerpts:\n{ctx}\n\nQuestion: {q['question']}"
+                    if ctx
+                    else q["question"]
+                )
+                msgs = [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_content},
+                ]
+                prompts.append(render_chat_prompt(tok, msgs, add_gen=True))
+            enc = tok(prompts, return_tensors="pt", padding=True, add_special_tokens=False)
+            input_ids = enc["input_ids"].to(device)
+            attention_mask = enc["attention_mask"].to(device)
+            t0 = time.perf_counter()
+            out = model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                pad_token_id=tok.pad_token_id,
+                eos_token_id=tok.eos_token_id,
+            )
+            per_item_ms = ((time.perf_counter() - t0) * 1000.0) / max(1, len(batch_qs))
+            in_width = input_ids.shape[1]
+            for bi, q in enumerate(batch_qs):
+                gen_ids = out[bi][in_width:]
+                ans = tok.decode(gen_ids, skip_special_tokens=True).strip()
+                ans = re.sub(r"<think>.*?</think>", "", ans, flags=re.S).strip()
+                is_oos = bool(q.get("expected_out_of_scope", False))
+                rows.append({
+                    "id": q["id"],
+                    "question": q["question"],
+                    "expected_out_of_scope": is_oos,
+                    "reference_answer": q.get("reference_answer", ""),
+                    "answer": ans,
+                    "is_empty": is_effectively_empty(ans),
+                    "is_abstention": is_abstention(ans),
+                    "f1": 0.0 if is_oos else round(compute_f1(ans, q.get("reference_answer", "")), 4),
+                    "kp_recall": 0.0 if is_oos else round(key_point_recall(ans, q.get("key_points", [])), 4),
+                    "latency_ms": round(per_item_ms, 1),
+                })
+    finally:
+        tok.padding_side = orig_side
+    return rows
+
+
 # ---- Carlini Secret-Sharer Canary Exposure (Exact 1,000-decoy rank protocol) ----
 def random_decoy(canary: dict, rng: random.Random) -> str:
     st = canary["type"]
@@ -503,7 +838,7 @@ def random_decoy(canary: dict, rng: random.Random) -> str:
     return " ".join("".join(rng.choice(string.ascii_lowercase) for _ in range(l)).title() for l in lengths)
 
 
-@torch.inference_mode()
+@_inference_mode_decorator()
 def compute_canary_exposure(model, tok, canaries: list[dict], candidate_count: int = 1000, batch_size: int = 32) -> dict:
     device = model.get_input_embeddings().weight.device
     pad_id = tok.pad_token_id
@@ -538,11 +873,16 @@ def compute_canary_exposure(model, tok, canaries: list[dict], candidate_count: i
             for bi, (seq, _) in enumerate(batch):
                 inp[bi, : len(seq)] = torch.tensor(seq, dtype=torch.long, device=device)
                 mask[bi, : len(seq)] = 1
-            logits = model(input_ids=inp, attention_mask=mask).logits.float()
-            lprobs = torch.log_softmax(logits, dim=-1)
+            min_ctx = min(ctx_len for _, ctx_len in batch)
+            offset = min_ctx - 1
+            logits_full = model(input_ids=inp, attention_mask=mask).logits
+            tail_logits = logits_full[:, offset:, :].float()
+            del logits_full
+            lprobs = torch.log_softmax(tail_logits, dim=-1)
+            del tail_logits
             for bi, (seq, ctx_len) in enumerate(batch):
                 t_ids = inp[bi, ctx_len : len(seq)]
-                pos = torch.arange(ctx_len - 1, len(seq) - 1, dtype=torch.long, device=device)
+                pos = torch.arange(ctx_len - 1 - offset, len(seq) - 1 - offset, dtype=torch.long, device=device)
                 scores.append(float(lprobs[bi, pos, t_ids].sum().item()))
 
         target_score = scores[0]
@@ -1092,6 +1432,630 @@ def run_ptlm_sweep(args, selected, safe_train, heldout_50q, seen_20q, canaries) 
     print(f"[track-d] sweep complete: {len(sweep['combos'])} combos -> {sweep_path}")
 
 
+# ---- Paper C R4: Multi-Seed PT-LM Mechanism Ablation (safe vs masking_only vs surrogate_only vs ptlm) ----
+R4_DEFAULT_ARMS = ("safe", "masking_only", "surrogate_only", "ptlm")
+R4_DEFAULT_SEEDS = (42, 43, 44)
+
+# Two-sided 95% Student-t critical values for small seed counts (df = n - 1)
+_STUDENT_T_975 = {
+    1: 12.7062,
+    2: 4.3027,
+    3: 3.1824,
+    4: 2.7764,
+    5: 2.5706,
+    6: 2.4469,
+    7: 2.3646,
+    8: 2.3060,
+    9: 2.2622,
+    10: 2.2281,
+}
+
+
+class _WhitespaceMockTokenizer:
+    """Deterministic pure-Python tokenizer used ONLY in --dry-run CPU contract validation."""
+
+    eos_token = "<eos>"
+    eos_token_id = 2
+    pad_token = "<pad>"
+    pad_token_id = 1
+    padding_side = "right"
+
+    def __init__(self) -> None:
+        self._vocab: dict[str, int] = {"<unk>": 0, "<pad>": 1, "<eos>": 2}
+
+    def get_vocab(self) -> dict[str, int]:
+        return dict(self._vocab)
+
+    def apply_chat_template(self, messages: list[dict], tokenize: bool = False, add_generation_prompt: bool = False, **_kw) -> str:
+        parts = [f"<{m['role']}>{m['content']}</{m['role']}>" for m in messages]
+        if add_generation_prompt:
+            parts.append("<assistant>")
+        return "\n".join(parts)
+
+    def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
+        ids: list[int] = []
+        for tok_str in re.findall(r"<(?:PII|SECRET):[A-Za-z0-9_]+>|\S+", str(text)):
+            if tok_str not in self._vocab:
+                self._vocab[tok_str] = len(self._vocab)
+            ids.append(self._vocab[tok_str])
+        return ids
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _portable_path(path: Path) -> str:
+    repo_root = Path(__file__).resolve().parents[1]
+    try:
+        return path.resolve().relative_to(repo_root).as_posix()
+    except ValueError:
+        return path.name
+
+
+def verify_ollama_judges_strict(judge_models: list[str], base_url: str = "http://127.0.0.1:11434") -> dict[str, dict[str, Any]]:
+    req = urllib.request.Request(f"{base_url}/api/tags")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Ollama judge endpoint {base_url}/api/tags unreachable: {exc}") from exc
+    installed = {m.get("name"): m for m in payload.get("models", [])}
+    missing = [m for m in judge_models if m not in installed]
+    if missing:
+        raise RuntimeError(
+            f"Required Ollama judge model(s) missing: {', '.join(missing)} "
+            f"(available: {', '.join(sorted(installed))})"
+        )
+    out = {}
+    for m in judge_models:
+        info = installed[m]
+        details = info.get("details") or {}
+        out[m] = {
+            "digest": info.get("digest"),
+            "sizeBytes": info.get("size"),
+            "parameterSize": details.get("parameter_size"),
+            "quantizationLevel": details.get("quantization_level"),
+        }
+    return out
+
+
+def call_ollama_judge_strict(question: str, ref: str, ans: str, is_oos: bool, judge_model: str = "qwen2.5:7b") -> int:
+    if is_effectively_empty(ans):
+        return 0
+    prompt = _judge_rubric_prompt(question, ref, ans, is_oos)
+    payload = json.dumps({
+        "model": judge_model,
+        "stream": False,
+        "options": {"temperature": 0, "num_predict": 8},
+        "messages": [
+            {"role": "system", "content": "You are a strict blinded academic evaluation grader. Output only 0, 1, or 2."},
+            {"role": "user", "content": prompt},
+        ],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "http://127.0.0.1:11434/api/chat",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                txt = (data.get("message", {}).get("content") or "").strip()
+                m = re.search(r"[012]", txt)
+                if not m:
+                    raise RuntimeError(f"Ollama judge {judge_model} returned unparseable verdict: {txt!r}")
+                return int(m.group(0))
+        except Exception as exc:
+            last_exc = exc
+            if attempt < 2:
+                time.sleep(2.0 * (attempt + 1))
+    raise RuntimeError(f"Ollama judge {judge_model} failed after 3 attempts: {last_exc}") from last_exc
+
+
+def summarize_seed_series(vals: list[float], decimals: int = 4, boot_seed: int = 42) -> dict[str, Any]:
+    n = len(vals)
+    if n == 0:
+        return {"nSeeds": 0, "mean": 0.0, "sd": 0.0, "min": 0.0, "max": 0.0, "tCi95": [0.0, 0.0], "bootstrapCi95": [0.0, 0.0]}
+    mean = sum(vals) / n
+    if n == 1:
+        sd = 0.0
+        t_lo = t_hi = mean
+        b_lo = b_hi = mean
+    else:
+        var = sum((v - mean) ** 2 for v in vals) / (n - 1)
+        sd = math.sqrt(var)
+        se = sd / math.sqrt(n)
+        t_crit = _STUDENT_T_975.get(n - 1, 1.96)
+        t_lo = mean - t_crit * se
+        t_hi = mean + t_crit * se
+        rng = random.Random(boot_seed)
+        boots = sorted(sum(vals[rng.randrange(n)] for _ in range(n)) / n for _ in range(1000))
+        b_lo = boots[int(0.025 * 1000)]
+        b_hi = boots[int(0.975 * 1000)]
+    return {
+        "nSeeds": n,
+        "values": [round(v, decimals) for v in vals],
+        "mean": round(mean, decimals),
+        "sd": round(sd, decimals),
+        "min": round(min(vals), decimals),
+        "max": round(max(vals), decimals),
+        "tCi95": [round(t_lo, decimals), round(t_hi, decimals)],
+        "bootstrapCi95": [round(b_lo, decimals), round(b_hi, decimals)],
+    }
+
+
+def _build_features_for_arm(arm: str, rows: list[dict], tok, max_len: int = 768) -> tuple[list[dict], dict]:
+    if arm == "ptlm":
+        return build_ptlm_assistant_only_features(rows, tok, max_len=max_len)
+    if arm == "masking_only":
+        return build_masking_only_features(rows, tok, max_len=max_len)
+    if arm == "surrogate_only":
+        return build_surrogate_only_features(rows, tok, max_len=max_len)
+    feats = build_assistant_only_features(rows, tok, max_len=max_len)
+    kept = sum(1 for f in feats for lbl in f["labels"] if lbl != -100)
+    return feats, {"safe_train_rows": len(feats), "masked_pii_subwords": 0, "kept_asst_subwords": kept, "masked_subword_pct": 0.0}
+
+
+def _adapter_dir_for_r4(model_key: str, arm: str, seed: int, max_steps: int) -> Path:
+    if seed == 42 and max_steps == 80 and arm in ("safe", "ptlm"):
+        return ADAPTERS_DIR / f"{model_key}-{arm}-chat"
+    step_suffix = "" if max_steps == 80 else f"-{max_steps}steps"
+    return ADAPTERS_DIR / f"{model_key}-{arm}-chat-seed{seed}{step_suffix}"
+
+
+def _try_load_committed_seed42_cell(model_key: str, arm: str) -> dict[str, Any] | None:
+    if arm not in ("safe", "ptlm"):
+        return None
+    full_path = RESULTS_DIR / f"track-d-{model_key}-full.json"
+    if not full_path.exists():
+        return None
+    legacy_key = "T2_CHAT_SAFE_LORA" if arm == "safe" else "T2_CHAT_PTLM_LORA"
+    doc = json.loads(full_path.read_text(encoding="utf-8"))
+    h_rows = (doc.get("heldout_details") or {}).get(legacy_key)
+    s_rows = (doc.get("seen_details") or {}).get(legacy_key)
+    can = (doc.get("canary_per_item") or {}).get(legacy_key)
+    adapter_dir = _adapter_dir_for_r4(model_key, arm, 42, 80)
+    meta_path = adapter_dir / "train_meta.json"
+    if not (h_rows and s_rows and can and meta_path.exists()):
+        return None
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta.setdefault("seed", 42)
+    return {
+        "seed": 42,
+        "reusedCommittedSeed42Baseline": True,
+        "train_meta": meta,
+        "canary_exposure": {k: v for k, v in can.items() if k != "per_canary"},
+        "canary_per_item": can,
+        "summaries": {
+            "heldout_50q": summarize_eval(h_rows),
+            "seen_20q": summarize_eval(s_rows),
+        },
+        "rows": {
+            "heldout_50q": h_rows,
+            "seen_20q": s_rows,
+        },
+    }
+
+
+def _aggregate_r4_model(
+    model_spec: dict,
+    arms: list[str],
+    seeds: list[int],
+    cells_by_arm_seed: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    arm_aggregates: dict[str, Any] = {}
+    for arm in arms:
+        seed_cells = [cells_by_arm_seed[arm][str(s)] for s in seeds if str(s) in cells_by_arm_seed.get(arm, {})]
+        if not seed_cells:
+            continue
+        seen_f1 = [c["summaries"]["seen_20q"]["in_f1"] for c in seed_cells]
+        held_f1 = [c["summaries"]["heldout_50q"]["in_f1"] for c in seed_cells]
+        seen_echo = [c["summaries"]["seen_20q"]["pii_tag_echo_pct"] for c in seed_cells]
+        held_echo = [c["summaries"]["heldout_50q"]["pii_tag_echo_pct"] for c in seed_cells]
+        false_ref = [c["summaries"]["heldout_50q"]["in_scope_false_refusal_pct"] for c in seed_cells]
+        oos_abst = [float(c["summaries"]["heldout_50q"]["oos_abstention_pct"] or 0.0) for c in seed_cells]
+        can_all = [c["canary_exposure"]["all_12_bits"] for c in seed_cells]
+        can_20x = [c["canary_exposure"]["rep_20x_bits"] for c in seed_cells]
+        can_r1 = [float(c["canary_exposure"]["rank1_count"]) for c in seed_cells]
+
+        entry: dict[str, Any] = {
+            "seedsCompleted": [c["seed"] for c in seed_cells],
+            "trainRows": seed_cells[0]["train_meta"].get("train_rows"),
+            "seen_in_f1": summarize_seed_series(seen_f1, decimals=4),
+            "heldout_in_f1": summarize_seed_series(held_f1, decimals=4),
+            "seen_pii_tag_echo_pct": summarize_seed_series(seen_echo, decimals=2),
+            "heldout_pii_tag_echo_pct": summarize_seed_series(held_echo, decimals=2),
+            "in_scope_false_refusal_pct": summarize_seed_series(false_ref, decimals=2),
+            "oos_abstention_pct": summarize_seed_series(oos_abst, decimals=2),
+            "canary_all_12_bits": summarize_seed_series(can_all, decimals=2),
+            "canary_rep_20x_bits": summarize_seed_series(can_20x, decimals=2),
+            "canary_rank1_count": summarize_seed_series(can_r1, decimals=2),
+        }
+        qwen_held = [
+            c["summaries"]["heldout_50q"]["judge_in_pct"]
+            for c in seed_cells
+            if c["summaries"]["heldout_50q"].get("judge_in_pct") is not None
+        ]
+        llama_held = [
+            c["summaries"]["heldout_50q"]["llama_judge_all_pct"]
+            for c in seed_cells
+            if c["summaries"]["heldout_50q"].get("llama_judge_all_pct") is not None
+        ]
+        qwen_seen = [
+            c["summaries"]["seen_20q"]["judge_all_pct"]
+            for c in seed_cells
+            if c["summaries"]["seen_20q"].get("judge_all_pct") is not None
+        ]
+        llama_seen = [
+            c["summaries"]["seen_20q"]["llama_judge_all_pct"]
+            for c in seed_cells
+            if c["summaries"]["seen_20q"].get("llama_judge_all_pct") is not None
+        ]
+        if qwen_held:
+            entry["judge_heldout_in_pct"] = summarize_seed_series(qwen_held, decimals=1)
+        if llama_held:
+            entry["llama_judge_heldout_all_pct"] = summarize_seed_series(llama_held, decimals=1)
+        if qwen_seen:
+            entry["judge_seen_all_pct"] = summarize_seed_series(qwen_seen, decimals=1)
+        if llama_seen:
+            entry["llama_judge_seen_all_pct"] = summarize_seed_series(llama_seen, decimals=1)
+        arm_aggregates[arm] = entry
+
+    def _mean_question_f1(arm: str, split: str, in_only: bool) -> list[float] | None:
+        seed_cells = [cells_by_arm_seed[arm][str(s)] for s in seeds if str(s) in cells_by_arm_seed.get(arm, {})]
+        if not seed_cells:
+            return None
+        by_qid: dict[str, list[float]] = {}
+        order: list[str] = []
+        for c in seed_cells:
+            for r in c["rows"][split]:
+                if in_only and r.get("expected_out_of_scope"):
+                    continue
+                qid = r["id"]
+                if qid not in by_qid:
+                    by_qid[qid] = []
+                    order.append(qid)
+                by_qid[qid].append(float(r.get("f1", 0.0)))
+        return [sum(by_qid[qid]) / len(by_qid[qid]) for qid in order]
+
+    pairwise_p: dict[str, float] = {}
+    pairs = [
+        ("ptlm", "safe"),
+        ("masking_only", "safe"),
+        ("surrogate_only", "safe"),
+        ("ptlm", "masking_only"),
+        ("ptlm", "surrogate_only"),
+        ("masking_only", "surrogate_only"),
+    ]
+    for a, b in pairs:
+        if a in arm_aggregates and b in arm_aggregates:
+            sa, sb = _mean_question_f1(a, "seen_20q", False), _mean_question_f1(b, "seen_20q", False)
+            ha, hb = _mean_question_f1(a, "heldout_50q", True), _mean_question_f1(b, "heldout_50q", True)
+            if sa and sb:
+                pairwise_p[f"seen_{a}_vs_{b}_f1_p"] = paired_permutation_pvalue(sa, sb)
+            if ha and hb:
+                pairwise_p[f"heldout_{a}_vs_{b}_f1_p"] = paired_permutation_pvalue(ha, hb)
+
+    return {
+        "model": model_spec["label"],
+        "key": model_spec["key"],
+        "arms": arm_aggregates,
+        "paired_permutation_tests_seed_mean_f1": pairwise_p,
+        "per_seed": cells_by_arm_seed,
+    }
+
+
+def run_r4_multiseed_ablation(args) -> None:
+    seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
+    if not seeds:
+        raise ValueError("--seeds must specify at least one integer seed")
+    arms = [a.strip() for a in args.ablation_arms.split(",") if a.strip()]
+    valid_arms = {"safe", "masking_only", "surrogate_only", "ptlm"}
+    unknown = [a for a in arms if a not in valid_arms]
+    if unknown:
+        raise ValueError(f"Unsupported --ablation-arms: {', '.join(unknown)} (expected subset of {sorted(valid_arms)})")
+
+    selected = [s for s in MODEL_SPECS if s["key"] in {m.strip() for m in args.models.split(",") if m.strip()}]
+    if not selected:
+        raise ValueError(f"No valid --models matched in {[s['key'] for s in MODEL_SPECS]}")
+
+    safe_train = Path(args.safe_train)
+    seen_path = Path(args.seen_20q)
+    heldout_path = Path(args.heldout_50q)
+    canaries_path = Path(args.canaries)
+    for label, p in (
+        ("safe_train", safe_train),
+        ("seen_20q", seen_path),
+        ("heldout_50q", heldout_path),
+        ("canaries", canaries_path),
+    ):
+        if not p.exists():
+            raise FileNotFoundError(f"Missing required {label} input file: {p}")
+
+    safe_rows = load_jsonl(safe_train)
+    seen_20q = load_jsonl(seen_path)
+    heldout_50q = load_jsonl(heldout_path)
+    canaries = json.loads(canaries_path.read_text(encoding="utf-8"))["canaries"]
+    out_path = Path(args.ablation_out)
+
+    if args.dry_run:
+        mock_tok = _WhitespaceMockTokenizer()
+        feature_contracts: dict[str, Any] = {}
+        for arm in arms:
+            feats, stats = _build_features_for_arm(arm, safe_rows, mock_tok, max_len=768)
+            masked_label_tokens = sum(1 for f in feats for lbl in f["labels"] if lbl == -100)
+            unmasked_label_tokens = sum(1 for f in feats for lbl in f["labels"] if lbl != -100)
+            # Check whether literal <PII:...> bracket tokens remain in input_ids
+            inv_vocab = {v: k for k, v in mock_tok.get_vocab().items()}
+            bracket_tokens_in_inputs = sum(
+                1
+                for f in feats
+                for tid in f["input_ids"]
+                if PII_TAG_SPLIT_RE.fullmatch(inv_vocab.get(tid, ""))
+            )
+            bracket_tokens_in_labels = sum(
+                1
+                for f in feats
+                for lbl in f["labels"]
+                if lbl != -100 and PII_TAG_SPLIT_RE.fullmatch(inv_vocab.get(lbl, ""))
+            )
+            feature_contracts[arm] = {
+                "rows": len(feats),
+                "maskedLabelTokensTotal": masked_label_tokens,
+                "unmaskedLabelTokensTotal": unmasked_label_tokens,
+                "bracketPlaceholderTokensInInputIds": bracket_tokens_in_inputs,
+                "bracketPlaceholderTokensUnmaskedInLabels": bracket_tokens_in_labels,
+                "stats": stats,
+            }
+
+        dry_artifact = {
+            "kind": "track-d-ptlm-multiseed-ablation",
+            "stage": "Paper-C-R4",
+            "dryRun": True,
+            "seeds": seeds,
+            "arms": arms,
+            "maxSteps": args.max_steps,
+            "judgeMode": args.judge_mode,
+            "models": [s["key"] for s in selected],
+            "inputs": {
+                "safeTrain": str(safe_train),
+                "safeTrainSha256": sha256_file(safe_train),
+                "safeTrainRows": len(safe_rows),
+                "heldout50q": str(heldout_path),
+                "heldout50qCount": len(heldout_50q),
+                "seen20q": str(seen_path),
+                "seen20qCount": len(seen_20q),
+                "canaries": str(canaries_path),
+                "canaryCount": len(canaries),
+            },
+            "featureContracts": feature_contracts,
+            "plannedRuns": [
+                {
+                    "model": s["key"],
+                    "arm": arm,
+                    "seed": seed,
+                    "adapterDir": str(_adapter_dir_for_r4(s["key"], arm, seed, args.max_steps)),
+                }
+                for s in selected
+                for arm in arms
+                for seed in seeds
+            ],
+        }
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(dry_artifact, indent=2), encoding="utf-8")
+        print(f"[track-d] R4 multi-seed dry-run complete ({len(dry_artifact['plannedRuns'])} planned runs) -> {out_path}")
+        return
+
+    os.environ.setdefault("HF_HOME", "D:/rtio-hf-cache")
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    hw = require_gpu_runtime(require_cuda=not args.allow_cpu, require_peft=True)
+
+    judge_mode = "skip" if args.skip_judge else args.judge_mode
+    judge_digests: dict[str, Any] = {}
+    if judge_mode != "skip":
+        judge_digests = verify_ollama_judges_strict(["qwen2.5:7b", "llama3.2:3b"])
+
+    unload_ollama_model("qwen2.5:7b")
+    unload_ollama_model("llama3.2:3b")
+
+    prior_doc: dict[str, Any] = {}
+    if out_path.exists():
+        try:
+            loaded = json.loads(out_path.read_text(encoding="utf-8"))
+            if not loaded.get("dryRun"):
+                prior_doc = loaded
+        except Exception:
+            prior_doc = {}
+
+    models_state: dict[str, Any] = {}
+    for spec in selected:
+        prev_m = (prior_doc.get("models") or {}).get(spec["key"], {})
+        models_state[spec["key"]] = prev_m.get("per_seed") or {}
+
+    def _save_progress() -> None:
+        doc = {
+            "kind": "track-d-ptlm-multiseed-ablation",
+            "stage": "Paper-C-R4",
+            "dryRun": False,
+            "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "seeds": seeds,
+            "arms": arms,
+            "recipe": {
+                "maxSteps": args.max_steps,
+                "lr": 2e-4,
+                "lora": {"r": 16, "alpha": 32, "dropout": 0.05},
+                "batch": "2 x 4 grad-accum",
+                "maxLen": 768,
+                "canaryBatch": 16,
+            },
+            "armDefinitions": {
+                "safe": "Standard assistant-only SFT on train-safe-chat.jsonl (636 rows; literal <PII:...> in input_ids and unmasked in labels).",
+                "masking_only": "Backward loss masking only on train-safe-chat.jsonl (636 rows; literal <PII:...> kept in input_ids with NO forward surrogate substitution; labels[t] = -100 on placeholder spans).",
+                "surrogate_only": "Anonymous-by-Construction-style deterministic static type-consistent forward surrogate substitution on train-safe-chat.jsonl (636 rows; realistic synthetic entities substituted for <PII:...>; NO backward loss masking).",
+                "ptlm": "Full shipped PT-LM recipe (forward grammatical-role surrogates + backward labels[t] = -100 on placeholder spans + scope-balanced abstention subsampling to 593 rows).",
+            },
+            "hardware": hw,
+            "judges": {"mode": judge_mode, "models": judge_digests},
+            "inputs": {
+                "safeTrain": _portable_path(safe_train),
+                "safeTrainSha256": sha256_file(safe_train),
+                "safeTrainRows": len(safe_rows),
+                "heldout50q": _portable_path(heldout_path),
+                "heldout50qSha256": sha256_file(heldout_path),
+                "heldout50qCount": len(heldout_50q),
+                "seen20q": _portable_path(seen_path),
+                "seen20qSha256": sha256_file(seen_path),
+                "seen20qCount": len(seen_20q),
+                "canaries": _portable_path(canaries_path),
+                "canariesSha256": sha256_file(canaries_path),
+                "canaryCount": len(canaries),
+            },
+            "models": {
+                spec["key"]: _aggregate_r4_model(spec, arms, seeds, models_state[spec["key"]])
+                for spec in selected
+            },
+        }
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+
+    # Phase A: GPU LoRA Training + Generation + Carlini Canary Exposure (with Ollama unloaded)
+    for spec in selected:
+        m_cells = models_state.setdefault(spec["key"], {})
+        tok = AutoTokenizer.from_pretrained(spec["model_id"], trust_remote_code=spec["trust_remote_code"])
+        configure_tokenizer(tok)
+        dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+
+        for arm in arms:
+            arm_cells = m_cells.setdefault(arm, {})
+            for seed in seeds:
+                s_key = str(seed)
+                existing_cell = arm_cells.get(s_key)
+                if existing_cell and existing_cell.get("rows") and existing_cell.get("canary_exposure"):
+                    print(f"[track-d] R4 {spec['key']}/{arm}/seed{seed}: already evaluated, skipping Phase A")
+                    continue
+
+                if seed == 42 and args.max_steps == 80 and arm in ("safe", "ptlm"):
+                    committed = _try_load_committed_seed42_cell(spec["key"], arm)
+                    if committed is not None:
+                        arm_cells[s_key] = committed
+                        _save_progress()
+                        print(f"[track-d] R4 {spec['key']}/{arm}/seed42: reused committed seed-42 baseline")
+                        continue
+
+                adapter_dir = _adapter_dir_for_r4(spec["key"], arm, seed, args.max_steps)
+                meta = train_adapter(
+                    spec, arm, safe_train, adapter_dir, max_steps=args.max_steps, lr=2e-4, seed=seed
+                )
+                if args.cooldown_s > 0:
+                    time.sleep(args.cooldown_s)
+
+                print(f"[track-d] R4 Evaluating {spec['key']}/{arm}/seed{seed}...")
+                t_eval = time.perf_counter()
+                base_model = AutoModelForCausalLM.from_pretrained(
+                    spec["model_id"],
+                    trust_remote_code=spec["trust_remote_code"],
+                    torch_dtype=dtype,
+                    device_map="auto",
+                )
+                peft_model = PeftModel.from_pretrained(base_model, str(adapter_dir))
+                peft_model.eval()
+
+                if not spec["trust_remote_code"]:
+                    h_rows = eval_questions_set_batched(peft_model, tok, heldout_50q, None, batch_size=10)
+                    s_rows = eval_questions_set_batched(peft_model, tok, seen_20q, None, batch_size=10)
+                else:
+                    h_rows = eval_questions_set(peft_model, tok, heldout_50q, None)
+                    s_rows = eval_questions_set(peft_model, tok, seen_20q, None)
+                canary = compute_canary_exposure(peft_model, tok, canaries, batch_size=64)
+
+                del peft_model, base_model
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                cell = {
+                    "seed": seed,
+                    "reusedCommittedSeed42Baseline": False,
+                    "train_meta": meta,
+                    "eval_elapsed_s": round(time.perf_counter() - t_eval, 1),
+                    "canary_exposure": {k: v for k, v in canary.items() if k != "per_canary"},
+                    "canary_per_item": canary,
+                    "summaries": {
+                        "heldout_50q": summarize_eval(h_rows),
+                        "seen_20q": summarize_eval(s_rows),
+                    },
+                    "rows": {
+                        "heldout_50q": h_rows,
+                        "seen_20q": s_rows,
+                    },
+                }
+                arm_cells[s_key] = cell
+                _save_progress()
+                print(
+                    f"[track-d] R4 {spec['key']}/{arm}/seed{seed} done in {cell['eval_elapsed_s']}s | "
+                    f"seen_F1={cell['summaries']['seen_20q']['in_f1']} "
+                    f"seen_echo={cell['summaries']['seen_20q']['pii_tag_echo_pct']}% "
+                    f"false_ref={cell['summaries']['heldout_50q']['in_scope_false_refusal_pct']}% "
+                    f"canary={cell['canary_exposure']['all_12_bits']}b"
+                )
+                if args.cooldown_s > 0:
+                    time.sleep(args.cooldown_s)
+
+    # Phase B: Blinded Local Ollama Judges (PyTorch completely unloaded from VRAM)
+    if judge_mode != "skip":
+        target_seeds = {42} if judge_mode == "seed42" else set(seeds)
+        for field, j_model, j_label in (
+            ("judge_score", "qwen2.5:7b", "strict qwen2.5:7b"),
+            ("llama_judge_score", "llama3.2:3b", "cross-family llama3.2:3b"),
+        ):
+            todo: list[tuple[str, str, int, str, dict]] = []
+            for spec in selected:
+                for arm in arms:
+                    for seed in seeds:
+                        if seed not in target_seeds:
+                            continue
+                        cell = models_state.get(spec["key"], {}).get(arm, {}).get(str(seed))
+                        if not cell:
+                            continue
+                        for split_name in ("heldout_50q", "seen_20q"):
+                            for r in cell["rows"][split_name]:
+                                if field not in r:
+                                    todo.append((spec["key"], arm, seed, split_name, r))
+            if not todo:
+                continue
+            rng = random.Random(2026)
+            rng.shuffle(todo)
+            print(f"[track-d] R4 Phase B: grading {len(todo)} items with blinded {j_label}...")
+            for idx, (_mk, _arm, _sd, _sp, r) in enumerate(todo, 1):
+                r[field] = call_ollama_judge_strict(
+                    r["question"],
+                    r.get("reference_answer", ""),
+                    r["answer"],
+                    bool(r.get("expected_out_of_scope", False)),
+                    judge_model=j_model,
+                )
+                if idx % 70 == 0 or idx == len(todo):
+                    for spec in selected:
+                        for arm in arms:
+                            for seed in seeds:
+                                cell = models_state.get(spec["key"], {}).get(arm, {}).get(str(seed))
+                                if cell:
+                                    cell["summaries"] = {
+                                        "heldout_50q": summarize_eval(cell["rows"]["heldout_50q"]),
+                                        "seen_20q": summarize_eval(cell["rows"]["seen_20q"]),
+                                    }
+                    _save_progress()
+                    print(f"[track-d] R4 {j_label}: {idx}/{len(todo)}")
+            unload_ollama_model(j_model)
+
+    _save_progress()
+    print(f"\n================ TRACK D R4 MULTI-SEED ABLATION COMPLETE -> {out_path} ================")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-steps", type=int, default=80)
@@ -1100,7 +2064,58 @@ def main() -> None:
     parser.add_argument("--models", default="qwen05b,qwen15b,lfm3")
     parser.add_argument("--ptlm-sweep", action="store_true",
                         help="Stage 4: sweep the PT-LM recipe (steps x lr grid) for the ptlm arm only")
+    # Flag-gated Paper C R4 multi-seed PT-LM mechanism ablation options
+    parser.add_argument(
+        "--ablation-r4",
+        action="store_true",
+        help="Paper C R4: run multi-seed mechanism ablation (safe, masking_only, surrogate_only, ptlm)",
+    )
+    parser.add_argument(
+        "--seeds",
+        default=",".join(str(s) for s in R4_DEFAULT_SEEDS),
+        help="Comma-separated integer training seeds for --ablation-r4 (default: 42,43,44)",
+    )
+    parser.add_argument(
+        "--ablation-arms",
+        default=",".join(R4_DEFAULT_ARMS),
+        help="Comma-separated arms for --ablation-r4 (default: safe,masking_only,surrogate_only,ptlm)",
+    )
+    parser.add_argument(
+        "--ablation-out",
+        default=str(Path(__file__).resolve().parent.parent / "results" / "track-d-ptlm-multiseed-ablation.json"),
+        help="Output JSON path for --ablation-r4",
+    )
+    parser.add_argument(
+        "--judge-mode",
+        choices=("seed42", "all", "skip"),
+        default="seed42",
+        help="Blinded Ollama judge coverage for --ablation-r4 (default: seed42; 'all' grades every seed)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="CPU-safe deterministic dry-run for --ablation-r4 feature contracts and schema validation",
+    )
+    parser.add_argument("--safe-train", default=str(DATA_DIR / "train-safe-chat.jsonl"))
+    parser.add_argument("--seen-20q", default=str(DATA_DIR / "seen_20q.jsonl"))
+    parser.add_argument("--heldout-50q", default=str(HELD_OUT_50Q))
+    parser.add_argument("--canaries", default=str(CANARIES_JSON))
+    parser.add_argument("--allow-cpu", action="store_true", help="Allow CPU execution if CUDA is unavailable")
     args = parser.parse_args()
+
+    if args.ablation_r4:
+        try:
+            run_r4_multiseed_ablation(args)
+        except Exception as exc:
+            print(f"[track-d] ERROR (fail-closed): {exc}", file=sys.stderr)
+            sys.exit(2)
+        return
+
+    try:
+        require_gpu_runtime(require_cuda=not args.allow_cpu, require_peft=True)
+    except Exception as exc:
+        print(f"[track-d] ERROR (fail-closed): {exc}", file=sys.stderr)
+        sys.exit(2)
 
     os.environ.setdefault("HF_HOME", "D:/rtio-hf-cache")
     selected = [s for s in MODEL_SPECS if s["key"] in set(args.models.split(","))]
