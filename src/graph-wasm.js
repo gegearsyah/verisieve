@@ -199,6 +199,19 @@ export class SaltedPseudonymVault {
     this.salt = salt || crypto.randomBytes(24).toString('hex');
     this.byEntityId = new Map();
     this.kindCounters = new Map();
+    // Default salted pseudonymization is strictly one-way irreversible.
+    this.reversible = false;
+    this.irreversible = true;
+    this.oneWay = true;
+  }
+
+  restore() {
+    const err = new Error(
+      'Fail-closed: SaltedPseudonymVault is one-way irreversible; use createReversibleVault({ reversible: true }) for explicit opt-in restoration'
+    );
+    err.code = 'VAULT_IRREVERSIBLE_MODE';
+    err.failClosed = true;
+    throw err;
   }
 
   pseudonymize(rawValue, piiType) {

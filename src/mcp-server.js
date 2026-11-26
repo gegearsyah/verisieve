@@ -16,6 +16,279 @@ import { parseEnterpriseBuffer } from './enterprise-parsers.js';
 import { redactEnterpriseText, scanEnterprisePiiAndSecrets } from './secret-scanner.js';
 import { redactAudioCall } from './audio-redactor.js';
 import { scrubBinaryMediaMetadata } from './video-redactor.js';
+import {
+  createReversibleVault,
+  redactWithVault,
+  restoreFromVault,
+  VaultRestoreError,
+  VAULT_ERROR_CODES,
+} from './vault-restore.js';
+
+const KNOWN_MCP_TOOL_NAMES = new Set([
+  'ingest_and_tokenize',
+  'train_local_gatekeeper',
+  'gatekeeper_decide',
+  'verify_provenance_chain',
+  'train_multiaxis_gatekeeper',
+  'gatekeeper_decide_multiaxis',
+  'plan_local_open_weight_training',
+  'ingest_url_or_links',
+  'index_document_graph',
+  'blast_radius',
+  'ppr_retrieve',
+  'trace_path',
+  'get_document_tree',
+  'read_section_nodes',
+  'ingest_enterprise_bundle',
+  'scan_enterprise_secrets',
+  'redact_audio_call',
+  'audit_forensic_leaks',
+  'restore_vault_text',
+]);
+
+// Bounded in-memory session registry for explicit opt-in reversible vaults (never populated in default one-way mode)
+const MAX_SESSION_VAULTS = 256;
+const sessionReversibleVaults = new Map();
+
+function registerSessionVault(vault) {
+  if (!vault || !vault.vaultId) return;
+  if (sessionReversibleVaults.size >= MAX_SESSION_VAULTS) {
+    const oldestKey = sessionReversibleVaults.keys().next().value;
+    if (oldestKey !== undefined) sessionReversibleVaults.delete(oldestKey);
+  }
+  sessionReversibleVaults.set(vault.vaultId, vault);
+}
+
+const STATIC_ERROR_CATALOG = Object.freeze({
+  [VAULT_ERROR_CODES.VAULT_RESTORE_DISABLED]: {
+    rpcCode: -32010,
+    errorCode: VAULT_ERROR_CODES.VAULT_RESTORE_DISABLED,
+    message: 'VAULT_RESTORE_DISABLED: Fail-closed vault restoration is disabled by default',
+  },
+  [VAULT_ERROR_CODES.VAULT_IRREVERSIBLE_MODE]: {
+    rpcCode: -32011,
+    errorCode: VAULT_ERROR_CODES.VAULT_IRREVERSIBLE_MODE,
+    message: 'VAULT_IRREVERSIBLE_MODE: Fail-closed restoration blocked in irreversible one-way mode',
+  },
+  [VAULT_ERROR_CODES.VAULT_UNAUTHORIZED]: {
+    rpcCode: -32012,
+    errorCode: VAULT_ERROR_CODES.VAULT_UNAUTHORIZED,
+    message: 'VAULT_UNAUTHORIZED: Fail-closed explicit authorization required for vault restoration',
+  },
+  [VAULT_ERROR_CODES.VAULT_BINDING_MISMATCH]: {
+    rpcCode: -32013,
+    errorCode: VAULT_ERROR_CODES.VAULT_BINDING_MISMATCH,
+    message: 'VAULT_BINDING_MISMATCH: Fail-closed vault or workspace salt binding mismatch',
+  },
+  [VAULT_ERROR_CODES.VAULT_INVALID]: {
+    rpcCode: -32014,
+    errorCode: VAULT_ERROR_CODES.VAULT_INVALID,
+    message: 'VAULT_INVALID: Fail-closed invalid or unknown vault reference',
+  },
+  PARSER_FAULT: {
+    rpcCode: -32020,
+    errorCode: 'PARSER_FAULT',
+    message: 'PARSER_FAULT: Fail-closed internal parser error (payload suppressed)',
+  },
+  WASM_FAULT: {
+    rpcCode: -32021,
+    errorCode: 'WASM_FAULT',
+    message: 'WASM_FAULT: Fail-closed internal WASM kernel error (payload suppressed)',
+  },
+  DETECTOR_FAULT: {
+    rpcCode: -32022,
+    errorCode: 'DETECTOR_FAULT',
+    message: 'DETECTOR_FAULT: Fail-closed internal detector error (payload suppressed)',
+  },
+  URL_SSRF_BLOCKED: {
+    rpcCode: -32030,
+    errorCode: 'URL_SSRF_BLOCKED',
+    message: 'URL_SSRF_BLOCKED: Fail-closed SSRF policy blocked request',
+  },
+  ZIP_SLIP_REJECTED: {
+    rpcCode: -32031,
+    errorCode: 'ZIP_SLIP_REJECTED',
+    message: 'ZIP_SLIP_REJECTED: Fail-closed archive path traversal rejected',
+  },
+  ZIP_BOMB_RATIO_EXCEEDED: {
+    rpcCode: -32032,
+    errorCode: 'ZIP_BOMB_RATIO_EXCEEDED',
+    message: 'ZIP_BOMB_RATIO_EXCEEDED: Fail-closed archive expansion ratio exceeded',
+  },
+  ASR_WEIGHTS_REQUIRED: {
+    rpcCode: -32033,
+    errorCode: 'ASR_WEIGHTS_REQUIRED',
+    message: 'ASR_WEIGHTS_REQUIRED: Fail-closed local ASR weights or wordTimestamps required',
+  },
+  NER_WEIGHTS_REQUIRED: {
+    rpcCode: -32034,
+    errorCode: 'NER_WEIGHTS_REQUIRED',
+    message: 'NER_WEIGHTS_REQUIRED: Fail-closed local NER weights required',
+  },
+  LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN: {
+    rpcCode: -32035,
+    errorCode: 'LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN',
+    message: 'LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN: Fail-closed disjoint calibration split required',
+  },
+  ZERO_IMPORT_VIOLATION: {
+    rpcCode: -32036,
+    errorCode: 'ZERO_IMPORT_VIOLATION',
+    message: 'ZERO_IMPORT_VIOLATION: Fail-closed WASM zero-import invariant violated',
+  },
+  INVALID_PARAMS: {
+    rpcCode: -32602,
+    errorCode: 'INVALID_PARAMS',
+    message: 'INVALID_PARAMS: Fail-closed invalid or missing tool parameters',
+  },
+  UNKNOWN_TOOL: {
+    rpcCode: -32601,
+    errorCode: 'UNKNOWN_TOOL',
+    message: 'UNKNOWN_TOOL: Fail-closed requested tool is not registered',
+  },
+  INTERNAL_FAIL_CLOSED: {
+    rpcCode: -32603,
+    errorCode: 'INTERNAL_FAIL_CLOSED',
+    message: 'INTERNAL_FAIL_CLOSED: Fail-closed internal processing error (payload suppressed)',
+  },
+});
+
+/**
+ * Map ANY internal exception to a deterministic, static, zero-echo fail-closed error descriptor.
+ * Guarantees ZERO raw input bytes, ZERO stack frames, and ZERO arbitrary error text echo.
+ */
+export function sanitizeMcpError(err, context = {}) {
+  const safeTool =
+    typeof context.toolName === 'string' && KNOWN_MCP_TOOL_NAMES.has(context.toolName)
+      ? context.toolName
+      : 'unknown';
+
+  const errCode = typeof err?.code === 'string' ? err.code : '';
+  const faultDomain = String(err?.faultDomain || context.stage || '').toLowerCase();
+  const rawMsg = typeof err?.message === 'string' ? err.message : '';
+
+  let entry = null;
+
+  if (errCode && Object.prototype.hasOwnProperty.call(STATIC_ERROR_CATALOG, errCode)) {
+    entry = STATIC_ERROR_CATALOG[errCode];
+  } else if (err instanceof VaultRestoreError && STATIC_ERROR_CATALOG[err.code]) {
+    entry = STATIC_ERROR_CATALOG[err.code];
+  } else if (/URL_SSRF_BLOCKED|SSRF/i.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.URL_SSRF_BLOCKED;
+  } else if (/ZIP_SLIP_REJECTED/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.ZIP_SLIP_REJECTED;
+  } else if (/ZIP_BOMB_RATIO_EXCEEDED/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.ZIP_BOMB_RATIO_EXCEEDED;
+  } else if (/ASR_WEIGHTS_REQUIRED/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.ASR_WEIGHTS_REQUIRED;
+  } else if (/NER_WEIGHTS_REQUIRED/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.NER_WEIGHTS_REQUIRED;
+  } else if (/LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.LTT_IN_SAMPLE_CALIBRATION_FORBIDDEN;
+  } else if (/ZERO_IMPORT_VIOLATION/.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.ZERO_IMPORT_VIOLATION;
+  } else if (
+    faultDomain === 'wasm' ||
+    err instanceof WebAssembly.RuntimeError ||
+    err instanceof WebAssembly.CompileError ||
+    err instanceof WebAssembly.LinkError ||
+    /WASM_MEDIA_ERROR|versieve_[a-z]+\.wasm|WebAssembly/i.test(rawMsg)
+  ) {
+    entry = STATIC_ERROR_CATALOG.WASM_FAULT;
+  } else if (faultDomain === 'parser' || /\b(?:parser|parseEnterpriseBuffer|PDF|ZIP|CFBF|OOXML)\b/i.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.PARSER_FAULT;
+  } else if (faultDomain === 'detector' || /\b(?:detector|scanner|scanEnterprisePiiAndSecrets|scanRecordsForPII|NER)\b/i.test(rawMsg)) {
+    entry = STATIC_ERROR_CATALOG.DETECTOR_FAULT;
+  } else {
+    entry = STATIC_ERROR_CATALOG.INTERNAL_FAIL_CLOSED;
+  }
+
+  return {
+    isError: true,
+    failClosed: true,
+    rpcCode: entry.rpcCode,
+    errorCode: entry.errorCode,
+    message: entry.message,
+    tool: safeTool,
+    payloadSuppressed: true,
+  };
+}
+
+function buildFailClosedJsonRpcError(err, requestId = null, context = {}) {
+  const sanitized = sanitizeMcpError(err, context);
+  return {
+    jsonrpc: '2.0',
+    error: {
+      code: sanitized.rpcCode,
+      message: sanitized.message,
+      data: {
+        isError: true,
+        failClosed: true,
+        errorCode: sanitized.errorCode,
+        tool: sanitized.tool,
+        payloadSuppressed: true,
+      },
+    },
+    id: requestId ?? null,
+  };
+}
+
+/**
+ * Uniform fail-closed wrapper for any synchronous or asynchronous MCP tool handler.
+ * Guarantees that exceptions never echo raw input bytes, PII canaries, or stack traces.
+ */
+export function failClosedMcpHandler(handler, context = {}) {
+  return function wrappedMcpToolHandler(...args) {
+    try {
+      const out = handler(...args);
+      if (out && typeof out.then === 'function') {
+        return out.catch((err) => {
+          const sanitized = sanitizeMcpError(err, context);
+          return {
+            isError: true,
+            failClosed: true,
+            errorCode: sanitized.errorCode,
+            message: sanitized.message,
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  isError: true,
+                  failClosed: true,
+                  errorCode: sanitized.errorCode,
+                  message: sanitized.message,
+                  tool: sanitized.tool,
+                  payloadSuppressed: true,
+                }),
+              },
+            ],
+          };
+        });
+      }
+      return out;
+    } catch (err) {
+      const sanitized = sanitizeMcpError(err, context);
+      return {
+        isError: true,
+        failClosed: true,
+        errorCode: sanitized.errorCode,
+        message: sanitized.message,
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              isError: true,
+              failClosed: true,
+              errorCode: sanitized.errorCode,
+              message: sanitized.message,
+              tool: sanitized.tool,
+              payloadSuppressed: true,
+            }),
+          },
+        ],
+      };
+    }
+  };
+}
 
 function sanitizePiiItems(piiItems = [], includeRawPii = false) {
   if (includeRawPii) return piiItems;
@@ -164,11 +437,39 @@ function getOrAutoTrainBundle(customBundle = null, alpha = 0.05) {
 // ---------------------------------------------------------------------------
 // 2. MCP Server for Matilda Code (JSON-RPC 2.0 over stdio + programmatic handler)
 // ---------------------------------------------------------------------------
-export function handleJsonRpcRequest(request) {
+export function handleJsonRpcRequest(request, options = {}) {
+  const ov = options?.overrides || {};
+  const runPipeline = ov.runCleanAndTokenizePipeline || runCleanAndTokenizePipeline;
+  const scanPii = ov.scanRecordsForPII || scanRecordsForPII;
+  const scanEnterprise = ov.scanEnterprisePiiAndSecrets || scanEnterprisePiiAndSecrets;
+  const redactEnterprise = ov.redactEnterpriseText || redactEnterpriseText;
+  const parseEnterprise = ov.parseEnterpriseBuffer || parseEnterpriseBuffer;
+  const scrubMedia = ov.scrubBinaryMediaMetadata || scrubBinaryMediaMetadata;
+  const toolName = request?.params?.name;
+
   try {
+    if (!request || typeof request !== 'object') {
+      return {
+        jsonrpc: '2.0',
+        error: {
+          code: -32600,
+          message: 'Invalid Request',
+          data: { isError: true, failClosed: true, errorCode: 'INVALID_REQUEST', payloadSuppressed: true },
+        },
+        id: null,
+      };
+    }
     const { id, method, params } = request;
     if (!method) {
-      return { jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request: method missing' }, id: id || null };
+      return {
+        jsonrpc: '2.0',
+        error: {
+          code: -32600,
+          message: 'Invalid Request: method missing',
+          data: { isError: true, failClosed: true, errorCode: 'INVALID_REQUEST', payloadSuppressed: true },
+        },
+        id: id ?? null,
+      };
     }
 
     let result = null;
@@ -351,12 +652,20 @@ export function handleJsonRpcRequest(request) {
             },
             {
               name: 'scan_enterprise_secrets',
-              description: 'Runs zero-import versieve_media.wasm Unicode anti-evasion, international checksum PII (IBAN, AU TFN/Medicare/ABN, UK NHS/NINO, Aadhaar, Luhn), and 30+ enterprise secret detectors (JWT, PEM, AWS/OpenAI/Anthropic/GitHub/Stripe/Slack/DB URIs) returning privacy-safe redacted tokens.',
+              description: 'Runs zero-import versieve_media.wasm Unicode anti-evasion, HIPAA Safe Harbor validators (NPI, DEA, MBI, MRN, CLIA, clinical dates/IDs), international checksum PII, and 30+ enterprise secret detectors returning privacy-safe redacted tokens, with optional opt-in reversible vault restoration.',
               inputSchema: {
                 type: 'object',
                 properties: {
                   text: { type: 'string' },
-                  workspaceSalt: { type: 'string' }
+                  redactedText: { type: 'string' },
+                  workspaceSalt: { type: 'string' },
+                  hipaaPack: { type: 'boolean' },
+                  mode: { type: 'string', enum: ['redact', 'scan', 'restore'] },
+                  reversible: { type: 'boolean' },
+                  irreversible: { type: 'boolean' },
+                  oneWay: { type: 'boolean' },
+                  authorized: { type: 'boolean' },
+                  vaultId: { type: 'string' }
                 }
               }
             },
@@ -391,13 +700,13 @@ export function handleJsonRpcRequest(request) {
         break;
 
       case 'tools/call': {
-        const toolName = params?.name;
+        const callToolName = params?.name;
         const args = params?.arguments || {};
 
-        if (toolName === 'ingest_and_tokenize') {
-          const res = runCleanAndTokenizePipeline(args.input, args.options || {});
+        if (callToolName === 'ingest_and_tokenize') {
+          const res = runPipeline(args.input, args.options || {});
           result = { content: [{ type: 'text', text: JSON.stringify(res, null, 2) }] };
-        } else if (toolName === 'train_local_gatekeeper') {
+        } else if (callToolName === 'train_local_gatekeeper') {
           let bundle = null;
 
           if (args.featureRows && args.labels) {
@@ -411,7 +720,7 @@ export function handleJsonRpcRequest(request) {
           } else if (args.texts && args.labels) {
             // Text-based training mode
             const fRows = args.texts.map(t => {
-              const pii = scanRecordsForPII(t);
+              const pii = scanPii(t);
               return extractFeatureRow({ text: t, piiItems: pii });
             });
             const calibN = Math.max(2, Math.floor(fRows.length * 0.3));
@@ -448,7 +757,7 @@ export function handleJsonRpcRequest(request) {
           bundle.gatekeeperStatus = bundle.certified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED';
           lastTrainedBundle = bundle;
           result = { content: [{ type: 'text', text: JSON.stringify(bundle, null, 2) }] };
-        } else if (toolName === 'gatekeeper_decide') {
+        } else if (callToolName === 'gatekeeper_decide') {
           const bundle = getOrAutoTrainBundle(args.bundle, args.alpha || 0.05);
           const includeRawExcerpt = args.includeRawExcerpt === true || args.options?.includeRawExcerpt === true;
           const includeRawPii = args.includeRawPii === true || args.options?.includeRawPii === true;
@@ -464,7 +773,7 @@ export function handleJsonRpcRequest(request) {
             result = { content: [{ type: 'text', text: JSON.stringify(decision, null, 2) }] };
           } else if (typeof args.text === 'string') {
             // Direct text decision mode
-            const pii = scanRecordsForPII(args.text);
+            const pii = scanPii(args.text);
             const fRow = extractFeatureRow({ text: args.text, piiItems: pii });
             const decision = decideGatekeeper(bundle, fRow);
             decision.piiDetected = pii.length > 0;
@@ -479,7 +788,7 @@ export function handleJsonRpcRequest(request) {
           } else if (Array.isArray(args.texts)) {
             // Batch texts decision mode
             const decisions = args.texts.map(t => {
-              const pii = scanRecordsForPII(t);
+              const pii = scanPii(t);
               const fRow = extractFeatureRow({ text: t, piiItems: pii });
               const d = decideGatekeeper(bundle, fRow);
               d.piiDetected = pii.length > 0;
@@ -494,18 +803,20 @@ export function handleJsonRpcRequest(request) {
             });
             result = { content: [{ type: 'text', text: JSON.stringify({ decisions }, null, 2) }] };
           } else {
-            throw new Error('gatekeeper_decide requires featureRow, text, or texts argument');
+            const err = new Error('gatekeeper_decide requires featureRow, text, or texts argument');
+            err.code = 'INVALID_PARAMS';
+            throw err;
           }
-        } else if (toolName === 'verify_provenance_chain') {
+        } else if (callToolName === 'verify_provenance_chain') {
           const isValid = AuditChain.verifyChain(args.entries);
           result = { content: [{ type: 'text', text: JSON.stringify({ isValid }, null, 2) }] };
-        } else if (toolName === 'train_multiaxis_gatekeeper') {
+        } else if (callToolName === 'train_multiaxis_gatekeeper') {
           let fRows;
           let labelsMap;
           if (Array.isArray(args.samples) && args.samples.length > 0) {
             fRows = args.samples.map((s) => {
               const txt = String(s.text || '');
-              const pii = scanRecordsForPII(txt);
+              const pii = scanPii(txt);
               return extractFeatureRow({ text: txt, piiItems: pii });
             });
             labelsMap = {
@@ -517,7 +828,9 @@ export function handleJsonRpcRequest(request) {
             fRows = args.featureRows.map((r) => new Float32Array(r));
             labelsMap = args.labelsMap;
           } else {
-            throw new Error('train_multiaxis_gatekeeper requires samples[] or featureRows+labelsMap');
+            const err = new Error('train_multiaxis_gatekeeper requires samples[] or featureRows+labelsMap');
+            err.code = 'INVALID_PARAMS';
+            throw err;
           }
           let trainFRows = fRows;
           let trainLabelsMap = labelsMap;
@@ -526,7 +839,7 @@ export function handleJsonRpcRequest(request) {
           if (Array.isArray(args.calibSamples) && args.calibSamples.length > 0) {
             cRows = args.calibSamples.map((s) => {
               const txt = String(s.text || '');
-              const pii = scanRecordsForPII(txt);
+              const pii = scanPii(txt);
               return extractFeatureRow({ text: txt, piiItems: pii });
             });
             cLabels = {
@@ -557,13 +870,15 @@ export function handleJsonRpcRequest(request) {
           multiBundle.gatekeeperStatus = multiCertified ? 'CERTIFIED' : 'FAIL_CLOSED_UNVERIFIED';
           lastMultiAxisBundle = multiBundle;
           result = { content: [{ type: 'text', text: JSON.stringify(multiBundle, null, 2) }] };
-        } else if (toolName === 'gatekeeper_decide_multiaxis') {
+        } else if (callToolName === 'gatekeeper_decide_multiaxis') {
           const multiBundle = args.bundle || lastMultiAxisBundle;
           if (!multiBundle) {
-            throw new Error('No trained multi-axis bundle available; call train_multiaxis_gatekeeper first or pass bundle');
+            const err = new Error('No trained multi-axis bundle available; call train_multiaxis_gatekeeper first or pass bundle');
+            err.code = 'INVALID_PARAMS';
+            throw err;
           }
           const rawText = typeof args.text === 'string' ? args.text : '';
-          const pii = rawText ? scanRecordsForPII(rawText) : [];
+          const pii = rawText ? scanPii(rawText) : [];
           const fRow = args.featureRow
             ? new Float32Array(args.featureRow)
             : extractFeatureRow({ text: rawText, piiItems: pii });
@@ -594,15 +909,15 @@ export function handleJsonRpcRequest(request) {
               },
             ],
           };
-        } else if (toolName === 'plan_local_open_weight_training') {
+        } else if (callToolName === 'plan_local_open_weight_training') {
           const plan = buildPlanPayload(args);
           result = { content: [{ type: 'text', text: JSON.stringify(plan, null, 2) }] };
-        } else if (toolName === 'ingest_url_or_links') {
+        } else if (callToolName === 'ingest_url_or_links') {
           if (typeof args.htmlOrLinks === 'string') {
             const hasHtml = /<[a-z][\s\S]*>/i.test(args.htmlOrLinks);
             const stripped = hasHtml ? stripHtmlBoilerplate(args.htmlOrLinks) : null;
             const cleanInput = stripped ? stripped.cleanText : args.htmlOrLinks;
-            const pipelineRes = runCleanAndTokenizePipeline(cleanInput, {
+            const pipelineRes = runPipeline(cleanInput, {
               format: 'text',
               ...(args.options || {}),
             });
@@ -623,24 +938,34 @@ export function handleJsonRpcRequest(request) {
               ],
             };
           } else {
-            throw new Error('URL network fetching requires handleJsonRpcRequestAsync');
+            const err = new Error('URL network fetching requires handleJsonRpcRequestAsync');
+            err.code = 'INVALID_PARAMS';
+            throw err;
           }
-        } else if (toolName === 'index_document_graph') {
+        } else if (callToolName === 'index_document_graph') {
           const docs = Array.isArray(args.documents) ? args.documents : [];
           const artifacts = Array.isArray(args.artifacts) ? args.artifacts : [];
           activeDocumentGraph = new PortableDocumentGraph({ workspaceSalt: args.workspaceSalt });
           const summary = activeDocumentGraph.indexDocuments(docs, artifacts);
           result = { content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }] };
-        } else if (toolName === 'blast_radius') {
-          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+        } else if (callToolName === 'blast_radius') {
+          if (!activeDocumentGraph) {
+            const err = new Error('No document graph indexed yet');
+            err.code = 'INVALID_PARAMS';
+            throw err;
+          }
           const hits = activeDocumentGraph.blastRadius(args.seedIds || [], {
             direction: args.direction || 'in',
             maxHops: args.maxHops ?? 3,
             edgeTypes: args.edgeTypes,
           });
           result = { content: [{ type: 'text', text: JSON.stringify({ hits }, null, 2) }] };
-        } else if (toolName === 'ppr_retrieve') {
-          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+        } else if (callToolName === 'ppr_retrieve') {
+          if (!activeDocumentGraph) {
+            const err = new Error('No document graph indexed yet');
+            err.code = 'INVALID_PARAMS';
+            throw err;
+          }
           const out = activeDocumentGraph.pprRetrieve(String(args.query || ''), {
             topK: args.topK ?? 6,
             alpha: args.alpha ?? 0.85,
@@ -648,57 +973,154 @@ export function handleJsonRpcRequest(request) {
             passageResetScale: args.passageResetScale ?? 0.05,
           });
           result = { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] };
-        } else if (toolName === 'trace_path') {
-          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+        } else if (callToolName === 'trace_path') {
+          if (!activeDocumentGraph) {
+            const err = new Error('No document graph indexed yet');
+            err.code = 'INVALID_PARAMS';
+            throw err;
+          }
           const traced = activeDocumentGraph.tracePath(String(args.srcId || ''), String(args.dstId || ''), {
             direction: args.direction || 'both',
             maxHops: args.maxHops ?? 6,
             weighted: Boolean(args.weighted),
           });
           result = { content: [{ type: 'text', text: JSON.stringify({ path: traced }, null, 2) }] };
-        } else if (toolName === 'get_document_tree') {
-          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+        } else if (callToolName === 'get_document_tree') {
+          if (!activeDocumentGraph) {
+            const err = new Error('No document graph indexed yet');
+            err.code = 'INVALID_PARAMS';
+            throw err;
+          }
           const trees = activeDocumentGraph.getDocumentTree(args.docId);
           result = { content: [{ type: 'text', text: JSON.stringify({ trees }, null, 2) }] };
-        } else if (toolName === 'read_section_nodes') {
-          if (!activeDocumentGraph) throw new Error('No document graph indexed yet. Call index_document_graph first.');
+        } else if (callToolName === 'read_section_nodes') {
+          if (!activeDocumentGraph) {
+            const err = new Error('No document graph indexed yet');
+            err.code = 'INVALID_PARAMS';
+            throw err;
+          }
           const passages = activeDocumentGraph.readSectionNodes(args.sectionNodeIds || [], {
             includeDescendants: args.includeDescendants !== false,
           });
           result = { content: [{ type: 'text', text: JSON.stringify({ passages }, null, 2) }] };
-        } else if (toolName === 'scan_enterprise_secrets') {
-          const text = String(args.text || '');
-          const scan = scanEnterprisePiiAndSecrets(text);
-          const red = redactEnterpriseText(text, { workspaceSalt: args.workspaceSalt });
+        } else if (callToolName === 'restore_vault_text' || (callToolName === 'scan_enterprise_secrets' && args.mode === 'restore')) {
+          const targetVault = typeof args.vaultId === 'string' ? sessionReversibleVaults.get(args.vaultId) : null;
+          if (!targetVault) {
+            throw new VaultRestoreError(
+              VAULT_ERROR_CODES.VAULT_INVALID,
+              'Fail-closed: unknown or missing session vaultId'
+            );
+          }
+          const restored = restoreFromVault(args.redactedText ?? args.text, targetVault, {
+            authorized: args.authorized === true,
+            workspaceSalt: args.workspaceSalt,
+            vaultId: args.vaultId,
+            irreversible: args.irreversible === true,
+            oneWay: args.oneWay === true,
+          });
           result = {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(
-                  {
-                    maskedText: red.maskedText,
-                    secretCount: red.secretCount,
-                    piiCount: red.piiCount,
-                    evasionCharsStripped: scan.evasionCharsStripped,
-                    homoglyphsFolded: scan.homoglyphsFolded,
-                    entities: red.entities.map((e) => ({
-                      type: e.type,
-                      category: e.category,
-                      token: e.token,
-                      entityId: e.entityId,
-                      start: e.start,
-                      end: e.end,
-                      confidence: e.confidence,
-                      evasionNormalized: e.evasionNormalized,
-                    })),
-                  },
-                  null,
-                  2
-                ),
+                text: JSON.stringify(restored, null, 2),
               },
             ],
           };
-        } else if (toolName === 'ingest_enterprise_bundle') {
+        } else if (callToolName === 'scan_enterprise_secrets') {
+          const text = String(args.text || '');
+          const includeHipaa = args.hipaaPack !== false && args.includeHipaa !== false;
+          const wantsReversible = args.reversible === true && args.irreversible !== true && args.oneWay !== true;
+
+          if (ov.scanEnterprisePiiAndSecrets || ov.redactEnterpriseText) {
+            const scan = scanEnterprise(text, { includeHipaa });
+            const red = redactEnterprise(text, { workspaceSalt: args.workspaceSalt, includeHipaa });
+            result = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      maskedText: red.maskedText,
+                      secretCount: red.secretCount,
+                      piiCount: red.piiCount,
+                      hipaaCount: red.hipaaCount ?? scan.hipaaCount ?? 0,
+                      evasionCharsStripped: scan.evasionCharsStripped,
+                      homoglyphsFolded: scan.homoglyphsFolded,
+                      reversible: false,
+                      irreversible: true,
+                      mode: 'irreversible',
+                      entities: red.entities.map((e) => ({
+                        type: e.type,
+                        category: e.category,
+                        token: e.token,
+                        entityId: e.entityId,
+                        start: e.start,
+                        end: e.end,
+                        confidence: e.confidence,
+                        evasionNormalized: e.evasionNormalized,
+                      })),
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          } else {
+            const existingVault =
+              typeof args.vaultId === 'string' && sessionReversibleVaults.has(args.vaultId)
+                ? sessionReversibleVaults.get(args.vaultId)
+                : null;
+            const vault =
+              existingVault ||
+              createReversibleVault({
+                workspaceSalt: args.workspaceSalt || 'versieve-enterprise-v1',
+                reversible: wantsReversible,
+                irreversible: args.irreversible === true || !wantsReversible,
+                oneWay: args.oneWay === true || !wantsReversible,
+              });
+            registerSessionVault(vault);
+            const red = redactWithVault(text, vault, {
+              includeHipaa,
+              hipaaPack: includeHipaa,
+              irreversible: args.irreversible === true,
+              oneWay: args.oneWay === true,
+            });
+            result = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      maskedText: red.maskedText,
+                      secretCount: red.secretCount,
+                      piiCount: red.piiCount,
+                      hipaaCount: red.hipaaCount,
+                      evasionCharsStripped: red.evasionCharsStripped,
+                      homoglyphsFolded: red.homoglyphsFolded,
+                      vaultId: red.vaultId,
+                      reversible: red.reversible,
+                      irreversible: red.irreversible,
+                      mode: red.mode,
+                      entities: red.entities.map((e) => ({
+                        type: e.type,
+                        category: e.category,
+                        token: e.token,
+                        entityId: e.entityId,
+                        start: e.start,
+                        end: e.end,
+                        confidence: e.confidence,
+                        evasionNormalized: e.evasionNormalized,
+                      })),
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          }
+        } else if (callToolName === 'ingest_enterprise_bundle') {
           const files = Array.isArray(args.files) ? args.files : [];
           const salt = args.workspaceSalt || 'versieve-enterprise-v1';
           const vault = new SaltedPseudonymVault(salt);
@@ -711,10 +1133,10 @@ export function handleJsonRpcRequest(request) {
               typeof f.contentBase64 === 'string'
                 ? Buffer.from(f.contentBase64, 'base64')
                 : Buffer.from(String(f.text || f.content || ''), 'utf8');
-            const parsed = parseEnterpriseBuffer(name, buf, { usersMap: f.usersMap });
+            const parsed = parseEnterprise(name, buf, { usersMap: f.usersMap });
             forensicFindings.push(...(parsed.forensicFindings || []));
             const redactedBlocks = parsed.blocks.map((blk) => {
-              const red = redactEnterpriseText(blk.text, { vault });
+              const red = redactEnterprise(blk.text, { vault });
               return {
                 ...blk,
                 text: red.maskedText,
@@ -751,12 +1173,12 @@ export function handleJsonRpcRequest(request) {
               },
             ],
           };
-        } else if (toolName === 'audit_forensic_leaks') {
+        } else if (callToolName === 'audit_forensic_leaks') {
           const src = String(args.source || 'media.bin');
           const buf = Buffer.from(String(args.contentBase64 || ''), 'base64');
           const lower = src.toLowerCase();
           if (/\.(jpe?g|png|mp4|mov)$/i.test(lower)) {
-            const scrubbed = scrubBinaryMediaMetadata(buf);
+            const scrubbed = scrubMedia(buf);
             result = {
               content: [
                 {
@@ -774,7 +1196,7 @@ export function handleJsonRpcRequest(request) {
               ],
             };
           } else {
-            const parsed = parseEnterpriseBuffer(src, buf);
+            const parsed = parseEnterprise(src, buf);
             result = {
               content: [
                 {
@@ -794,22 +1216,38 @@ export function handleJsonRpcRequest(request) {
             };
           }
         } else {
-          throw new Error(`Unknown tool: ${toolName}`);
+          const err = new Error('Unknown tool');
+          err.code = 'UNKNOWN_TOOL';
+          throw err;
         }
         break;
       }
 
       default:
-        return { jsonrpc: '2.0', error: { code: -32601, message: `Method not found: ${method}` }, id };
+        return {
+          jsonrpc: '2.0',
+          error: {
+            code: -32601,
+            message: 'Method not found',
+            data: { isError: true, failClosed: true, errorCode: 'METHOD_NOT_FOUND', payloadSuppressed: true },
+          },
+          id: id ?? null,
+        };
     }
 
     return { jsonrpc: '2.0', result, id };
   } catch (err) {
-    return { jsonrpc: '2.0', error: { code: -32603, message: err.message }, id: request?.id || null };
+    return buildFailClosedJsonRpcError(err, request?.id ?? null, { toolName });
   }
 }
 
-export async function handleJsonRpcRequestAsync(request) {
+export async function handleJsonRpcRequestAsync(request, options = {}) {
+  const ov = options?.overrides || {};
+  const redactAudio = ov.redactAudioCall || redactAudioCall;
+  const ingestUrlFn = ov.ingestUrl || ingestUrl;
+  const ingestLinkListFn = ov.ingestLinkList || ingestLinkList;
+  const runPipeline = ov.runCleanAndTokenizePipeline || runCleanAndTokenizePipeline;
+
   if (
     request?.method === 'tools/call' &&
     request?.params?.name === 'redact_audio_call'
@@ -817,7 +1255,7 @@ export async function handleJsonRpcRequestAsync(request) {
     try {
       const args = request.params?.arguments || {};
       const wavBuf = Buffer.from(String(args.wavBase64 || ''), 'base64');
-      const out = await redactAudioCall(String(args.source || 'call.wav'), wavBuf, {
+      const out = await redactAudio(String(args.source || 'call.wav'), wavBuf, {
         wordTimestamps: Array.isArray(args.wordTimestamps) ? args.wordTimestamps : undefined,
         mode: args.mode || 'beep',
         padMs: args.padMs ?? 40,
@@ -850,11 +1288,7 @@ export async function handleJsonRpcRequestAsync(request) {
         id: request.id ?? null,
       };
     } catch (err) {
-      return {
-        jsonrpc: '2.0',
-        error: { code: -32603, message: err.message },
-        id: request?.id ?? null,
-      };
+      return buildFailClosedJsonRpcError(err, request?.id ?? null, { toolName: 'redact_audio_call' });
     }
   }
 
@@ -876,13 +1310,13 @@ export async function handleJsonRpcRequestAsync(request) {
       if (explicitUrls.length > 0) {
         const fetched =
           explicitUrls.length === 1
-            ? [Object.assign({ url: explicitUrls[0], success: true }, await ingestUrl(explicitUrls[0], safeOpts))]
-            : await ingestLinkList(explicitUrls, safeOpts);
+            ? [Object.assign({ url: explicitUrls[0], success: true }, await ingestUrlFn(explicitUrls[0], safeOpts))]
+            : await ingestLinkListFn(explicitUrls, safeOpts);
         const combinedText = fetched
           .filter((item) => item.success && item.cleanText)
           .map((item) => item.cleanText)
           .join('\n\n');
-        const pipelineRes = runCleanAndTokenizePipeline(combinedText, {
+        const pipelineRes = runPipeline(combinedText, {
           format: 'text',
           ...safeOpts,
         });
@@ -910,16 +1344,12 @@ export async function handleJsonRpcRequestAsync(request) {
         };
       }
 
-      return handleJsonRpcRequest(request);
+      return handleJsonRpcRequest(request, options);
     } catch (err) {
-      return {
-        jsonrpc: '2.0',
-        error: { code: -32603, message: err.message },
-        id: request?.id ?? null,
-      };
+      return buildFailClosedJsonRpcError(err, request?.id ?? null, { toolName: 'ingest_url_or_links' });
     }
   }
-  return handleJsonRpcRequest(request);
+  return handleJsonRpcRequest(request, options);
 }
 
 // Stdio runner if executed directly
@@ -939,7 +1369,17 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('mcp-server.js')
           process.stdout.write(JSON.stringify(res) + '\n');
         }
       } catch (e) {
-        process.stdout.write(JSON.stringify({ jsonrpc: '2.0', error: { code: -32700, message: 'Parse error' }, id: null }) + '\n');
+        process.stdout.write(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            error: {
+              code: -32700,
+              message: 'PARSE_ERROR: Fail-closed JSON-RPC parse error (payload suppressed)',
+              data: { isError: true, failClosed: true, errorCode: 'PARSE_ERROR', payloadSuppressed: true },
+            },
+            id: null,
+          }) + '\n'
+        );
       }
     }
   });
