@@ -330,6 +330,7 @@ function readBalancedDict(text, startIdx) {
 function parseTopLevelPdfObjects(buf) {
   const latin = buf.toString('latin1');
   const objects = new Map();
+  const streamRanges = [];
   const objRegex = /(?:^|[\r\n\s])(\d+)\s+(\d+)\s+obj\b/g;
   let searchPos = 0;
 
@@ -381,6 +382,7 @@ function parseTopLevelPdfObjects(buf) {
         }
         if (dEnd !== -1 && dEnd >= dStart) {
           streamRaw = buf.subarray(dStart, dEnd);
+          streamRanges.push([dStart, dEnd]);
           streamStartIdx = dEnd + 9;
           const realEndObj = latin.indexOf('endobj', streamStartIdx);
           rawText = dictStr;
@@ -401,7 +403,7 @@ function parseTopLevelPdfObjects(buf) {
     objects.set(objNum, { objNum, gen, dictStr, rawText, streamRaw });
   }
 
-  return { objects, latin };
+  return { objects, latin, streamRanges };
 }
 
 function expandObjectStreams(objects, options) {
@@ -516,12 +518,36 @@ function buildFontEntry(fontObj, objects, options) {
   };
 }
 
+function parsePdfBox(dict, keyName, objects) {
+  const inlineRx = new RegExp(`\\/${keyName}\\s*\\[([^\\]]+)\\]`);
+  let body = dict.match(inlineRx)?.[1] || '';
+  if (!body) {
+    const refRx = new RegExp(`\\/${keyName}\\s+(\\d+)\\s+\\d+\\s+R`);
+    const refMatch = dict.match(refRx);
+    if (refMatch) {
+      const boxObj = objects.get(Number(refMatch[1]));
+      body = (boxObj?.rawText || '').match(/\[([^\]]+)\]/)?.[1] || '';
+    }
+  }
+  if (!body) return null;
+  const nums = body.trim().split(/\s+/).map(Number).filter(Number.isFinite);
+  if (nums.length < 4) return null;
+  return {
+    x0: Math.min(nums[0], nums[2]),
+    y0: Math.min(nums[1], nums[3]),
+    x1: Math.max(nums[0], nums[2]),
+    y1: Math.max(nums[1], nums[3]),
+  };
+}
+
+const DEFAULT_PAGE_BOX = { x0: 0, y0: 0, x1: 612, y1: 792 };
+
 function getOrderedPages(objects) {
   const catalog = Array.from(objects.values()).find((o) => /\/Type\s*\/Catalog\b/.test(o.dictStr));
   const ordered = [];
   const visited = new Set();
 
-  const walkPagesNode = (obj, inheritedResourcesText = '') => {
+  const walkPagesNode = (obj, inheritedResourcesText = '', inheritedMediaBox = null, inheritedCropBox = null) => {
     if (!obj || visited.has(obj.objNum)) return;
     visited.add(obj.objNum);
     const dict = obj.dictStr || obj.rawText;
@@ -536,22 +562,31 @@ function getOrderedPages(objects) {
       resText = readBalancedDict(dict, rPos).dictStr;
     }
 
+    const mediaBox = parsePdfBox(dict, 'MediaBox', objects) || inheritedMediaBox;
+    const cropBox = parsePdfBox(dict, 'CropBox', objects) || inheritedCropBox;
+
     if (/\/Type\s*\/Page\b(?!s)/.test(dict)) {
-      ordered.push({ pageObj: obj, resourcesText: resText });
+      ordered.push({
+        pageObj: obj,
+        resourcesText: resText,
+        mediaBox: mediaBox || DEFAULT_PAGE_BOX,
+        cropBox: cropBox || null,
+        pageBox: cropBox || mediaBox || DEFAULT_PAGE_BOX,
+      });
       return;
     }
 
     const kidsMatch = dict.match(/\/Kids\s*\[([\s\S]*?)\]/);
     if (kidsMatch) {
       for (const km of kidsMatch[1].matchAll(/(\d+)\s+\d+\s+R/g)) {
-        walkPagesNode(objects.get(Number(km[1])), resText);
+        walkPagesNode(objects.get(Number(km[1])), resText, mediaBox, cropBox);
       }
     }
   };
 
   if (catalog) {
     const rootPages = resolveRef(catalog.dictStr.match(/\/Pages\s+(\d+\s+\d+\s+R)/)?.[1], objects);
-    if (rootPages) walkPagesNode(rootPages, '');
+    if (rootPages) walkPagesNode(rootPages, '', null, null);
   }
 
   if (ordered.length === 0) {
@@ -562,7 +597,15 @@ function getOrderedPages(objects) {
         if (/\/Resources\s*<</.test(d)) {
           resText = readBalancedDict(d, d.indexOf('/Resources')).dictStr;
         }
-        ordered.push({ pageObj: obj, resourcesText: resText });
+        const mediaBox = parsePdfBox(d, 'MediaBox', objects) || DEFAULT_PAGE_BOX;
+        const cropBox = parsePdfBox(d, 'CropBox', objects) || null;
+        ordered.push({
+          pageObj: obj,
+          resourcesText: resText,
+          mediaBox,
+          cropBox,
+          pageBox: cropBox || mediaBox,
+        });
       }
     }
   }
@@ -783,6 +826,51 @@ function tokenizeContentStream(buf) {
   return tokens;
 }
 
+function clamp01(v) {
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(1, v));
+}
+
+function cmykToRgb(c, m, y, k) {
+  const cc = clamp01(c);
+  const mm = clamp01(m);
+  const yy = clamp01(y);
+  const kk = clamp01(k);
+  return {
+    space: 'DeviceCMYK',
+    r: Number(((1 - cc) * (1 - kk)).toFixed(4)),
+    g: Number(((1 - mm) * (1 - kk)).toFixed(4)),
+    b: Number(((1 - yy) * (1 - kk)).toFixed(4)),
+  };
+}
+
+function colorLuminance(c) {
+  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
+
+function isNearWhiteColor(c) {
+  return c.r >= 0.95 && c.g >= 0.95 && c.b >= 0.95;
+}
+
+function colorDistance(a, b) {
+  return Math.max(Math.abs(a.r - b.r), Math.abs(a.g - b.g), Math.abs(a.b - b.b));
+}
+
+function computeRectOverlap(a, b) {
+  const ix1 = Math.max(a.x, b.x);
+  const iy1 = Math.max(a.y, b.y);
+  const ix2 = Math.min(a.x + a.w, b.x + b.w);
+  const iy2 = Math.min(a.y + a.h, b.y + b.h);
+  if (ix2 <= ix1 || iy2 <= iy1) {
+    return { iw: 0, ih: 0, area: 0, ratioA: 0 };
+  }
+  const iw = ix2 - ix1;
+  const ih = iy2 - iy1;
+  const area = iw * ih;
+  const areaA = Math.max(1e-6, a.w * a.h);
+  return { iw, ih, area, ratioA: area / areaA };
+}
+
 function interpretContentStream(streamBuf, fontTable, pageIndex) {
   const tokens = tokenizeContentStream(streamBuf);
   const stack = [];
@@ -793,10 +881,15 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
   let leading = 12;
   let fontKey = '';
   let fontSize = 11;
+  let fillColor = { space: 'DeviceGray', r: 0, g: 0, b: 0 };
+  let strokeColor = { space: 'DeviceGray', r: 0, g: 0, b: 0 };
+  let textRenderMode = 0;
   let inText = false;
   let seq = 0;
+  let drawOrder = 0;
   const runs = [];
   const vectorPaths = [];
+  const filledRects = [];
   let pathSegs = [];
   let pathRects = [];
   let curPt = null;
@@ -808,16 +901,32 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
     if (!cleaned.trim()) return;
     const abs = matMul(tm, ctm);
     const activeFont = getActiveFont();
-    const effectiveScale = Math.hypot(abs[0], abs[1]) || 1;
-    const px = Math.round(Math.max(6, Math.abs(fontSize * effectiveScale))) || 11;
+    const scaleX = Math.hypot(abs[0], abs[1]) || 1;
+    const scaleY = Math.hypot(abs[2], abs[3]) || scaleX;
+    const rawFontSizePt = Math.abs(fontSize * scaleY);
+    const px = Math.round(Math.max(6, Math.abs(fontSize * scaleX))) || 11;
+    const effSize = Math.max(rawFontSizePt, 0.5);
+    const estWidth = Math.max(effSize * 0.4, cleaned.length * effSize * 0.52);
+    const bbox = {
+      x: Number(abs[4].toFixed(2)),
+      y: Number((abs[5] - Math.max(rawFontSizePt, 1) * 0.2).toFixed(2)),
+      w: Number(estWidth.toFixed(2)),
+      h: Number((Math.max(rawFontSizePt, 1) * 1.05).toFixed(2)),
+    };
     runs.push({
       pageIndex,
       x: abs[4],
       y: abs[5],
       seq: seq++,
+      drawOrder: drawOrder++,
       text: cleaned,
       fontSizePx: px,
+      rawFontSizePt,
       fontStyle: activeFont?.fontStyle || 'sans_serif',
+      fillColor: { ...fillColor },
+      textRenderMode,
+      bbox,
+      hiddenChannelFlags: [],
     });
     // Advance horizontal estimate slightly for chained sequential Tj without Td
     tm = matMul([1, 0, 0, 1, cleaned.length * (fontSize * 0.45), 0], tm);
@@ -830,7 +939,15 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
     }
     const op = tok.value;
     if (op === 'q') {
-      stateStack.push({ ctm: [...ctm], fontKey, fontSize, leading });
+      stateStack.push({
+        ctm: [...ctm],
+        fontKey,
+        fontSize,
+        leading,
+        fillColor: { ...fillColor },
+        strokeColor: { ...strokeColor },
+        textRenderMode,
+      });
       stack.length = 0;
     } else if (op === 'Q') {
       const prev = stateStack.pop();
@@ -839,12 +956,73 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
         fontKey = prev.fontKey;
         fontSize = prev.fontSize;
         leading = prev.leading;
+        fillColor = prev.fillColor;
+        strokeColor = prev.strokeColor;
+        textRenderMode = prev.textRenderMode;
       }
       stack.length = 0;
     } else if (op === 'cm') {
       if (stack.length >= 6) {
         const vals = stack.slice(-6).map((x) => Number(x.value) || 0);
         ctm = matMul(vals, ctm);
+      }
+      stack.length = 0;
+    } else if (op === 'g') {
+      if (stack.length >= 1) {
+        const v = clamp01(Number(stack[stack.length - 1].value));
+        fillColor = { space: 'DeviceGray', r: v, g: v, b: v };
+      }
+      stack.length = 0;
+    } else if (op === 'G') {
+      if (stack.length >= 1) {
+        const v = clamp01(Number(stack[stack.length - 1].value));
+        strokeColor = { space: 'DeviceGray', r: v, g: v, b: v };
+      }
+      stack.length = 0;
+    } else if (op === 'rg') {
+      if (stack.length >= 3) {
+        const [r, g, b] = stack.slice(-3).map((x) => clamp01(Number(x.value)));
+        fillColor = { space: 'DeviceRGB', r, g, b };
+      }
+      stack.length = 0;
+    } else if (op === 'RG') {
+      if (stack.length >= 3) {
+        const [r, g, b] = stack.slice(-3).map((x) => clamp01(Number(x.value)));
+        strokeColor = { space: 'DeviceRGB', r, g, b };
+      }
+      stack.length = 0;
+    } else if (op === 'k') {
+      if (stack.length >= 4) {
+        const [c, m, y, k] = stack.slice(-4).map((x) => Number(x.value));
+        fillColor = cmykToRgb(c, m, y, k);
+      }
+      stack.length = 0;
+    } else if (op === 'K') {
+      if (stack.length >= 4) {
+        const [c, m, y, k] = stack.slice(-4).map((x) => Number(x.value));
+        strokeColor = cmykToRgb(c, m, y, k);
+      }
+      stack.length = 0;
+    } else if (op === 'sc' || op === 'scn' || op === 'SC' || op === 'SCN') {
+      const nums = stack.filter((t) => t.kind === 'num').map((t) => t.value);
+      let parsedColor = null;
+      if (nums.length === 1) {
+        const v = clamp01(nums[0]);
+        parsedColor = { space: 'DeviceGray', r: v, g: v, b: v };
+      } else if (nums.length === 3) {
+        parsedColor = { space: 'DeviceRGB', r: clamp01(nums[0]), g: clamp01(nums[1]), b: clamp01(nums[2]) };
+      } else if (nums.length >= 4) {
+        parsedColor = cmykToRgb(nums[0], nums[1], nums[2], nums[3]);
+      }
+      if (parsedColor) {
+        if (op === 'sc' || op === 'scn') fillColor = parsedColor;
+        else strokeColor = parsedColor;
+      }
+      stack.length = 0;
+    } else if (op === 'Tr') {
+      if (stack.length >= 1) {
+        const mode = Number(stack[stack.length - 1].value);
+        if (Number.isFinite(mode)) textRenderMode = Math.trunc(mode);
       }
       stack.length = 0;
     } else if (op === 'BT') {
@@ -858,7 +1036,8 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
     } else if (op === 'Tf') {
       if (stack.length >= 2) {
         fontKey = String(stack[stack.length - 2].value || '');
-        fontSize = Number(stack[stack.length - 1].value) || 11;
+        const parsedSize = Number(stack[stack.length - 1].value);
+        fontSize = Number.isFinite(parsedSize) ? parsedSize : 11;
       }
       stack.length = 0;
     } else if (op === 'TL') {
@@ -930,9 +1109,42 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
         pathRects.push({ x: Math.min(px1, px2), y: Math.min(py1, py2), w: Math.abs(px2 - px1), h: Math.abs(py2 - py1) });
       }
       stack.length = 0;
-    } else if (op === 'S' || op === 's' || op === 'f' || op === 'f*' || op === 'n') {
+    } else if (
+      op === 'S' || op === 's' || op === 'f' || op === 'F' || op === 'f*' ||
+      op === 'B' || op === 'B*' || op === 'b' || op === 'b*' || op === 'n'
+    ) {
+      const isFillOp = op === 'f' || op === 'F' || op === 'f*' || op === 'B' || op === 'B*' || op === 'b' || op === 'b*';
       if (op !== 'n' && (pathSegs.length > 0 || pathRects.length > 0)) {
         vectorPaths.push({ pageIndex, op: op[0], segments: pathSegs, rects: pathRects });
+        if (isFillOp) {
+          const rectsToRecord = [...pathRects];
+          if (rectsToRecord.length === 0 && pathSegs.length >= 3) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const s of pathSegs) {
+              minX = Math.min(minX, s.x1, s.x2);
+              minY = Math.min(minY, s.y1, s.y2);
+              maxX = Math.max(maxX, s.x1, s.x2);
+              maxY = Math.max(maxY, s.y1, s.y2);
+            }
+            if (maxX - minX >= 4 && maxY - minY >= 4) {
+              rectsToRecord.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+            }
+          }
+          for (const r of rectsToRecord) {
+            if (r.w >= 4 && r.h >= 4) {
+              filledRects.push({
+                pageIndex,
+                x: Number(r.x.toFixed(2)),
+                y: Number(r.y.toFixed(2)),
+                w: Number(r.w.toFixed(2)),
+                h: Number(r.h.toFixed(2)),
+                fillColor: { ...fillColor },
+                op,
+                drawOrder: drawOrder++,
+              });
+            }
+          }
+        }
       }
       pathSegs = [];
       pathRects = [];
@@ -943,7 +1155,155 @@ function interpretContentStream(streamBuf, fontTable, pageIndex) {
     }
   }
 
-  return { runs, vectorPaths };
+  return { runs, vectorPaths, filledRects };
+}
+
+function analyzePageForensics(runs, filledRects, pageBox, pageIndex, options = {}) {
+  const findings = [];
+  const box = pageBox || DEFAULT_PAGE_BOX;
+  const pageW = Math.max(1, box.x1 - box.x0);
+  const pageH = Math.max(1, box.y1 - box.y0);
+  const sublegibleThreshold = options.sublegibleFontPt ?? 1.5;
+
+  for (const run of runs) {
+    const snippet = run.text.slice(0, 160);
+    let flaggedOverlay = false;
+
+    // 1. Failed-redaction detection: text covered by opaque filled vector rectangle
+    let bestOverlay = null;
+    for (const rect of filledRects) {
+      if (rect.w < 4 || rect.h < 4) continue;
+      const ov = computeRectOverlap(run.bbox, rect);
+      if (ov.iw < 3 || ov.ih < Math.max(1, run.bbox.h * 0.30) || ov.ratioA < 0.08) continue;
+      const isFullPageBg = rect.w >= pageW * 0.85 && rect.h >= pageH * 0.85;
+      const drawnOverText = rect.drawOrder > run.drawOrder;
+      const darkOccludingBg =
+        !isFullPageBg &&
+        rect.drawOrder < run.drawOrder &&
+        colorLuminance(rect.fillColor) <= 0.25 &&
+        colorDistance(rect.fillColor, run.fillColor) <= 0.25;
+
+      if (drawnOverText || darkOccludingBg) {
+        if (!bestOverlay || ov.ratioA > bestOverlay.overlapRatio) {
+          bestOverlay = { rect, overlapRatio: ov.ratioA };
+        }
+      }
+    }
+    if (bestOverlay) {
+      flaggedOverlay = true;
+      run.hiddenChannelFlags.push('PDF_TEXT_UNDER_OPAQUE_OVERLAY');
+      findings.push({
+        code: 'PDF_TEXT_UNDER_OPAQUE_OVERLAY',
+        vector: 'pdf_text_under_opaque_overlay',
+        severity: 'high',
+        page: pageIndex + 1,
+        pageIndex,
+        textSnippet: snippet,
+        coveredTextLength: run.text.length,
+        bbox: { ...run.bbox },
+        overlayBbox: {
+          x: bestOverlay.rect.x,
+          y: bestOverlay.rect.y,
+          w: bestOverlay.rect.w,
+          h: bestOverlay.rect.h,
+        },
+        overlapRatio: Number(bestOverlay.overlapRatio.toFixed(3)),
+        fillColor: { ...bestOverlay.rect.fillColor },
+      });
+    }
+
+    // 2. Invisible text rendering mode 3 (`3 Tr`)
+    if (run.textRenderMode === 3) {
+      run.hiddenChannelFlags.push('PDF_INVISIBLE_RENDER_MODE_3');
+      findings.push({
+        code: 'PDF_INVISIBLE_RENDER_MODE_3',
+        vector: 'pdf_invisible_render_mode_3',
+        severity: 'high',
+        page: pageIndex + 1,
+        pageIndex,
+        renderMode: 3,
+        textSnippet: snippet,
+        textLength: run.text.length,
+        bbox: { ...run.bbox },
+      });
+    }
+
+    // 3. White-on-white / matching-background text
+    if (run.textRenderMode !== 3) {
+      let bgColor = { space: 'DeviceRGB', r: 1, g: 1, b: 1 };
+      let hasBgRect = false;
+      for (const rect of filledRects) {
+        if (rect.drawOrder >= run.drawOrder) continue;
+        const ov = computeRectOverlap(run.bbox, rect);
+        if (ov.ratioA >= 0.5) {
+          bgColor = rect.fillColor;
+          hasBgRect = true;
+        }
+      }
+      const whiteOnWhite = isNearWhiteColor(bgColor) && isNearWhiteColor(run.fillColor);
+      const matchingBg = hasBgRect && !flaggedOverlay && colorDistance(run.fillColor, bgColor) <= 0.06;
+      if (whiteOnWhite || matchingBg) {
+        run.hiddenChannelFlags.push('INVISIBLE_WHITE_ON_WHITE_TEXT');
+        findings.push({
+          code: 'INVISIBLE_WHITE_ON_WHITE_TEXT',
+          vector: 'pdf_white_on_white_text',
+          severity: 'high',
+          page: pageIndex + 1,
+          pageIndex,
+          textColor: { ...run.fillColor },
+          backgroundColor: { ...bgColor },
+          textSnippet: snippet,
+          textLength: run.text.length,
+          bbox: { ...run.bbox },
+        });
+      }
+    }
+
+    // 4. Sub-legible tiny font (<= 1.5 pt default)
+    if (run.rawFontSizePt <= sublegibleThreshold) {
+      run.hiddenChannelFlags.push('INVISIBLE_SUBLEGIBLE_FONT');
+      findings.push({
+        code: 'INVISIBLE_SUBLEGIBLE_FONT',
+        vector: 'pdf_sublegible_font',
+        severity: 'high',
+        page: pageIndex + 1,
+        pageIndex,
+        fontSizePt: Number(run.rawFontSizePt.toFixed(3)),
+        textSnippet: snippet,
+        textLength: run.text.length,
+        bbox: { ...run.bbox },
+      });
+    }
+
+    // 5. Off-page coordinate text outside MediaBox/CropBox
+    const tol = 2;
+    const completelyOutside =
+      run.bbox.x + run.bbox.w < box.x0 - tol ||
+      run.bbox.x > box.x1 + tol ||
+      run.bbox.y + run.bbox.h < box.y0 - tol ||
+      run.bbox.y > box.y1 + tol;
+    const originOutside =
+      run.x < box.x0 - tol ||
+      run.x > box.x1 + tol ||
+      run.y < box.y0 - tol ||
+      run.y > box.y1 + tol;
+    if (completelyOutside || originOutside) {
+      run.hiddenChannelFlags.push('PDF_OFF_PAGE_TEXT');
+      findings.push({
+        code: 'PDF_OFF_PAGE_TEXT',
+        vector: 'pdf_off_page_text',
+        severity: 'high',
+        page: pageIndex + 1,
+        pageIndex,
+        textSnippet: snippet,
+        textLength: run.text.length,
+        bbox: { ...run.bbox },
+        pageBox: { ...box },
+      });
+    }
+  }
+
+  return findings;
 }
 
 function reconstructRunsIntoLines(runs) {
@@ -1122,9 +1482,128 @@ function deriveVectorTables(vectorPaths, runs) {
   return tables;
 }
 
+function findEofRevisionOffsets(latin, streamRanges) {
+  const eofEnds = [];
+  const rx = /%%EOF\b/g;
+  let m;
+  while ((m = rx.exec(latin)) !== null) {
+    const idx = m.index;
+    const insideStream = streamRanges.some(([s, e]) => idx >= s && idx < e);
+    if (!insideStream) {
+      eofEnds.push(idx + m[0].length);
+    }
+  }
+  return eofEnds;
+}
+
+function extractPdfMetadataStrings(objects, options = {}) {
+  const strings = [];
+  const infoKeys = ['Title', 'Author', 'Subject', 'Keywords', 'Creator', 'Producer', 'Contents'];
+  for (const obj of objects.values()) {
+    const dict = obj.dictStr || obj.rawText || '';
+    for (const key of infoKeys) {
+      const litRx = new RegExp(`\\/${key}\\s*\\(([^)]*)\\)`, 'g');
+      let m;
+      while ((m = litRx.exec(dict)) !== null) {
+        const decoded = decodeLiteralBytes(Buffer.from(m[1], 'latin1')).toString('latin1').trim();
+        if (decoded) strings.push(decoded);
+      }
+      const hexRx = new RegExp(`\\/${key}\\s*<([0-9a-fA-F\\s]+)>`, 'g');
+      while ((m = hexRx.exec(dict)) !== null) {
+        const val = decodeTextToken({ kind: 'hex', value: m[1] }, null).trim();
+        if (val) strings.push(val);
+      }
+    }
+    if (obj.streamRaw && /\/Subtype\s*\/XML\b|\/Type\s*\/Metadata\b/.test(obj.dictStr)) {
+      try {
+        const dec = decodePdfStreamData(obj.dictStr, obj.streamRaw, options);
+        if (dec.decoded) {
+          const xmlStr = dec.decoded.toString('utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          if (xmlStr) strings.push(xmlStr);
+        }
+      } catch {}
+    }
+  }
+  return strings;
+}
+
+function normalizeForComparison(str, { caseSensitive = false, normalizeWhitespace = true } = {}) {
+  let out = String(str ?? '')
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g, '');
+  if (normalizeWhitespace) {
+    out = out.replace(/\s+/g, ' ').trim();
+  }
+  if (!caseSensitive) {
+    out = out.toLowerCase();
+  }
+  return out;
+}
+
+function inspectPdfIncrementalRevisions(buf, latin, streamRanges, latestLines, latestMetaStrings, options = {}) {
+  const eofEnds = findEofRevisionOffsets(latin, streamRanges);
+  const revisionCount = Math.max(1, eofEnds.length);
+  if (eofEnds.length < 2) {
+    return { revisionCount, findings: [], historicalResidualTexts: [] };
+  }
+
+  const latestCorpusNorm = normalizeForComparison([...latestLines, ...latestMetaStrings].join('\n'));
+  const maxRevisionsToInspect = Math.min(eofEnds.length - 1, options.maxRevisions ?? 16);
+  const leakedRevisionIndices = [];
+  const residualSet = new Set();
+  const residualStrings = [];
+
+  for (let i = 0; i < maxRevisionsToInspect; i += 1) {
+    const revSlice = buf.subarray(0, eofEnds[i]);
+    let revDiag;
+    try {
+      revDiag = extractPdfDetailed(revSlice, { ...options, _skipRevisionInspection: true });
+    } catch {
+      continue;
+    }
+    const revCandidates = [...(revDiag.lines || []), ...(revDiag.metadataStrings || [])];
+    let revHasLeak = false;
+    for (const candidate of revCandidates) {
+      const trimmed = String(candidate || '').trim();
+      if (!trimmed) continue;
+      const norm = normalizeForComparison(trimmed);
+      if (!norm) continue;
+      if (!latestCorpusNorm.includes(norm)) {
+        revHasLeak = true;
+        if (!residualSet.has(trimmed)) {
+          residualSet.add(trimmed);
+          residualStrings.push(trimmed);
+        }
+      }
+    }
+    if (revHasLeak) {
+      leakedRevisionIndices.push(i + 1);
+    }
+  }
+
+  const findings = [];
+  if (residualStrings.length > 0) {
+    findings.push({
+      code: 'PDF_INCREMENTAL_REVISION_LEAK',
+      vector: 'pdf_incremental_revision_leak',
+      severity: 'high',
+      revisionCount,
+      leakedRevisionIndices,
+      residualCount: residualStrings.length,
+      residualStrings: residualStrings.slice(0, 50),
+      residualSnippets: residualStrings.slice(0, 20).map((s) => s.slice(0, 160)),
+    });
+  }
+
+  return {
+    revisionCount,
+    findings,
+    historicalResidualTexts: residualStrings,
+  };
+}
+
 export function extractPdfDetailed(pdfBuffer, options = {}) {
   const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
-  const { objects, latin } = parseTopLevelPdfObjects(buf);
+  const { objects, latin, streamRanges } = parseTopLevelPdfObjects(buf);
   const encrypted = /\/Encrypt\b/.test(latin);
   expandObjectStreams(objects, options);
 
@@ -1153,6 +1632,10 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       streams: [],
       images: [],
       vectorTables: [],
+      forensicFindings: [],
+      revisionCount: Math.max(1, findEofRevisionOffsets(latin, streamRanges).length),
+      historicalResidualTexts: [],
+      metadataStrings: [],
     };
   }
 
@@ -1168,9 +1651,12 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
   const pageStreams = [];
   const allRuns = [];
   const vectorPathsAcc = [];
+  const forensicFindings = [];
+  const pageBoxes = [];
   let pageCount = pages.length;
 
-  pages.forEach(({ pageObj, resourcesText }, pageIndex) => {
+  pages.forEach(({ pageObj, resourcesText, pageBox }, pageIndex) => {
+    pageBoxes.push(pageBox || DEFAULT_PAGE_BOX);
     const pageDict = pageObj.dictStr || pageObj.rawText;
     const fontRefs = parseFontDictRefs(resolveDictText(resourcesText, objects) || pageDict, objects);
     const fontTable = new Map();
@@ -1211,7 +1697,9 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
       if (options.includeStreams) {
         pageStreams.push(joined.toString('latin1'));
       }
-      const { runs, vectorPaths } = interpretContentStream(joined, fontTable, pageIndex);
+      const { runs, vectorPaths, filledRects } = interpretContentStream(joined, fontTable, pageIndex);
+      const pageFindings = analyzePageForensics(runs, filledRects, pageBox, pageIndex, options);
+      forensicFindings.push(...pageFindings);
       allRuns.push(...runs);
       vectorPathsAcc.push(...vectorPaths);
     }
@@ -1238,7 +1726,10 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
         if (options.includeStreams) {
           pageStreams.push(dec.decoded.toString('latin1'));
         }
-        const { runs, vectorPaths } = interpretContentStream(dec.decoded, globalFontTable, idx++);
+        const curPageIdx = idx++;
+        const { runs, vectorPaths, filledRects } = interpretContentStream(dec.decoded, globalFontTable, curPageIdx);
+        const pageFindings = analyzePageForensics(runs, filledRects, DEFAULT_PAGE_BOX, curPageIdx, options);
+        forensicFindings.push(...pageFindings);
         allRuns.push(...runs);
         vectorPathsAcc.push(...vectorPaths);
       }
@@ -1246,9 +1737,31 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
     if (allRuns.length > 0 && pageCount === 0) pageCount = 1;
   }
 
-  const lineRecords = reconstructRunsIntoLines(allRuns);
-  const vectorTables = deriveVectorTables(vectorPathsAcc, allRuns);
+  const STRIP_INVISIBLE_CODES = new Set([
+    'PDF_INVISIBLE_RENDER_MODE_3',
+    'INVISIBLE_WHITE_ON_WHITE_TEXT',
+    'INVISIBLE_SUBLEGIBLE_FONT',
+    'PDF_OFF_PAGE_TEXT',
+  ]);
+  const selectedRuns = options.excludeInvisibleRuns
+    ? allRuns.filter((r) => !r.hiddenChannelFlags.some((f) => STRIP_INVISIBLE_CODES.has(f)))
+    : allRuns;
+
+  const lineRecords = reconstructRunsIntoLines(selectedRuns);
+  const vectorTables = deriveVectorTables(vectorPathsAcc, selectedRuns);
   const lines = lineRecords.map((r) => r.text);
+  const metadataStrings = extractPdfMetadataStrings(objects, options);
+
+  // Incremental revision history inspection (multiple %%EOF sections)
+  let revisionCount = 1;
+  let historicalResidualTexts = [];
+  if (!options._skipRevisionInspection) {
+    const revAudit = inspectPdfIncrementalRevisions(buf, latin, streamRanges, lines, metadataStrings, options);
+    revisionCount = revAudit.revisionCount;
+    historicalResidualTexts = revAudit.historicalResidualTexts;
+    forensicFindings.push(...revAudit.findings);
+  }
+
   // Decode embedded image XObjects lazily ONLY when the PDF has no text layer (scanned PDF) or explicitly requested
   const images = (lines.length === 0 || options.alwaysDecodeImages)
     ? collectImages(objects, options)
@@ -1273,5 +1786,284 @@ export function extractPdfDetailed(pdfBuffer, options = {}) {
     streams: pageStreams,
     images,
     vectorTables,
+    forensicFindings,
+    revisionCount,
+    historicalResidualTexts,
+    metadataStrings,
+    pageBoxes,
+  };
+}
+
+function normalizeRedactionSpans(redactedSpans = []) {
+  const out = [];
+  const seen = new Set();
+  for (const item of redactedSpans || []) {
+    const raw = typeof item === 'string'
+      ? item
+      : (item?.value ?? item?.text ?? item?.raw ?? '');
+    const str = String(raw || '').trim();
+    if (!str) continue;
+    const key = str.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      raw: str,
+      type: typeof item === 'object' && item ? (item.type || item.category || 'sensitive') : 'sensitive',
+      replacement: typeof item === 'object' && item ? (item.replacement || null) : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Mandatory post-redaction PDF irreversibility verification gate.
+ * Re-extracts all text across visible layer, hidden channels (3 Tr, white-on-white,
+ * tiny fonts, off-page, text under opaque overlays), incremental update revisions,
+ * decoded content streams, and raw PDF objects/metadata.
+ * Fails closed (throws structured PDF_REDACTION_IRREVERSIBILITY_FAILED error) by default
+ * if ANY redacted span remains recoverable.
+ */
+export function verifyPdfRedactionIrreversibility(redactedPdfBuffer, redactedSpans = [], options = {}) {
+  const buf = Buffer.isBuffer(redactedPdfBuffer) ? redactedPdfBuffer : Buffer.from(redactedPdfBuffer);
+  const throwOnLeak = options.throwOnLeak !== false;
+  const caseSensitive = options.caseSensitive === true;
+  const normalizeWhitespace = options.normalizeWhitespace !== false;
+  const scanRawStreams = options.scanRawStreams !== false;
+
+  const diag = extractPdfDetailed(buf, { includeStreams: true });
+  const spans = normalizeRedactionSpans(redactedSpans);
+  const normOpts = { caseSensitive, normalizeWhitespace };
+
+  const textLayerNorm = normalizeForComparison(diag.lines.join('\n'), normOpts);
+  const revNorm = normalizeForComparison((diag.historicalResidualTexts || []).join('\n'), normOpts);
+  const streamsNorm = scanRawStreams
+    ? normalizeForComparison((diag.streams || []).join('\n'), normOpts)
+    : '';
+  const metaAndRawNorm = scanRawStreams
+    ? normalizeForComparison(
+        [...(diag.metadataStrings || []), buf.toString('latin1')].join('\n'),
+        normOpts
+      )
+    : normalizeForComparison((diag.metadataStrings || []).join('\n'), normOpts);
+
+  const residualLeaks = [];
+  for (const sp of spans) {
+    const needle = normalizeForComparison(sp.raw, normOpts);
+    if (!needle) continue;
+
+    const channels = [];
+    const forensicCodes = [];
+
+    if (textLayerNorm.includes(needle)) {
+      channels.push('text_layer');
+    }
+    if (revNorm.includes(needle)) {
+      channels.push('incremental_revision');
+      if (!forensicCodes.includes('PDF_INCREMENTAL_REVISION_LEAK')) {
+        forensicCodes.push('PDF_INCREMENTAL_REVISION_LEAK');
+      }
+    }
+
+    for (const f of diag.forensicFindings || []) {
+      const findingHaystack = normalizeForComparison(
+        [f.textSnippet || '', ...(f.residualStrings || [])].join('\n'),
+        normOpts
+      );
+      if (findingHaystack.includes(needle)) {
+        if (!channels.includes('forensic_hidden_channel')) {
+          channels.push('forensic_hidden_channel');
+        }
+        if (f.code && !forensicCodes.includes(f.code)) {
+          forensicCodes.push(f.code);
+        }
+      }
+    }
+
+    if (streamsNorm && streamsNorm.includes(needle)) {
+      channels.push('content_stream');
+    }
+    if (metaAndRawNorm && metaAndRawNorm.includes(needle)) {
+      channels.push('metadata_or_raw_object');
+    }
+
+    if (channels.length > 0) {
+      residualLeaks.push({
+        span: sp.raw,
+        type: sp.type,
+        channels,
+        forensicCodes,
+      });
+    }
+  }
+
+  const report = {
+    ok: residualLeaks.length === 0,
+    checkedSpanCount: spans.length,
+    residualLeakCount: residualLeaks.length,
+    residualLeaks,
+    forensicFindings: diag.forensicFindings || [],
+    revisionCount: diag.revisionCount ?? 1,
+    channelsChecked: [
+      'text_layer',
+      'forensic_hidden_channel',
+      'incremental_revision',
+      'content_stream',
+      'metadata_or_raw_object',
+    ],
+  };
+
+  if (!report.ok && throwOnLeak) {
+    const err = new Error(
+      `PDF_REDACTION_IRREVERSIBILITY_FAILED: ${residualLeaks.length} redacted span(s) remain recoverable in emitted PDF`
+    );
+    err.code = 'PDF_REDACTION_IRREVERSIBILITY_FAILED';
+    err.report = report;
+    err.residualLeaks = residualLeaks;
+    throw err;
+  }
+
+  return report;
+}
+
+function escapePdfLiteralString(str) {
+  let out = '';
+  for (let i = 0; i < str.length; i += 1) {
+    const code = str.charCodeAt(i);
+    if (code === 0x5c) out += '\\\\';
+    else if (code === 0x28) out += '\\(';
+    else if (code === 0x29) out += '\\)';
+    else if (code >= 0x20 && code <= 0x7e) out += str[i];
+    else if (code <= 0xff) out += `\\${code.toString(8).padStart(3, '0')}`;
+    else out += ' ';
+  }
+  return out;
+}
+
+function escapeRegexLiteral(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Emits a genuinely scrubbed, single-revision, flattened PDF 1.4 buffer with
+ * underlying redacted text completely removed (no opaque pseudo-redaction boxes
+ * covering intact text, no incremental update history, no invisible hidden text),
+ * followed by a mandatory verifyPdfRedactionIrreversibility() gate.
+ */
+export function redactPdfBuffer(pdfBuffer, spansToRedact = [], options = {}) {
+  const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+  const sourceDiag = extractPdfDetailed(buf);
+  const stripHiddenChannels = options.stripHiddenChannels !== false;
+  const visibleDiag = stripHiddenChannels
+    ? extractPdfDetailed(buf, { excludeInvisibleRuns: true, _skipRevisionInspection: true })
+    : sourceDiag;
+
+  const normalizedSpans = normalizeRedactionSpans(spansToRedact)
+    .sort((a, b) => b.raw.length - a.raw.length);
+  const defaultReplacement = options.replacement ?? '[REDACTED]';
+
+  const scrubLine = (text) => {
+    let out = String(text || '');
+    for (const sp of normalizedSpans) {
+      const repl = sp.replacement || defaultReplacement;
+      const rx = new RegExp(escapeRegexLiteral(sp.raw), options.caseSensitive ? 'g' : 'gi');
+      out = out.replace(rx, repl);
+    }
+    return out;
+  };
+
+  // Group scrubbed lines by pageIndex
+  const pageCount = Math.max(1, visibleDiag.pageCount || sourceDiag.pageCount || 1);
+  const linesByPage = Array.from({ length: pageCount }, () => []);
+  for (const rec of visibleDiag.lineRecords || []) {
+    const pIdx = Math.max(0, Math.min(pageCount - 1, rec.pageIndex || 0));
+    const scrubbed = scrubLine(rec.text).trim();
+    if (scrubbed) {
+      linesByPage[pIdx].push({
+        text: scrubbed,
+        fontStyle: rec.fontStyle || 'sans_serif',
+      });
+    }
+  }
+
+  // Build fresh single-revision flattened PDF 1.4
+  const fontMap = {
+    display_serif: '/F1',
+    sans_serif: '/F2',
+    monospace: '/F3',
+    italic: '/F4',
+    bold_stamp: '/F5',
+  };
+
+  // Objects 1=Catalog, 2=Pages, 3..7=Fonts, then per-page Page + Content objects
+  const objects = [];
+  const pageObjNums = [];
+  const firstPageObjNum = 8;
+
+  for (let p = 0; p < pageCount; p += 1) {
+    pageObjNums.push(firstPageObjNum + p * 2);
+  }
+
+  objects.push('<< /Type /Catalog /Pages 2 0 R >>'); // 1
+  objects.push(`<< /Type /Pages /Kids [${pageObjNums.map((n) => `${n} 0 R`).join(' ')}] /Count ${pageCount} >>`); // 2
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >>'); // 3 (/F1)
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'); // 4 (/F2)
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>'); // 5 (/F3)
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic >>'); // 6 (/F4)
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'); // 7 (/F5)
+
+  for (let p = 0; p < pageCount; p += 1) {
+    const box = sourceDiag.pageBoxes?.[p] || DEFAULT_PAGE_BOX;
+    const contentObjNum = firstPageObjNum + p * 2 + 1;
+    const pageLines = linesByPage[p];
+    const topY = Math.max(box.y0 + 40, box.y1 - 48);
+    const lineStep = 18;
+
+    let stream = 'BT\n0 0 0 rg\n0 Tr\n';
+    pageLines.forEach((ln, idx) => {
+      const y = Math.max(box.y0 + 24, topY - idx * lineStep);
+      const fRef = fontMap[ln.fontStyle] || '/F2';
+      stream += `${fRef} 10 Tf\n1 0 0 1 50 ${y} Tm\n(${escapePdfLiteralString(ln.text)}) Tj\n`;
+    });
+    stream += 'ET\n';
+
+    const streamBuf = Buffer.from(stream, 'latin1');
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [${box.x0} ${box.y0} ${box.x1} ${box.y1}] ` +
+      `/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> ` +
+      `/Contents ${contentObjNum} 0 R >>`
+    );
+    objects.push(`<< /Length ${streamBuf.length} >>\nstream\n${stream}endstream`);
+  }
+
+  let pdfStr = '%PDF-1.4\n';
+  const offsets = [0];
+  for (let i = 0; i < objects.length; i += 1) {
+    offsets.push(Buffer.byteLength(pdfStr, 'latin1'));
+    pdfStr += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xrefOff = Buffer.byteLength(pdfStr, 'latin1');
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let i = 1; i <= objects.length; i += 1) {
+    xref += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+  }
+  pdfStr += `${xref}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOff}\n%%EOF\n`;
+
+  const redactedPdfBuffer = Buffer.from(pdfStr, 'latin1');
+
+  // Mandatory post-redaction irreversibility verification pass
+  const verification = verifyPdfRedactionIrreversibility(
+    redactedPdfBuffer,
+    spansToRedact,
+    {
+      ...(options.verifyOptions || {}),
+      throwOnLeak: options.throwOnLeak !== false,
+    }
+  );
+
+  return {
+    redactedPdfBuffer,
+    verification,
+    redactedSpanCount: normalizedSpans.length,
+    strippedForensicFindings: sourceDiag.forensicFindings || [],
   };
 }

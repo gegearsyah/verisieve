@@ -14,6 +14,7 @@
 import crypto from 'node:crypto';
 import { loadMediaWasmSync } from './media-wasm.js';
 import { formatDelimitedTableBlocks } from './structure-extractor.js';
+import { extractPdfDetailed } from './pdf-parser.js';
 
 const UTF8_DEC = new TextDecoder('utf-8', { fatal: false });
 const LATIN1_DEC = new TextDecoder('latin1', { fatal: false });
@@ -252,8 +253,11 @@ function splitHeaderAndBody(rawStr) {
   };
 }
 
-function parseMimeEntity(rawStr, depth = 0, out = { textParts: [], htmlParts: [], attachments: [], nestedEmails: [] }) {
-  if (depth > 5) return out;
+function parseMimeEntity(rawStr, depth = 0, out = { textParts: [], htmlParts: [], attachments: [], nestedEmails: [], mimeDepthTruncated: false }, maxMimeDepth = 12) {
+  if (depth > maxMimeDepth) {
+    out.mimeDepthTruncated = true;
+    return out;
+  }
   const { headerRaw, bodyRaw } = splitHeaderAndBody(rawStr);
   const headers = parseHeadersBlock(headerRaw);
   const ct = String(headers['content-type'] || 'text/plain; charset=utf-8');
@@ -271,14 +275,25 @@ function parseMimeEntity(rawStr, depth = 0, out = { textParts: [], htmlParts: []
       for (let i = 1; i < parts.length; i++) {
         const part = parts[i];
         if (!part || part.trim() === '' || part.trim() === '--') continue;
-        parseMimeEntity(part, depth + 1, out);
+        parseMimeEntity(part, depth + 1, out, maxMimeDepth);
       }
       return out;
     }
   }
 
   if (ctLower.startsWith('message/rfc822')) {
-    out.nestedEmails.push(bodyRaw);
+    let decodedNested;
+    if (cte === 'base64') {
+      decodedNested = UTF8_DEC.decode(Buffer.from(bodyRaw.replace(/\s+/g, ''), 'base64'));
+    } else if (cte === 'quoted-printable') {
+      decodedNested = decodeQuotedPrintable(bodyRaw);
+    } else {
+      decodedNested = bodyRaw;
+    }
+    out.nestedEmails.push({
+      raw: decodedNested,
+      filename: filename || `forwarded_${out.nestedEmails.length + 1}.eml`,
+    });
     return out;
   }
 
@@ -298,13 +313,29 @@ function parseMimeEntity(rawStr, depth = 0, out = { textParts: [], htmlParts: []
     }
     const extGuess = ctLower.includes('pdf')
       ? '.pdf'
-      : ctLower.includes('png')
-        ? '.png'
-        : ctLower.includes('jpeg')
-          ? '.jpg'
-          : ctLower.includes('csv')
-            ? '.csv'
-            : '.bin';
+      : ctLower.includes('zip')
+        ? '.zip'
+        : ctLower.includes('wordprocessingml')
+          ? '.docx'
+          : ctLower.includes('spreadsheetml')
+            ? '.xlsx'
+            : ctLower.includes('presentationml')
+              ? '.pptx'
+              : ctLower.includes('ms-outlook')
+                ? '.msg'
+                : ctLower.includes('png')
+                  ? '.png'
+                  : ctLower.includes('jpeg')
+                    ? '.jpg'
+                    : ctLower.includes('csv')
+                      ? '.csv'
+                      : ctLower.includes('text/plain')
+                        ? '.txt'
+                        : ctLower.includes('json')
+                          ? '.json'
+                          : ctLower.includes('html')
+                            ? '.html'
+                            : '.bin';
     out.attachments.push({
       filename: filename || `inline_${out.attachments.length + 1}${extGuess}`,
       mimeType: ct.split(';')[0].trim().toLowerCase(),
@@ -332,6 +363,8 @@ function parseMimeEntity(rawStr, depth = 0, out = { textParts: [], htmlParts: []
 }
 
 export function parseEmlBuffer(source, buf, options = {}) {
+  const depth = options._depth ?? 0;
+  const maxDepth = options.maxDepth ?? options.maxArchiveDepth ?? 4;
   const rawStr = typeof buf === 'string' ? buf : UTF8_DEC.decode(buf);
   const { headerRaw } = splitHeaderAndBody(rawStr);
   const headers = parseHeadersBlock(headerRaw);
@@ -340,6 +373,17 @@ export function parseEmlBuffer(source, buf, options = {}) {
   const threadId = headers['in-reply-to'] || headers['references']?.split(/\s+/)[0] || headers['message-id'] || source;
   const blocks = [];
   const forensicFindings = [];
+
+  if (mime.mimeDepthTruncated) {
+    forensicFindings.push({
+      code: 'RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED',
+      vector: 'recursive_attachment_max_depth_exceeded',
+      depth,
+      maxDepth,
+      parentSource: source,
+      detail: 'MIME multipart nesting exceeded maximum allowed depth.',
+    });
+  }
 
   // Emit structured headers block (ensures From/To/Cc/Reply-To/Subject PII is always redacted!)
   const headerLines = [];
@@ -395,14 +439,37 @@ export function parseEmlBuffer(source, buf, options = {}) {
     if (b) blocks.push(b);
   });
 
-  // Recursively handle nested forwarded `message/rfc822` emails
-  mime.nestedEmails.forEach((nested, idx) => {
-    const childSrc = `${source}::forwarded_${idx + 1}.eml`;
-    const childRes = parseEmlBuffer(childSrc, nested, { ...options, parentSource: source });
-    blocks.push(...childRes.blocks);
-    forensicFindings.push(...childRes.forensicFindings);
-    mime.attachments.push(...childRes.attachments);
-  });
+  // Recursively handle nested forwarded `message/rfc822` emails with bounded depth
+  if (mime.nestedEmails.length > 0) {
+    if (depth >= maxDepth) {
+      if (options.failOnMaxDepth === true) {
+        throw new Error(`RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED: Nesting depth ${depth} exceeds max ${maxDepth}`);
+      }
+      forensicFindings.push({
+        code: 'RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED',
+        vector: 'recursive_attachment_max_depth_exceeded',
+        depth,
+        maxDepth,
+        skippedCount: mime.nestedEmails.length,
+        parentSource: source,
+        detail: `Bounded nested message/rfc822 recursion at depth ${depth} (maxDepth=${maxDepth}).`,
+      });
+    } else {
+      mime.nestedEmails.forEach((nested, idx) => {
+        const nestedRaw = typeof nested === 'string' ? nested : nested.raw;
+        const nestedName = typeof nested === 'object' && nested.filename ? nested.filename : `forwarded_${idx + 1}.eml`;
+        const childSrc = `${source}::${nestedName}`;
+        const childRes = parseEmlBuffer(childSrc, nestedRaw, {
+          ...options,
+          parentSource: source,
+          _depth: depth + 1,
+        });
+        blocks.push(...childRes.blocks);
+        forensicFindings.push(...childRes.forensicFindings);
+        mime.attachments.push(...childRes.attachments);
+      });
+    }
+  }
 
   return {
     source,
@@ -410,7 +477,7 @@ export function parseEmlBuffer(source, buf, options = {}) {
     headers,
     threadId,
     blocks,
-    attachments: mime.attachments.map((a) => ({ ...a, parentSource: source })),
+    attachments: mime.attachments.map((a) => ({ ...a, parentSource: a.parentSource || source })),
     forensicFindings,
   };
 }
@@ -571,6 +638,103 @@ function extractXmlTextRuns(xml, tagPattern = /<(?:a:t|w:t|t)\b[^>]*>([\s\S]*?)<
   return parts.join('').replace(/\s+/g, ' ').trim();
 }
 
+function parseHexRgb(hex6) {
+  if (!hex6 || !/^[0-9a-fA-F]{6}$/.test(hex6)) return null;
+  return {
+    r: parseInt(hex6.slice(0, 2), 16),
+    g: parseInt(hex6.slice(2, 4), 16),
+    b: parseInt(hex6.slice(4, 6), 16),
+  };
+}
+
+function detectDocxInvisibleTextRuns(xml, partName, options = {}) {
+  const findings = [];
+  if (!xml) return findings;
+  const sublegibleThreshold = options.sublegibleFontPt ?? 1.5;
+  const cleanedXml = xml
+    .replace(/<w:delText\b[^>]*>[\s\S]*?<\/w:delText>/gi, '')
+    .replace(/<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi, '');
+
+  const pRx = /<w:p\b[^>]*>([\s\S]*?)<\/w:p>/gi;
+  let pm;
+  while ((pm = pRx.exec(cleanedXml)) !== null) {
+    const pInner = pm[1];
+    const pPr = pInner.match(/<w:pPr\b[^>]*>([\s\S]*?)<\/w:pPr>/i)?.[1] || '';
+    const pBgHex = pPr.match(/<w:shd\b[^>]*\bw:fill=["']([0-9a-fA-F]{6})["']/i)?.[1]?.toUpperCase() || null;
+
+    const rRx = /<w:r\b[^>]*>([\s\S]*?)<\/w:r>/gi;
+    let rm;
+    while ((rm = rRx.exec(pInner)) !== null) {
+      const rInner = rm[1];
+      const runText = extractXmlTextRuns(rInner, /<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi);
+      if (!runText) continue;
+
+      const rPr = rInner.match(/<w:rPr\b[^>]*>([\s\S]*?)<\/w:rPr>/i)?.[1] || '';
+      if (!rPr) continue;
+
+      const snippet = runText.slice(0, 160);
+
+      // 1. Vanish / webHidden hidden run text (`<w:vanish/>`)
+      const vanishTag = rPr.match(/<w:(?:vanish|webHidden)\b([^>]*)\/?>/i);
+      if (vanishTag && !/\bw:val=["'](?:0|false)["']/i.test(vanishTag[1] || '')) {
+        findings.push({
+          code: 'DOCX_VANISH_HIDDEN_TEXT',
+          vector: 'docx_vanish_hidden_text',
+          severity: 'high',
+          part: partName,
+          textSnippet: snippet,
+          textLength: runText.length,
+        });
+      }
+
+      // 2. White-on-white or matching-background text (`<w:color w:val="FFFFFF"/>`)
+      const colorHex = rPr.match(/<w:color\b[^>]*\bw:val=["']([0-9a-fA-F]{6})["']/i)?.[1]?.toUpperCase() || null;
+      if (colorHex) {
+        const fg = parseHexRgb(colorHex);
+        const rBgHex = rPr.match(/<w:shd\b[^>]*\bw:fill=["']([0-9a-fA-F]{6})["']/i)?.[1]?.toUpperCase() || pBgHex || 'FFFFFF';
+        const bg = parseHexRgb(rBgHex) || { r: 255, g: 255, b: 255 };
+        if (fg) {
+          const maxDiff = Math.max(Math.abs(fg.r - bg.r), Math.abs(fg.g - bg.g), Math.abs(fg.b - bg.b));
+          const whiteOnWhite = rBgHex === 'FFFFFF' && fg.r >= 245 && fg.g >= 245 && fg.b >= 245;
+          if (whiteOnWhite || maxDiff <= 15) {
+            findings.push({
+              code: 'INVISIBLE_WHITE_ON_WHITE_TEXT',
+              vector: 'docx_white_on_white_text',
+              severity: 'high',
+              part: partName,
+              colorHex,
+              backgroundHex: rBgHex,
+              textSnippet: snippet,
+              textLength: runText.length,
+            });
+          }
+        }
+      }
+
+      // 3. Sub-legible tiny font (`<w:sz w:val="..."/>` in half-points, <= 1.5 pt -> val <= 3)
+      const szMatch =
+        rPr.match(/<w:sz\b[^>]*\bw:val=["'](\d+(?:\.\d+)?)["']/i) ||
+        rPr.match(/<w:szCs\b[^>]*\bw:val=["'](\d+(?:\.\d+)?)["']/i);
+      if (szMatch) {
+        const halfPts = Number(szMatch[1]);
+        const fontSizePt = halfPts / 2;
+        if (Number.isFinite(fontSizePt) && fontSizePt <= sublegibleThreshold) {
+          findings.push({
+            code: 'INVISIBLE_SUBLEGIBLE_FONT',
+            vector: 'docx_sublegible_font',
+            severity: 'high',
+            part: partName,
+            fontSizePt: Number(fontSizePt.toFixed(3)),
+            textSnippet: snippet,
+            textLength: runText.length,
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
 export function extractDocxForensic(source, buf, options = {}) {
   const { xmlMap, binaryChildren } = readZipXmlMap(buf, options);
   const blocks = [];
@@ -589,6 +753,9 @@ export function extractDocxForensic(source, buf, options = {}) {
       detail: 'Deleted tracked-change text (<w:delText>) stripped before corpus emission.',
     });
   }
+
+  // Detect invisible text channels inside main document XML (white-on-white, w:vanish, tiny w:sz)
+  forensicFindings.push(...detectDocxInvisibleTextRuns(mainXml, 'word/document.xml', options));
 
   // Extract visible paragraphs (stripping <w:delText> & <w:instrText>)
   const cleanMain = mainXml
@@ -618,6 +785,7 @@ export function extractDocxForensic(source, buf, options = {}) {
     if (
       /^word\/(header\d*|footer\d*|comments|footnotes|endnotes)\.xml$/i.test(lower)
     ) {
+      forensicFindings.push(...detectDocxInvisibleTextRuns(xml, partName, options));
       const label = lower.includes('comment')
         ? 'Comments'
         : lower.includes('header')
@@ -1632,15 +1800,51 @@ export const ENTERPRISE_TEXT_EXTENSIONS = new Set([
   '.zip', '.tar', '.tgz', '.gz',
 ]);
 
+const PLAIN_TEXT_ATTACHMENT_RX = /\.(txt|md|csv|tsv|json|html|htm|xml|py|js|ts|java|c|cpp|h|rs|go|sh|typ|tex|bib|svg)$/i;
+const FAIL_CLOSED_GUARD_RX = /ZIP_SLIP_REJECTED|ZIP_BOMB_RATIO_EXCEEDED|ARCHIVE_TOTAL_SIZE_EXCEEDED|ARCHIVE_TOO_MANY_ENTRIES|ARCHIVE_MAX_DEPTH_EXCEEDED|RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED/i;
+
 export function parseEnterpriseBuffer(source, buf, options = {}) {
   const depth = options._depth ?? 0;
-  const maxDepth = options.maxArchiveDepth ?? 2;
+  const maxDepth = options.maxDepth ?? options.maxArchiveDepth ?? 4;
   const maxArchiveRatio = options.maxArchiveRatio ?? 25;
   const maxArchiveEntryBytes = options.maxArchiveEntryBytes ?? 32 * 1024 * 1024;
   const maxArchiveTotalBytes = options.maxArchiveTotalBytes ?? 100 * 1024 * 1024;
   const lower = String(source || '').toLowerCase();
   const baseName = String(source || '').split(/[/\\]/).pop() || '';
   const u8 = buf instanceof Uint8Array ? buf : Buffer.from(buf);
+  const budget = options._budget || {
+    totalBytes: 0,
+    maxTotalBytes: maxArchiveTotalBytes,
+    rootBytes: Math.max(1, u8.byteLength),
+    maxRatio: maxArchiveRatio,
+  };
+
+  const chargeBudget = (byteCount, checkRatio = false) => {
+    budget.totalBytes += byteCount;
+    if (budget.totalBytes > budget.maxTotalBytes) {
+      throw new Error(`ARCHIVE_TOTAL_SIZE_EXCEEDED: Aggregate decompressed bytes exceed ${budget.maxTotalBytes}`);
+    }
+    if (checkRatio && budget.totalBytes > Math.max(256 * 1024, budget.rootBytes * budget.maxRatio)) {
+      throw new Error(`ZIP_BOMB_RATIO_EXCEEDED: Aggregate expansion ratio exceeds ${budget.maxRatio}x`);
+    }
+  };
+
+  const extractPdfChild = (childSource, childBytes, parentSrc) => {
+    const diag = extractPdfDetailed(Buffer.from(childBytes));
+    const pdfBlocks = [];
+    if (diag.lines.length > 0) {
+      const b = makeBlock({
+        source: childSource,
+        modality: 'document',
+        breadcrumb: childSource,
+        text: diag.lines.join('\n'),
+        structRole: 'PROSE',
+        parentSource: parentSrc,
+      });
+      if (b) pdfBlocks.push(b);
+    }
+    return { blocks: pdfBlocks, forensicFindings: diag.forensicFindings || [] };
+  };
 
   // Detect Microsoft Office `~$*` temporary owner lock files (contain Windows username PII!)
   if (baseName.startsWith('~$') && u8.byteLength < 1024) {
@@ -1667,24 +1871,75 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
   }
 
   const recurseAttachments = (result) => {
-    if (!result.attachments || result.attachments.length === 0 || depth >= maxDepth) {
+    if (!result.attachments || result.attachments.length === 0) {
       return result;
+    }
+    if (depth >= maxDepth) {
+      if (options.failOnMaxDepth === true) {
+        throw new Error(`RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED: Nesting depth ${depth} exceeds max ${maxDepth}`);
+      }
+      return {
+        ...result,
+        forensicFindings: [
+          ...result.forensicFindings,
+          {
+            code: 'RECURSIVE_ATTACHMENT_MAX_DEPTH_EXCEEDED',
+            vector: 'recursive_attachment_max_depth_exceeded',
+            depth,
+            maxDepth,
+            skippedCount: result.attachments.length,
+            parentSource: source,
+            detail: `Bounded attachment recursion at depth ${depth} (maxDepth=${maxDepth}).`,
+          },
+        ],
+      };
     }
     const childBlocks = [];
     const childFindings = [];
     for (const att of result.attachments) {
       const childName = `${source}::${att.filename}`;
-      if (isEnterpriseFile(childName) && att.bytes && att.bytes.byteLength > 0) {
+      if (!att.bytes || att.bytes.byteLength === 0) continue;
+
+      if (isEnterpriseFile(childName)) {
+        chargeBudget(att.bytes.byteLength, depth > 0);
         try {
           const sub = parseEnterpriseBuffer(childName, att.bytes, {
             ...options,
             parentSource: source,
             _depth: depth + 1,
+            _budget: budget,
           });
           childBlocks.push(...sub.blocks);
           childFindings.push(...sub.forensicFindings);
         } catch (err) {
+          if (FAIL_CLOSED_GUARD_RX.test(String(err?.message || ''))) {
+            throw err;
+          }
           childFindings.push({ vector: 'attachment_parse_error', child: childName, error: err.message });
+        }
+      } else if (/\.pdf$/i.test(childName)) {
+        chargeBudget(att.bytes.byteLength, depth > 0);
+        try {
+          const pdfRes = extractPdfChild(childName, att.bytes, source);
+          childBlocks.push(...pdfRes.blocks);
+          childFindings.push(...pdfRes.forensicFindings);
+        } catch (err) {
+          childFindings.push({ vector: 'attachment_parse_error', child: childName, error: err.message });
+        }
+      } else if (PLAIN_TEXT_ATTACHMENT_RX.test(childName) && (depth > 0 || options.scanTextAttachments === true)) {
+        chargeBudget(att.bytes.byteLength, depth > 0);
+        const txt = UTF8_DEC.decode(att.bytes).trim();
+        if (txt) {
+          const b = makeBlock({
+            source: childName,
+            modality: 'document',
+            breadcrumb: childName,
+            text: `[Attachment: ${att.filename}]\n${txt}`,
+            structRole: 'PROSE',
+            parentSource: source,
+            forensicSource: att.filename,
+          });
+          if (b) childBlocks.push(b);
         }
       }
     }
@@ -1719,6 +1974,7 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
       if (totalBytes > maxArchiveTotalBytes) {
         throw new Error(`ARCHIVE_TOTAL_SIZE_EXCEEDED: Aggregate decompressed bytes exceed ${maxArchiveTotalBytes}`);
       }
+      chargeBudget(childBytes.byteLength, true);
       const childSource = `${source}::${entry.name}`;
       childFiles.push({ source: childSource, bytes: childBytes });
       if (isEnterpriseFile(childSource)) {
@@ -1726,12 +1982,17 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
           ...options,
           parentSource: source,
           _depth: depth + 1,
+          _budget: budget,
         });
         blocks.push(...sub.blocks);
         forensicFindings.push(...sub.forensicFindings);
+      } else if (/\.pdf$/i.test(childSource)) {
+        const pdfRes = extractPdfChild(childSource, childBytes, source);
+        blocks.push(...pdfRes.blocks);
+        forensicFindings.push(...pdfRes.forensicFindings);
       } else if (/\.(exe|dll|msi|bat|cmd|ps1|scr|com)$/i.test(childSource)) {
         forensicFindings.push({ vector: 'zip_executable_binary_skipped', child: entry.name, bytes: childBytes.byteLength });
-      } else if (/\.(txt|md|csv|tsv|json|html|htm|xml|py|js|ts|java|c|cpp|h|rs|go|sh|typ|tex|bib|svg)$/i.test(childSource)) {
+      } else if (PLAIN_TEXT_ATTACHMENT_RX.test(childSource)) {
         const txt = UTF8_DEC.decode(childBytes).trim();
         if (txt) {
           const b = makeBlock({
@@ -1763,6 +2024,7 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
     const childFiles = [];
     for (const entry of entries) {
       if (entry.isDir) continue;
+      chargeBudget(entry.bytes.byteLength, true);
       const childSource = `${source}::${entry.name}`;
       childFiles.push({ source: childSource, bytes: entry.bytes });
       if (isEnterpriseFile(childSource)) {
@@ -1770,12 +2032,17 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
           ...options,
           parentSource: source,
           _depth: depth + 1,
+          _budget: budget,
         });
         blocks.push(...sub.blocks);
         forensicFindings.push(...sub.forensicFindings);
+      } else if (/\.pdf$/i.test(childSource)) {
+        const pdfRes = extractPdfChild(childSource, entry.bytes, source);
+        blocks.push(...pdfRes.blocks);
+        forensicFindings.push(...pdfRes.forensicFindings);
       } else if (/\.(exe|dll|msi|bat|cmd|ps1|scr|com)$/i.test(childSource)) {
-        forensicFindings.push({ vector: 'zip_executable_binary_skipped', child: entry.name, bytes: childBytes.byteLength });
-      } else if (/\.(txt|md|csv|tsv|json|html|htm|xml|py|js|ts|java|c|cpp|h|rs|go|sh|typ|tex|bib|svg)$/i.test(childSource)) {
+        forensicFindings.push({ vector: 'zip_executable_binary_skipped', child: entry.name, bytes: entry.bytes.byteLength });
+      } else if (PLAIN_TEXT_ATTACHMENT_RX.test(childSource)) {
         const txt = UTF8_DEC.decode(entry.bytes).trim();
         if (txt) {
           const b = makeBlock({
@@ -1793,9 +2060,10 @@ export function parseEnterpriseBuffer(source, buf, options = {}) {
     return { source, modality: 'document', blocks, childFiles, attachments: [], forensicFindings };
   }
 
-  if (lower.endsWith('.eml')) return recurseAttachments(parseEmlBuffer(source, u8, options));
-  if (lower.endsWith('.mbox')) return recurseAttachments(parseMboxBuffer(source, u8, options));
-  if (lower.endsWith('.msg')) return recurseAttachments(parseMsgBuffer(source, u8, options));
+  const nestedOpts = { ...options, _depth: depth, maxDepth, _budget: budget };
+  if (lower.endsWith('.eml')) return recurseAttachments(parseEmlBuffer(source, u8, nestedOpts));
+  if (lower.endsWith('.mbox')) return recurseAttachments(parseMboxBuffer(source, u8, nestedOpts));
+  if (lower.endsWith('.msg')) return recurseAttachments(parseMsgBuffer(source, u8, nestedOpts));
   if (lower.endsWith('.vcf')) return parseVcfContacts(source, UTF8_DEC.decode(u8), options);
   if (lower.endsWith('.docx') || lower.endsWith('.docm')) return recurseAttachments(extractDocxForensic(source, u8, options));
   if (lower.endsWith('.pptx') || lower.endsWith('.pptm')) return recurseAttachments(extractPptxStructured(source, u8, options));

@@ -19,7 +19,7 @@ import {
 } from './ocr-engine.js';
 import { createTokenizer, extractFeatureRow, maskValue, scanRecordsForPII, maskPiiDual, AuditChain, computeNodeHash } from './clean-and-tokenize.js';
 import { trainGatekeeper, calibrateGatekeeper, decideGatekeeper, binomCdf } from './gatekeeper.js';
-import { extractPdfDetailed } from './pdf-parser.js';
+import { extractPdfDetailed, verifyPdfRedactionIrreversibility, redactPdfBuffer } from './pdf-parser.js';
 import { isHtmlDocumentBuffer, isPdfDocumentBuffer } from './document-format.js';
 import { extractDocxText, fetchSafeUrlResponse, stripHtmlBoilerplate } from './ingestor.js';
 import { loadCleanWasmSync } from './clean-wasm.js';
@@ -39,7 +39,7 @@ import {
 } from './graph-sft-builder.js';
 import { isEnterpriseFile, parseEnterpriseBuffer } from './enterprise-parsers.js';
 
-export { extractPdfDetailed } from './pdf-parser.js';
+export { extractPdfDetailed, verifyPdfRedactionIrreversibility, redactPdfBuffer } from './pdf-parser.js';
 
 function resolveDefaultPmcPaths() {
   const envDir = process.env.VERSIEVE_PAPERS_DIR ? path.resolve(process.env.VERSIEVE_PAPERS_DIR) : null;
@@ -285,6 +285,21 @@ export function generateResearchPdfAndImage(options = {}) {
   });
   const redactedPngBuffer = encodePNG(docImage.width, docImage.height, redactedRgb);
 
+  // Irreversibly redacted PDF (truly scrubs underlying text streams + runs mandatory post-redaction verification pass)
+  const pdfRedactionSpans = specs
+    .filter((s) => s.routingLabel === 'quarantine_pii' && s.piiVal)
+    .map((s) => ({
+      value: s.piiVal,
+      type: s.piiType || 'sensitive',
+      replacement: maskValue(s.piiVal, s.piiType || 'sensitive', 'token'),
+    }));
+  const {
+    redactedPdfBuffer,
+    verification: pdfRedactionVerification,
+  } = redactPdfBuffer(pdfBuffer, pdfRedactionSpans, {
+    throwOnLeak: true,
+  });
+
   // Bad Scan degraded facsimile (skew, noise, block quantization)
   const badDegraded = applyScanDegradations(docImage.rgb, docImage.width, docImage.height, {
     seed: options.badScanSeed || 99,
@@ -297,6 +312,8 @@ export function generateResearchPdfAndImage(options = {}) {
 
   return {
     pdfBuffer,
+    redactedPdfBuffer,
+    pdfRedactionVerification,
     pngBuffer,
     redactedPngBuffer,
     badScanPngBuffer,
@@ -304,6 +321,53 @@ export function generateResearchPdfAndImage(options = {}) {
     badScanDoc,
     sourceLines: specs
   };
+}
+
+/**
+ * End-to-end PDF sanitization helper: extracts born-digital + hidden-channel text,
+ * discovers PII spans (plus any caller-supplied extraSpans), emits a genuinely
+ * scrubbed single-revision PDF buffer, and executes the mandatory post-redaction
+ * irreversibility verification gate (failing closed if any redacted span remains).
+ */
+export function sanitizePdfBuffer(pdfBuffer, options = {}) {
+  const strategy = options.piiStrategy || 'token';
+  const diag = extractPdfDetailed(pdfBuffer);
+  const discoveredSpans = [];
+  const seen = new Set();
+
+  for (const line of diag.lines || []) {
+    for (const item of scanRecordsForPII(line)) {
+      const key = String(item.value || '').toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      discoveredSpans.push({
+        value: item.value,
+        type: item.type,
+        replacement: maskValue(item.value, item.type, strategy),
+      });
+    }
+  }
+
+  for (const extra of options.redactedSpans || []) {
+    const val = typeof extra === 'string' ? extra : (extra?.value ?? extra?.text ?? '');
+    const key = String(val || '').toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    discoveredSpans.push(
+      typeof extra === 'string'
+        ? { value: extra, type: 'custom', replacement: options.replacement ?? '[REDACTED]' }
+        : {
+            value: extra.value ?? extra.text,
+            type: extra.type || 'custom',
+            replacement: extra.replacement || maskValue(extra.value ?? extra.text, extra.type || 'sensitive', strategy),
+          }
+    );
+  }
+
+  return redactPdfBuffer(pdfBuffer, discoveredSpans, {
+    ...options,
+    throwOnLeak: options.throwOnLeak !== false,
+  });
 }
 
 export function redactExcerptWithSha256(rawText, maskedText) {
@@ -1544,6 +1608,8 @@ export async function ingestFromUrlOrPath(inputUrlOrPath, options = {}) {
       isLikelyScanned: diag.isLikelyScanned,
       encrypted: diag.encrypted,
       diagnosticReason: diag.diagnosticReason,
+      revisionCount: diag.revisionCount ?? 1,
+      forensicFindings: diag.forensicFindings || [],
     };
     if (diag.encrypted) {
       throw new Error(`PDF_ENCRYPTED_UNSUPPORTED: ${filename} uses encrypted streams/strings`);
