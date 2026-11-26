@@ -592,5 +592,753 @@
       "3. Finite-sample conditional LTT boundary: at alpha = 0.01, conditional calibration on n_cal,unsafe = 206 (< 299) hits BinomCDF(0) = 0.1261 > 0.05 and fails closed, while joint calibration on n_cal = 301 satisfies BinomCDF(0) = 0.0486 <= 0.05.",
       "4. Honest warm compute boundary: C99 leads process spawn (14.12 ms, 6.08 MB). NumPy wins the shared 1,207x520 logistic (0.2072 ms vs. C99 0.745 ms) at 388.79 ms OS startup. Node's 7.1254 ms warm loop is 64-d VeRA predict, not that logistic."
     ]
+  },
+  "race_2_external_ner_baselines": {
+    "generatedAt": "2026-11-26T08:13:03Z",
+    "dataset": "ai4privacy/pii-masking-200k (exact 500-record Paper A split)",
+    "datasetLicense": "Apache-2.0 (ai4privacy-200k synthetic PII benchmark)",
+    "recordsEvaluated": 500,
+    "structured26DenominatorSpans": 580,
+    "all56DenominatorSpans": 1556,
+    "seed": 42,
+    "bootstraps": 1000,
+    "pythonRuntime": {
+      "executable": "C:\\Python312\\python.exe",
+      "version": "3.12.4",
+      "platform": "Windows-11-10.0.26300-SP0"
+    },
+    "arms": {
+      "versieve_regex_matched_protocol": {
+        "detector": "Versieve Format-Validated Regex (scanRecordsForPII)",
+        "license": "Apache-2.0",
+        "runtime": "Node.js v24.13.1",
+        "recordsEvaluated": 500,
+        "seed": 42,
+        "bootstraps": 1000,
+        "structured26": {
+          "tp": 204,
+          "fn": 376,
+          "gtTotal": 580,
+          "spans": "204/580",
+          "valueMatchTp": 180,
+          "valueMatchSpans": "180/580",
+          "valueMatchRecallPct": 31.03,
+          "valueMatchRecallWilson95CI": [
+            27.4,
+            34.91
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            27.24,
+            35.06
+          ],
+          "predTotal": 507,
+          "predTp": 472,
+          "predFp": 35,
+          "recallPct": 35.17,
+          "recallWilson95CI": [
+            31.4,
+            39.14
+          ],
+          "recallBootstrap95CI": [
+            31.46,
+            39.09
+          ],
+          "precisionPct": 93.1,
+          "precisionWilson95CI": [
+            90.55,
+            94.99
+          ],
+          "precisionBootstrap95CI": [
+            90.93,
+            95.21
+          ],
+          "f1Pct": 51.06,
+          "f1Bootstrap95CI": [
+            46.84,
+            55.32
+          ],
+          "precisionDefinition": "Fraction of predicted spans overlapping any ground-truth PII span in privacy_mask (56-tag GT); recall is over the exact 26 structured tags (580 spans).",
+          "strictStructuredOnlyPrecisionPct": 97.32,
+          "strictStructuredOnlyPrecisionWilson95CI": [
+            93.3,
+            98.95
+          ],
+          "strictStructuredOnlyF1Pct": 39.78,
+          "strictStructuredOnlyF1Bootstrap95CI": [
+            35.23,
+            44.47
+          ],
+          "strictStructuredOnlyPredTotal": 149
+        },
+        "contactCardIpv4": {
+          "tp": 112,
+          "fn": 28,
+          "gtTotal": 140,
+          "spans": "112/140",
+          "valueMatchTp": 110,
+          "valueMatchSpans": "110/140",
+          "valueMatchRecallPct": 78.57,
+          "valueMatchRecallWilson95CI": [
+            71.06,
+            84.56
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            71.33,
+            84.8
+          ],
+          "predTotal": 507,
+          "predTp": 472,
+          "predFp": 35,
+          "recallPct": 80,
+          "recallWilson95CI": [
+            72.61,
+            85.78
+          ],
+          "recallBootstrap95CI": [
+            72.85,
+            86.51
+          ],
+          "precisionPct": 93.1,
+          "precisionWilson95CI": [
+            90.55,
+            94.99
+          ],
+          "precisionBootstrap95CI": [
+            90.93,
+            95.21
+          ],
+          "f1Pct": 86.05,
+          "f1Bootstrap95CI": [
+            81.89,
+            89.92
+          ]
+        },
+        "targeted8": {
+          "tp": 169,
+          "fn": 84,
+          "gtTotal": 253,
+          "spans": "169/253",
+          "valueMatchTp": 159,
+          "valueMatchSpans": "159/253",
+          "valueMatchRecallPct": 62.85,
+          "valueMatchRecallWilson95CI": [
+            56.74,
+            68.57
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            56.91,
+            68.38
+          ],
+          "predTotal": 507,
+          "predTp": 472,
+          "predFp": 35,
+          "recallPct": 66.8,
+          "recallWilson95CI": [
+            60.78,
+            72.31
+          ],
+          "recallBootstrap95CI": [
+            60.53,
+            72.44
+          ],
+          "precisionPct": 93.1,
+          "precisionWilson95CI": [
+            90.55,
+            94.99
+          ],
+          "precisionBootstrap95CI": [
+            90.93,
+            95.21
+          ],
+          "f1Pct": 77.78,
+          "f1Bootstrap95CI": [
+            73.42,
+            81.69
+          ]
+        },
+        "bareNames": {
+          "tp": 118,
+          "fn": 120,
+          "gtTotal": 238,
+          "spans": "118/238",
+          "valueMatchTp": 118,
+          "valueMatchSpans": "118/238",
+          "valueMatchRecallPct": 49.58,
+          "valueMatchRecallWilson95CI": [
+            43.29,
+            55.89
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            42.73,
+            56.36
+          ],
+          "predTotal": 507,
+          "predTp": 472,
+          "predFp": 35,
+          "recallPct": 49.58,
+          "recallWilson95CI": [
+            43.29,
+            55.89
+          ],
+          "recallBootstrap95CI": [
+            42.58,
+            56.14
+          ],
+          "precisionPct": 93.1,
+          "precisionWilson95CI": [
+            90.55,
+            94.99
+          ],
+          "precisionBootstrap95CI": [
+            90.93,
+            95.21
+          ],
+          "f1Pct": 64.7,
+          "f1Bootstrap95CI": [
+            58.42,
+            70.39
+          ]
+        },
+        "all56Tags": {
+          "tp": 522,
+          "fn": 1034,
+          "gtTotal": 1556,
+          "spans": "522/1556",
+          "valueMatchTp": 468,
+          "valueMatchSpans": "468/1556",
+          "valueMatchRecallPct": 30.08,
+          "valueMatchRecallWilson95CI": [
+            27.85,
+            32.4
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            27.73,
+            32.51
+          ],
+          "predTotal": 507,
+          "predTp": 472,
+          "predFp": 35,
+          "recallPct": 33.55,
+          "recallWilson95CI": [
+            31.24,
+            35.93
+          ],
+          "recallBootstrap95CI": [
+            31.1,
+            35.9
+          ],
+          "precisionPct": 93.1,
+          "precisionWilson95CI": [
+            90.55,
+            94.99
+          ],
+          "precisionBootstrap95CI": [
+            90.93,
+            95.21
+          ],
+          "f1Pct": 49.32,
+          "f1Bootstrap95CI": [
+            46.4,
+            52.19
+          ]
+        }
+      },
+      "presidio_en_core_web_lg": {
+        "detector": "Microsoft Presidio Analyzer (en_core_web_lg)",
+        "modelVersion": "presidio-analyzer 2.2.366 + spacy 3.8.18 + en_core_web_lg 3.8.0",
+        "spacyPipeline": "en_core_web_lg==3.8.0",
+        "packageVersions": {
+          "presidio-analyzer": "2.2.366",
+          "spacy": "3.8.18",
+          "en_core_web_lg": "3.8.0"
+        },
+        "modelSha256": null,
+        "license": "MIT (presidio-analyzer, spaCy, en_core_web_lg)",
+        "scoreThreshold": 0.5,
+        "latencyMs": {
+          "median": 11.82,
+          "p95": 18.79,
+          "total": 6370.36
+        },
+        "recordsEvaluated": 500,
+        "seed": 42,
+        "bootstraps": 1000,
+        "structured26": {
+          "tp": 374,
+          "fn": 206,
+          "gtTotal": 580,
+          "spans": "374/580",
+          "valueMatchTp": 374,
+          "valueMatchSpans": "374/580",
+          "valueMatchRecallPct": 64.48,
+          "valueMatchRecallWilson95CI": [
+            60.5,
+            68.27
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            60.38,
+            68.74
+          ],
+          "predTotal": 794,
+          "predTp": 746,
+          "predFp": 48,
+          "recallPct": 64.48,
+          "recallWilson95CI": [
+            60.5,
+            68.27
+          ],
+          "recallBootstrap95CI": [
+            60.39,
+            68.66
+          ],
+          "precisionPct": 93.95,
+          "precisionWilson95CI": [
+            92.08,
+            95.41
+          ],
+          "precisionBootstrap95CI": [
+            92.11,
+            95.6
+          ],
+          "f1Pct": 76.48,
+          "f1Bootstrap95CI": [
+            73.49,
+            79.44
+          ],
+          "precisionDefinition": "Fraction of predicted spans overlapping any ground-truth PII span in privacy_mask (56-tag GT); recall is over the exact 26 structured tags (580 spans).",
+          "strictStructuredOnlyPrecisionPct": 79.48,
+          "strictStructuredOnlyPrecisionWilson95CI": [
+            75.54,
+            82.92
+          ],
+          "strictStructuredOnlyF1Pct": 70.03,
+          "strictStructuredOnlyF1Bootstrap95CI": [
+            66.73,
+            73.25
+          ],
+          "strictStructuredOnlyPredTotal": 458
+        },
+        "contactCardIpv4": {
+          "tp": 110,
+          "fn": 30,
+          "gtTotal": 140,
+          "spans": "110/140",
+          "valueMatchTp": 110,
+          "valueMatchSpans": "110/140",
+          "valueMatchRecallPct": 78.57,
+          "valueMatchRecallWilson95CI": [
+            71.06,
+            84.56
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            71.74,
+            85.31
+          ],
+          "predTotal": 794,
+          "predTp": 746,
+          "predFp": 48,
+          "recallPct": 78.57,
+          "recallWilson95CI": [
+            71.06,
+            84.56
+          ],
+          "recallBootstrap95CI": [
+            71.94,
+            85.03
+          ],
+          "precisionPct": 93.95,
+          "precisionWilson95CI": [
+            92.08,
+            95.41
+          ],
+          "precisionBootstrap95CI": [
+            92.11,
+            95.6
+          ],
+          "f1Pct": 85.58,
+          "f1Bootstrap95CI": [
+            81.27,
+            89.66
+          ]
+        },
+        "targeted8": {
+          "tp": 212,
+          "fn": 41,
+          "gtTotal": 253,
+          "spans": "212/253",
+          "valueMatchTp": 212,
+          "valueMatchSpans": "212/253",
+          "valueMatchRecallPct": 83.79,
+          "valueMatchRecallWilson95CI": [
+            78.75,
+            87.82
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            79.22,
+            88.24
+          ],
+          "predTotal": 794,
+          "predTp": 746,
+          "predFp": 48,
+          "recallPct": 83.79,
+          "recallWilson95CI": [
+            78.75,
+            87.82
+          ],
+          "recallBootstrap95CI": [
+            79.53,
+            88.16
+          ],
+          "precisionPct": 93.95,
+          "precisionWilson95CI": [
+            92.08,
+            95.41
+          ],
+          "precisionBootstrap95CI": [
+            92.11,
+            95.6
+          ],
+          "f1Pct": 88.58,
+          "f1Bootstrap95CI": [
+            85.69,
+            91.14
+          ]
+        },
+        "bareNames": {
+          "tp": 208,
+          "fn": 30,
+          "gtTotal": 238,
+          "spans": "208/238",
+          "valueMatchTp": 205,
+          "valueMatchSpans": "205/238",
+          "valueMatchRecallPct": 86.13,
+          "valueMatchRecallWilson95CI": [
+            81.17,
+            89.95
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            81.33,
+            90.25
+          ],
+          "predTotal": 794,
+          "predTp": 746,
+          "predFp": 48,
+          "recallPct": 87.39,
+          "recallWilson95CI": [
+            82.58,
+            91.03
+          ],
+          "recallBootstrap95CI": [
+            82.69,
+            92.08
+          ],
+          "precisionPct": 93.95,
+          "precisionWilson95CI": [
+            92.08,
+            95.41
+          ],
+          "precisionBootstrap95CI": [
+            92.11,
+            95.6
+          ],
+          "f1Pct": 90.56,
+          "f1Bootstrap95CI": [
+            87.79,
+            93.07
+          ]
+        },
+        "all56Tags": {
+          "tp": 778,
+          "fn": 778,
+          "gtTotal": 1556,
+          "spans": "778/1556",
+          "valueMatchTp": 776,
+          "valueMatchSpans": "776/1556",
+          "valueMatchRecallPct": 49.87,
+          "valueMatchRecallWilson95CI": [
+            47.39,
+            52.35
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            46.98,
+            52.54
+          ],
+          "predTotal": 794,
+          "predTp": 746,
+          "predFp": 48,
+          "recallPct": 50,
+          "recallWilson95CI": [
+            47.52,
+            52.48
+          ],
+          "recallBootstrap95CI": [
+            47.23,
+            52.85
+          ],
+          "precisionPct": 93.95,
+          "precisionWilson95CI": [
+            92.08,
+            95.41
+          ],
+          "precisionBootstrap95CI": [
+            92.11,
+            95.6
+          ],
+          "f1Pct": 65.27,
+          "f1Bootstrap95CI": [
+            62.77,
+            67.72
+          ]
+        }
+      },
+      "gliner_pii_edge_v1_0_int8": {
+        "detector": "GLiNER-PII-Edge v1.0 (45M INT8 ONNX, CPU)",
+        "modelVersion": "knowledgator/gliner-pii-edge-v1.0 (onnx/model_quint8.onnx)",
+        "spacyPipeline": null,
+        "packageVersions": {
+          "onnxruntime": "1.26.0",
+          "tokenizers": "0.22.2",
+          "numpy": "2.4.3"
+        },
+        "modelSha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4",
+        "license": "Apache-2.0",
+        "scoreThreshold": 0.4,
+        "latencyMs": {
+          "median": 25.18,
+          "p95": 41.23,
+          "total": 13199.7
+        },
+        "recordsEvaluated": 500,
+        "seed": 42,
+        "bootstraps": 1000,
+        "structured26": {
+          "tp": 362,
+          "fn": 218,
+          "gtTotal": 580,
+          "spans": "362/580",
+          "valueMatchTp": 361,
+          "valueMatchSpans": "361/580",
+          "valueMatchRecallPct": 62.24,
+          "valueMatchRecallWilson95CI": [
+            58.23,
+            66.09
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            58.35,
+            66.21
+          ],
+          "predTotal": 996,
+          "predTp": 893,
+          "predFp": 103,
+          "recallPct": 62.41,
+          "recallWilson95CI": [
+            58.4,
+            66.26
+          ],
+          "recallBootstrap95CI": [
+            58.51,
+            66.6
+          ],
+          "precisionPct": 89.66,
+          "precisionWilson95CI": [
+            87.61,
+            91.4
+          ],
+          "precisionBootstrap95CI": [
+            87.75,
+            91.52
+          ],
+          "f1Pct": 73.6,
+          "f1Bootstrap95CI": [
+            70.83,
+            76.45
+          ],
+          "precisionDefinition": "Fraction of predicted spans overlapping any ground-truth PII span in privacy_mask (56-tag GT); recall is over the exact 26 structured tags (580 spans).",
+          "strictStructuredOnlyPrecisionPct": 84.09,
+          "strictStructuredOnlyPrecisionWilson95CI": [
+            79.59,
+            87.75
+          ],
+          "strictStructuredOnlyF1Pct": 58.33,
+          "strictStructuredOnlyF1Bootstrap95CI": [
+            54.61,
+            62.15
+          ],
+          "strictStructuredOnlyPredTotal": 308
+        },
+        "contactCardIpv4": {
+          "tp": 101,
+          "fn": 39,
+          "gtTotal": 140,
+          "spans": "101/140",
+          "valueMatchTp": 100,
+          "valueMatchSpans": "100/140",
+          "valueMatchRecallPct": 71.43,
+          "valueMatchRecallWilson95CI": [
+            63.45,
+            78.26
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            62.99,
+            78.81
+          ],
+          "predTotal": 996,
+          "predTp": 893,
+          "predFp": 103,
+          "recallPct": 72.14,
+          "recallWilson95CI": [
+            64.2,
+            78.9
+          ],
+          "recallBootstrap95CI": [
+            64.96,
+            79.33
+          ],
+          "precisionPct": 89.66,
+          "precisionWilson95CI": [
+            87.61,
+            91.4
+          ],
+          "precisionBootstrap95CI": [
+            87.75,
+            91.52
+          ],
+          "f1Pct": 79.95,
+          "f1Bootstrap95CI": [
+            75.01,
+            84.34
+          ]
+        },
+        "targeted8": {
+          "tp": 194,
+          "fn": 59,
+          "gtTotal": 253,
+          "spans": "194/253",
+          "valueMatchTp": 193,
+          "valueMatchSpans": "193/253",
+          "valueMatchRecallPct": 76.28,
+          "valueMatchRecallWilson95CI": [
+            70.67,
+            81.11
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            70.93,
+            81.36
+          ],
+          "predTotal": 996,
+          "predTp": 893,
+          "predFp": 103,
+          "recallPct": 76.68,
+          "recallWilson95CI": [
+            71.09,
+            81.47
+          ],
+          "recallBootstrap95CI": [
+            71.37,
+            81.56
+          ],
+          "precisionPct": 89.66,
+          "precisionWilson95CI": [
+            87.61,
+            91.4
+          ],
+          "precisionBootstrap95CI": [
+            87.75,
+            91.52
+          ],
+          "f1Pct": 82.66,
+          "f1Bootstrap95CI": [
+            79.51,
+            85.62
+          ]
+        },
+        "bareNames": {
+          "tp": 205,
+          "fn": 33,
+          "gtTotal": 238,
+          "spans": "205/238",
+          "valueMatchTp": 205,
+          "valueMatchSpans": "205/238",
+          "valueMatchRecallPct": 86.13,
+          "valueMatchRecallWilson95CI": [
+            81.17,
+            89.95
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            80.22,
+            90.95
+          ],
+          "predTotal": 996,
+          "predTp": 893,
+          "predFp": 103,
+          "recallPct": 86.13,
+          "recallWilson95CI": [
+            81.17,
+            89.95
+          ],
+          "recallBootstrap95CI": [
+            80.77,
+            91.11
+          ],
+          "precisionPct": 89.66,
+          "precisionWilson95CI": [
+            87.61,
+            91.4
+          ],
+          "precisionBootstrap95CI": [
+            87.75,
+            91.52
+          ],
+          "f1Pct": 87.86,
+          "f1Bootstrap95CI": [
+            84.94,
+            90.6
+          ]
+        },
+        "all56Tags": {
+          "tp": 1001,
+          "fn": 555,
+          "gtTotal": 1556,
+          "spans": "1001/1556",
+          "valueMatchTp": 997,
+          "valueMatchSpans": "997/1556",
+          "valueMatchRecallPct": 64.07,
+          "valueMatchRecallWilson95CI": [
+            61.66,
+            66.42
+          ],
+          "valueMatchRecallBootstrap95CI": [
+            61.59,
+            66.69
+          ],
+          "predTotal": 996,
+          "predTp": 893,
+          "predFp": 103,
+          "recallPct": 64.33,
+          "recallWilson95CI": [
+            61.92,
+            66.67
+          ],
+          "recallBootstrap95CI": [
+            61.74,
+            66.88
+          ],
+          "precisionPct": 89.66,
+          "precisionWilson95CI": [
+            87.61,
+            91.4
+          ],
+          "precisionBootstrap95CI": [
+            87.75,
+            91.52
+          ],
+          "f1Pct": 74.91,
+          "f1Bootstrap95CI": [
+            73.05,
+            76.65
+          ]
+        }
+      }
+    }
   }
 }

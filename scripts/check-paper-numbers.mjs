@@ -1010,5 +1010,61 @@ for (const [name, body] of ALL_DOCS) {
   ok('t7:draws', `$${T7B.methodology.repeatedSubsamplingDraws}$ repeated-subsampling draws`, M);
 }
 
+/* ---------------- T8 (#35): Paper A R5 external NER & TAB shootout ---------------- */
+{
+  const EXT = SC.race_2_external_ner_baselines;
+  checks++;
+  if (!EXT || EXT.recordsEvaluated !== 500 || EXT.structured26DenominatorSpans !== 580 || EXT.seed !== 42 || EXT.bootstraps !== 1000) {
+    fails++;
+    console.error('FAIL [t8:r5.meta] expected 500 records, 580 26-tag spans, seed 42, 1000 bootstraps');
+  }
+  const rxArm = EXT.arms.versieve_regex_matched_protocol;
+  const prArm = EXT.arms.presidio_en_core_web_lg;
+  const glArm = EXT.arms.gliner_pii_edge_v1_0_int8;
+  checks++;
+  if (rxArm.structured26.valueMatchSpans !== A4P.all_structured_spans) {
+    fails++;
+    console.error(`FAIL [t8:r5.valueMatchParity] ${rxArm.structured26.valueMatchSpans} !== ${A4P.all_structured_spans}`);
+  }
+  for (const [tag, arm] of [['rx', rxArm], ['presidio', prArm], ['gliner', glArm]]) {
+    const s26 = arm.structured26;
+    const bn = arm.bareNames;
+    const a56 = arm.all56Tags;
+    ok(`t8:${tag}.rec26`, P(f2(s26.recallPct)), E);
+    ok(`t8:${tag}.rec26Spans`, s26.spans, E);
+    ok(`t8:${tag}.rec26CI`, `[$${f2(s26.recallWilson95CI[0])}, ${f2(s26.recallWilson95CI[1])}$]`, E);
+    ok(`t8:${tag}.prec`, P(f2(s26.precisionPct)), E);
+    ok(`t8:${tag}.precCI`, `[$${f2(s26.precisionWilson95CI[0])}, ${f2(s26.precisionWilson95CI[1])}$]`, E);
+    ok(`t8:${tag}.f1`, P(f2(s26.f1Pct)), E);
+    ok(`t8:${tag}.bare`, P(f2(bn.recallPct)), E);
+    ok(`t8:${tag}.bareSpans`, bn.spans, E);
+    ok(`t8:${tag}.all56Rec`, P(f2(a56.recallPct)), E);
+  }
+  ok('t8:presidio.f1CI', `[$${f2(prArm.structured26.f1Bootstrap95CI[0])}\\%, ${f2(prArm.structured26.f1Bootstrap95CI[1])}\\%$]`, E);
+  ok('t8:gliner.f1CI', `[$${f2(glArm.structured26.f1Bootstrap95CI[0])}\\%, ${f2(glArm.structured26.f1Bootstrap95CI[1])}\\%$]`, E);
+  ok('t8:presidio.medMs', f2(prArm.latencyMs.median), E);
+  ok('t8:gliner.medMs', f2(glArm.latencyMs.median), E);
+  ok('t8:presidio.ver', prArm.packageVersions['presidio-analyzer'], E);
+  ok('t8:spacy.ver', prArm.packageVersions.spacy, E);
+  ok('t8:spacyModel.ver', prArm.packageVersions.en_core_web_lg, E);
+  ok('t8:onnx.ver', glArm.packageVersions.onnxruntime, E);
+
+  const T8_TAB = j('t8-gate-over-detector-and-stitched-shootout.json');
+  checks++;
+  if (
+    T8_TAB.seed !== 42 ||
+    T8_TAB.bootstraps !== 1000 ||
+    T8_TAB.splits.calClusters !== 67 ||
+    T8_TAB.splits.testClusters !== 127 ||
+    T8_TAB.splits.testParagraphs !== 1999 ||
+    !T8_TAB.environment.models.glinerEdge.onnxSha256 ||
+    !Array.isArray(T8_TAB.stitchedBaselineShootout) ||
+    T8_TAB.stitchedBaselineShootout.length < 2
+  ) {
+    fails++;
+    console.error('FAIL [t8:tabShootout] t8-gate-over-detector-and-stitched-shootout.json missing required provenance or splits');
+  }
+}
+
 console.log(`\n${checks} paper-number checks, ${fails} failure${fails === 1 ? '' : 's'}`);
 process.exit(fails ? 1 : 0);

@@ -181,7 +181,29 @@ Regular-expression PII scrubbers face a sharp precision--recall trade-off on sci
 
 Versieve addresses precision in two ways. First, credit-card and financial identifier rules enforce Luhn checksum and Issuer Identification Number (IIN) validation so that arbitrary 16-digit scientific constants or grant IDs are not masked. Second, a pre-committed $334$-word exclusion lexicon (\texttt{EXCLUDED\_NAME\_WORDS}) suppresses common capitalized non-person phrases. On the held-out blind half of PubMedQA ($250$ clinical abstracts, $63{,}739$ words), the exclusion lexicon cuts false-positive Title-Case matches from $348$ ($5.46$ per $1{,}000$ words; $45.2\%$ of documents) down to $128$ ($2.01$ per $1{,}000$ words; $26.0\%$ of documents), a $2.72\times$ reduction (Figure~\ref{fig:pii}, Panel~B). On the development half ($62{,}620$ words), hits similarly decline from $5.29$ to $1.66$ per $1{,}000$ words ($44.4\% \to 22.8\%$ of documents), and false alarms on a five-item technical lookalike suite drop from $4/5$ to $1/5$.
 
-At the same time, evaluating the validated scanner against ground-truth spans on $500$ \texttt{ai4privacy-200k} records exposes a clear recall ceiling (Figure~\ref{fig:pii}, Panel~A): recall is $78.6\%$ ($110/140$) on contact, card, and IPv4 spans, $62.8\%$ ($159/253$) across the eight targeted identifier patterns, $49.6\%$ ($118/238$) on bare unprefixed person names, and $31.0\%$ ($180/580$) across all $26$ structured privacy tags (which include free-form addresses, employers, and usernames). Because deterministic regex alone cannot guarantee zero leakage on unstructured prose, Versieve treats regex as a fast first-pass redactor and places a statistically calibrated gatekeeper above it.
+At the same time, evaluating the validated scanner against ground-truth spans on $500$ \texttt{ai4privacy-200k} records exposes a clear recall ceiling (Figure~\ref{fig:pii}, Panel~A): recall is $78.6\%$ ($110/140$) on contact, card, and IPv4 spans, $62.8\%$ ($159/253$) across the eight targeted identifier patterns, $49.6\%$ ($118/238$) on bare unprefixed person names, and $31.0\%$ ($180/580$) across all $26$ structured privacy tags (which include free-form addresses, employers, and usernames).
+
+\begin{table}[t]
+\caption{External NER baselines on the identical $500$ \texttt{ai4privacy-200k} records ($580$ structured $26$-tag spans; $238$ bare-name spans; character-offset overlap with Wilson $95\%$ intervals; seed-$42$, $1{,}000$-resample bootstrap F1). Under the exact value-substring rule of Figure~\ref{fig:pii}, Versieve regex recalls $31.0\%$ ($180/580$).}
+\label{tab:external-ner}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Detector} & \textbf{26-Tag Rec.\ [95\% CI]} & \textbf{PII Prec.\ [95\% CI]} & \textbf{26-Tag F1} & \textbf{Bare Name} & \textbf{Med.\ ms} \\
+\midrule
+Versieve Regex & $35.17\%$ [$31.40, 39.14$] & $93.10\%$ [$90.55, 94.99$] & $51.06\%$ & $49.58\%$ ($118/238$) & -- \\
+Presidio (\texttt{en\_core\_web\_lg}) & $\mathbf{64.48\%}$ [$60.50, 68.27$] & $\mathbf{93.95\%}$ [$92.08, 95.41$] & $\mathbf{76.48\%}$ & $\mathbf{87.39\%}$ ($208/238$) & $11.82$ \\
+GLiNER-Edge v1.0 (INT8) & $62.41\%$ [$58.40, 66.26$] & $89.66\%$ [$87.61, 91.40$] & $73.60\%$ & $86.13\%$ ($205/238$) & $25.18$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+To separate the regex limit from task difficulty on the identical $500$ records and $580$ structured spans, Table~\ref{tab:external-ner} benchmarks Microsoft Presidio (\texttt{presidio-analyzer}~2.2.366 with \texttt{spacy}~3.8.18 and \texttt{en\_core\_web\_lg}~3.8.0 at threshold $0.50$) and local Apache-2.0 \texttt{knowledgator/gliner-pii-edge-v1.0} ($45.8$\,MB INT8 ONNX via \texttt{onnxruntime}~1.26.0 at threshold $0.40$). Under uniform character-offset overlap, 26-tag recall rises from $35.17\%$ ($204/580$) for Versieve regex to $64.48\%$ ($374/580$, bootstrap F1 $76.48\%$ [$73.49\%, 79.44\%$]) for Presidio and $62.41\%$ ($362/580$, bootstrap F1 $73.60\%$ [$70.83\%, 76.45\%$]) for GLiNER-Edge, while bare-name recall jumps from $49.58\%$ ($118/238$) to $87.39\%$ ($208/238$) and $86.13\%$ ($205/238$), and full 56-tag recall ($1{,}556$ spans) reaches $50.00\%$ ($778/1{,}556$) for Presidio and $64.33\%$ ($1{,}001/1{,}556$) for GLiNER-Edge versus $33.55\%$ ($522/1{,}556$) for regex. Because neither deterministic regex nor neural span taggers achieve zero residual misses on unstructured prose, Versieve treats span detection as a pluggable first-pass redactor and places a statistically calibrated gatekeeper above it.
 
 \section{Fail-Closed Conformal Gatekeeping}
 \label{sec:ltt}
@@ -349,7 +371,7 @@ Our experiments highlight five concrete boundaries that govern production deploy
     \item \textbf{Certificate scope:} The unsafe and safe labels used for risk control are scanner-derived except where a dataset supplies ground-truth PII spans, so a certificate means agreement with the scanner family, not independent PII truth. The $31.0\%$ all-tag recall measures the scanner against \texttt{ai4privacy}'s human labels and bounds what the gate can catch.
     \item \textbf{Exchangeability assumption:} Learn-Then-Test guarantees assume that calibration and deployment shards are exchangeable; domain shifts require recalibration on fresh labeled samples.
     \item \textbf{Geometric survival vs.\ neural OCR accuracy:} The $97.38\%$ FUNSD result measures geometric box legibility under 2D tiling, not end-to-end character error rate from a neural OCR backbone.
-    \item \textbf{Deterministic regex recall ceiling:} Format-validated regex misses roughly half of bare person names ($49.6\%$) and over-masks certain Title-Case legal phrases, a cost quantified in the companion training study \citep{ardiyansyah2026localtraining}. Adding a compact Apache-2.0 local neural span tagger is a clear next step.
+    \item \textbf{Deterministic regex recall ceiling:} Format-validated regex misses roughly half of bare person names ($49.6\%$) and over-masks certain Title-Case legal phrases, a cost quantified in the companion training study \citep{ardiyansyah2026localtraining}. External NER taggers on the same $500$ \texttt{ai4privacy-200k} records raise 26-tag span-overlap recall to $64.48\%$ (Presidio \texttt{en\_core\_web\_lg}) and $62.41\%$ (GLiNER-Edge INT8 ONNX), confirming that most of the gap is regex-specific while over one third of structured spans still require conformal gatekeeping.
 \end{itemize}
 
 \section{Conclusion}

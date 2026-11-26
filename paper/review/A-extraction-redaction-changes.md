@@ -66,7 +66,6 @@ No measured number was corrected. All printed numbers in the retained sections w
 
 ## Unresolved (needs new experiments or facts not in the artifacts)
 
-- External NER baseline for the recall-ceiling claim (review R5, MAJOR): a Presidio/GLiNER row on the same 500 `ai4privacy` records requires a new run; not available in the artifacts. The ceiling claim is already scoped to "format-validated regex" and the neural-tagger limitation is kept.
 - Corpus-scale ingestion throughput run (review R13, MAJOR): the startup/dedup micro-benchmarks remain fixture-scale; a 1,207-doc throughput number needs a new run.
 - Verified-vs-asserted provenance table and salt/vault-compromise paragraph (review R14, MAJOR): needs an `strace`/capture demonstration to move "zero-egress" from asserted to verified; only the abstract-level softening ("no network egress by default") was in scope here.
 - Abstention-workload characterization for human reviewers (review R15, MAJOR): what fraction of the corpus lands in `ABSTAIN` at the operating points is in Table 3 (up to 40.8%), but triage workload/latency needs deployment data.
@@ -84,3 +83,12 @@ The artifact paragraph now states the repository commit `1e35603`. The remaining
 - Reconciled Node.js portable CI test count in Appendix A from `100/100` (`94` core + `6` MCP) to `181` tests across `31` portable CI test files (`175` core + `6` MCP, verified directly from `package.json` `test:ci`).
 - Added primary-source verified prior-art citations in Section 1 and `.bib`: `lukas2023pii` (`arXiv:2302.00539`), `staab2024beyond` (`arXiv:2310.07298`), `abbasiyadkori2024abstention` (`arXiv:2405.01563`), `bhattacharjee2026curatorkit` (`arXiv:2606.21631`), `redakto2026incognito` (`arXiv:2608.18260`), and `cpa2026auditing` (`arXiv:2609.21340`). Clarified zero-egress scope (user bytes vs. offline-cached local weights).
 - All previously measured benchmark numbers remain unchanged.
+
+## T8 External NER Baseline Pass (Issue #35 / Review R5, 2026-11-26)
+
+- Closed review R5 (`docs/2026-11-25-experiment-gap-handoff.md` §1) by benchmarking Microsoft Presidio (`presidio-analyzer` `2.2.366`, `spacy` `3.8.18`, `en_core_web_lg` `3.8.0`, threshold `0.50`) and local Apache-2.0 `knowledgator/gliner-pii-edge-v1.0` (`onnx/model_quint8.onnx`, `45,820,894 B`, SHA-256 `988acb03456b26e2...`, `onnxruntime` `1.26.0`, threshold `0.40`) on the identical `500` `ai4privacy-200k` records and `580` evaluated 26-tag spans via `scripts/run-scale-benchmark.mjs --external-only --presidio --gliner` (appended to `results/scale-and-paradigm-benchmark.json` under `race_2_external_ner_baselines` with seed `42` and `1,000` bootstrap resamples).
+- Added Table `tab:external-ner` and accompanying prose in Section 4 (`sec:pii`) plus updated the regex recall-ceiling bullet in Section 7 (`sec:limitations`):
+  - Versieve format-validated regex: `35.17%` (`204/580`, Wilson 95% CI `[31.40%, 39.14%]`; `31.0%` / `180/580` under the exact value-substring rule kept verbatim), PII span precision `93.10%` (`[90.55%, 94.99%]`), 26-tag F1 `51.06%`, bare-name recall `49.58%` (`118/238`).
+  - Microsoft Presidio (`en_core_web_lg`): `64.48%` (`374/580`, `[60.50%, 68.27%]`), PII span precision `93.95%` (`[92.08%, 95.41%]`), 26-tag F1 `76.48%` (`[73.49%, 79.44%]`), bare-name recall `87.39%` (`208/238`), all-56-tag recall `50.00%` (`778/1,556`), median `11.82` ms/record.
+  - GLiNER-PII-Edge v1.0 (INT8 ONNX): `62.41%` (`362/580`, `[58.40%, 66.26%]`), PII span precision `89.66%` (`[87.61%, 91.40%]`), 26-tag F1 `73.60%` (`[70.83%, 76.45%]`), bare-name recall `86.13%` (`205/238`), all-56-tag recall `64.33%` (`1,001/1,556`), median `25.18` ms/record.
+- Verified clean PDF compilation (`9` pages, `0` undefined references/citations, `0` overfull boxes) and enforced all new cells in `scripts/check-paper-numbers.mjs`.
