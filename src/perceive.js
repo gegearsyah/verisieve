@@ -35,8 +35,13 @@ import {
   SaltedPseudonymVault,
 } from './graph-wasm.js';
 import { parseEnterpriseBuffer } from './enterprise-parsers.js';
-import { redactEnterpriseText } from './secret-scanner.js';
-import { compileTermList, matchTermKeysInText } from './term-matcher.js';
+import { redactEnterpriseText, scanEnterprisePiiAndSecrets } from './secret-scanner.js';
+import {
+  compileTermList,
+  matchTermKeysInText,
+  findTermMatches,
+  isSpanWhitelisted,
+} from './term-matcher.js';
 import { redactAudioCall } from './audio-redactor.js';
 import { redactVideoKeyframes } from './video-redactor.js';
 import { extractPdfDetailed } from './pdf-parser.js';
@@ -1178,6 +1183,1038 @@ export function buildOmnimodalSceneTimeline(blocks = []) {
   return scenes;
 }
 
+// ---------------------------------------------------------------------------
+// Post-Redaction Shadow Audit & Per-Run Residual Leakage Report
+// ---------------------------------------------------------------------------
+
+const VAULT_PLACEHOLDER_GLOBAL_RX = /<(?:PII|SECRET):[A-Za-z0-9_]+>/g;
+const VAULT_PLACEHOLDER_EXACT_RX = /^<(?:PII|SECRET):[A-Za-z0-9_]+>$/;
+const IMAGE_REDACTED_ONLY_RX = /^\[IMAGE_REDACTED:[^\]]*\]$/;
+
+function findVaultPlaceholderRanges(text) {
+  const s = String(text ?? '');
+  const ranges = [];
+  VAULT_PLACEHOLDER_GLOBAL_RX.lastIndex = 0;
+  let m;
+  while ((m = VAULT_PLACEHOLDER_GLOBAL_RX.exec(s)) !== null) {
+    ranges.push({ start: m.index, end: m.index + m[0].length });
+  }
+  return ranges;
+}
+
+function makeMaskedPreview(rawValue) {
+  const s = String(rawValue ?? '');
+  if (s.length <= 4) return '***';
+  if (s.length <= 8) return `${s.slice(0, 1)}***${s.slice(-1)}`;
+  return `${s.slice(0, 2)}***${s.slice(-2)}`;
+}
+
+function normalizeAuditEntityClass(type) {
+  const u = String(type || 'CUSTOM').trim().toUpperCase();
+  if (u === 'NAME_LIKELY' || u === 'PER') return 'PERSON';
+  if (u === 'ADDRESS_LIKELY' || u === 'STREET_ADDRESS') return 'ADDRESS';
+  if (u === 'PHONE_NUMBER') return 'PHONE';
+  return u;
+}
+
+function isStrictOrComplianceMode(options = {}) {
+  const mode = typeof options.mode === 'string' ? options.mode.trim().toLowerCase() : '';
+  return (
+    mode === 'strict' ||
+    mode === 'compliance' ||
+    options.strict === true ||
+    options.compliance === true
+  );
+}
+
+function resolveShadowAuditConfig(options = {}) {
+  const opt = options.shadowAudit;
+  if (opt === false) return { enabled: false };
+  if (opt && typeof opt === 'object') {
+    if (opt.enabled === false) return { enabled: false };
+    return {
+      enabled: true,
+      strict: Boolean(opt.strict ?? isStrictOrComplianceMode(options)),
+      allowlistedValues: opt.allowlistedValues ?? opt.allowlist ?? [],
+      detectors: opt.detectors ?? opt.shadowDetectors ?? null,
+      detectorAdapters: opt.detectorAdapters ?? null,
+      includeRawValues: Boolean(opt.includeRawValues),
+      minScore: typeof opt.minScore === 'number' && Number.isFinite(opt.minScore) ? opt.minScore : 0,
+      throwOnResidual: Boolean(opt.throwOnResidual),
+    };
+  }
+  if (opt === true || isStrictOrComplianceMode(options)) {
+    return {
+      enabled: true,
+      strict: isStrictOrComplianceMode(options),
+      allowlistedValues: [],
+      detectors: null,
+      detectorAdapters: null,
+      includeRawValues: false,
+      minScore: 0,
+      throwOnResidual: false,
+    };
+  }
+  return { enabled: false };
+}
+
+function resolveNumGuardConfig(options = {}) {
+  const opt = options.numGuard;
+  if (opt === false) return { enabled: false };
+  if (opt && typeof opt === 'object') {
+    if (opt.enabled === false) return { enabled: false };
+    return {
+      enabled: true,
+      excludeEntityTypes: Array.isArray(opt.excludeEntityTypes) ? opt.excludeEntityTypes : null,
+    };
+  }
+  if (opt === true || isStrictOrComplianceMode(options)) {
+    return {
+      enabled: true,
+      excludeEntityTypes: null,
+    };
+  }
+  return { enabled: false };
+}
+
+function normalizeAuditInputBlocks(redactedBlocks) {
+  const list = Array.isArray(redactedBlocks)
+    ? redactedBlocks
+    : redactedBlocks && typeof redactedBlocks === 'object' && Array.isArray(redactedBlocks.blocks)
+      ? redactedBlocks.blocks
+      : redactedBlocks !== undefined && redactedBlocks !== null
+        ? [redactedBlocks]
+        : [];
+  return list.map((item, idx) => {
+    if (typeof item === 'string') {
+      return {
+        blockId: `b${idx + 1}`,
+        source: 'document',
+        modality: 'document',
+        structRole: 'PARAGRAPH',
+        text: item,
+        originalText: null,
+        exemptSpans: [],
+        allowlistedValues: [],
+      };
+    }
+    const text = String(item?.maskedText ?? item?.text ?? '');
+    const originalText = typeof item?.originalText === 'string' ? item.originalText : null;
+    const exemptSpans = Array.isArray(item?.exemptSpans) ? item.exemptSpans : [];
+    const allowlistedValues = Array.isArray(item?.allowlistedValues) ? item.allowlistedValues : [];
+    return {
+      blockId: String(item?.blockId || item?.id || `b${idx + 1}`),
+      source: String(item?.source || 'document'),
+      modality: String(item?.modality || 'document'),
+      structRole: String(item?.structRole || 'PARAGRAPH'),
+      text,
+      originalText,
+      exemptSpans,
+      allowlistedValues,
+    };
+  });
+}
+
+function sortCountMap(counts) {
+  const out = {};
+  for (const key of Object.keys(counts).sort()) {
+    out[key] = counts[key];
+  }
+  return out;
+}
+
+/**
+ * Pure post-redaction shadow audit helper.
+ * Re-runs active Stage 3A detectors (WASM secrets/PII, HIPAA pack, regex PII, optional blacklist)
+ * AND any registered Stage 3B detector adapters over emitted redacted outputs.
+ *
+ * Distinguishes:
+ * - `newlyDiscoveredResidualSpans` (real residual leaks)
+ * - `allowlistedRetainedSpans` (intentionally retained whitelist/allowlist/human-exempted spans)
+ * - `status`: `'pass_zero_residual'` | `'fail_residual_detected'`
+ */
+export async function runShadowAudit(redactedBlocks, options = {}) {
+  const blocks = normalizeAuditInputBlocks(redactedBlocks);
+  const strict = Boolean(options.strict);
+  const includeRawValues = Boolean(options.includeRawValues);
+  const minScore = typeof options.minScore === 'number' && Number.isFinite(options.minScore) ? options.minScore : 0;
+
+  // Gather validated Stage 3B text detector adapters (merging pre-resolved adapters if provided)
+  const resolvedAdapterById = new Map();
+  if (Array.isArray(options._resolvedTextAdapters)) {
+    for (const a of options._resolvedTextAdapters) {
+      if (a && a.kinds?.includes('text')) resolvedAdapterById.set(a.id, a);
+    }
+  }
+  const extraAdapters = await resolveAndValidateAdapters({
+    detectors: options.detectors,
+    detectorAdapters: options.detectorAdapters,
+  });
+  for (const a of extraAdapters) {
+    if (a.kinds.includes('text')) resolvedAdapterById.set(a.id, a);
+  }
+  if (options.shadowDetectors) {
+    const shadowOnly = await resolveAndValidateAdapters({ detectors: options.shadowDetectors });
+    for (const a of shadowOnly) {
+      if (a.kinds.includes('text')) resolvedAdapterById.set(a.id, a);
+    }
+  }
+  const textAdapters = Array.from(resolvedAdapterById.values());
+
+  // Compile global allowlist (whitelist + explicit allowlistedValues) and optional blacklist
+  const globalAllowTerms = [];
+  if (options.whitelist) {
+    if (Array.isArray(options.whitelist) && options.whitelist._versieveCompiledTerms) {
+      for (const t of options.whitelist) globalAllowTerms.push(t.raw);
+    } else {
+      globalAllowTerms.push(...readTermList(options.whitelist));
+    }
+  }
+  if (options.allowlistedValues) {
+    globalAllowTerms.push(...readTermList(options.allowlistedValues));
+  }
+  const compiledGlobalAllow = compileTermList(globalAllowTerms);
+
+  const compiledDeny = options.blacklist
+    ? Array.isArray(options.blacklist) && options.blacklist._versieveCompiledTerms
+      ? options.blacklist
+      : compileTermList(readTermList(options.blacklist))
+    : [];
+
+  const stage3aActive = ['wasm_stage3a'];
+  if (strict || (options.includeHipaa !== false && options.hipaaPack !== false)) {
+    stage3aActive.push('hipaa_stage3a');
+  }
+  if (strict || options.includeStandardPii !== false) {
+    stage3aActive.push('regex_stage3a');
+  }
+  if (compiledDeny.length > 0) {
+    stage3aActive.push('blacklist');
+  }
+
+  const newlyDiscoveredResidualSpans = [];
+  const allowlistedRetainedSpans = [];
+  const residualCountsByClass = {};
+  const allowlistedCountsByClass = {};
+
+  for (const blk of blocks) {
+    const text = blk.text;
+    if (!text) continue;
+    if (blk.structRole === 'IMAGE_REGION' && IMAGE_REDACTED_ONLY_RX.test(text.trim())) continue;
+
+    const placeholderRanges = findVaultPlaceholderRanges(text);
+    const overlapsPlaceholder = (start, end, val) =>
+      VAULT_PLACEHOLDER_EXACT_RX.test(val) ||
+      placeholderRanges.some((ph) => spansOverlap(start, end, ph.start, ph.end));
+
+    // Build per-block allowlist combining global whitelist/allowlistedValues + block human exemptions
+    const blockExemptTexts = [];
+    if (blk.originalText && blk.exemptSpans.length > 0) {
+      for (const ex of blk.exemptSpans) {
+        if (Number.isInteger(ex.start) && Number.isInteger(ex.end) && ex.end > ex.start) {
+          const slice = blk.originalText.slice(ex.start, ex.end).trim();
+          if (slice) blockExemptTexts.push(slice);
+        }
+      }
+    }
+    const blockAllowTerms = [...blk.allowlistedValues, ...blockExemptTexts];
+    const compiledBlockExempt = blockAllowTerms.length > 0 ? compileTermList(blockAllowTerms) : [];
+    const globalAllowSpans =
+      compiledGlobalAllow.length > 0 ? findTermMatches(text, compiledGlobalAllow, { mode: 'whitelist' }) : [];
+    const blockExemptSpans =
+      compiledBlockExempt.length > 0 ? findTermMatches(text, compiledBlockExempt, { mode: 'whitelist' }) : [];
+
+    // 1. Re-run active Stage 3A detectors over redacted output
+    const candidates = [];
+    const scan3a = scanEnterprisePiiAndSecrets(text, {
+      domainConfig: options.domainConfig,
+      includeStandardPii: strict ? true : options.includeStandardPii,
+      includeHipaa: strict ? true : options.includeHipaa,
+      hipaaPack: strict ? true : options.hipaaPack,
+      hipaaOptions: options.hipaaOptions,
+    });
+    for (const sp of scan3a.spans || []) {
+      let spStart = sp.start;
+      let spEnd = sp.end;
+      let value = sp.value ?? text.slice(spStart, spEnd);
+      const normType = normalizeAuditEntityClass(sp.type);
+      if (normType === 'EMAIL' && /[.,;:!?)]+$/.test(value)) {
+        const stripped = value.replace(/[.,;:!?)]+$/, '');
+        if (stripped.length > 0) {
+          spEnd = spStart + stripped.length;
+          value = stripped;
+        }
+      }
+      if (overlapsPlaceholder(spStart, spEnd, value)) continue;
+      candidates.push({
+        start: spStart,
+        end: spEnd,
+        value,
+        entityType: normType,
+        category: sp.category === 'secret' ? 'secret' : 'pii',
+        confidence: Number(sp.confidence ?? 0.9),
+        provenanceTag: sp.source || 'stage3a',
+        stageRank: sp.category === 'secret' ? 4 : sp.source === 'wasm_stage3a' || sp.source === 'hipaa_stage3a' ? 3 : 2,
+      });
+    }
+
+    if (compiledDeny.length > 0) {
+      const denyHits = findTermMatches(text, compiledDeny, { mode: 'blacklist' });
+      for (const m of denyHits) {
+        if (overlapsPlaceholder(m.start, m.end, m.value)) continue;
+        candidates.push({
+          start: m.start,
+          end: m.end,
+          value: m.value,
+          entityType: 'CUSTOM',
+          category: 'pii',
+          confidence: 0.99,
+          provenanceTag: 'blacklist',
+          stageRank: 3,
+        });
+      }
+    }
+
+    // 2. Re-run registered Stage 3B detector adapters over redacted output
+    for (const adapter of textAdapters) {
+      const spans = await invokeDetectorAdapter(
+        adapter,
+        {
+          kind: 'text',
+          text,
+          blockId: blk.blockId,
+          filePath: blk.source,
+          modality: blk.modality,
+          shadowAudit: true,
+          options: options.detectorOptions,
+        },
+        { text }
+      );
+      for (const sp of spans) {
+        if ((sp.score ?? sp.confidence ?? 1) < minScore) continue;
+        const value = text.slice(sp.start, sp.end);
+        if (overlapsPlaceholder(sp.start, sp.end, value)) continue;
+        candidates.push({
+          start: sp.start,
+          end: sp.end,
+          value,
+          entityType: normalizeAuditEntityClass(sp.entityType || sp.type),
+          category: sp.entityType?.startsWith('SECRET') ? 'secret' : 'pii',
+          confidence: Number(sp.score ?? sp.confidence ?? 0.8),
+          provenanceTag: sp.provenanceTag || adapter.provenanceTag,
+          stageRank: 2.5,
+        });
+      }
+    }
+
+    // Deduplicate overlapping detections deterministically (start ASC, longer DESC, stageRank DESC, confidence DESC)
+    candidates.sort(
+      (a, b) =>
+        a.start - b.start ||
+        (b.end - b.start) - (a.end - a.start) ||
+        b.stageRank - a.stageRank ||
+        b.confidence - a.confidence ||
+        a.provenanceTag.localeCompare(b.provenanceTag)
+    );
+    const deduped = [];
+    let lastEnd = -1;
+    for (const cand of candidates) {
+      if (cand.start >= lastEnd) {
+        deduped.push(cand);
+        lastEnd = cand.end;
+      }
+    }
+
+    // Classify each detection as allowlistedRetained vs newlyDiscoveredResidual
+    for (const hit of deduped) {
+      const probeSpan = { start: hit.start, end: hit.end, value: hit.value };
+      const isGlobalAllowed =
+        compiledGlobalAllow.length > 0 &&
+        isSpanWhitelisted(probeSpan, text, compiledGlobalAllow, globalAllowSpans);
+      const isBlockExempt =
+        !isGlobalAllowed &&
+        compiledBlockExempt.length > 0 &&
+        isSpanWhitelisted(probeSpan, text, compiledBlockExempt, blockExemptSpans);
+
+      if (isGlobalAllowed || isBlockExempt) {
+        allowlistedCountsByClass[hit.entityType] = (allowlistedCountsByClass[hit.entityType] || 0) + 1;
+        allowlistedRetainedSpans.push({
+          blockId: blk.blockId,
+          source: blk.source,
+          entityType: hit.entityType,
+          start: hit.start,
+          end: hit.end,
+          value: hit.value,
+          maskedPreview: makeMaskedPreview(hit.value),
+          provenanceTag: hit.provenanceTag,
+          reason: isGlobalAllowed ? 'whitelist_or_allowlist' : 'human_exemption',
+        });
+      } else {
+        residualCountsByClass[hit.entityType] = (residualCountsByClass[hit.entityType] || 0) + 1;
+        newlyDiscoveredResidualSpans.push({
+          blockId: blk.blockId,
+          source: blk.source,
+          entityType: hit.entityType,
+          start: hit.start,
+          end: hit.end,
+          length: hit.value.length,
+          maskedPreview: makeMaskedPreview(hit.value),
+          valueSha256: sha256Hex(hit.value),
+          confidence: Number(hit.confidence.toFixed(4)),
+          provenanceTag: hit.provenanceTag,
+          ...(includeRawValues ? { value: hit.value } : {}),
+        });
+      }
+    }
+  }
+
+  const residualCount = newlyDiscoveredResidualSpans.length;
+  const passed = residualCount === 0;
+  const coreReport = {
+    status: passed ? 'pass_zero_residual' : 'fail_residual_detected',
+    passed,
+    blocksAudited: blocks.length,
+    detectorsRun: {
+      stage3a: stage3aActive,
+      stage3b: textAdapters.map((a) => a.id),
+    },
+    residualCount,
+    newlyDiscoveredResidualSpans,
+    allowlistedRetainedCount: allowlistedRetainedSpans.length,
+    allowlistedRetainedSpans,
+    entityClassBreakdown: sortCountMap(residualCountsByClass),
+    allowlistedClassBreakdown: sortCountMap(allowlistedCountsByClass),
+  };
+
+  return {
+    ...coreReport,
+    reportSha256: sha256Hex(JSON.stringify(coreReport)),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// NumGuard-Style Pre/Post-Redaction Numeric Integrity Hashing
+// ---------------------------------------------------------------------------
+
+const NUMGUARD_LEGAL_PREFIX_RX =
+  /\b(Clause|Section|Sec\.|Article|Art\.|Paragraph|Para\.|Schedule|Exhibit|Appendix|Part|Item|Subsection|Subclause)\s+(\d+(?:\.\d+)*)\b|§\s*(\d+(?:\.\d+)*)\b/gi;
+
+const NUMGUARD_CURRENCY_CODE_RX =
+  /\b(USD|EUR|GBP|AUD|CAD|CHF|JPY|CNY|INR|SGD|HKD|NZD)\s+([+-])?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(?:([KMB]|bn|mn)\b)?/g;
+
+const NUMGUARD_CURRENCY_SYMBOL_RX =
+  /([+-])?([$€£¥₹₩])\s*([+-])?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(?:([KMB]|bn|mn)(?![A-Za-z0-9_]))?/g;
+
+const NUMGUARD_PLAIN_NUMBER_RX =
+  /([+-])?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)*)(?:\.(\d+))?(%|(?:[KMB]|bps|bp|ms|kg|mg|mcg|ml|km|cm|mm|gb|mb|kb|tb)(?![A-Za-z0-9_])|\s+(?:bps|bp|days|day|months|month|years|year|hrs|hours|hour|mins|min|ms|secs|sec|kg|mg|mcg|ml|km|cm|mm|gb|mb|kb|tb|USD|EUR|GBP|AUD|CAD|CHF|JPY)(?![A-Za-z0-9_]))?/gi;
+
+const SIGN_PRECEDING_OK_RX = /^$|[\s([{:=,;/"'–—]/;
+
+function normalizeNumericCore(intOrDotted, fracPart) {
+  const cleaned = String(intOrDotted || '').replace(/,/g, '');
+  return fracPart !== undefined && fracPart !== '' ? `${cleaned}.${fracPart}` : cleaned;
+}
+
+function normalizeUnitSuffix(rawUnit) {
+  if (!rawUnit) return { unit: null, attached: false };
+  const trimmed = rawUnit.trim();
+  if (!trimmed) return { unit: null, attached: false };
+  const attached = !/^\s/.test(rawUnit);
+  if (trimmed === '%') return { unit: '%', attached: true };
+  if (/^[KMB]$/.test(trimmed)) return { unit: trimmed, attached: true };
+  if (/^(?:USD|EUR|GBP|AUD|CAD|CHF|JPY)$/i.test(trimmed)) {
+    return { unit: trimmed.toUpperCase(), attached: false };
+  }
+  return { unit: trimmed.toLowerCase(), attached };
+}
+
+/**
+ * Pure canonical numeric token extractor for NumGuard integrity hashing.
+ * Extracts numeric tokens while preserving sign, decimals, percentages, currency symbols/codes,
+ * unit context, and legal/structural clause prefixes (e.g. `$1,250.50`, `4.25%`, `-12.5`, `Clause 14.2`).
+ * Automatically ignores digits embedded inside `<PII:...>` / `<SECRET:...>` placeholders
+ * and alphanumeric identifiers (e.g. `sha256`, `utf8`, `v2`).
+ */
+export function extractCanonicalNumericTokens(text) {
+  const raw = String(text ?? '');
+  if (!raw || !/\d/.test(raw)) return [];
+
+  const placeholderRanges = findVaultPlaceholderRanges(raw);
+  const insidePlaceholder = (start, end) =>
+    placeholderRanges.some((ph) => spansOverlap(start, end, ph.start, ph.end));
+
+  const candidates = [];
+
+  // 1. Legal / structural clause prefixes (e.g. "Clause 14.2", "Section 3.1.4", "§ 164.514")
+  NUMGUARD_LEGAL_PREFIX_RX.lastIndex = 0;
+  let m;
+  while ((m = NUMGUARD_LEGAL_PREFIX_RX.exec(raw)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    if (insidePlaceholder(start, end)) continue;
+    const prefixRaw = m[1] ? m[1] : '§';
+    const numStr = m[2] ?? m[3];
+    const numOffset = m[0].lastIndexOf(numStr);
+    const numStart = start + numOffset;
+    const numEnd = numStart + numStr.length;
+    const prefixNorm = prefixRaw === '§' ? '§' : prefixRaw.toLowerCase().replace(/\.$/, '');
+    candidates.push({
+      raw: m[0],
+      canonical: `${prefixNorm} ${numStr}`,
+      numericValue: numStr,
+      sign: '',
+      currency: null,
+      unit: null,
+      contextPrefix: prefixNorm,
+      start,
+      end,
+      numStart,
+      numEnd,
+      priority: 4,
+    });
+  }
+
+  // 2. Currency-code prefixed numbers (e.g. "USD 1,250.50", "EUR -42.00")
+  NUMGUARD_CURRENCY_CODE_RX.lastIndex = 0;
+  while ((m = NUMGUARD_CURRENCY_CODE_RX.exec(raw)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    if (insidePlaceholder(start, end)) continue;
+    const afterChar = raw[end] || '';
+    if (/[A-Za-z0-9_]/.test(afterChar)) continue;
+    const currency = m[1].toUpperCase();
+    const sign = m[2] || '';
+    const core = normalizeNumericCore(m[3], m[4]);
+    const suffix = m[5] || '';
+    const numValue = `${sign}${core}`;
+    const numStart = start + m[0].indexOf(m[3]);
+    const numEnd = end;
+    candidates.push({
+      raw: m[0],
+      canonical: `${currency} ${numValue}${suffix}`,
+      numericValue: numValue,
+      sign,
+      currency,
+      unit: suffix || null,
+      contextPrefix: null,
+      start,
+      end,
+      numStart,
+      numEnd,
+      priority: 3,
+    });
+  }
+
+  // 3. Currency-symbol prefixed numbers (e.g. "$1,250.50", "-$250.00", "€99.95", "$4.5M")
+  NUMGUARD_CURRENCY_SYMBOL_RX.lastIndex = 0;
+  while ((m = NUMGUARD_CURRENCY_SYMBOL_RX.exec(raw)) !== null) {
+    let start = m.index;
+    let rawSlice = m[0];
+    let leadSign = m[1] || '';
+    const currency = m[2];
+    const innerSign = m[3] || '';
+    const prevBeforeStart = start > 0 ? raw[start - 1] : '';
+    if (leadSign && !SIGN_PRECEDING_OK_RX.test(prevBeforeStart)) {
+      leadSign = '';
+      start += 1;
+      rawSlice = rawSlice.slice(1);
+    }
+    const prevChar = start > 0 ? raw[start - 1] : '';
+    if (/[A-Za-z0-9_]/.test(prevChar)) continue;
+    const end = m.index + m[0].length;
+    if (insidePlaceholder(start, end)) continue;
+    const sign = leadSign || innerSign;
+    const core = normalizeNumericCore(m[4], m[5]);
+    const suffix = m[6] || '';
+    const numStart = raw.indexOf(m[4], start);
+    const numEnd = end;
+    candidates.push({
+      raw: rawSlice,
+      canonical: `${sign}${currency}${core}${suffix}`,
+      numericValue: `${sign}${core}`,
+      sign,
+      currency,
+      unit: suffix || null,
+      contextPrefix: null,
+      start,
+      end,
+      numStart,
+      numEnd,
+      priority: 3,
+    });
+  }
+
+  // 4. Plain / signed / percentage / unit-suffixed numbers (e.g. "4.25%", "-12.5", "30 days")
+  NUMGUARD_PLAIN_NUMBER_RX.lastIndex = 0;
+  while ((m = NUMGUARD_PLAIN_NUMBER_RX.exec(raw)) !== null) {
+    let start = m.index;
+    let rawSlice = m[0];
+    let sign = m[1] || '';
+    const prevBeforeStart = start > 0 ? raw[start - 1] : '';
+    if (sign && !SIGN_PRECEDING_OK_RX.test(prevBeforeStart)) {
+      sign = '';
+      start += 1;
+      rawSlice = rawSlice.slice(1);
+    }
+    const prevChar = start > 0 ? raw[start - 1] : '';
+    if (/[A-Za-z0-9_]/.test(prevChar)) continue;
+    const end = m.index + m[0].length;
+    if (insidePlaceholder(start, end)) continue;
+    const afterChar = raw[end] || '';
+    if (/[A-Za-z0-9_]/.test(afterChar)) continue;
+
+    const core = normalizeNumericCore(m[2], m[3]);
+    const { unit, attached } = normalizeUnitSuffix(m[4]);
+    const numValue = `${sign}${core}`;
+    const canonical = unit
+      ? attached
+        ? `${numValue}${unit}`
+        : `${numValue} ${unit}`
+      : numValue;
+    const numStart = start + (sign ? 1 : 0);
+    const numEnd = start + (sign ? 1 : 0) + m[2].length + (m[3] ? 1 + m[3].length : 0);
+    candidates.push({
+      raw: rawSlice,
+      canonical,
+      numericValue: numValue,
+      sign,
+      currency: null,
+      unit,
+      contextPrefix: null,
+      start,
+      end,
+      numStart,
+      numEnd,
+      priority: 1,
+    });
+  }
+
+  // Resolve overlaps: start ASC, higher priority DESC, longer span DESC
+  candidates.sort(
+    (a, b) =>
+      a.start - b.start ||
+      b.priority - a.priority ||
+      (b.end - b.start) - (a.end - a.start)
+  );
+
+  const tokens = [];
+  let lastEnd = -1;
+  for (const c of candidates) {
+    if (c.start >= lastEnd) {
+      tokens.push({
+        raw: c.raw,
+        canonical: c.canonical,
+        numericValue: c.numericValue,
+        sign: c.sign,
+        currency: c.currency,
+        unit: c.unit,
+        contextPrefix: c.contextPrefix,
+        start: c.start,
+        end: c.end,
+        numStart: c.numStart,
+        numEnd: c.numEnd,
+      });
+      lastEnd = c.end;
+    }
+  }
+
+  return tokens;
+}
+
+/**
+ * Align two canonical token arrays via LCS to separate altered, missing, and unexpected tokens.
+ */
+function diffNumericTokenSequences(expectedObjs, actualObjs) {
+  const n = expectedObjs.length;
+  const m = actualObjs.length;
+  const dp = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      if (expectedObjs[i].canonical === actualObjs[j].canonical) {
+        dp[i][j] = dp[i + 1][j + 1] + 1;
+      } else {
+        dp[i][j] = dp[i + 1][j] >= dp[i][j + 1] ? dp[i + 1][j] : dp[i][j + 1];
+      }
+    }
+  }
+
+  // Reconstruct matched index pairs
+  const matches = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (expectedObjs[i].canonical === actualObjs[j].canonical) {
+      matches.push([i, j]);
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  matches.push([n, m]);
+
+  const missingTokens = [];
+  const alteredTokens = [];
+  const unexpectedTokens = [];
+  let prevE = 0;
+  let prevA = 0;
+
+  for (const [nextE, nextA] of matches) {
+    const expGap = expectedObjs.slice(prevE, nextE);
+    const actGap = actualObjs.slice(prevA, nextA);
+    const paired = Math.min(expGap.length, actGap.length);
+    for (let k = 0; k < paired; k++) {
+      alteredTokens.push({
+        index: prevE + k,
+        expected: expGap[k].canonical,
+        actual: actGap[k].canonical,
+        rawExpected: expGap[k].raw,
+        rawActual: actGap[k].raw,
+        start: expGap[k].start,
+        end: expGap[k].end,
+      });
+    }
+    for (let k = paired; k < expGap.length; k++) {
+      missingTokens.push({
+        index: prevE + k,
+        expected: expGap[k].canonical,
+        raw: expGap[k].raw,
+        start: expGap[k].start,
+        end: expGap[k].end,
+      });
+    }
+    for (let k = paired; k < actGap.length; k++) {
+      unexpectedTokens.push({
+        index: prevA + k,
+        actual: actGap[k].canonical,
+        raw: actGap[k].raw,
+        start: actGap[k].start,
+        end: actGap[k].end,
+      });
+    }
+    prevE = nextE + 1;
+    prevA = nextA + 1;
+  }
+
+  return { missingTokens, alteredTokens, unexpectedTokens };
+}
+
+/**
+ * Pure NumGuard pre/post-redaction numeric integrity verifier.
+ *
+ * Accepts either:
+ * - `(rawBlocks, redactedBlocks, redactedSpansPerBlock, options)`
+ * - or a single array of perceived blocks `(perceivedBlocks)` containing `{ originalText, maskedText, entities }`.
+ *
+ * Excludes numeric spans overlapping intentionally redacted PII/secret spans (SSN, credit card,
+ * phone, MRN, NPI, DEA, MBI, CLIA, IBAN, account number, passport, etc.) and hashes the remaining
+ * non-PII numeric token sequence per block before and after redaction.
+ */
+export function verifyNumericIntegrity(rawBlocks, redactedBlocks, redactedSpansPerBlock = null, options = {}) {
+  const combinedMode = redactedBlocks === undefined;
+  const rawList = Array.isArray(rawBlocks) ? rawBlocks : [];
+  const redList = combinedMode ? rawList : Array.isArray(redactedBlocks) ? redactedBlocks : [];
+  const count = Math.max(rawList.length, redList.length);
+
+  const excludeTypeFilter =
+    Array.isArray(options?.excludeEntityTypes) && options.excludeEntityTypes.length > 0
+      ? new Set(options.excludeEntityTypes.map((t) => String(t).trim().toUpperCase()))
+      : null;
+
+  const resolveSpansForBlock = (idx, blockId, rawBlk, redBlk) => {
+    if (Array.isArray(redactedSpansPerBlock)) {
+      return Array.isArray(redactedSpansPerBlock[idx]) ? redactedSpansPerBlock[idx] : [];
+    }
+    if (redactedSpansPerBlock instanceof Map) {
+      return redactedSpansPerBlock.get(blockId) || [];
+    }
+    if (redactedSpansPerBlock && typeof redactedSpansPerBlock === 'object') {
+      return Array.isArray(redactedSpansPerBlock[blockId]) ? redactedSpansPerBlock[blockId] : [];
+    }
+    if (Array.isArray(redBlk?.entities)) return redBlk.entities;
+    if (Array.isArray(rawBlk?.entities)) return rawBlk.entities;
+    if (Array.isArray(rawBlk?.redactedSpans)) return rawBlk.redactedSpans;
+    return [];
+  };
+
+  const blockReports = [];
+  let totalNonPiiNumericTokens = 0;
+  let excludedPiiNumericTokensCount = 0;
+  let missingTokenCount = 0;
+  let alteredTokenCount = 0;
+  let unexpectedTokenCount = 0;
+
+  for (let i = 0; i < count; i++) {
+    const rawItem = rawList[i];
+    const redItem = redList[i];
+
+    const blockId = String(
+      (typeof redItem === 'object' && (redItem?.blockId || redItem?.id)) ||
+        (typeof rawItem === 'object' && (rawItem?.blockId || rawItem?.id)) ||
+        `b${i + 1}`
+    );
+    const source = String(
+      (typeof redItem === 'object' && redItem?.source) ||
+        (typeof rawItem === 'object' && rawItem?.source) ||
+        'document'
+    );
+    const rawText =
+      typeof rawItem === 'string'
+        ? rawItem
+        : String(rawItem?.originalText ?? rawItem?.text ?? '');
+    const redactedText =
+      typeof redItem === 'string'
+        ? redItem
+        : String(redItem?.maskedText ?? redItem?.text ?? '');
+
+    const redactedSpans = resolveSpansForBlock(i, blockId, rawItem, redItem).filter((sp) => {
+      if (!sp || !Number.isInteger(sp.start) || !Number.isInteger(sp.end) || sp.end <= sp.start) {
+        return false;
+      }
+      if (!excludeTypeFilter) return true;
+      const t = normalizeAuditEntityClass(sp.type ?? sp.entityType);
+      return excludeTypeFilter.has(t);
+    });
+
+    const rawNumTokens = extractCanonicalNumericTokens(rawText);
+    const expectedObjs = [];
+    let excludedCount = 0;
+    for (const tok of rawNumTokens) {
+      const overlapsRedacted = redactedSpans.some((sp) =>
+        spansOverlap(tok.numStart, tok.numEnd, sp.start, sp.end)
+      );
+      if (overlapsRedacted) {
+        excludedCount++;
+      } else {
+        expectedObjs.push(tok);
+      }
+    }
+
+    const actualObjs = extractCanonicalNumericTokens(redactedText);
+    const expectedTokens = expectedObjs.map((t) => t.canonical);
+    const actualTokens = actualObjs.map((t) => t.canonical);
+    const preHash = sha256Hex(JSON.stringify(expectedTokens));
+    const postHash = sha256Hex(JSON.stringify(actualTokens));
+    const intact = preHash === postHash;
+
+    const { missingTokens, alteredTokens, unexpectedTokens } = intact
+      ? { missingTokens: [], alteredTokens: [], unexpectedTokens: [] }
+      : diffNumericTokenSequences(expectedObjs, actualObjs);
+
+    totalNonPiiNumericTokens += expectedTokens.length;
+    excludedPiiNumericTokensCount += excludedCount;
+    missingTokenCount += missingTokens.length;
+    alteredTokenCount += alteredTokens.length;
+    unexpectedTokenCount += unexpectedTokens.length;
+
+    blockReports.push({
+      blockId,
+      source,
+      intact,
+      expectedTokens,
+      actualTokens,
+      excludedPiiNumericCount: excludedCount,
+      missingTokens,
+      alteredTokens,
+      unexpectedTokens,
+      preHash,
+      postHash,
+    });
+  }
+
+  const driftedBlocks = blockReports.filter((b) => !b.intact);
+  const intact = driftedBlocks.length === 0;
+  const corpusPreHash = sha256Hex(JSON.stringify(blockReports.map((b) => [b.blockId, b.preHash])));
+  const corpusPostHash = sha256Hex(JSON.stringify(blockReports.map((b) => [b.blockId, b.postHash])));
+
+  return {
+    status: intact ? 'pass_intact' : 'fail_numeric_drift',
+    intact,
+    blocksChecked: blockReports.length,
+    intactBlockCount: blockReports.length - driftedBlocks.length,
+    driftedBlockCount: driftedBlocks.length,
+    totalNonPiiNumericTokens,
+    excludedPiiNumericTokensCount,
+    missingTokenCount,
+    alteredTokenCount,
+    unexpectedTokenCount,
+    corpusPreHash,
+    corpusPostHash,
+    driftedBlocks,
+    blocks: blockReports,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Optional Per-Entity Ego-Graph Degree & Structural Equivalence-Class Telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes per-entity ego-graph degree, canonical relation-type multiset signature,
+ * structural equivalence-class size (`kClassSize`), and `minEquivalenceClassSize` /
+ * `singledOutEntities` (where `kClassSize === 1`) for structural k-anonymity auditing.
+ *
+ * Accepts:
+ * - A `PortableDocumentGraph` or `{ nodes, edges }` object
+ * - An explicit `{ entities, edges }` object
+ * - An Amnesiac Corpus `{ samples, entityIndex }` (or array of sample records `{ id, entities, target? }`)
+ */
+export function computeEgoGraphTelemetry(graphOrRecords) {
+  const entitySet = new Set();
+  const incidence = new Map(); // entityId -> Map<relationType, count>
+
+  const ensureEntity = (eid) => {
+    const id = String(eid);
+    if (!id) return;
+    entitySet.add(id);
+    if (!incidence.has(id)) incidence.set(id, new Map());
+  };
+
+  const addIncidentRelation = (eid, relType) => {
+    ensureEntity(eid);
+    const map = incidence.get(String(eid));
+    const rel = String(relType || 'RELATES_TO').trim().toUpperCase();
+    map.set(rel, (map.get(rel) || 0) + 1);
+  };
+
+  if (graphOrRecords && typeof graphOrRecords === 'object') {
+    if (Array.isArray(graphOrRecords.edges)) {
+      // Shape A: PortableDocumentGraph / { nodes, edges } or { entities, edges }
+      if (Array.isArray(graphOrRecords.nodes)) {
+        for (const n of graphOrRecords.nodes) {
+          const nid = n?.node_id ?? n?.id;
+          if (!nid) continue;
+          const nType = String(n?.node_type ?? n?.type ?? '').toUpperCase();
+          if (nType === 'ENTITY' || String(nid).startsWith('ent:')) {
+            ensureEntity(nid);
+          }
+        }
+      }
+      if (Array.isArray(graphOrRecords.entities)) {
+        for (const e of graphOrRecords.entities) {
+          const eid = typeof e === 'string' ? e : e?.entityId ?? e?.entity_id ?? e?.node_id ?? e?.id;
+          if (eid) ensureEntity(eid);
+        }
+      }
+      // If no nodes/entities were declared explicitly, infer entity ids starting with `ent:` from edges
+      if (entitySet.size === 0) {
+        for (const edge of graphOrRecords.edges) {
+          const src = edge?.src_id ?? edge?.src ?? edge?.from;
+          const dst = edge?.dst_id ?? edge?.dst ?? edge?.to;
+          if (src && String(src).startsWith('ent:')) ensureEntity(src);
+          if (dst && String(dst).startsWith('ent:')) ensureEntity(dst);
+        }
+      }
+      for (const edge of graphOrRecords.edges) {
+        const src = edge?.src_id ?? edge?.src ?? edge?.from;
+        const dst = edge?.dst_id ?? edge?.dst ?? edge?.to;
+        const rel = edge?.edge_type ?? edge?.type ?? edge?.relation ?? 'RELATES_TO';
+        if (src && entitySet.has(String(src))) addIncidentRelation(src, rel);
+        if (dst && entitySet.has(String(dst)) && String(dst) !== String(src)) {
+          addIncidentRelation(dst, rel);
+        }
+      }
+    } else if (Array.isArray(graphOrRecords.samples) || Array.isArray(graphOrRecords)) {
+      // Shape B: Amnesiac Corpus { samples, entityIndex } or sample array
+      const samples = Array.isArray(graphOrRecords) ? graphOrRecords : graphOrRecords.samples;
+      const entityIndex = Array.isArray(graphOrRecords.entityIndex) ? graphOrRecords.entityIndex : [];
+      for (const meta of entityIndex) {
+        if (meta?.entityId) ensureEntity(meta.entityId);
+      }
+      for (const s of samples) {
+        const ents = Array.isArray(s?.entities) ? Array.from(new Set(s.entities.map(String))) : [];
+        for (const eid of ents) {
+          const rel = s?.target && String(s.target) === eid ? 'COMPOSED_TARGET' : 'MENTIONS';
+          addIncidentRelation(eid, rel);
+        }
+        // Pairwise co-mention structure within the same sample/block
+        for (let i = 0; i < ents.length; i++) {
+          for (let j = i + 1; j < ents.length; j++) {
+            addIncidentRelation(ents[i], 'CO_MENTION');
+            addIncidentRelation(ents[j], 'CO_MENTION');
+          }
+        }
+      }
+    }
+  }
+
+  // Build deterministic per-entity ego-graph signatures
+  const rawPerEntity = [];
+  const classGroups = new Map(); // signature -> { signature, degree, relationMultiset, entityIds }
+
+  for (const entityId of Array.from(entitySet).sort()) {
+    const relMap = incidence.get(entityId) || new Map();
+    const sortedRelKeys = Array.from(relMap.keys()).sort();
+    const relationMultiset = {};
+    let degree = 0;
+    const parts = [];
+    for (const rel of sortedRelKeys) {
+      const cnt = relMap.get(rel);
+      relationMultiset[rel] = cnt;
+      degree += cnt;
+      parts.push(`${rel}:${cnt}`);
+    }
+    const relationSignature = `deg=${degree}|${parts.join(',')}`;
+    rawPerEntity.push({
+      entityId,
+      degree,
+      relationMultiset,
+      relationSignature,
+    });
+    if (!classGroups.has(relationSignature)) {
+      classGroups.set(relationSignature, {
+        signature: relationSignature,
+        degree,
+        relationMultiset,
+        entityIds: [],
+      });
+    }
+    classGroups.get(relationSignature).entityIds.push(entityId);
+  }
+
+  const entities = rawPerEntity.map((e) => {
+    const kClassSize = classGroups.get(e.relationSignature).entityIds.length;
+    return {
+      ...e,
+      kClassSize,
+      singledOut: kClassSize === 1,
+    };
+  });
+
+  const equivalenceClasses = Array.from(classGroups.values())
+    .sort((a, b) => (a.signature < b.signature ? -1 : a.signature > b.signature ? 1 : 0))
+    .map((g) => ({
+      signature: g.signature,
+      degree: g.degree,
+      relationMultiset: g.relationMultiset,
+      kClassSize: g.entityIds.length,
+      entityIds: g.entityIds.slice().sort(),
+    }));
+
+  const singledOutEntities = entities.filter((e) => e.kClassSize === 1).map((e) => e.entityId);
+  const classSizes = entities.map((e) => e.kClassSize);
+  const minEquivalenceClassSize = classSizes.length > 0 ? Math.min(...classSizes) : 0;
+  const maxEquivalenceClassSize = classSizes.length > 0 ? Math.max(...classSizes) : 0;
+
+  const core = {
+    entityCount: entities.length,
+    equivalenceClassCount: equivalenceClasses.length,
+    minEquivalenceClassSize,
+    maxEquivalenceClassSize,
+    singledOutCount: singledOutEntities.length,
+    singledOutEntities,
+    entities,
+    equivalenceClasses,
+  };
+
+  return {
+    ...core,
+    telemetrySha256: sha256Hex(JSON.stringify(core)),
+  };
+}
+
 /**
  * Formats a perceived block into an Unlimited-OCR-style structured layout/modality tag:
  * `<BLOCK id="b1" modality="document" role="PARAGRAPH" gate="KEEP_SAFE_REDACTED" risk="0.040">...</BLOCK>`
@@ -2170,6 +3207,64 @@ export async function perceiveMulti(inputs = [], options = {}) {
     perceptionSha256: sha256Hex(perceptionStream),
   };
 
+  // Optional Post-Redaction Shadow Audit (default-on in strict/compliance mode, opt-in otherwise)
+  const shadowAuditCfg = resolveShadowAuditConfig(options);
+  let shadowAuditReport = null;
+  if (shadowAuditCfg.enabled) {
+    shadowAuditReport = await runShadowAudit(extractedBlocks, {
+      ...shadowAuditCfg,
+      _resolvedTextAdapters: textAdapters,
+      whitelist: perceptionOptions.whitelist,
+      blacklist: perceptionOptions.blacklist,
+      domainConfig: options.domainConfig,
+      includeStandardPii: options.includeStandardPii,
+      includeHipaa: options.includeHipaa,
+      hipaaPack: options.hipaaPack,
+      hipaaOptions: options.hipaaOptions,
+      detectorOptions: options.detectorOptions,
+    });
+    receiptPayload.shadowAudit = shadowAuditReport;
+    if (shadowAuditCfg.throwOnResidual && !shadowAuditReport.passed) {
+      const err = new Error(
+        `SHADOW_AUDIT_RESIDUAL_DETECTED: Shadow audit detected ${shadowAuditReport.residualCount} residual span(s)`
+      );
+      err.code = 'SHADOW_AUDIT_RESIDUAL_DETECTED';
+      err.shadowAudit = shadowAuditReport;
+      throw err;
+    }
+  }
+
+  // Optional NumGuard Pre/Post-Redaction Numeric Integrity Hashing (opt-in or strict/compliance mode)
+  const numGuardCfg = resolveNumGuardConfig(options);
+  let numericIntegrityReport = null;
+  if (numGuardCfg.enabled) {
+    numericIntegrityReport = verifyNumericIntegrity(extractedBlocks, undefined, null, {
+      excludeEntityTypes: numGuardCfg.excludeEntityTypes,
+    });
+    receiptPayload.numericIntegrity = {
+      status: numericIntegrityReport.status,
+      intact: numericIntegrityReport.intact,
+      blocksChecked: numericIntegrityReport.blocksChecked,
+      intactBlockCount: numericIntegrityReport.intactBlockCount,
+      driftedBlockCount: numericIntegrityReport.driftedBlockCount,
+      totalNonPiiNumericTokens: numericIntegrityReport.totalNonPiiNumericTokens,
+      excludedPiiNumericTokensCount: numericIntegrityReport.excludedPiiNumericTokensCount,
+      missingTokenCount: numericIntegrityReport.missingTokenCount,
+      alteredTokenCount: numericIntegrityReport.alteredTokenCount,
+      unexpectedTokenCount: numericIntegrityReport.unexpectedTokenCount,
+      corpusPreHash: numericIntegrityReport.corpusPreHash,
+      corpusPostHash: numericIntegrityReport.corpusPostHash,
+      driftedBlocks: numericIntegrityReport.driftedBlocks,
+    };
+  }
+
+  // Optional Per-Entity Ego-Graph Degree & Structural Equivalence-Class Telemetry
+  const egoGraphTelemetry =
+    options.includeEgoGraphTelemetry === true ? computeEgoGraphTelemetry(graphIndex) : null;
+  if (egoGraphTelemetry) {
+    receiptPayload.egoGraphTelemetry = egoGraphTelemetry;
+  }
+
   // Inventory of every masked span so callers can audit what was (and was not) redacted.
   const seen = new Set();
   const redactedValues = [];
@@ -2225,6 +3320,12 @@ export async function perceiveMulti(inputs = [], options = {}) {
     clusters: Array.from(clusterMap.entries()).map(([clusterId, blocks]) => ({ clusterId, blocks })),
   };
 
+  const receipt = {
+    ...receiptPayload,
+    ...(shadowAuditReport ? { residualLeakageReport: shadowAuditReport } : {}),
+    receiptSha256: sha256Hex(JSON.stringify(receiptPayload)),
+  };
+
   return {
     perceptionStream,
     markdown,
@@ -2242,10 +3343,12 @@ export async function perceiveMulti(inputs = [], options = {}) {
     imageArtifacts,
     calibrationObservations,
     conformalRiskStats,
+    ...(shadowAuditReport
+      ? { shadowAudit: shadowAuditReport, residualLeakageReport: shadowAuditReport }
+      : {}),
+    ...(numericIntegrityReport ? { numericIntegrity: numericIntegrityReport } : {}),
+    ...(egoGraphTelemetry ? { egoGraphTelemetry } : {}),
     graph: graphIndex,
-    receipt: {
-      ...receiptPayload,
-      receiptSha256: sha256Hex(JSON.stringify(receiptPayload)),
-    },
+    receipt,
   };
 }

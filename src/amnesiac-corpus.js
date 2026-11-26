@@ -21,7 +21,8 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import { perceiveMulti } from './perceive.js';
+import { perceiveMulti, computeEgoGraphTelemetry } from './perceive.js';
+export { computeEgoGraphTelemetry };
 import { scanEnterprisePiiAndSecrets } from './secret-scanner.js';
 import { binomCdf } from './gatekeeper.js';
 
@@ -169,6 +170,217 @@ export function certifiedLowerBound(k, n, delta = DELTA) {
     else lo = mid;
   }
   return Number(((lo + hi) / 2).toFixed(6));
+}
+
+// ---------------------------------------------------------------------------
+// Optional canonical entity-sorted Merkle root over corpus spans (opt-in; never part of V1 digests)
+// ---------------------------------------------------------------------------
+
+export const MERKLE_ORDERING_SPEC = 'sorted by (entityId, sourceDocHash, byteRange[start,end], vaultedSpan) ascending; leaf=sha256("leaf\\0"+JSON([entityId,sourceDocHash,byteRange|null,vaultedSpan])); node=sha256("node\\0"+left+right); odd node promoted unchanged; empty=sha256("empty")';
+
+function cmpStr(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function normalizeMerkleRecord(r) {
+  const range = Array.isArray(r.byteRange) && r.byteRange.length === 2 ? [Number(r.byteRange[0]), Number(r.byteRange[1])] : null;
+  return {
+    entityId: String(r.entityId),
+    sourceDocHash: String(r.sourceDocHash),
+    byteRange: range,
+    vaultedSpan: String(r.vaultedSpan ?? ''),
+  };
+}
+
+function compareMerkleRecords(a, b) {
+  const c1 = cmpStr(a.entityId, b.entityId);
+  if (c1) return c1;
+  const c2 = cmpStr(a.sourceDocHash, b.sourceDocHash);
+  if (c2) return c2;
+  const ar = a.byteRange || [-1, -1];
+  const br = b.byteRange || [-1, -1];
+  if (ar[0] !== br[0]) return ar[0] - br[0];
+  if (ar[1] !== br[1]) return ar[1] - br[1];
+  return cmpStr(a.vaultedSpan, b.vaultedSpan);
+}
+
+function merkleLeafHash(rec) {
+  return sha256Hex(`leaf\u0000${JSON.stringify([rec.entityId, rec.sourceDocHash, rec.byteRange, rec.vaultedSpan])}`);
+}
+
+function merkleNodeHash(l, r) {
+  return sha256Hex(`node\u0000${l}${r}`);
+}
+
+function sortedUniqueMerkleRecords(records) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of records || []) {
+    const rec = normalizeMerkleRecord(raw);
+    const key = JSON.stringify([rec.entityId, rec.sourceDocHash, rec.byteRange, rec.vaultedSpan]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(rec);
+  }
+  return out.sort(compareMerkleRecords);
+}
+
+function buildMerkleLevels(leafHashes) {
+  if (leafHashes.length === 0) return [[sha256Hex('empty')]];
+  const levels = [leafHashes];
+  while (levels[levels.length - 1].length > 1) {
+    const cur = levels[levels.length - 1];
+    const next = [];
+    for (let i = 0; i < cur.length; i += 2) {
+      next.push(i + 1 < cur.length ? merkleNodeHash(cur[i], cur[i + 1]) : cur[i]);
+    }
+    levels.push(next);
+  }
+  return levels;
+}
+
+/**
+ * Pure canonical entity-sorted Merkle root. `records` = [{ entityId, sourceDocHash, byteRange, vaultedSpan }].
+ * Input order never matters: records are canonically sorted and de-duplicated first.
+ */
+export function computeEntitySortedMerkleRoot(records) {
+  const sorted = sortedUniqueMerkleRecords(records);
+  const leaves = sorted.map(merkleLeafHash);
+  const levels = buildMerkleLevels(leaves);
+  return {
+    merkleRoot: levels[levels.length - 1][0],
+    leafCount: sorted.length,
+    ordering: MERKLE_ORDERING_SPEC,
+    orderingSpec: MERKLE_ORDERING_SPEC,
+    leaves,
+    records: sorted,
+  };
+}
+
+/** Inclusion proof for one record (or leaf index): array of { sibling, position: 'left'|'right' } steps. */
+export function computeMerkleProof(treeOrRecords, recordOrIndex) {
+  const rawRecords = Array.isArray(treeOrRecords)
+    ? treeOrRecords
+    : Array.isArray(treeOrRecords?.records)
+      ? treeOrRecords.records
+      : [];
+  const sorted = sortedUniqueMerkleRecords(rawRecords);
+  let idx = -1;
+  if (typeof recordOrIndex === 'number' && Number.isInteger(recordOrIndex)) {
+    if (recordOrIndex >= 0 && recordOrIndex < sorted.length) idx = recordOrIndex;
+  } else if (recordOrIndex && typeof recordOrIndex === 'object') {
+    const norm = normalizeMerkleRecord(recordOrIndex);
+    const target = JSON.stringify([norm.entityId, norm.sourceDocHash, norm.byteRange, norm.vaultedSpan]);
+    idx = sorted.findIndex(
+      (r) => JSON.stringify([r.entityId, r.sourceDocHash, r.byteRange, r.vaultedSpan]) === target
+    );
+  }
+  if (idx === -1) throw new Error('computeMerkleProof: record is not a leaf of this tree');
+  const levels = buildMerkleLevels(sorted.map(merkleLeafHash));
+  const proof = [];
+  let i = idx;
+  for (let lvl = 0; lvl < levels.length - 1; lvl++) {
+    const cur = levels[lvl];
+    const sib = i % 2 === 0 ? i + 1 : i - 1;
+    if (sib < cur.length) proof.push({ sibling: cur[sib], position: i % 2 === 0 ? 'right' : 'left' });
+    i = Math.floor(i / 2);
+  }
+  return proof;
+}
+
+/** Verify an inclusion proof for `record` (or a precomputed leaf hash string) against `merkleRoot`. */
+export function verifyMerkleProof(record, proof, merkleRoot) {
+  let h = typeof record === 'string' ? record : merkleLeafHash(normalizeMerkleRecord(record));
+  for (const step of proof || []) {
+    h = step.position === 'left' ? merkleNodeHash(step.sibling, h) : merkleNodeHash(h, step.sibling);
+  }
+  return h === merkleRoot;
+}
+
+// Derive canonical (entity, source doc, byte range, vaulted span) records from a corpus state.
+function corpusMerkleRecords(samples, entityIndex) {
+  const tokenOf = new Map(entityIndex.map((e) => [e.entityId, e.token]));
+  const records = [];
+  for (const s of samples) {
+    if (Array.isArray(s.blocks) && s.blocks.length > 0) {
+      for (const b of s.blocks) {
+        const blockEnts = b.spans ? Object.keys(b.spans).filter((eid) => (b.spans[eid] || []).length > 0) : [];
+        for (const eid of blockEnts) {
+          if (!(s.entities || []).includes(eid)) continue;
+          records.push({
+            entityId: eid,
+            sourceDocHash: sha256Hex(String(b.source ?? '')),
+            byteRange: b.sourceRange ?? null,
+            vaultedSpan: tokenOf.get(eid) ?? '',
+          });
+        }
+      }
+      continue;
+    }
+    const srcs = Array.isArray(s.sources) ? s.sources : [{ source: s.source, sourceRange: s.sourceRange }];
+    for (const eid of s.entities || []) {
+      for (const src of srcs) {
+        records.push({
+          entityId: eid,
+          sourceDocHash: sha256Hex(String(src.source ?? '')),
+          byteRange: src.sourceRange ?? null,
+          vaultedSpan: tokenOf.get(eid) ?? '',
+        });
+      }
+    }
+  }
+  return records;
+}
+
+// Opt-in telemetry attachments; returns { receiptExtra, resultExtra } (both empty by default).
+function optionalTelemetry(samples, entityIndex, view, options, priorState = null) {
+  const receiptExtra = {};
+  const resultExtra = {};
+  const wantMerkle = Boolean(
+    options?.includeMerkleRoot === true ||
+      view?.includeMerkleRoot === true ||
+      priorState?.receipt?.merkleRoot !== undefined
+  );
+  const wantEgo = Boolean(
+    options?.includeEgoGraphTelemetry === true ||
+      view?.includeEgoGraphTelemetry === true ||
+      priorState?.egoGraphTelemetry !== undefined ||
+      priorState?.receipt?.egoGraphTelemetry !== undefined
+  );
+  if (wantMerkle) {
+    const m = computeEntitySortedMerkleRoot(corpusMerkleRecords(samples, entityIndex));
+    receiptExtra.merkleRoot = m.merkleRoot;
+    receiptExtra.merkleLeafCount = m.leafCount;
+    receiptExtra.merkleOrderingSpec = m.orderingSpec;
+    receiptExtra.merkle = {
+      merkleRoot: m.merkleRoot,
+      leafCount: m.leafCount,
+      orderingSpec: m.orderingSpec,
+    };
+    resultExtra.merkleTree = m;
+  }
+  if (wantEgo) {
+    const t = computeEgoGraphTelemetry({ samples, entityIndex });
+    resultExtra.egoGraphTelemetry = t;
+    receiptExtra.egoGraphTelemetry = {
+      entityCount: t.entityCount,
+      equivalenceClassCount: t.equivalenceClassCount,
+      minEquivalenceClassSize: t.minEquivalenceClassSize,
+      maxEquivalenceClassSize: t.maxEquivalenceClassSize,
+      singledOutCount: t.singledOutCount,
+      singledOutEntities: t.singledOutEntities,
+      telemetrySha256: t.telemetrySha256,
+    };
+    receiptExtra.egoGraphTelemetrySha256 = t.telemetrySha256;
+  }
+  return { receiptExtra, resultExtra };
+}
+
+function canonicalViewForDigest(view) {
+  if (!view || typeof view !== 'object') return view ?? null;
+  if (!('includeMerkleRoot' in view) && !('includeEgoGraphTelemetry' in view)) return view;
+  const { includeMerkleRoot: _m, includeEgoGraphTelemetry: _e, ...rest } = view;
+  return Object.keys(rest).length === 0 ? null : rest;
 }
 
 function normalizeClassName(type) {
@@ -472,6 +684,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
   if (composed) {
     const { composed: composedSamples, composedIndex } = composeReadableSamples(samples, entityIndex);
     const composedJsonl = composedSamples.map((s) => JSON.stringify(composedSampleLine(s))).join('\n') + (composedSamples.length ? '\n' : '');
+    const { receiptExtra, resultExtra } = optionalTelemetry(composedSamples, composedIndex, view, options);
     const composedReceipt = {
       engine: AMNESIAC_ENGINE_VERSION,
       engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
@@ -480,12 +693,20 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
       entityCount: composedIndex.length,
       identity,
       compositionPolicy: COMPOSITION_POLICY,
-      viewDigest: sha256Hex(JSON.stringify(view ?? null)),
+      viewDigest: sha256Hex(JSON.stringify(canonicalViewForDigest(view))),
+      ...receiptExtra,
     };
-    return { jsonl: composedJsonl, samples: composedSamples, entityIndex: composedIndex, receipt: composedReceipt };
+    return {
+      jsonl: composedJsonl,
+      samples: composedSamples,
+      entityIndex: composedIndex,
+      ...resultExtra,
+      receipt: composedReceipt,
+    };
   }
 
   const jsonl = serialize(samples);
+  const { receiptExtra, resultExtra } = optionalTelemetry(samples, entityIndex, view, options);
   const receipt = {
     engine: AMNESIAC_ENGINE_VERSION,
     engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
@@ -493,13 +714,22 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     sampleCount: samples.length,
     entityCount: entityIndex.length,
     ...(readable ? { identity } : {}),
-    viewDigest: sha256Hex(JSON.stringify(view ?? null)),
+    viewDigest: sha256Hex(JSON.stringify(canonicalViewForDigest(view))),
+    ...receiptExtra,
   };
   // Readable mode has no certificate ceremony and no placeholder-masking recipe: the general
   // mode emits none of the vault's protection machinery, only the corpus and its receipt.
-  if (readable) return { jsonl, samples, entityIndex, receipt };
+  if (readable) return { jsonl, samples, entityIndex, ...resultExtra, receipt };
   const certificates = computeCertificates(samples);
-  return { jsonl, samples, entityIndex, certificates, trainingRecipe: AMNESIAC_TRAINING_RECIPE, receipt };
+  return {
+    jsonl,
+    samples,
+    entityIndex,
+    certificates,
+    trainingRecipe: AMNESIAC_TRAINING_RECIPE,
+    ...resultExtra,
+    receipt,
+  };
 }
 
 /**
@@ -647,12 +877,20 @@ export function eraseEntity(state, entityId) {
   const jsonl = composed
     ? regeneratedSamples.map((s) => JSON.stringify(composedSampleLine(s))).join('\n') + (regeneratedSamples.length ? '\n' : '')
     : serialize(regeneratedSamples);
+  const { receiptExtra, resultExtra } = optionalTelemetry(
+    regeneratedSamples,
+    regeneratedEntityIndex,
+    null,
+    null,
+    state
+  );
   const receipt = {
     ...state.receipt,
     corpusSha256: sha256Hex(jsonl),
     entityCount: regeneratedEntityIndex.length,
     // Composed retraction changes the sample count; span-removal samples keep their identity.
     ...(composed ? { sampleCount: regeneratedSamples.length } : {}),
+    ...receiptExtra,
   };
   const removedSpanCount = changed.reduce((n, c) => n + (c.removedSpans || 0), 0);
   // Readable surfaces can diverge from one canonical token (aliases), so removed bytes are the
@@ -682,11 +920,26 @@ export function eraseEntity(state, entityId) {
       .sort((a, b) => (a.id < b.id ? -1 : 1)),
     corpusSha256Before: state.receipt.corpusSha256,
     corpusSha256After: receipt.corpusSha256,
+    ...(state.receipt.merkleRoot !== undefined
+      ? {
+          merkleRootBefore: state.receipt.merkleRoot,
+          merkleRootAfter: receipt.merkleRoot,
+        }
+      : {}),
     diffVerified: true,
   };
   diffReceipt.diffReceiptSha256 = sha256Hex(JSON.stringify(diffReceipt));
   // Readable mode carries no certificate ceremony; erasure is plain mechanical regeneration.
-  if (readable) return { jsonl, samples: regeneratedSamples, entityIndex: regeneratedEntityIndex, receipt, diffReceipt };
+  if (readable) {
+    return {
+      jsonl,
+      samples: regeneratedSamples,
+      entityIndex: regeneratedEntityIndex,
+      ...resultExtra,
+      receipt,
+      diffReceipt,
+    };
+  }
   const certificates = computeCertificates(regeneratedSamples);
   return {
     jsonl,
@@ -694,6 +947,7 @@ export function eraseEntity(state, entityId) {
     entityIndex: regeneratedEntityIndex,
     certificates,
     trainingRecipe: AMNESIAC_TRAINING_RECIPE,
+    ...resultExtra,
     receipt,
     diffReceipt,
   };
