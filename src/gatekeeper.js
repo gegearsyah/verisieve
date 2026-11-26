@@ -53,6 +53,209 @@ export function binomCdf(k, n, p) {
 }
 
 // ---------------------------------------------------------------------------
+// 0. Structured Conformal Gate Diagnostics & Dual-Channel E-Value Helpers
+// ---------------------------------------------------------------------------
+export const GATE_REJECTION_REASONS = Object.freeze({
+  NONE: 'NONE',
+  CALIBRATION_INSUFFICIENT: 'CALIBRATION_INSUFFICIENT',
+  RISK_BUDGET_EXCEEDED: 'RISK_BUDGET_EXCEEDED',
+  CLUSTER_ADJUSTED_RISK_EXCEEDED: 'CLUSTER_ADJUSTED_RISK_EXCEEDED',
+  E_VALUE_THRESHOLD_EXCEEDED: 'E_VALUE_THRESHOLD_EXCEEDED',
+  DETECTOR_ERROR: 'DETECTOR_ERROR',
+  FORENSIC_ANOMALY: 'FORENSIC_ANOMALY',
+  TOPIC_POLICY_BLOCK: 'TOPIC_POLICY_BLOCK',
+  USEFULNESS_BELOW_THRESHOLD: 'USEFULNESS_BELOW_THRESHOLD',
+  UNPARSABLE_INPUT: 'UNPARSABLE_INPUT',
+});
+
+export const GATE_RECOVERABILITY = Object.freeze({
+  NONE: 'none',
+  RECOVERABLE_HUMAN_REVIEW: 'recoverable_human_review',
+  RECOVERABLE_RECALIBRATE: 'recoverable_recalibrate',
+  HARD_DROP: 'hard_drop',
+});
+
+/**
+ * Transparently maps internal gate actions (`KEEP*`, `ABSTAIN*`, `DROP*`/`QUARANTINE*`)
+ * to canonical policy semantics (`allow`, `redact`, `deny`).
+ */
+export function mapGateActionToPolicy(action) {
+  const normalized = String(action || '').toUpperCase();
+  if (
+    normalized === 'KEEP' ||
+    normalized === 'KEEP_SAFE' ||
+    normalized === 'KEEP_SAFE_REDACTED' ||
+    normalized === 'ALLOW'
+  ) {
+    return 'allow';
+  }
+  if (
+    normalized === 'DROP' ||
+    normalized === 'DROP_OR_QUARANTINE' ||
+    normalized === 'QUARANTINE_SECRET' ||
+    normalized === 'DENY'
+  ) {
+    return 'deny';
+  }
+  return 'redact';
+}
+
+function resolveConvexWeights(weights) {
+  if (weights === undefined || weights === null) {
+    return { w1: 0.5, w2: 0.5 };
+  }
+  let w1;
+  let w2;
+  if (Array.isArray(weights)) {
+    if (weights.length !== 2) {
+      throw new RangeError('INVALID_E_VALUE_WEIGHTS: weights array must have exactly 2 elements [w1, w2]');
+    }
+    [w1, w2] = weights;
+  } else if (typeof weights === 'object') {
+    w1 = weights.w1 ?? weights.primary;
+    w2 = weights.w2 ?? weights.secondary;
+  } else {
+    throw new TypeError('INVALID_E_VALUE_WEIGHTS: weights must be { w1, w2 } or [w1, w2]');
+  }
+  if (
+    typeof w1 !== 'number' ||
+    typeof w2 !== 'number' ||
+    !Number.isFinite(w1) ||
+    !Number.isFinite(w2) ||
+    w1 <= 0 ||
+    w2 <= 0 ||
+    Math.abs(w1 + w2 - 1) >= 1e-9
+  ) {
+    throw new RangeError(
+      `INVALID_E_VALUE_WEIGHTS: weights must satisfy w1 > 0, w2 > 0, and |w1 + w2 - 1| < 1e-9 (got w1=${w1}, w2=${w2})`
+    );
+  }
+  return { w1, w2 };
+}
+
+/**
+ * Pure convex combination of two valid e-values (`AC-CRC` dual-channel hook):
+ *   E_joint = w1 * primaryE + w2 * secondaryE
+ * Valid under arbitrary dependence between channels because E[w1*E1 + w2*E2] <= w1 + w2 = 1 under H_0.
+ */
+export function combineConvexEValues(primaryE, secondaryE, weights = { w1: 0.5, w2: 0.5 }) {
+  if (typeof primaryE !== 'number' || !Number.isFinite(primaryE) || primaryE < 0) {
+    throw new RangeError(`INVALID_E_VALUE: primaryE must be a finite number >= 0 (got ${primaryE})`);
+  }
+  if (typeof secondaryE !== 'number' || !Number.isFinite(secondaryE) || secondaryE < 0) {
+    throw new RangeError(`INVALID_E_VALUE: secondaryE must be a finite number >= 0 (got ${secondaryE})`);
+  }
+  const { w1, w2 } = resolveConvexWeights(weights);
+  return w1 * primaryE + w2 * secondaryE;
+}
+
+/**
+ * Evaluates a dual-channel convex e-value against the Markov/Ville threshold `1 / delta`.
+ */
+export function evaluateDualChannelEValue(primaryE, secondaryE, options = {}) {
+  const weights = resolveConvexWeights(options.eValueWeights ?? options.weights);
+  const delta = Number(options.delta ?? 0.05);
+  if (!Number.isFinite(delta) || delta <= 0 || delta > 1) {
+    throw new RangeError(`INVALID_DELTA: delta must be in (0, 1] (got ${delta})`);
+  }
+  const threshold = 1.0 / delta;
+  const jointEValue = combineConvexEValues(primaryE, secondaryE, weights);
+  return {
+    primaryE,
+    secondaryE,
+    w1: weights.w1,
+    w2: weights.w2,
+    jointEValue,
+    delta,
+    threshold,
+    exceeded: jointEValue >= threshold,
+  };
+}
+
+/**
+ * Normalizes a human-review correction into a structured calibration observation record
+ * that can be persisted and replayed into `HC-CRC` / `E-LTT` recalibration.
+ */
+export function createCalibrationObservation(input = {}) {
+  const source = String(input.source || 'inline');
+  const blockId = String(input.blockId || 'b0');
+  const correctionKind = String(input.correctionKind || 'text_span_addition');
+  const entityType = String(input.entityType || 'CUSTOM').toUpperCase();
+  const action = String(input.action || 'redact').toLowerCase();
+  const labelSafe = input.labelSafe !== undefined ? (Number(input.labelSafe) ? 1 : 0) : (action === 'exempt' || action === 'allow' ? 1 : 0);
+  const previousScore = typeof input.previousScore === 'number' && Number.isFinite(input.previousScore) ? input.previousScore : null;
+  const correctedRiskScore = labelSafe === 0 ? 1.0 : 0.0;
+  const span = input.span && typeof input.span === 'object' ? { start: input.span.start, end: input.span.end } : null;
+  const bbox = input.bbox && typeof input.bbox === 'object' ? { ...input.bbox } : null;
+  const ruleId = input.ruleId ? String(input.ruleId) : null;
+  const provenanceTag = String(input.provenanceTag || `human_correction:${correctionKind}`);
+  const reviewerId = input.reviewerId ? String(input.reviewerId) : null;
+  const reason = input.reason ? String(input.reason) : null;
+
+  const seedKey = JSON.stringify({
+    source,
+    blockId,
+    correctionKind,
+    entityType,
+    action,
+    labelSafe,
+    span,
+    bbox,
+    ruleId,
+  });
+  const observationId = `obs_${crypto.createHash('sha256').update(seedKey).digest('hex').slice(0, 16)}`;
+
+  return {
+    observationId,
+    source,
+    blockId,
+    modality: String(input.modality || 'document'),
+    correctionKind,
+    entityType,
+    action,
+    labelSafe,
+    previousScore,
+    correctedRiskScore,
+    span,
+    bbox,
+    ruleId,
+    provenanceTag,
+    reviewerId,
+    reason,
+  };
+}
+
+/**
+ * Converts logged human-correction `calibrationObservations` into document-level clusters
+ * compatible with `calibrateClusterRobustGatekeeper` and `calibrateStreamingEProcessGatekeeper`.
+ */
+export function observationsToCalibrationClusters(observations = []) {
+  const bySource = new Map();
+  for (const obs of observations || []) {
+    const clusterId = String(obs.source || 'inline');
+    if (!bySource.has(clusterId)) bySource.set(clusterId, []);
+    const prob =
+      typeof obs.prob === 'number' && Number.isFinite(obs.prob)
+        ? obs.prob
+        : typeof obs.previousScore === 'number' && Number.isFinite(obs.previousScore)
+          ? Math.max(0, Math.min(1, 1 - obs.previousScore))
+          : obs.labelSafe === 1
+            ? 0.9
+            : 0.1;
+    bySource.get(clusterId).push({
+      prob,
+      labelSafe: obs.labelSafe === 1 ? 1 : 0,
+      observationId: obs.observationId,
+      correctionKind: obs.correctionKind,
+    });
+  }
+  return Array.from(bySource.entries()).map(([clusterId, blocks]) => ({
+    clusterId,
+    blocks,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // 1. Client-Side Data-Quality & PII Routing Gatekeeper
 // ---------------------------------------------------------------------------
 function hashTrainingData(featureRows, labels) {
@@ -271,7 +474,7 @@ export function calibrateGatekeeper(bundle, calibFeatureRows, calibLabels, { alp
   return bundle;
 }
 
-export function decideGatekeeper(bundle, featureRow) {
+export function decideGatekeeper(bundle, featureRow, options = {}) {
   const dim = bundle.dim || 520;
   const weights = bundle.weights;
   const bias = bundle.bias;
@@ -288,30 +491,118 @@ export function decideGatekeeper(bundle, featureRow) {
 
   let action = 'ABSTAIN_HUMAN_REVIEW';
   let abstained = true;
+  let rejectionReason = GATE_REJECTION_REASONS.NONE;
+  let recoverability = GATE_RECOVERABILITY.NONE;
 
-  if (bundle.calibration) {
-    const { tauKeep, tauDrop, certified } = bundle.calibration;
+  const useCluster = Boolean(
+    !bundle.calibration &&
+    bundle.clusterCalibration &&
+    options.useClusterCalibration !== false
+  );
+  const activeCal = bundle.calibration || (useCluster ? bundle.clusterCalibration : null);
+
+  if (options.detectorError) {
+    action = 'DROP_OR_QUARANTINE';
+    abstained = false;
+    rejectionReason = GATE_REJECTION_REASONS.DETECTOR_ERROR;
+    recoverability = GATE_RECOVERABILITY.HARD_DROP;
+  } else if (options.unparsableInput) {
+    action = 'DROP_OR_QUARANTINE';
+    abstained = false;
+    rejectionReason = GATE_REJECTION_REASONS.UNPARSABLE_INPUT;
+    recoverability = GATE_RECOVERABILITY.HARD_DROP;
+  } else if (options.forensicAnomaly) {
+    if (options.forensicRecoverable) {
+      action = 'ABSTAIN_HUMAN_REVIEW';
+      abstained = true;
+      rejectionReason = GATE_REJECTION_REASONS.FORENSIC_ANOMALY;
+      recoverability = GATE_RECOVERABILITY.RECOVERABLE_HUMAN_REVIEW;
+    } else {
+      action = 'DROP_OR_QUARANTINE';
+      abstained = false;
+      rejectionReason = GATE_REJECTION_REASONS.FORENSIC_ANOMALY;
+      recoverability = GATE_RECOVERABILITY.HARD_DROP;
+    }
+  } else if (activeCal) {
+    const { tauKeep, tauDrop, certified } = activeCal;
+    const riskReason = useCluster
+      ? GATE_REJECTION_REASONS.CLUSTER_ADJUSTED_RISK_EXCEEDED
+      : GATE_REJECTION_REASONS.RISK_BUDGET_EXCEEDED;
+
     if (certified !== false && prob >= tauKeep) {
       action = 'KEEP_SAFE';
       abstained = false;
+      rejectionReason = GATE_REJECTION_REASONS.NONE;
+      recoverability = GATE_RECOVERABILITY.NONE;
     } else if (prob <= tauDrop) {
       action = 'DROP_OR_QUARANTINE';
       abstained = false;
+      rejectionReason = certified === false && (activeCal.nNegatives === 0 || activeCal.nUnsafeClusters === 0)
+        ? GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+        : riskReason;
+      recoverability = certified === false && (activeCal.nNegatives === 0 || activeCal.nUnsafeClusters === 0)
+        ? GATE_RECOVERABILITY.RECOVERABLE_RECALIBRATE
+        : GATE_RECOVERABILITY.HARD_DROP;
     } else {
       action = 'ABSTAIN_HUMAN_REVIEW';
       abstained = true;
+      if (certified === false) {
+        rejectionReason = GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT;
+        recoverability = GATE_RECOVERABILITY.RECOVERABLE_RECALIBRATE;
+      } else {
+        rejectionReason = riskReason;
+        recoverability = GATE_RECOVERABILITY.RECOVERABLE_HUMAN_REVIEW;
+      }
     }
   } else {
     action = prob >= 0.5 ? 'KEEP_SAFE' : 'DROP_OR_QUARANTINE';
     abstained = false;
+    if (action === 'DROP_OR_QUARANTINE') {
+      rejectionReason = GATE_REJECTION_REASONS.RISK_BUDGET_EXCEEDED;
+      recoverability = GATE_RECOVERABILITY.HARD_DROP;
+    }
   }
 
-  return {
+  // Optional dual-channel convex e-value hook (`AC-CRC` ready).
+  // Strictly inactive when neither `secondaryEValue` nor `adversaryEValue` is provided.
+  let eValueDiagnostics;
+  const hasSecondaryChannel =
+    options &&
+    (options.secondaryEValue !== undefined || options.adversaryEValue !== undefined);
+  if (hasSecondaryChannel) {
+    const secondaryE = options.secondaryEValue ?? options.adversaryEValue;
+    const primaryE = options.primaryEValue ?? 1.0;
+    const delta =
+      options.delta ??
+      bundle.eProcessCalibration?.delta ??
+      activeCal?.delta ??
+      0.05;
+    eValueDiagnostics = evaluateDualChannelEValue(primaryE, secondaryE, {
+      eValueWeights: options.eValueWeights ?? options.weights,
+      delta,
+    });
+
+    if (eValueDiagnostics.exceeded && action !== 'DROP_OR_QUARANTINE') {
+      action = 'ABSTAIN_HUMAN_REVIEW';
+      abstained = true;
+      rejectionReason = GATE_REJECTION_REASONS.E_VALUE_THRESHOLD_EXCEEDED;
+      recoverability = GATE_RECOVERABILITY.RECOVERABLE_HUMAN_REVIEW;
+    }
+  }
+
+  const decision = {
     prob,
     logit: z,
     action,
-    abstained
+    abstained,
+    policyAction: mapGateActionToPolicy(action),
+    rejectionReason,
+    recoverability,
   };
+  if (eValueDiagnostics) {
+    decision.eValueDiagnostics = eValueDiagnostics;
+  }
+  return decision;
 }
 
 export function evaluateExchangeabilityAndShift(bundle, inDistDataset, shiftedDataset) {
@@ -371,10 +662,20 @@ export function calibrateMultiAxisGatekeeper(multiBundle, calibFeatureRows, cali
   };
 }
 
-export function decideMultiAxisGatekeeper(multiBundle, featureRow) {
+export function decideMultiAxisGatekeeper(multiBundle, featureRow, options = {}) {
   const decisions = {};
   for (const axis of multiBundle.axes) {
-    decisions[axis] = decideGatekeeper(multiBundle.models[axis], featureRow);
+    const axisSpecific = options.axes?.[axis] || {};
+    const axisOptions = axis === 'safe' ? { ...options, ...axisSpecific } : { ...axisSpecific };
+    if (axis !== 'safe') {
+      if (options.detectorError) axisOptions.detectorError = options.detectorError;
+      if (options.unparsableInput) axisOptions.unparsableInput = options.unparsableInput;
+      if (options.forensicAnomaly) {
+        axisOptions.forensicAnomaly = options.forensicAnomaly;
+        axisOptions.forensicRecoverable = options.forensicRecoverable;
+      }
+    }
+    decisions[axis] = decideGatekeeper(multiBundle.models[axis], featureRow, axisOptions);
   }
 
   const allKeep =
@@ -395,18 +696,55 @@ export function decideMultiAxisGatekeeper(multiBundle, featureRow) {
     conjunctionAction = 'KEEP_SAFE';
   }
 
+  let rejectionReason = GATE_REJECTION_REASONS.NONE;
+  let recoverability = GATE_RECOVERABILITY.NONE;
+  if (conjunctionAction !== 'KEEP_SAFE') {
+    if (decisions.safe && decisions.safe.action !== 'KEEP_SAFE') {
+      rejectionReason = decisions.safe.rejectionReason;
+      recoverability =
+        conjunctionAction === 'DROP_OR_QUARANTINE' &&
+        decisions.safe.recoverability !== GATE_RECOVERABILITY.RECOVERABLE_RECALIBRATE
+          ? GATE_RECOVERABILITY.HARD_DROP
+          : decisions.safe.recoverability;
+    } else if (decisions.topic && decisions.topic.action !== 'KEEP_SAFE') {
+      rejectionReason =
+        decisions.topic.rejectionReason === GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+          ? GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+          : GATE_REJECTION_REASONS.TOPIC_POLICY_BLOCK;
+      recoverability =
+        decisions.topic.rejectionReason === GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+          ? GATE_RECOVERABILITY.RECOVERABLE_RECALIBRATE
+          : conjunctionAction === 'DROP_OR_QUARANTINE'
+            ? GATE_RECOVERABILITY.HARD_DROP
+            : GATE_RECOVERABILITY.RECOVERABLE_HUMAN_REVIEW;
+    } else if (decisions.useful && decisions.useful.action !== 'KEEP_SAFE') {
+      rejectionReason =
+        decisions.useful.rejectionReason === GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+          ? GATE_REJECTION_REASONS.CALIBRATION_INSUFFICIENT
+          : GATE_REJECTION_REASONS.USEFULNESS_BELOW_THRESHOLD;
+      recoverability = decisions.useful.recoverability;
+    }
+  }
+
   const probSum = multiBundle.axes.reduce((s, ax) => s + (decisions[ax]?.prob || 0), 0);
   const combinedProb = multiBundle.axes.length > 0 ? Math.round((probSum / multiBundle.axes.length) * 10000) / 10000 : 0;
 
-  return {
+  const result = {
     decisions,
     axes: decisions,
     allSafeAndUseful: allKeep,
     prob: combinedProb,
     action: conjunctionAction,
     conjunctionAction,
-    abstained: conjunctionAction === 'ABSTAIN_HUMAN_REVIEW'
+    abstained: conjunctionAction === 'ABSTAIN_HUMAN_REVIEW',
+    policyAction: mapGateActionToPolicy(conjunctionAction),
+    rejectionReason,
+    recoverability,
   };
+  if (decisions.safe?.eValueDiagnostics) {
+    result.eValueDiagnostics = decisions.safe.eValueDiagnostics;
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -573,8 +911,26 @@ export function calibrateClusterRobustGatekeeper(
 export function calibrateStreamingEProcessGatekeeper(
   bundle,
   calibClusters = [],
-  { alpha = 0.05, delta = 0.05, betFraction } = {}
+  {
+    alpha = 0.05,
+    delta = 0.05,
+    betFraction,
+    secondaryEValue,
+    adversaryEValue,
+    eValueWeights,
+    weights,
+  } = {}
 ) {
+  const hasSecondaryChannel = secondaryEValue !== undefined || adversaryEValue !== undefined;
+  const secondaryInput = secondaryEValue !== undefined ? secondaryEValue : adversaryEValue;
+  const resolvedWeights = hasSecondaryChannel
+    ? resolveConvexWeights(eValueWeights ?? weights)
+    : null;
+  if (hasSecondaryChannel && typeof secondaryInput !== 'function') {
+    // Fail closed immediately on invalid scalar secondary e-value
+    combineConvexEValues(1.0, secondaryInput, resolvedWeights);
+  }
+
   const normalizedClusters = calibClusters.map((cl, idx) => {
     const blocks = (cl.blocks || []).map((b) => {
       const prob = typeof b.prob === 'number' ? b.prob : decideGatekeeper(bundle, b.featureRow).prob;
@@ -600,6 +956,7 @@ export function calibrateStreamingEProcessGatekeeper(
   let certified = false;
   let maxEValueAtTau = 1.0;
   let stoppingStepAtTau = null;
+  let dualChannelAtTau = null;
 
   // Evaluate over streaming unsafe blocks or clusters
   const streamUnits = [];
@@ -638,16 +995,34 @@ export function calibrateStreamingEProcessGatekeeper(
     }
 
     const peakE = Math.exp(Math.min(50, maxLogWealth));
-    if (peakE >= targetWealth) {
+    let effectiveE = peakE;
+    let secE = null;
+    if (hasSecondaryChannel) {
+      secE = typeof secondaryInput === 'function'
+        ? secondaryInput(t, { primaryE: peakE, alpha, delta, step })
+        : secondaryInput;
+      effectiveE = combineConvexEValues(peakE, secE, resolvedWeights);
+    }
+
+    if (effectiveE >= targetWealth) {
       tauKeep = Number(t.toFixed(2));
       certified = true;
-      maxEValueAtTau = Number(peakE.toFixed(3));
+      maxEValueAtTau = Number(effectiveE.toFixed(3));
       stoppingStepAtTau = stopAt;
+      if (hasSecondaryChannel) {
+        dualChannelAtTau = {
+          enabled: true,
+          primaryEValue: Number(peakE.toFixed(3)),
+          secondaryEValue: Number(secE.toFixed(3)),
+          jointEValue: Number(effectiveE.toFixed(3)),
+          weights: { ...resolvedWeights },
+        };
+      }
       break;
     }
   }
 
-  bundle.eProcessCalibration = {
+  const calResult = {
     method: 'E-LTT (Anytime-Valid Ville Betting Supermartingale)',
     alpha,
     delta,
@@ -661,6 +1036,16 @@ export function calibrateStreamingEProcessGatekeeper(
     stoppingClusterStep: stoppingStepAtTau,
     certified,
   };
+  if (hasSecondaryChannel) {
+    calResult.dualChannel = dualChannelAtTau || {
+      enabled: true,
+      primaryEValue: 1.0,
+      secondaryEValue: typeof secondaryInput === 'number' ? secondaryInput : null,
+      jointEValue: maxEValueAtTau,
+      weights: { ...resolvedWeights },
+    };
+  }
+  bundle.eProcessCalibration = calResult;
 
   return bundle;
 }
