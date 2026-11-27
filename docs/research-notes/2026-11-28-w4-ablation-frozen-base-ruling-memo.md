@@ -45,7 +45,7 @@ evaluation, not the Kaggle 2x T4 recipe.
    effect; freezing keeps more of it, which makes the post-hoc INLP step more
    necessary, not less.
 
-## 3. Recommendation for the #44 ruling
+## 3. Ruling for #44 (adopted 2026-11-28, founder authorization "please do all")
 
 Adopt INLP (post-hoc, fitted on identity labels only, link labels never used)
 as the identity-suppression mechanism on the frozen-base recipe, and drop the

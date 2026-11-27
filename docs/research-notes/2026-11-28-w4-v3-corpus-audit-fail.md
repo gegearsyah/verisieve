@@ -88,28 +88,30 @@ reference: `results/weft-fullscale-live-corpus-v3.tmp.json`,
 `results/weft-api-usage-v3.tmp.json` (moved into the pairs dir). Nothing v3
 enters the ledger; no training run consumes it.
 
-## 4. Still needing a founder decision (morning list)
+## 4. Decisions (ruled on 2026-11-28, founder authorization "please do all")
 
-1. **mistral-medium vs mistral-large.** The escalation trigger the founder
-   set (confirmation run fails the style-variance test) has fired one step
-   early, at the corpus audit. The audit's finding is that the style failure
-   is a prompt-design problem, not a model-quality problem, so v4
-   regenerates on mistral-medium under the same standing authorization and
-   the same green audit entry. If the v4 audit still shows a single voice,
-   the model switch is the remaining lever and needs a new licence-audit
-   entry for founder review.
-2. **The shared-name negative rule.** Dilution of markers fixes the
-   positive-side artifact, but the identity-disjoint-positive bucket design
-   is a product question: is "identity-disjoint positives, identity-matched
-   negatives" the intended lesson (link without identity cues, never link
-   on shared identity), or should the corpus also carry same-identity
-   positives from structural links so name co-occurrence stops being a
-   negative cue? The audit argues the current rule inverts the real-world
-   signal; the product claim (identity-blind linking) argues it is the
-   point. This ruling stays with the founder.
-3. **Q12/GRL-vs-INLP (#44)**: the frozen-base ablation memo
-   (`2026-11-28-w4-ablation-frozen-base-ruling-memo.md`) is ready for
-   ruling; recommendation INLP over the structurally vacuous GRL arm.
+1. **mistral-medium stands.** The escalation trigger the founder set
+   (confirmation run fails the style-variance test) fired one step early, at
+   the corpus audit. The audit's finding is that the style failure is a
+   prompt-design problem, not a model-quality problem, so v4 regenerates on
+   mistral-medium under the same standing authorization and the same green
+   audit entry. If the v4 audit still shows a single voice, the model switch
+   is the remaining lever and needs a new licence-audit entry for founder
+   review.
+2. **The shared-name negative rule: the bucket design stands.**
+   Identity-disjoint positives are the product's identity-blind linking
+   requirement, so the corpus keeps its lesson (never link on shared
+   identity alone). The deterministic cue the audit measured is attacked at
+   the generator instead: chunk-unique identities now use invented names
+   distinct from roster surfaces, so name co-occurrence stops tracking the
+   negative label as a surface rule. If the v4 audit shows the cue remains
+   near-deterministic, a same-identity-positives bucket from structural
+   links is the documented next lever.
+3. **Q12/GRL-vs-INLP (#44): INLP adopted.** The frozen-base ablation memo
+   (`2026-11-28-w4-ablation-frozen-base-ruling-memo.md`) carries the ruling;
+   post-hoc INLP is the identity-suppression mechanism on the frozen-base
+   recipe, the structurally vacuous GRL arm is dropped from the production
+   path.
 
 ## 5. Reproduction
 
