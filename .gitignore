@@ -46,3 +46,5 @@ paper/figs/_preview_*.png
 .env.*
 *.key
 secrets/
+.anthropic-key
+*-key
