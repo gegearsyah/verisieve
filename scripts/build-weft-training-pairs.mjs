@@ -51,6 +51,10 @@ const PERMISSIVE_TEACHER_LICENCES = new Set([
   'cc0-1.0',
 ]);
 const OPENAI_HOST = /(^|\.)openai\.com$/i;
+// API teachers are a separate verification class: a model-access licence, never weights.
+const API_TEACHER_LICENCE = 'mistral-api-tos';
+const DEFAULT_API_TEACHER = path.join(ROOT, 'scripts/weft-mistral-teacher.mjs');
+const DEFAULT_TEACHER_CHUNK = 10;
 
 // ---------------------------------------------------------------------------
 // Licence audit. Facts are the verified rows of the 2026-11-27 research note;
@@ -212,12 +216,44 @@ function sha256Hex(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+/**
+ * Read the appended licence audit and return the green API-teacher entry.
+ * The audit artifact, not the exported LICENCE_AUDIT, carries the API entry.
+ */
+function greenApiTeacherEntry(auditPath) {
+  let audit;
+  try {
+    audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+  } catch {
+    throw new WeftTeacherUnavailableError(
+      `licence audit is unavailable at ${auditPath}`,
+      'audit-unavailable'
+    );
+  }
+  const entries = Array.isArray(audit.sources) ? audit.sources : [];
+  const entry = entries.find(
+    (source) =>
+      source &&
+      (source.id === 'mistral-medium' || source.modelId === 'mistral-medium') &&
+      source.status === 'green' &&
+      String(source.licence || '').toLowerCase() === API_TEACHER_LICENCE
+  );
+  if (!entry) {
+    throw new WeftTeacherUnavailableError(
+      `no green ${API_TEACHER_LICENCE} entry for mistral-medium in the licence audit`,
+      'api-teacher-unverified'
+    );
+  }
+  return entry;
+}
+
 // ---------------------------------------------------------------------------
-// Teacher runtime: local only, permissive licence, fail closed otherwise.
+// Teacher runtime: local open-weight or audited API, permissive licence, fail closed otherwise.
 // ---------------------------------------------------------------------------
 export function resolveLocalTeacher(env = process.env) {
   const endpoint = env.WEFT_TEACHER_URL;
   const command = env.WEFT_TEACHER_CMD;
+  const kind = String(env.WEFT_TEACHER_KIND || '').toLowerCase();
   const licence = String(env.WEFT_TEACHER_LICENCE || '').toLowerCase();
 
   if (endpoint) {
@@ -237,6 +273,55 @@ export function resolveLocalTeacher(env = process.env) {
       'no bundled HTTP teacher adapter; set WEFT_TEACHER_CMD to a local open-weight model binary',
       'http-adapter-absent'
     );
+  }
+  if (kind === 'api') {
+    if (!licence) {
+      throw new WeftTeacherUnavailableError(
+        `WEFT_TEACHER_LICENCE must be ${API_TEACHER_LICENCE} for an API teacher`,
+        'licence-absent'
+      );
+    }
+    if (licence !== API_TEACHER_LICENCE) {
+      throw new WeftTeacherUnavailableError(
+        `an API teacher requires licence ${API_TEACHER_LICENCE}; weights licence ${JSON.stringify(licence)} cannot authorize it`,
+        'api-licence-required'
+      );
+    }
+    const entry = greenApiTeacherEntry(env.WEFT_LICENCE_AUDIT || OUT_AUDIT);
+    const auditedModel = String(entry.modelId || 'mistral-medium');
+    const model = String(env.WEFT_TEACHER_MODEL || auditedModel);
+    if (model !== auditedModel) {
+      throw new WeftTeacherUnavailableError(
+        `model ${JSON.stringify(model)} is not the audited API teacher ${JSON.stringify(auditedModel)}`,
+        'api-teacher-unverified'
+      );
+    }
+    const adapter = command || DEFAULT_API_TEACHER;
+    return {
+      kind: 'api',
+      command: adapter,
+      endpoint: null,
+      licence,
+      model,
+      auditEntry: entry,
+      complete(prompt) {
+        const res = spawnSync(process.execPath, [adapter], {
+          input: String(prompt),
+          encoding: 'utf8',
+          maxBuffer: 64 * 1024 * 1024,
+          shell: false,
+          env: { ...process.env, ...env },
+        });
+        if (res.error || res.status !== 0) {
+          const tail = String(res.stderr || '').trim().split(/\r?\n/).filter(Boolean).pop() || '';
+          throw new WeftTeacherUnavailableError(
+            `API teacher adapter failed: ${res.error ? res.error.message : `exit ${res.status}${tail ? `: ${tail}` : ''}`}`,
+            'runtime-failed'
+          );
+        }
+        return res.stdout;
+      },
+    };
   }
   if (!command) {
     throw new WeftTeacherUnavailableError(
@@ -287,50 +372,117 @@ const DEFAULT_LIVE_THEMES = [
   'product launch readiness',
 ];
 
+// Shared identity roster pinned into every chunk prompt. Each chunk is
+// single-theme, so without a shared roster the teacher cannot reuse identity
+// keys across themes and identity-matched theme-different negatives never
+// compile. Invented names, deterministic, constant.
+const SHARED_IDENTITY_ROSTER = [
+  { key: 'emp-alex-carter', surface: 'Alex Carter', class: 'person' },
+  { key: 'emp-priya-nair', surface: 'Priya Nair', class: 'person' },
+  { key: 'emp-tomas-rivera', surface: 'Tomas Rivera', class: 'person' },
+  { key: 'emp-mei-chen', surface: 'Mei Chen', class: 'person' },
+  { key: 'emp-jonah-weber', surface: 'Jonah Weber', class: 'person' },
+  { key: 'emp-sofia-rossi', surface: 'Sofia Rossi', class: 'person' },
+  { key: 'emp-daniel-okafor', surface: 'Daniel Okafor', class: 'person' },
+  { key: 'emp-hana-sato', surface: 'Hana Sato', class: 'person' },
+  { key: 'emp-elena-petrova', surface: 'Elena Petrova', class: 'person' },
+  { key: 'emp-marcus-webb', surface: 'Marcus Webb', class: 'person' },
+  { key: 'emp-aisha-khan', surface: 'Aisha Khan', class: 'person' },
+  { key: 'emp-lucas-meyer', surface: 'Lucas Meyer', class: 'person' },
+  { key: 'vendor-northwind-supply', surface: 'Northwind Supply Co', class: 'organization' },
+  { key: 'vendor-helios-cloud', surface: 'Helios Cloud Services', class: 'organization' },
+];
+
 /**
- * Generate synthetic multi-format estates with a local open-weight teacher.
- * The teacher must expose `complete(prompt)` and carry a permissive licence.
- * Returns { docs, links } in the compiler input shape.
+ * Generate synthetic multi-format estates with a teacher.
+ * The teacher must expose `complete(prompt)` and carry either a permissive open-weight
+ * licence or an audited API-teacher entry. Each theme is generated in chunks of at most
+ * `chunkSize` documents (env WEFT_TEACHER_CHUNK, default 10) until the per-theme target
+ * is met, with a deterministic seed per chunk. Returns { docs, links }.
  */
 export function generateTeacherEstates(teacher, options = {}) {
   if (!teacher || typeof teacher.complete !== 'function') {
     throw new WeftTeacherUnavailableError('live generation requires a resolved local teacher runtime', 'runtime-absent');
   }
-  if (!PERMISSIVE_TEACHER_LICENCES.has(String(teacher.licence || '').toLowerCase())) {
+  const licence = String(teacher.licence || '').toLowerCase();
+  if (teacher.kind === 'api') {
+    if (licence !== API_TEACHER_LICENCE) {
+      throw new WeftTeacherUnavailableError(
+        `live generation requires licence ${API_TEACHER_LICENCE} for an API teacher`,
+        'licence-not-permissive'
+      );
+    }
+    if (!teacher.auditEntry || teacher.auditEntry.status !== 'green') {
+      throw new WeftTeacherUnavailableError(
+        `live generation requires a green ${API_TEACHER_LICENCE} audit entry`,
+        'api-teacher-unverified'
+      );
+    }
+  } else if (!PERMISSIVE_TEACHER_LICENCES.has(licence)) {
     throw new WeftTeacherUnavailableError('live generation requires a permissively-licensed open-weight teacher', 'licence-not-permissive');
   }
   const themes = Array.isArray(options.themes) && options.themes.length ? options.themes : DEFAULT_LIVE_THEMES;
   const pairsTarget = options.pairsTarget ?? 50000;
   const perTheme = Math.max(5, Math.ceil(pairsTarget / 8 / themes.length));
+  const rawChunk = options.chunkSize ?? process.env.WEFT_TEACHER_CHUNK ?? DEFAULT_TEACHER_CHUNK;
+  const parsedChunk = Number.parseInt(rawChunk, 10);
+  const chunkSize = Number.isInteger(parsedChunk) && parsedChunk > 0 ? parsedChunk : DEFAULT_TEACHER_CHUNK;
+  const baseSeed = Number.isInteger(options.seed) ? options.seed : 0;
   const docs = [];
   const links = [];
-  for (const theme of themes) {
-    const prompt = [
-      'Return only a JSON object.',
-      `Produce ${perTheme} short documents about the theme ${JSON.stringify(theme)}.`,
-      'Mix formats: email, transcript, slides, table, ticket, pdf-scan. Mix departments.',
-      'Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],',
-      '"links":[{"a","b","type"}]} where type is one of thread, attachment, meeting-minutes, ticket-pr, hyperlink.',
-      'Reuse some identity keys across themes and keep others disjoint so hard negatives and identity-disjoint positives both exist.',
-    ].join(' ');
-    const raw = teacher.complete(prompt);
-    const start = raw.indexOf('{');
-    const end = raw.lastIndexOf('}');
-    if (start < 0 || end <= start) {
-      throw new WeftTeacherUnavailableError('local teacher returned no JSON object', 'runtime-failed');
+  themes.forEach((theme, themeIndex) => {
+    const themePrefix = String(theme).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theme';
+    let collected = 0;
+    for (let chunk = 0; collected < perTheme; chunk++) {
+      const want = Math.min(chunkSize, perTheme - collected);
+      const seed = (baseSeed * 1000003 + themeIndex * 10007 + chunk) >>> 0;
+      const prompt = [
+        `Seed: ${seed}.`,
+        'Return only a JSON object.',
+        `Produce ${want} short documents about the theme ${JSON.stringify(theme)}.`,
+        'Mix formats: email, transcript, slides, table, ticket, pdf-scan. Mix departments.',
+        'Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],',
+        '"links":[{"a","b","type"}]} where type is one of thread, attachment, meeting-minutes, ticket-pr, hyperlink.',
+        'Reuse some identity keys within the chunk so linked documents share identities.',
+        `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(SHARED_IDENTITY_ROSTER)}.`,
+        'Each document uses 1 or 2 roster identities at most and at least 3 identity keys unique to this chunk, so same-theme documents can be fully identity-disjoint.',
+        `This is chunk ${chunk + 1}; ids must be unique within the chunk.`,
+      ].join(' ');
+      const raw = teacher.complete(prompt);
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start < 0 || end <= start) {
+        throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(raw.slice(start, end + 1));
+      } catch {
+        throw new WeftTeacherUnavailableError('teacher returned malformed JSON', 'runtime-failed');
+      }
+      if (!parsed || !Array.isArray(parsed.docs) || parsed.docs.length === 0) {
+        throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
+      }
+      // Namespace ids per chunk so repeated model ids across calls cannot collide.
+      const idMap = new Map();
+      const used = new Set();
+      parsed.docs.forEach((doc, index) => {
+        const oldId = doc && typeof doc.id === 'string' && doc.id ? doc.id : `doc-${index}`;
+        let newId = `${themePrefix}-c${chunk}-${oldId}`;
+        let suffix = 1;
+        while (used.has(newId)) newId = `${themePrefix}-c${chunk}-${oldId}-${suffix++}`;
+        used.add(newId);
+        idMap.set(oldId, newId);
+        docs.push({ ...doc, id: newId, source: (doc && doc.source) || 'synthetic-estate' });
+      });
+      for (const link of Array.isArray(parsed.links) ? parsed.links : []) {
+        const a = idMap.get(link && link.a);
+        const b = idMap.get(link && link.b);
+        if (a && b && a !== b) links.push({ ...link, a, b });
+      }
+      collected += parsed.docs.length;
     }
-    let parsed;
-    try {
-      parsed = JSON.parse(raw.slice(start, end + 1));
-    } catch {
-      throw new WeftTeacherUnavailableError('local teacher returned malformed JSON', 'runtime-failed');
-    }
-    if (!parsed || !Array.isArray(parsed.docs)) {
-      throw new WeftTeacherUnavailableError('local teacher JSON is missing a docs array', 'runtime-failed');
-    }
-    for (const doc of parsed.docs) docs.push({ ...doc, source: doc.source || 'synthetic-estate' });
-    for (const link of Array.isArray(parsed.links) ? parsed.links : []) links.push(link);
-  }
+  });
   return { docs, links };
 }
 
@@ -489,6 +641,13 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const rejected = {};
   const emitted = new Set();
   const pairs = [];
+  // Hard negatives and identity-disjoint positives both grow quadratically once
+  // a shared roster puts overlapping identities in most documents; a per-document
+  // cap keeps the pools balanced and memory bounded at full scale.
+  const capPerDoc = Math.max(4, Math.ceil(targetPairs / Math.max(1, docs.length)));
+  const perDocPairs = new Map();
+  const docUnderCap = (doc) => (perDocPairs.get(doc.id) || 0) < capPerDoc;
+  const docBump = (doc) => perDocPairs.set(doc.id, (perDocPairs.get(doc.id) || 0) + 1);
 
   const reject = (doc, status) => {
     const bucket = (rejected[doc.source] ||= { count: 0, status });
@@ -577,6 +736,9 @@ export function compileWeftTrainingPairs(input, options = {}) {
       const b = ordered[j];
       if (a.theme === b.theme) continue;
       if (sharedIdentityKeys(a, b).length === 0) continue;
+      if (!docUnderCap(a) || !docUnderCap(b)) continue;
+      docBump(a);
+      docBump(b);
       emit('identity-matched-theme-different-negative', a, b, {});
     }
   }
@@ -588,12 +750,39 @@ export function compileWeftTrainingPairs(input, options = {}) {
       const b = ordered[j];
       if (a.theme !== b.theme) continue;
       if (sharedIdentityKeys(a, b).length !== 0) continue;
+      if (!docUnderCap(a) || !docUnderCap(b)) continue;
+      docBump(a);
+      docBump(b);
       emit('identity-disjoint-same-theme-positive', a, b, {});
     }
   }
 
   pairs.sort((a, b) => (a.id < b.id ? -1 : 1));
-  const kept = pairs.slice(0, targetPairs);
+  let kept = pairs;
+  if (pairs.length > targetPairs) {
+    // Balanced fill: a plain slice of the id-sorted pool is dominated by whichever
+    // bucket is quadratic; round-robin across pair types so no type crowds out another.
+    const buckets = new Map();
+    for (const p of pairs) {
+      if (!buckets.has(p.pairType)) buckets.set(p.pairType, []);
+      buckets.get(p.pairType).push(p);
+    }
+    const types = [...buckets.keys()].sort();
+    kept = [];
+    for (let round = 0; kept.length < targetPairs; round++) {
+      let added = false;
+      for (const type of types) {
+        if (kept.length >= targetPairs) break;
+        const p = buckets.get(type)[round];
+        if (p) {
+          kept.push(p);
+          added = true;
+        }
+      }
+      if (!added) break;
+    }
+    kept.sort((a, b) => (a.id < b.id ? -1 : 1));
+  }
   // Small hand-checkable evaluation slice: an explicit evalSize, else a quarter capped at 32.
   const evalSize = Number.isInteger(options.evalSize) && options.evalSize >= 0
     ? options.evalSize

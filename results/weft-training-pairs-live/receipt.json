@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "weft-training-pairs",
+  "policy": "weft-pairs-v1",
+  "mode": "live",
+  "generator": "local-teacher",
+  "targetPairs": 40,
+  "pairCount": 40,
+  "trainCount": 30,
+  "evalCount": 10,
+  "evalPairIds": [
+    "02575dfeff9711b70781dd3c52dd4cf241a9e8f9ee1bfebcf7d89f1ae3d0a889",
+    "03ffe96f4da65333ac2abb7f9998b73904f9da6e76bfe71014e05faf533d792f",
+    "0f0222a9fe7baec1e30b6bf51d9c5d4e147d78dd15ffe8446e6a561368ceb48d",
+    "11751b02781506b5524b3ebc691e7b495cbb35b090185614c9fa8d4d5a9ffbb5",
+    "16d1d3d1862ad03c16c6d1d4eb0d66804eef8dd0b3918d76ebcb9456882c6bd5",
+    "1a6255e4a2f3f39555b502bbef760d004a674c64652149551ba83260a93f643d",
+    "2028fc888615cd023cc5fb1bb527fb76ed71b2dd0dd1d87ea64ef2acd334e3bb",
+    "2257ad6622e6a2eb2503ae345d743e045102fbec6f042402c690a285538a102d",
+    "272c44048675c3f2b780ccaf9300482b99563d5ddbfedcc063a866072218abc1",
+    "2cd5274add12d688103959df305b38681cdc8696f1c52c84da3c33010d2137cb"
+  ],
+  "byType": {
+    "identity-matched-theme-different-negative": 24,
+    "identity-disjoint-same-theme-positive": 7,
+    "identity-masked-positive": 9
+  },
+  "byLabel": {
+    "positive": 16,
+    "negative": 24
+  },
+  "augmentations": {
+    "asr": 0,
+    "ocr": 3,
+    "slide-fragmentation": 0
+  },
+  "usedSources": {
+    "synthetic-estate": "green"
+  },
+  "rejected": {},
+  "pairJsonlSha256": "b8be2702ebcf4f042f488e99624a756c8c2b6cb0dd3ebec6e4c677b5c69fd0d6",
+  "trainJsonlSha256": "d35d2238fca688fc85677a35568f48b778ddcfd1815336428050e07d886d5093",
+  "evalJsonlSha256": "7fae247e4935b87b966c87cc7976e9b77129a84cf3db8639e710c20c78d8e320"
+}

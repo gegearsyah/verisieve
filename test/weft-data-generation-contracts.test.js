@@ -300,8 +300,9 @@ test('W-Data 6: licence and realism artifacts are append-only', (t) => {
   assert.ok(committed.sources.length > LICENCE_AUDIT.sources.length, 'a teacher entry must be appended');
   assert.deepEqual(committed.sources.slice(0, LICENCE_AUDIT.sources.length), LICENCE_AUDIT.sources,
     'the original audit entries must be byte-for-byte unchanged in content');
-  const appended = committed.sources.at(-1);
-  assert.equal(appended.id, 'mistral-7b-instruct-v0.3');
+  // Find by id, not position: later tickets keep appending teacher entries at the end.
+  const appended = committed.sources.find((source) => source.id === 'mistral-7b-instruct-v0.3');
+  assert.ok(appended, 'the W-Data weights teacher entry must be present');
   assert.equal(appended.modelId, 'mistralai/Mistral-7B-Instruct-v0.3');
   assert.equal(appended.licence, 'Apache-2.0');
   assert.equal(appended.status, 'green');
