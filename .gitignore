@@ -48,3 +48,6 @@ paper/figs/_preview_*.png
 secrets/
 .anthropic-key
 *-key
+
+# scratch corpora kept on disk for follow-up audits, never committed
+results/*.tmp.json

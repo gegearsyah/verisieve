@@ -304,6 +304,8 @@ export function resolveLocalTeacher(env = process.env) {
       licence,
       model,
       auditEntry: entry,
+      // Honest token accounting: sum the adapter's per-call usage stderr lines.
+      usage: { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0 },
       complete(prompt) {
         const res = spawnSync(process.execPath, [adapter], {
           input: String(prompt),
@@ -318,6 +320,18 @@ export function resolveLocalTeacher(env = process.env) {
             `API teacher adapter failed: ${res.error ? res.error.message : `exit ${res.status}${tail ? `: ${tail}` : ''}`}`,
             'runtime-failed'
           );
+        }
+        for (const line of String(res.stderr || '').split(/\r?\n/)) {
+          if (!line.startsWith('{"type":"usage"')) continue;
+          try {
+            const u = JSON.parse(line);
+            this.usage.calls += 1;
+            this.usage.promptTokens += u.promptTokens || 0;
+            this.usage.completionTokens += u.completionTokens || 0;
+            this.usage.totalTokens += u.totalTokens || 0;
+          } catch {
+            // A malformed usage line never fails the generation.
+          }
         }
         return res.stdout;
       },
@@ -448,20 +462,33 @@ export function generateTeacherEstates(teacher, options = {}) {
         'Each document uses 1 or 2 roster identities at most and at least 3 identity keys unique to this chunk, so same-theme documents can be fully identity-disjoint.',
         `This is chunk ${chunk + 1}; ids must be unique within the chunk.`,
       ].join(' ');
-      const raw = teacher.complete(prompt);
-      const start = raw.indexOf('{');
-      const end = raw.lastIndexOf('}');
-      if (start < 0 || end <= start) {
-        throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
-      }
-      let parsed;
-      try {
-        parsed = JSON.parse(raw.slice(start, end + 1));
-      } catch {
-        throw new WeftTeacherUnavailableError('teacher returned malformed JSON', 'runtime-failed');
-      }
-      if (!parsed || !Array.isArray(parsed.docs) || parsed.docs.length === 0) {
-        throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
+      // One bounded retry per chunk: a single truncated response must not kill a
+      // long live run; the seed shifts so the retry is a fresh sample.
+      let parsed = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        let raw;
+        try {
+          raw = teacher.complete(attempt === 0 ? prompt : prompt.replace(`Seed: ${seed}.`, `Seed: ${seed + 1}.`));
+        } catch (err) {
+          if (attempt === 1) throw err;
+          continue;
+        }
+        const start = raw.indexOf('{');
+        const end = raw.lastIndexOf('}');
+        if (start < 0 || end <= start) {
+          if (attempt === 1) throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
+          continue;
+        }
+        try {
+          parsed = JSON.parse(raw.slice(start, end + 1));
+        } catch {
+          parsed = null;
+        }
+        if (parsed && Array.isArray(parsed.docs) && parsed.docs.length > 0) break;
+        parsed = null;
+        if (attempt === 1) {
+          throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
+        }
       }
       // Namespace ids per chunk so repeated model ids across calls cannot collide.
       const idMap = new Map();
@@ -642,12 +669,14 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const emitted = new Set();
   const pairs = [];
   // Hard negatives and identity-disjoint positives both grow quadratically once
-  // a shared roster puts overlapping identities in most documents; a per-document
-  // cap keeps the pools balanced and memory bounded at full scale.
+  // a shared roster puts overlapping identities in most documents; per-document
+  // budgets are tracked per pair type so the negatives loop (which runs before
+  // the others) cannot spend the budget the disjoint-positive loop needs.
   const capPerDoc = Math.max(4, Math.ceil(targetPairs / Math.max(1, docs.length)));
   const perDocPairs = new Map();
-  const docUnderCap = (doc) => (perDocPairs.get(doc.id) || 0) < capPerDoc;
-  const docBump = (doc) => perDocPairs.set(doc.id, (perDocPairs.get(doc.id) || 0) + 1);
+  const docKey = (type, doc) => `${type}\u0000${doc.id}`;
+  const docUnderCap = (type, doc) => (perDocPairs.get(docKey(type, doc)) || 0) < capPerDoc;
+  const docBump = (type, doc) => perDocPairs.set(docKey(type, doc), (perDocPairs.get(docKey(type, doc)) || 0) + 1);
 
   const reject = (doc, status) => {
     const bucket = (rejected[doc.source] ||= { count: 0, status });
@@ -736,9 +765,9 @@ export function compileWeftTrainingPairs(input, options = {}) {
       const b = ordered[j];
       if (a.theme === b.theme) continue;
       if (sharedIdentityKeys(a, b).length === 0) continue;
-      if (!docUnderCap(a) || !docUnderCap(b)) continue;
-      docBump(a);
-      docBump(b);
+      if (!docUnderCap('identity-matched-theme-different-negative', a) || !docUnderCap('identity-matched-theme-different-negative', b)) continue;
+      docBump('identity-matched-theme-different-negative', a);
+      docBump('identity-matched-theme-different-negative', b);
       emit('identity-matched-theme-different-negative', a, b, {});
     }
   }
@@ -750,9 +779,9 @@ export function compileWeftTrainingPairs(input, options = {}) {
       const b = ordered[j];
       if (a.theme !== b.theme) continue;
       if (sharedIdentityKeys(a, b).length !== 0) continue;
-      if (!docUnderCap(a) || !docUnderCap(b)) continue;
-      docBump(a);
-      docBump(b);
+      if (!docUnderCap('identity-disjoint-same-theme-positive', a) || !docUnderCap('identity-disjoint-same-theme-positive', b)) continue;
+      docBump('identity-disjoint-same-theme-positive', a);
+      docBump('identity-disjoint-same-theme-positive', b);
       emit('identity-disjoint-same-theme-positive', a, b, {});
     }
   }

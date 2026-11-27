@@ -150,7 +150,12 @@ async function main() {
     }, JSON.stringify(body), timeoutMs);
 
     if (r.status === 0) {
-      // Never surface the request, headers, or the key: only the error name.
+      // Transient socket failures (reset, closed, DNS blip) are retryable like 5xx;
+      // never surface the request, headers, or the key: only the error name.
+      if (attempt < MAX_ATTEMPTS) {
+        await sleep(BACKOFF_BASE_MS * 2 ** (attempt - 1));
+        continue;
+      }
       fail('WEFT_TEACHER_UPSTREAM_FAILED', `network request failed: ${r.errName}`);
     }
     if (r.status === 401 || r.status === 403) {

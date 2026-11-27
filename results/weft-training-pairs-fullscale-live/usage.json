@@ -1,0 +1,29 @@
+{
+  "kind": "weft-api-teacher-usage",
+  "model": "mistral-medium",
+  "startedAt": "2026-11-27T05:20:08.216Z",
+  "finishedAt": "2026-11-27T07:50:41.237Z",
+  "wallclockMs": 9033021,
+  "teacherCalls": 631,
+  "promptTokens": 305162,
+  "completionTokens": 1618248,
+  "totalTokens": 1923410,
+  "corpus": {
+    "docs": 6252,
+    "links": 3603
+  },
+  "receipt": {
+    "pairCount": 49070,
+    "byType": {
+      "identity-matched-theme-different-negative": 23661,
+      "identity-disjoint-same-theme-positive": 24206,
+      "identity-masked-positive": 1203
+    },
+    "byLabel": {
+      "positive": 25409,
+      "negative": 23661
+    }
+  },
+  "recompiledAt": "2026-11-27T07:51:34.925Z",
+  "recompileNote": "recompiled locally from the saved corpus after the per-type budget fix; token counts are the original generation facts"
+}
