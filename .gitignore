@@ -40,3 +40,9 @@ paper/*.log
 
 # Figure build previews
 paper/figs/_preview_*.png
+
+# Secrets and API keys (never commit)
+.env
+.env.*
+*.key
+secrets/
