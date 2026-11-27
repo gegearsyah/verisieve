@@ -3523,6 +3523,3623 @@
         "Fixture-scale compute is disclosed in environment.computeDisclosure.",
         "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
       ]
+    },
+    {
+      "runId": "f40c17ad9c40b308c9a618afe6975bb6ab74ae9252127687453da3b0957c4ea4",
+      "ticket": "W4",
+      "status": "ran",
+      "stage": "bare",
+      "extras": [],
+      "createdAt": "2026-11-27T15:24:08.379439+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127,
+        "probe": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1)",
+        "parameterCount": 23156610,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs/train.jsonl",
+        "trainSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+        "trainRawSha256": "aadb874dda643a661369eb7735a8c19444c11d1f4e1215160ccb5e5ca7c48655",
+        "receiptPath": "results/weft-training-pairs/receipt.json",
+        "receiptSha256": "03e5f4d21c88fce65260304a4131bef59bd453a44ad508fa5d91741024eac848",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 11,
+        "scale": "fixture",
+        "licenceTrace": {
+          "usedSources": {
+            "synthetic-estate": "green"
+          },
+          "teacher": "not used for fixture pairs",
+          "baseEncoder": "Apache-2.0"
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 11,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "extraWeights": {
+          "adversary": 0.0,
+          "setConditioning": 0.0,
+          "triangle": 0.0,
+          "modality": 0.0
+        },
+        "adversaryLambda": 1.0,
+        "triangleMargin": 0.1,
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "extrasEnabled": [],
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head"
+      },
+      "environment": {
+        "device": "cpu",
+        "cudaAvailable": false,
+        "cudaVersion": null,
+        "gpuCount": 0,
+        "gpuNames": [],
+        "torch": "2.10.0+cpu",
+        "transformers": "4.57.6",
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "kaggle": false,
+        "computeDisclosure": "CPU fixture-scale run on 11 W2 pairs and the W1 synthetic estate; not the Kaggle 2x T4 recipe"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 2.4598305225372314,
+            "linkBce": 0.6837360858917236,
+            "crossclr": 2.1630663871765137,
+            "evidence": 3.472806453704834
+          },
+          {
+            "epoch": 2,
+            "loss": 2.005056858062744,
+            "linkBce": 0.6007273197174072,
+            "crossclr": 1.4207483530044556,
+            "evidence": 3.4697775840759277
+          },
+          {
+            "epoch": 3,
+            "loss": 1.757297158241272,
+            "linkBce": 0.5268659591674805,
+            "crossclr": 1.0717636346817017,
+            "evidence": 3.4727470874786377
+          },
+          {
+            "epoch": 4,
+            "loss": 1.6592285633087158,
+            "linkBce": 0.46188050508499146,
+            "crossclr": 1.0046887397766113,
+            "evidence": 3.4750187397003174
+          },
+          {
+            "epoch": 5,
+            "loss": 1.5857930183410645,
+            "linkBce": 0.4111635982990265,
+            "crossclr": 0.9630954265594482,
+            "evidence": 3.4654088020324707
+          },
+          {
+            "epoch": 6,
+            "loss": 1.5016067028045654,
+            "linkBce": 0.34116628766059875,
+            "crossclr": 0.9359092116355896,
+            "evidence": 3.462428569793701
+          },
+          {
+            "epoch": 7,
+            "loss": 1.4330272674560547,
+            "linkBce": 0.2727473974227905,
+            "crossclr": 0.933354914188385,
+            "evidence": 3.468012571334839
+          },
+          {
+            "epoch": 8,
+            "loss": 1.373512864112854,
+            "linkBce": 0.21580596268177032,
+            "crossclr": 0.9317554831504822,
+            "evidence": 3.4591457843780518
+          },
+          {
+            "epoch": 9,
+            "loss": 1.307295799255371,
+            "linkBce": 0.15472261607646942,
+            "crossclr": 0.9204180240631104,
+            "evidence": 3.4618210792541504
+          },
+          {
+            "epoch": 10,
+            "loss": 1.2884900569915771,
+            "linkBce": 0.13507062196731567,
+            "crossclr": 0.9237887859344482,
+            "evidence": 3.457625150680542
+          },
+          {
+            "epoch": 11,
+            "loss": 1.2360944747924805,
+            "linkBce": 0.08368305116891861,
+            "crossclr": 0.9209474921226501,
+            "evidence": 3.459688663482666
+          },
+          {
+            "epoch": 12,
+            "loss": 1.2207767963409424,
+            "linkBce": 0.06937101483345032,
+            "crossclr": 0.9215993285179138,
+            "evidence": 3.4530303478240967
+          },
+          {
+            "epoch": 13,
+            "loss": 1.1910861730575562,
+            "linkBce": 0.03932411968708038,
+            "crossclr": 0.9205793738365173,
+            "evidence": 3.4573616981506348
+          },
+          {
+            "epoch": 14,
+            "loss": 1.1738677024841309,
+            "linkBce": 0.021277008578181267,
+            "crossclr": 0.9218195080757141,
+            "evidence": 3.458404541015625
+          },
+          {
+            "epoch": 15,
+            "loss": 1.1679141521453857,
+            "linkBce": 0.017820514738559723,
+            "crossclr": 0.9209956526756287,
+            "evidence": 3.447978973388672
+          },
+          {
+            "epoch": 16,
+            "loss": 1.158499836921692,
+            "linkBce": 0.009747209958732128,
+            "crossclr": 0.9172284603118896,
+            "evidence": 3.4506919384002686
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1556535959243774,
+            "linkBce": 0.006886275485157967,
+            "crossclr": 0.9181922674179077,
+            "evidence": 3.4483559131622314
+          },
+          {
+            "epoch": 18,
+            "loss": 1.1541366577148438,
+            "linkBce": 0.005469310563057661,
+            "crossclr": 0.9186372756958008,
+            "evidence": 3.4467430114746094
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1526429653167725,
+            "linkBce": 0.0025595922488719225,
+            "crossclr": 0.9200482964515686,
+            "evidence": 3.450295925140381
+          },
+          {
+            "epoch": 20,
+            "loss": 1.1513396501541138,
+            "linkBce": 0.001716412603855133,
+            "crossclr": 0.9186242818832397,
+            "evidence": 3.4515552520751953
+          }
+        ],
+        "wallSeconds": 6.284745400014799,
+        "parameters": 23156610
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.7010338306427002,
+          "pairwise": {
+            "precision": 0.28425925925925927,
+            "recall": 0.28425925925925927,
+            "f1": 0.28425925925925927,
+            "truePositivePairs": 307,
+            "falsePositivePairs": 773,
+            "falseNegativePairs": 773,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 1080
+          },
+          "pairwiseF1CI95": [
+            0.25626740947075205,
+            0.30009233610341646
+          ],
+          "falseMerge": {
+            "count": 773,
+            "rate": 0.7157407407407408,
+            "predictedPositivePairs": 1080
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.0018828451882845188,
+              "achievedFalseMergeRate": 0.037037037037037035,
+              "threshold": 0.7869292497634888,
+              "predictedPositivePairs": 54,
+              "truePositivePairs": 52
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.002510460251046025,
+              "achievedFalseMergeRate": 0.09722222222222222,
+              "threshold": 0.7741070985794067,
+              "predictedPositivePairs": 72,
+              "truePositivePairs": 65
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.3048907388137357,
+              "recall": 0.28391472868217055,
+              "f1": 0.2940291018564978,
+              "truePositivePairs": 293,
+              "falsePositivePairs": 668,
+              "falseNegativePairs": 739,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 961
+            },
+            "cross_modality": {
+              "precision": 0.303670745272525,
+              "recall": 0.284375,
+              "f1": 0.2937062937062937,
+              "truePositivePairs": 273,
+              "falsePositivePairs": 626,
+              "falseNegativePairs": 687,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 899
+            },
+            "identity_overlap": {
+              "precision": 0.3333333333333333,
+              "recall": 0.22916666666666666,
+              "f1": 0.2716049382716049,
+              "truePositivePairs": 33,
+              "falsePositivePairs": 66,
+              "falseNegativePairs": 111,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 99
+            },
+            "identity_disjoint": {
+              "precision": 0.2793068297655454,
+              "recall": 0.29273504273504275,
+              "f1": 0.2858633281168493,
+              "truePositivePairs": 274,
+              "falsePositivePairs": 707,
+              "falseNegativePairs": 662,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 981
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.30991735537190085,
+                "recall": 0.2840909090909091,
+                "f1": 0.29644268774703564,
+                "truePositivePairs": 75,
+                "falsePositivePairs": 167,
+                "falseNegativePairs": 189,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 242
+              },
+              "Finance": {
+                "precision": 0.3609467455621302,
+                "recall": 0.23106060606060605,
+                "f1": 0.2817551963048499,
+                "truePositivePairs": 61,
+                "falsePositivePairs": 108,
+                "falseNegativePairs": 203,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 169
+              },
+              "Legal": {
+                "precision": 0.32978723404255317,
+                "recall": 0.23484848484848486,
+                "f1": 0.2743362831858407,
+                "truePositivePairs": 62,
+                "falsePositivePairs": 126,
+                "falseNegativePairs": 202,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 188
+              },
+              "Operations": {
+                "precision": 0.31313131313131315,
+                "recall": 0.3522727272727273,
+                "f1": 0.3315508021390374,
+                "truePositivePairs": 93,
+                "falsePositivePairs": 204,
+                "falseNegativePairs": 171,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 297
+              },
+              "People": {
+                "precision": 0.24431818181818182,
+                "recall": 0.32575757575757575,
+                "f1": 0.2792207792207792,
+                "truePositivePairs": 86,
+                "falsePositivePairs": 266,
+                "falseNegativePairs": 178,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 352
+              },
+              "Research": {
+                "precision": 0.24012158054711247,
+                "recall": 0.29924242424242425,
+                "f1": 0.2664418212478921,
+                "truePositivePairs": 79,
+                "falsePositivePairs": 250,
+                "falseNegativePairs": 185,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 329
+              },
+              "Sales": {
+                "precision": 0.2857142857142857,
+                "recall": 0.3181818181818182,
+                "f1": 0.30107526881720426,
+                "truePositivePairs": 84,
+                "falsePositivePairs": 210,
+                "falseNegativePairs": 180,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 294
+              },
+              "Support": {
+                "precision": 0.35294117647058826,
+                "recall": 0.22727272727272727,
+                "f1": 0.2764976958525346,
+                "truePositivePairs": 60,
+                "falsePositivePairs": 110,
+                "falseNegativePairs": 204,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 170
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.328042328042328,
+                "recall": 0.30392156862745096,
+                "f1": 0.3155216284987278,
+                "truePositivePairs": 124,
+                "falsePositivePairs": 254,
+                "falseNegativePairs": 284,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 378
+              },
+              "memo": {
+                "precision": 0.25653206650831356,
+                "recall": 0.2647058823529412,
+                "f1": 0.2605548854041013,
+                "truePositivePairs": 108,
+                "falsePositivePairs": 313,
+                "falseNegativePairs": 300,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 421
+              },
+              "slide": {
+                "precision": 0.30601092896174864,
+                "recall": 0.27450980392156865,
+                "f1": 0.28940568475452194,
+                "truePositivePairs": 112,
+                "falsePositivePairs": 254,
+                "falseNegativePairs": 296,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 366
+              },
+              "ticket": {
+                "precision": 0.30547550432276654,
+                "recall": 0.25980392156862747,
+                "f1": 0.280794701986755,
+                "truePositivePairs": 106,
+                "falsePositivePairs": 241,
+                "falseNegativePairs": 302,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 347
+              },
+              "transcript": {
+                "precision": 0.278372591006424,
+                "recall": 0.31862745098039214,
+                "f1": 0.2971428571428571,
+                "truePositivePairs": 130,
+                "falsePositivePairs": 337,
+                "falseNegativePairs": 278,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 467
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.4457746478873234,
+            "recall": 0.5724999999999985,
+            "f1": 0.501251772191292
+          },
+          "conllStyle": {
+            "precision": 0.056637698531615224,
+            "recall": 0.525,
+            "f1": 0.10224506356505274,
+            "truePositivePairs": 567,
+            "falsePositivePairs": 9444,
+            "falseNegativePairs": 513,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 10011
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 20,
+            "meanThemesPerCluster": 1.1919191919191918,
+            "maxClusterSize": 142,
+            "contaminatedClusters": 1,
+            "contaminatedDocuments": 142
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.2968036529680365,
+            "recall": 0.2927927927927928,
+            "f1": 0.2947845804988662,
+            "truePositivePairs": 260,
+            "falsePositivePairs": 616,
+            "falseNegativePairs": 628,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 876
+          },
+          "identityDisjointCrossDepartmentPairs": 23256,
+          "latency": {
+            "encodeMsPerDocument": 5.447050833269411,
+            "evaluatedPairs": 28680
+          },
+          "estate": {
+            "version": "weft-synthetic-v1",
+            "seed": 20261127,
+            "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+            "documents": 240,
+            "pairs": 28680
+          }
+        },
+        "deltaVsW3Bare": {
+          "baseline": {
+            "artifact": "results/weft-specialist-training.json",
+            "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+            "metric": "identity_disjoint_cross_department_pairwise_f1",
+            "f1": 0.29610046265697293,
+            "harness": {
+              "path": "scripts/run-weft-baseline-shootout.py",
+              "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+              "estateVersion": "weft-synthetic-v1",
+              "estateSeed": 20261127,
+              "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+              "documents": 240,
+              "pairs": 28680,
+              "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+            },
+            "seeds": {
+              "python": 20261127,
+              "numpy": 20261127,
+              "torch": 20261127,
+              "evaluation": 20261127,
+              "resampleSeed": 20261127
+            },
+            "baseEncoderDigest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b"
+          },
+          "stageF1": 0.2947845804988662,
+          "delta": -0.0013158821581067404,
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "status": "negative",
+          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+        }
+      },
+      "probeBattery": {
+        "target": "author identity on the evaluation estate theme embeddings",
+        "classes": 16,
+        "documents": 240,
+        "split": {
+          "train": 164,
+          "test": 76,
+          "fraction": 0.7,
+          "seed": 20261127
+        },
+        "chanceAccuracy": 0.0625,
+        "majorityBaseline": 0.09210526315789473,
+        "linear": {
+          "testAccuracy": 0.19736842811107635,
+          "trainAccuracy": 0.9512194991111755,
+          "steps": 200,
+          "hidden": null
+        },
+        "nonlinearMlp": {
+          "testAccuracy": 0.2631579041481018,
+          "trainAccuracy": 1.0,
+          "steps": 200,
+          "hidden": 64
+        },
+        "wording": "identity-blind: this battery measures residual identity information in the exported theme embedding",
+        "note": "accuracy is measured on a held-out document split; values near or below chance on this fixture are reported as measured"
+      },
+      "identitySuppression": {
+        "wording": "identity-blind",
+        "h2Metric": "post-hoc classifier battery (linear and small MLP) on exported theme embeddings, never the in-training adversary alone",
+        "caveat": "Elazar & Goldberg (2018) report that a post-hoc classifier still recovers the attribute when an in-training adversary reaches chance, and advise against relying on adversarial training for invariant representations.",
+        "inTrainingAdversary": {
+          "enabled": false,
+          "mechanism": "gradient-reversal identity-overlap classifier on the link representation",
+          "accuracyHistory": [],
+          "finalAccuracy": null,
+          "note": "in-training accuracy is not a leak guarantee; the post-hoc battery is authoritative"
+        },
+        "postHocInlp": {
+          "enabled": true,
+          "mechanism": "INLP null-space projection fitted on identity labels over the evaluation estate",
+          "probeAccuracyBefore": {
+            "linear": 0.19736842811107635,
+            "nonlinearMlp": 0.2631579041481018
+          },
+          "probeAccuracyAfter": {
+            "linear": 0.03947368264198303,
+            "nonlinearMlp": 0.02631578966975212
+          },
+          "iterationsOnTheme": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.1184210553765297,
+              "nonlinearProbeAccuracy": 0.25
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.15789473056793213
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.10526315867900848,
+              "nonlinearProbeAccuracy": 0.07894736528396606
+            },
+            {
+              "iteration": 4,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.06578947603702545,
+              "nonlinearProbeAccuracy": 0.06578947603702545
+            }
+          ],
+          "iterationsOnPooled": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.2368421107530594,
+              "nonlinearProbeAccuracy": 0.19736842811107635
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.05263157933950424
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.02631578966975212,
+              "nonlinearProbeAccuracy": 0.05263157933950424
+            }
+          ],
+          "linkF1Before": 0.2947845804988662,
+          "linkF1After": 0.3056624518966465,
+          "note": "INLP is the canonical linear-erasure baseline; nonlinear recovery is known and is measured in the battery above"
+        },
+        "founderDecision": "pending: the evidence above informs the GRL-versus-INLP decision"
+      },
+      "notes": [
+        "One extra per stage; the bare stage reproduces the W3 bare specialist under identical seeds.",
+        "Deltas are versus the W3 bare specialist on the same W1 harness estate and threshold sweep.",
+        "Set-conditioning builds up to four same-theme anchors per training item; W1 evaluation pairs remain single-document.",
+        "The INLP projection is fitted on the evaluation estate's identity labels; link labels are never used.",
+        "Fixture-scale compute is disclosed in environment.computeDisclosure.",
+        "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
+      ]
+    },
+    {
+      "runId": "519933af276a5ccf9fd591bd0bd723bada25ac79eca507f478d9a85b2bc71920",
+      "ticket": "W4",
+      "status": "ran",
+      "stage": "adversary",
+      "extras": [
+        "adversary"
+      ],
+      "createdAt": "2026-11-27T15:24:19.498107+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127,
+        "probe": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1)",
+        "parameterCount": 23353475,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs/train.jsonl",
+        "trainSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+        "trainRawSha256": "aadb874dda643a661369eb7735a8c19444c11d1f4e1215160ccb5e5ca7c48655",
+        "receiptPath": "results/weft-training-pairs/receipt.json",
+        "receiptSha256": "03e5f4d21c88fce65260304a4131bef59bd453a44ad508fa5d91741024eac848",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 11,
+        "scale": "fixture",
+        "licenceTrace": {
+          "usedSources": {
+            "synthetic-estate": "green"
+          },
+          "teacher": "not used for fixture pairs",
+          "baseEncoder": "Apache-2.0"
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 11,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "extraWeights": {
+          "adversary": 0.1,
+          "setConditioning": 0.0,
+          "triangle": 0.0,
+          "modality": 0.0
+        },
+        "adversaryLambda": 1.0,
+        "triangleMargin": 0.1,
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "extrasEnabled": [
+          "adversary"
+        ],
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head"
+      },
+      "environment": {
+        "device": "cpu",
+        "cudaAvailable": false,
+        "cudaVersion": null,
+        "gpuCount": 0,
+        "gpuNames": [],
+        "torch": "2.10.0+cpu",
+        "transformers": "4.57.6",
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "kaggle": false,
+        "computeDisclosure": "CPU fixture-scale run on 11 W2 pairs and the W1 synthetic estate; not the Kaggle 2x T4 recipe"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 2.526740312576294,
+            "linkBce": 0.6837360858917236,
+            "crossclr": 2.1630663871765137,
+            "evidence": 3.472806453704834,
+            "adversary": 0.6690986156463623,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 2,
+            "loss": 2.0658788681030273,
+            "linkBce": 0.6007273197174072,
+            "crossclr": 1.4207507371902466,
+            "evidence": 3.469778060913086,
+            "adversary": 0.6082061529159546,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 3,
+            "loss": 1.812748670578003,
+            "linkBce": 0.5268711447715759,
+            "crossclr": 1.0717560052871704,
+            "evidence": 3.472747802734375,
+            "adversary": 0.5544994473457336,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 4,
+            "loss": 1.7102265357971191,
+            "linkBce": 0.461952805519104,
+            "crossclr": 1.0046311616897583,
+            "evidence": 3.4750285148620605,
+            "adversary": 0.5095243453979492,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 5,
+            "loss": 1.6332802772521973,
+            "linkBce": 0.4113066494464874,
+            "crossclr": 0.9630510210990906,
+            "evidence": 3.465426206588745,
+            "adversary": 0.4736282527446747,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 6,
+            "loss": 1.5451736450195312,
+            "linkBce": 0.34135568141937256,
+            "crossclr": 0.9358015060424805,
+            "evidence": 3.4624500274658203,
+            "adversary": 0.43427231907844543,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.7272727272727273
+          },
+          {
+            "epoch": 7,
+            "loss": 1.4727578163146973,
+            "linkBce": 0.27296990156173706,
+            "crossclr": 0.9333066940307617,
+            "evidence": 3.4680397510528564,
+            "adversary": 0.3952654004096985,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.8181818181818182
+          },
+          {
+            "epoch": 8,
+            "loss": 1.4080264568328857,
+            "linkBce": 0.215994730591774,
+            "crossclr": 0.9316627979278564,
+            "evidence": 3.459155321121216,
+            "adversary": 0.34369173645973206,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.8181818181818182
+          },
+          {
+            "epoch": 9,
+            "loss": 1.3375072479248047,
+            "linkBce": 0.1548398733139038,
+            "crossclr": 0.9201996326446533,
+            "evidence": 3.4618332386016846,
+            "adversary": 0.3020089864730835,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.9090909090909091
+          },
+          {
+            "epoch": 10,
+            "loss": 1.3175424337387085,
+            "linkBce": 0.13510902225971222,
+            "crossclr": 0.9241259098052979,
+            "evidence": 3.4576163291931152,
+            "adversary": 0.2884722650051117,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.9090909090909091
+          },
+          {
+            "epoch": 11,
+            "loss": 1.2579843997955322,
+            "linkBce": 0.08362969756126404,
+            "crossclr": 0.9210508465766907,
+            "evidence": 3.4596047401428223,
+            "adversary": 0.2190830260515213,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 12,
+            "loss": 1.2396509647369385,
+            "linkBce": 0.06920666247606277,
+            "crossclr": 0.9213590621948242,
+            "evidence": 3.4529776573181152,
+            "adversary": 0.19169235229492188,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 0.9090909090909091
+          },
+          {
+            "epoch": 13,
+            "loss": 1.2065160274505615,
+            "linkBce": 0.03913980722427368,
+            "crossclr": 0.9202272295951843,
+            "evidence": 3.4572176933288574,
+            "adversary": 0.15819121897220612,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 14,
+            "loss": 1.1865437030792236,
+            "linkBce": 0.021131129935383797,
+            "crossclr": 0.9219797253608704,
+            "evidence": 3.458179473876953,
+            "adversary": 0.1278684139251709,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 15,
+            "loss": 1.1796780824661255,
+            "linkBce": 0.017699670046567917,
+            "crossclr": 0.9213933944702148,
+            "evidence": 3.447904109954834,
+            "adversary": 0.117009237408638,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 16,
+            "loss": 1.165510892868042,
+            "linkBce": 0.00968939159065485,
+            "crossclr": 0.9171895384788513,
+            "evidence": 3.450554609298706,
+            "adversary": 0.07115837931632996,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1632161140441895,
+            "linkBce": 0.006862886715680361,
+            "crossclr": 0.9181498885154724,
+            "evidence": 3.4480667114257812,
+            "adversary": 0.07664891332387924,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 18,
+            "loss": 1.158281922340393,
+            "linkBce": 0.005477410741150379,
+            "crossclr": 0.918839693069458,
+            "evidence": 3.446481227874756,
+            "adversary": 0.04088403657078743,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1560336351394653,
+            "linkBce": 0.002568518277257681,
+            "crossclr": 0.9201804995536804,
+            "evidence": 3.44978404045105,
+            "adversary": 0.034181397408246994,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          },
+          {
+            "epoch": 20,
+            "loss": 1.153796911239624,
+            "linkBce": 0.0017359453486278653,
+            "crossclr": 0.9186370372772217,
+            "evidence": 3.450843334197998,
+            "adversary": 0.025737572461366653,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0,
+            "adversaryAccuracy": 1.0
+          }
+        ],
+        "wallSeconds": 6.267668200016487,
+        "parameters": 23353475
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.6929356455802917,
+          "pairwise": {
+            "precision": 0.25305535585909417,
+            "recall": 0.32592592592592595,
+            "f1": 0.2849048968029138,
+            "truePositivePairs": 352,
+            "falsePositivePairs": 1039,
+            "falseNegativePairs": 728,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 1391
+          },
+          "pairwiseF1CI95": [
+            0.2479740680713128,
+            0.29716599190283405
+          ],
+          "falseMerge": {
+            "count": 1039,
+            "rate": 0.7469446441409058,
+            "predictedPositivePairs": 1391
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.0018828451882845188,
+              "achievedFalseMergeRate": 0.037037037037037035,
+              "threshold": 0.7867307662963867,
+              "predictedPositivePairs": 54,
+              "truePositivePairs": 52
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.0025453277545327752,
+              "achievedFalseMergeRate": 0.0958904109589041,
+              "threshold": 0.7736421823501587,
+              "predictedPositivePairs": 73,
+              "truePositivePairs": 66
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.2709677419354839,
+              "recall": 0.32558139534883723,
+              "f1": 0.295774647887324,
+              "truePositivePairs": 336,
+              "falsePositivePairs": 904,
+              "falseNegativePairs": 696,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 1240
+            },
+            "cross_modality": {
+              "precision": 0.27217391304347827,
+              "recall": 0.3260416666666667,
+              "f1": 0.2966824644549763,
+              "truePositivePairs": 313,
+              "falsePositivePairs": 837,
+              "falseNegativePairs": 647,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 1150
+            },
+            "identity_overlap": {
+              "precision": 0.27941176470588236,
+              "recall": 0.2638888888888889,
+              "f1": 0.2714285714285714,
+              "truePositivePairs": 38,
+              "falsePositivePairs": 98,
+              "falseNegativePairs": 106,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 136
+            },
+            "identity_disjoint": {
+              "precision": 0.250199203187251,
+              "recall": 0.33547008547008544,
+              "f1": 0.28662711090826104,
+              "truePositivePairs": 314,
+              "falsePositivePairs": 941,
+              "falseNegativePairs": 622,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 1255
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.26625386996904027,
+                "recall": 0.32575757575757575,
+                "f1": 0.293015332197615,
+                "truePositivePairs": 86,
+                "falsePositivePairs": 237,
+                "falseNegativePairs": 178,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 323
+              },
+              "Finance": {
+                "precision": 0.35555555555555557,
+                "recall": 0.30303030303030304,
+                "f1": 0.32719836400818,
+                "truePositivePairs": 80,
+                "falsePositivePairs": 145,
+                "falseNegativePairs": 184,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 225
+              },
+              "Legal": {
+                "precision": 0.285140562248996,
+                "recall": 0.2689393939393939,
+                "f1": 0.27680311890838205,
+                "truePositivePairs": 71,
+                "falsePositivePairs": 178,
+                "falseNegativePairs": 193,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 249
+              },
+              "Operations": {
+                "precision": 0.25906735751295334,
+                "recall": 0.3787878787878788,
+                "f1": 0.3076923076923077,
+                "truePositivePairs": 100,
+                "falsePositivePairs": 286,
+                "falseNegativePairs": 164,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 386
+              },
+              "People": {
+                "precision": 0.2164705882352941,
+                "recall": 0.3484848484848485,
+                "f1": 0.2670537010159652,
+                "truePositivePairs": 92,
+                "falsePositivePairs": 333,
+                "falseNegativePairs": 172,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 425
+              },
+              "Research": {
+                "precision": 0.22169811320754718,
+                "recall": 0.3560606060606061,
+                "f1": 0.2732558139534884,
+                "truePositivePairs": 94,
+                "falsePositivePairs": 330,
+                "falseNegativePairs": 170,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 424
+              },
+              "Sales": {
+                "precision": 0.2540106951871658,
+                "recall": 0.35984848484848486,
+                "f1": 0.29780564263322884,
+                "truePositivePairs": 95,
+                "falsePositivePairs": 279,
+                "falseNegativePairs": 169,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 374
+              },
+              "Support": {
+                "precision": 0.3111111111111111,
+                "recall": 0.26515151515151514,
+                "f1": 0.28629856850715746,
+                "truePositivePairs": 70,
+                "falsePositivePairs": 155,
+                "falseNegativePairs": 194,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 225
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.2833333333333333,
+                "recall": 0.3333333333333333,
+                "f1": 0.3063063063063063,
+                "truePositivePairs": 136,
+                "falsePositivePairs": 344,
+                "falseNegativePairs": 272,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 480
+              },
+              "memo": {
+                "precision": 0.23551401869158878,
+                "recall": 0.3088235294117647,
+                "f1": 0.2672322375397667,
+                "truePositivePairs": 126,
+                "falsePositivePairs": 409,
+                "falseNegativePairs": 282,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 535
+              },
+              "slide": {
+                "precision": 0.26883910386965376,
+                "recall": 0.3235294117647059,
+                "f1": 0.2936596218020022,
+                "truePositivePairs": 132,
+                "falsePositivePairs": 359,
+                "falseNegativePairs": 276,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 491
+              },
+              "ticket": {
+                "precision": 0.2733333333333333,
+                "recall": 0.3014705882352941,
+                "f1": 0.2867132867132867,
+                "truePositivePairs": 123,
+                "falsePositivePairs": 327,
+                "falseNegativePairs": 285,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 450
+              },
+              "transcript": {
+                "precision": 0.252991452991453,
+                "recall": 0.3627450980392157,
+                "f1": 0.29808660624370587,
+                "truePositivePairs": 148,
+                "falsePositivePairs": 437,
+                "falseNegativePairs": 260,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 585
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.3950216450216459,
+            "recall": 0.6008333333333319,
+            "f1": 0.4766601099072275
+          },
+          "conllStyle": {
+            "precision": 0.05101434513199219,
+            "recall": 0.5564814814814815,
+            "f1": 0.09346085063369877,
+            "truePositivePairs": 601,
+            "falsePositivePairs": 11180,
+            "falseNegativePairs": 479,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 11781
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 23,
+            "meanThemesPerCluster": 1.2528735632183907,
+            "maxClusterSize": 154,
+            "contaminatedClusters": 1,
+            "contaminatedDocuments": 154
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.2641843971631206,
+            "recall": 0.3355855855855856,
+            "f1": 0.29563492063492064,
+            "truePositivePairs": 298,
+            "falsePositivePairs": 830,
+            "falseNegativePairs": 590,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 1128
+          },
+          "identityDisjointCrossDepartmentPairs": 23256,
+          "latency": {
+            "encodeMsPerDocument": 5.483287916528449,
+            "evaluatedPairs": 28680
+          },
+          "estate": {
+            "version": "weft-synthetic-v1",
+            "seed": 20261127,
+            "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+            "documents": 240,
+            "pairs": 28680
+          }
+        },
+        "deltaVsW3Bare": {
+          "baseline": {
+            "artifact": "results/weft-specialist-training.json",
+            "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+            "metric": "identity_disjoint_cross_department_pairwise_f1",
+            "f1": 0.29610046265697293,
+            "harness": {
+              "path": "scripts/run-weft-baseline-shootout.py",
+              "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+              "estateVersion": "weft-synthetic-v1",
+              "estateSeed": 20261127,
+              "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+              "documents": 240,
+              "pairs": 28680,
+              "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+            },
+            "seeds": {
+              "python": 20261127,
+              "numpy": 20261127,
+              "torch": 20261127,
+              "evaluation": 20261127,
+              "resampleSeed": 20261127
+            },
+            "baseEncoderDigest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b"
+          },
+          "stageF1": 0.29563492063492064,
+          "delta": -0.0004655420220522899,
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "status": "negative",
+          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+        }
+      },
+      "probeBattery": {
+        "target": "author identity on the evaluation estate theme embeddings",
+        "classes": 16,
+        "documents": 240,
+        "split": {
+          "train": 164,
+          "test": 76,
+          "fraction": 0.7,
+          "seed": 20261127
+        },
+        "chanceAccuracy": 0.0625,
+        "majorityBaseline": 0.09210526315789473,
+        "linear": {
+          "testAccuracy": 0.19736842811107635,
+          "trainAccuracy": 0.9512194991111755,
+          "steps": 200,
+          "hidden": null
+        },
+        "nonlinearMlp": {
+          "testAccuracy": 0.2631579041481018,
+          "trainAccuracy": 1.0,
+          "steps": 200,
+          "hidden": 64
+        },
+        "wording": "identity-blind: this battery measures residual identity information in the exported theme embedding",
+        "note": "accuracy is measured on a held-out document split; values near or below chance on this fixture are reported as measured"
+      },
+      "identitySuppression": {
+        "wording": "identity-blind",
+        "h2Metric": "post-hoc classifier battery (linear and small MLP) on exported theme embeddings, never the in-training adversary alone",
+        "caveat": "Elazar & Goldberg (2018) report that a post-hoc classifier still recovers the attribute when an in-training adversary reaches chance, and advise against relying on adversarial training for invariant representations.",
+        "inTrainingAdversary": {
+          "enabled": true,
+          "mechanism": "gradient-reversal identity-overlap classifier on the link representation",
+          "accuracyHistory": [
+            0.7272727272727273,
+            0.7272727272727273,
+            0.7272727272727273,
+            0.7272727272727273,
+            0.7272727272727273,
+            0.7272727272727273,
+            0.8181818181818182,
+            0.8181818181818182,
+            0.9090909090909091,
+            0.9090909090909091,
+            1.0,
+            0.9090909090909091,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "finalAccuracy": 1.0,
+          "note": "in-training accuracy is not a leak guarantee; the post-hoc battery is authoritative"
+        },
+        "postHocInlp": {
+          "enabled": true,
+          "mechanism": "INLP null-space projection fitted on identity labels over the evaluation estate",
+          "probeAccuracyBefore": {
+            "linear": 0.19736842811107635,
+            "nonlinearMlp": 0.2631579041481018
+          },
+          "probeAccuracyAfter": {
+            "linear": 0.03947368264198303,
+            "nonlinearMlp": 0.05263157933950424
+          },
+          "iterationsOnTheme": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.1184210553765297,
+              "nonlinearProbeAccuracy": 0.22368420660495758
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.15789473056793213
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.09210526198148727
+            },
+            {
+              "iteration": 4,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.06578947603702545,
+              "nonlinearProbeAccuracy": 0.06578947603702545
+            }
+          ],
+          "iterationsOnPooled": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.2368421107530594,
+              "nonlinearProbeAccuracy": 0.21052631735801697
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.07894736528396606
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.02631578966975212,
+              "nonlinearProbeAccuracy": 0.03947368264198303
+            }
+          ],
+          "linkF1Before": 0.29563492063492064,
+          "linkF1After": 0.3050108932461873,
+          "note": "INLP is the canonical linear-erasure baseline; nonlinear recovery is known and is measured in the battery above"
+        },
+        "founderDecision": "pending: the evidence above informs the GRL-versus-INLP decision"
+      },
+      "notes": [
+        "One extra per stage; the bare stage reproduces the W3 bare specialist under identical seeds.",
+        "Deltas are versus the W3 bare specialist on the same W1 harness estate and threshold sweep.",
+        "Set-conditioning builds up to four same-theme anchors per training item; W1 evaluation pairs remain single-document.",
+        "The INLP projection is fitted on the evaluation estate's identity labels; link labels are never used.",
+        "Fixture-scale compute is disclosed in environment.computeDisclosure.",
+        "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
+      ]
+    },
+    {
+      "runId": "99f9843248ca3efdc6b66126ff882687a6457a97161a8fe87562e0362bc2e461",
+      "ticket": "W4",
+      "status": "ran",
+      "stage": "set-conditioning",
+      "extras": [
+        "set-conditioning"
+      ],
+      "createdAt": "2026-11-27T15:24:35.970719+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127,
+        "probe": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1)",
+        "parameterCount": 23156610,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs/train.jsonl",
+        "trainSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+        "trainRawSha256": "aadb874dda643a661369eb7735a8c19444c11d1f4e1215160ccb5e5ca7c48655",
+        "receiptPath": "results/weft-training-pairs/receipt.json",
+        "receiptSha256": "03e5f4d21c88fce65260304a4131bef59bd453a44ad508fa5d91741024eac848",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 11,
+        "scale": "fixture",
+        "licenceTrace": {
+          "usedSources": {
+            "synthetic-estate": "green"
+          },
+          "teacher": "not used for fixture pairs",
+          "baseEncoder": "Apache-2.0"
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 11,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "extraWeights": {
+          "adversary": 0.0,
+          "setConditioning": 0.1,
+          "triangle": 0.0,
+          "modality": 0.0
+        },
+        "adversaryLambda": 1.0,
+        "triangleMargin": 0.1,
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "extrasEnabled": [
+          "set-conditioning"
+        ],
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head"
+      },
+      "environment": {
+        "device": "cpu",
+        "cudaAvailable": false,
+        "cudaVersion": null,
+        "gpuCount": 0,
+        "gpuNames": [],
+        "torch": "2.10.0+cpu",
+        "transformers": "4.57.6",
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "kaggle": false,
+        "computeDisclosure": "CPU fixture-scale run on 11 W2 pairs and the W1 synthetic estate; not the Kaggle 2x T4 recipe"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 2.412715196609497,
+            "linkBce": 0.6838723421096802,
+            "crossclr": 2.0694453716278076,
+            "evidence": 3.4705142974853516,
+            "adversary": 0.0,
+            "setConsistency": 0.00017293276323471218,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 2,
+            "loss": 1.8948390483856201,
+            "linkBce": 0.611154317855835,
+            "crossclr": 1.1773724555969238,
+            "evidence": 3.4749088287353516,
+            "adversary": 0.0,
+            "setConsistency": 0.00016740804130677134,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 3,
+            "loss": 1.745469570159912,
+            "linkBce": 0.5439156889915466,
+            "crossclr": 1.0127296447753906,
+            "evidence": 3.475172758102417,
+            "adversary": 0.0,
+            "setConsistency": 0.0015446807956323028,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 4,
+            "loss": 1.6965672969818115,
+            "linkBce": 0.48515212535858154,
+            "crossclr": 1.036057710647583,
+            "evidence": 3.4651997089385986,
+            "adversary": 0.0,
+            "setConsistency": 0.003464587265625596,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 5,
+            "loss": 1.6004704236984253,
+            "linkBce": 0.42639467120170593,
+            "crossclr": 0.9588078856468201,
+            "evidence": 3.4695656299591064,
+            "adversary": 0.0,
+            "setConsistency": 0.007586303632706404,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 6,
+            "loss": 1.5413910150527954,
+            "linkBce": 0.3665461838245392,
+            "crossclr": 0.9588755965232849,
+            "evidence": 3.4696433544158936,
+            "adversary": 0.0,
+            "setConsistency": 0.014783600345253944,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 7,
+            "loss": 1.4765350818634033,
+            "linkBce": 0.3118031322956085,
+            "crossclr": 0.9393569827079773,
+            "evidence": 3.465635299682617,
+            "adversary": 0.0,
+            "setConsistency": 0.01926402747631073,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 8,
+            "loss": 1.4246678352355957,
+            "linkBce": 0.2595897912979126,
+            "crossclr": 0.9396314024925232,
+            "evidence": 3.4608001708984375,
+            "adversary": 0.0,
+            "setConsistency": 0.031022613868117332,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 9,
+            "loss": 1.3544045686721802,
+            "linkBce": 0.19562683999538422,
+            "crossclr": 0.924695611000061,
+            "evidence": 3.4597465991973877,
+            "adversary": 0.0,
+            "setConsistency": 0.04480641707777977,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 10,
+            "loss": 1.3135167360305786,
+            "linkBce": 0.154918372631073,
+            "crossclr": 0.9207081198692322,
+            "evidence": 3.4587268829345703,
+            "adversary": 0.0,
+            "setConsistency": 0.06498883664608002,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 11,
+            "loss": 1.2716500759124756,
+            "linkBce": 0.10797525197267532,
+            "crossclr": 0.9317309856414795,
+            "evidence": 3.4544849395751953,
+            "adversary": 0.0,
+            "setConsistency": 0.06912374496459961,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 12,
+            "loss": 1.2455583810806274,
+            "linkBce": 0.08520251512527466,
+            "crossclr": 0.9216346740722656,
+            "evidence": 3.4514923095703125,
+            "adversary": 0.0,
+            "setConsistency": 0.09240067005157471,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 13,
+            "loss": 1.225987195968628,
+            "linkBce": 0.06097150966525078,
+            "crossclr": 0.9318273663520813,
+            "evidence": 3.4520199298858643,
+            "adversary": 0.0,
+            "setConsistency": 0.08697929233312607,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 14,
+            "loss": 1.2108713388442993,
+            "linkBce": 0.047343909740448,
+            "crossclr": 0.9232673048973083,
+            "evidence": 3.451805591583252,
+            "adversary": 0.0,
+            "setConsistency": 0.11532609164714813,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 15,
+            "loss": 1.1933815479278564,
+            "linkBce": 0.02708289586007595,
+            "crossclr": 0.931774914264679,
+            "evidence": 3.450247287750244,
+            "adversary": 0.0,
+            "setConsistency": 0.1036171242594719,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 16,
+            "loss": 1.1779433488845825,
+            "linkBce": 0.01934533193707466,
+            "crossclr": 0.9202274084091187,
+            "evidence": 3.450049877166748,
+            "adversary": 0.0,
+            "setConsistency": 0.08474288135766983,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1705906391143799,
+            "linkBce": 0.011163941584527493,
+            "crossclr": 0.9209831357002258,
+            "evidence": 3.444369077682495,
+            "adversary": 0.0,
+            "setConsistency": 0.1006128340959549,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 18,
+            "loss": 1.1650888919830322,
+            "linkBce": 0.006759886629879475,
+            "crossclr": 0.9176679849624634,
+            "evidence": 3.443157911300659,
+            "adversary": 0.0,
+            "setConsistency": 0.10863406956195831,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1694164276123047,
+            "linkBce": 0.005757383536547422,
+            "crossclr": 0.916084885597229,
+            "evidence": 3.445835590362549,
+            "adversary": 0.0,
+            "setConsistency": 0.1644948124885559,
+            "triangle": 0.0,
+            "modality": 0.0
+          },
+          {
+            "epoch": 20,
+            "loss": 1.1660336256027222,
+            "linkBce": 0.0033620058093219995,
+            "crossclr": 0.9167478084564209,
+            "evidence": 3.449559450149536,
+            "adversary": 0.0,
+            "setConsistency": 0.1438581645488739,
+            "triangle": 0.0,
+            "modality": 0.0
+          }
+        ],
+        "wallSeconds": 11.39548940001987,
+        "parameters": 23156610
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.7752864360809326,
+          "pairwise": {
+            "precision": 0.33100436681222706,
+            "recall": 0.3509259259259259,
+            "f1": 0.34067415730337075,
+            "truePositivePairs": 379,
+            "falsePositivePairs": 766,
+            "falseNegativePairs": 701,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 1145
+          },
+          "pairwiseF1CI95": [
+            0.3092224231464738,
+            0.3637172076478435
+          ],
+          "falseMerge": {
+            "count": 766,
+            "rate": 0.6689956331877729,
+            "predictedPositivePairs": 1145
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.002615062761506276,
+              "achievedFalseMergeRate": 0.04,
+              "threshold": 0.8403707146644592,
+              "predictedPositivePairs": 75,
+              "truePositivePairs": 72
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.0029288702928870294,
+              "achievedFalseMergeRate": 0.09523809523809523,
+              "threshold": 0.8373897075653076,
+              "predictedPositivePairs": 84,
+              "truePositivePairs": 76
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.3504854368932039,
+              "recall": 0.3498062015503876,
+              "f1": 0.35014548981571286,
+              "truePositivePairs": 361,
+              "falsePositivePairs": 669,
+              "falseNegativePairs": 671,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 1030
+            },
+            "cross_modality": {
+              "precision": 0.35446985446985446,
+              "recall": 0.35520833333333335,
+              "f1": 0.3548387096774194,
+              "truePositivePairs": 341,
+              "falsePositivePairs": 621,
+              "falseNegativePairs": 619,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 962
+            },
+            "identity_overlap": {
+              "precision": 0.3333333333333333,
+              "recall": 0.2222222222222222,
+              "f1": 0.26666666666666666,
+              "truePositivePairs": 32,
+              "falsePositivePairs": 64,
+              "falseNegativePairs": 112,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 96
+            },
+            "identity_disjoint": {
+              "precision": 0.330791229742612,
+              "recall": 0.37072649572649574,
+              "f1": 0.3496221662468514,
+              "truePositivePairs": 347,
+              "falsePositivePairs": 702,
+              "falseNegativePairs": 589,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 1049
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.30612244897959184,
+                "recall": 0.3409090909090909,
+                "f1": 0.3225806451612903,
+                "truePositivePairs": 90,
+                "falsePositivePairs": 204,
+                "falseNegativePairs": 174,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 294
+              },
+              "Finance": {
+                "precision": 0.3798076923076923,
+                "recall": 0.29924242424242425,
+                "f1": 0.3347457627118644,
+                "truePositivePairs": 79,
+                "falsePositivePairs": 129,
+                "falseNegativePairs": 185,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 208
+              },
+              "Legal": {
+                "precision": 0.36771300448430494,
+                "recall": 0.3106060606060606,
+                "f1": 0.33675564681724846,
+                "truePositivePairs": 82,
+                "falsePositivePairs": 141,
+                "falseNegativePairs": 182,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 223
+              },
+              "Operations": {
+                "precision": 0.3906810035842294,
+                "recall": 0.4128787878787879,
+                "f1": 0.4014732965009209,
+                "truePositivePairs": 109,
+                "falsePositivePairs": 170,
+                "falseNegativePairs": 155,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 279
+              },
+              "People": {
+                "precision": 0.33003300330033003,
+                "recall": 0.3787878787878788,
+                "f1": 0.3527336860670194,
+                "truePositivePairs": 100,
+                "falsePositivePairs": 203,
+                "falseNegativePairs": 164,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 303
+              },
+              "Research": {
+                "precision": 0.2947976878612717,
+                "recall": 0.38636363636363635,
+                "f1": 0.3344262295081967,
+                "truePositivePairs": 102,
+                "falsePositivePairs": 244,
+                "falseNegativePairs": 162,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 346
+              },
+              "Sales": {
+                "precision": 0.29245283018867924,
+                "recall": 0.3522727272727273,
+                "f1": 0.31958762886597936,
+                "truePositivePairs": 93,
+                "falsePositivePairs": 225,
+                "falseNegativePairs": 171,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 318
+              },
+              "Support": {
+                "precision": 0.4166666666666667,
+                "recall": 0.32196969696969696,
+                "f1": 0.3632478632478633,
+                "truePositivePairs": 85,
+                "falsePositivePairs": 119,
+                "falseNegativePairs": 179,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 204
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.40641711229946526,
+                "recall": 0.37254901960784315,
+                "f1": 0.3887468030690537,
+                "truePositivePairs": 152,
+                "falsePositivePairs": 222,
+                "falseNegativePairs": 256,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 374
+              },
+              "memo": {
+                "precision": 0.3120567375886525,
+                "recall": 0.3235294117647059,
+                "f1": 0.3176895306859206,
+                "truePositivePairs": 132,
+                "falsePositivePairs": 291,
+                "falseNegativePairs": 276,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 423
+              },
+              "slide": {
+                "precision": 0.31277533039647576,
+                "recall": 0.3480392156862745,
+                "f1": 0.32946635730858465,
+                "truePositivePairs": 142,
+                "falsePositivePairs": 312,
+                "falseNegativePairs": 266,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 454
+              },
+              "ticket": {
+                "precision": 0.3421686746987952,
+                "recall": 0.3480392156862745,
+                "f1": 0.3450789793438639,
+                "truePositivePairs": 142,
+                "falsePositivePairs": 273,
+                "falseNegativePairs": 266,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 415
+              },
+              "transcript": {
+                "precision": 0.34467120181405897,
+                "recall": 0.37254901960784315,
+                "f1": 0.35806831566548886,
+                "truePositivePairs": 152,
+                "falsePositivePairs": 289,
+                "falseNegativePairs": 256,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 441
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.3915591397849451,
+            "recall": 0.6149999999999998,
+            "f1": 0.4784793291315021
+          },
+          "conllStyle": {
+            "precision": 0.0517804775869292,
+            "recall": 0.5722222222222222,
+            "f1": 0.09496734537072608,
+            "truePositivePairs": 618,
+            "falsePositivePairs": 11317,
+            "falseNegativePairs": 462,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 11935
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 20,
+            "meanThemesPerCluster": 1.2209302325581395,
+            "maxClusterSize": 155,
+            "contaminatedClusters": 1,
+            "contaminatedDocuments": 155
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.3477801268498943,
+            "recall": 0.3704954954954955,
+            "f1": 0.3587786259541985,
+            "truePositivePairs": 329,
+            "falsePositivePairs": 617,
+            "falseNegativePairs": 559,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 946
+          },
+          "identityDisjointCrossDepartmentPairs": 23256,
+          "latency": {
+            "encodeMsPerDocument": 5.55648291677547,
+            "evaluatedPairs": 28680
+          },
+          "estate": {
+            "version": "weft-synthetic-v1",
+            "seed": 20261127,
+            "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+            "documents": 240,
+            "pairs": 28680
+          }
+        },
+        "deltaVsW3Bare": {
+          "baseline": {
+            "artifact": "results/weft-specialist-training.json",
+            "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+            "metric": "identity_disjoint_cross_department_pairwise_f1",
+            "f1": 0.29610046265697293,
+            "harness": {
+              "path": "scripts/run-weft-baseline-shootout.py",
+              "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+              "estateVersion": "weft-synthetic-v1",
+              "estateSeed": 20261127,
+              "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+              "documents": 240,
+              "pairs": 28680,
+              "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+            },
+            "seeds": {
+              "python": 20261127,
+              "numpy": 20261127,
+              "torch": 20261127,
+              "evaluation": 20261127,
+              "resampleSeed": 20261127
+            },
+            "baseEncoderDigest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b"
+          },
+          "stageF1": 0.3587786259541985,
+          "delta": 0.06267816329722559,
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "status": "positive",
+          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+        }
+      },
+      "probeBattery": {
+        "target": "author identity on the evaluation estate theme embeddings",
+        "classes": 16,
+        "documents": 240,
+        "split": {
+          "train": 164,
+          "test": 76,
+          "fraction": 0.7,
+          "seed": 20261127
+        },
+        "chanceAccuracy": 0.0625,
+        "majorityBaseline": 0.09210526315789473,
+        "linear": {
+          "testAccuracy": 0.21052631735801697,
+          "trainAccuracy": 0.9512194991111755,
+          "steps": 200,
+          "hidden": null
+        },
+        "nonlinearMlp": {
+          "testAccuracy": 0.3684210479259491,
+          "trainAccuracy": 1.0,
+          "steps": 200,
+          "hidden": 64
+        },
+        "wording": "identity-blind: this battery measures residual identity information in the exported theme embedding",
+        "note": "accuracy is measured on a held-out document split; values near or below chance on this fixture are reported as measured"
+      },
+      "identitySuppression": {
+        "wording": "identity-blind",
+        "h2Metric": "post-hoc classifier battery (linear and small MLP) on exported theme embeddings, never the in-training adversary alone",
+        "caveat": "Elazar & Goldberg (2018) report that a post-hoc classifier still recovers the attribute when an in-training adversary reaches chance, and advise against relying on adversarial training for invariant representations.",
+        "inTrainingAdversary": {
+          "enabled": false,
+          "mechanism": "gradient-reversal identity-overlap classifier on the link representation",
+          "accuracyHistory": [],
+          "finalAccuracy": null,
+          "note": "in-training accuracy is not a leak guarantee; the post-hoc battery is authoritative"
+        },
+        "postHocInlp": {
+          "enabled": true,
+          "mechanism": "INLP null-space projection fitted on identity labels over the evaluation estate",
+          "probeAccuracyBefore": {
+            "linear": 0.21052631735801697,
+            "nonlinearMlp": 0.3684210479259491
+          },
+          "probeAccuracyAfter": {
+            "linear": 0.06578947603702545,
+            "nonlinearMlp": 0.03947368264198303
+          },
+          "iterationsOnTheme": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.09210526198148727,
+              "nonlinearProbeAccuracy": 0.21052631735801697
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.09210526198148727,
+              "nonlinearProbeAccuracy": 0.14473684132099152
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.09210526198148727,
+              "nonlinearProbeAccuracy": 0.02631578966975212
+            },
+            {
+              "iteration": 4,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.06578947603702545,
+              "nonlinearProbeAccuracy": 0.05263157933950424
+            }
+          ],
+          "iterationsOnPooled": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.2368421107530594,
+              "nonlinearProbeAccuracy": 0.15789473056793213
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.03947368264198303
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.02631578966975212,
+              "nonlinearProbeAccuracy": 0.05263157933950424
+            }
+          ],
+          "linkF1Before": 0.3587786259541985,
+          "linkF1After": 0.32325581395348835,
+          "note": "INLP is the canonical linear-erasure baseline; nonlinear recovery is known and is measured in the battery above"
+        },
+        "founderDecision": "pending: the evidence above informs the GRL-versus-INLP decision"
+      },
+      "notes": [
+        "One extra per stage; the bare stage reproduces the W3 bare specialist under identical seeds.",
+        "Deltas are versus the W3 bare specialist on the same W1 harness estate and threshold sweep.",
+        "Set-conditioning builds up to four same-theme anchors per training item; W1 evaluation pairs remain single-document.",
+        "The INLP projection is fitted on the evaluation estate's identity labels; link labels are never used.",
+        "Fixture-scale compute is disclosed in environment.computeDisclosure.",
+        "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
+      ]
+    },
+    {
+      "runId": "5bb89df520067ac6a3daf1e3f5c68eb19d87e99a2dc7774e25d4ddd808c587e6",
+      "ticket": "W4",
+      "status": "ran",
+      "stage": "triangle",
+      "extras": [
+        "triangle"
+      ],
+      "createdAt": "2026-11-27T15:24:47.486184+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127,
+        "probe": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1)",
+        "parameterCount": 23156610,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs/train.jsonl",
+        "trainSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+        "trainRawSha256": "aadb874dda643a661369eb7735a8c19444c11d1f4e1215160ccb5e5ca7c48655",
+        "receiptPath": "results/weft-training-pairs/receipt.json",
+        "receiptSha256": "03e5f4d21c88fce65260304a4131bef59bd453a44ad508fa5d91741024eac848",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 11,
+        "scale": "fixture",
+        "licenceTrace": {
+          "usedSources": {
+            "synthetic-estate": "green"
+          },
+          "teacher": "not used for fixture pairs",
+          "baseEncoder": "Apache-2.0"
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 11,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "extraWeights": {
+          "adversary": 0.0,
+          "setConditioning": 0.0,
+          "triangle": 0.1,
+          "modality": 0.0
+        },
+        "adversaryLambda": 1.0,
+        "triangleMargin": 0.1,
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "extrasEnabled": [
+          "triangle"
+        ],
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head"
+      },
+      "environment": {
+        "device": "cpu",
+        "cudaAvailable": false,
+        "cudaVersion": null,
+        "gpuCount": 0,
+        "gpuNames": [],
+        "torch": "2.10.0+cpu",
+        "transformers": "4.57.6",
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "kaggle": false,
+        "computeDisclosure": "CPU fixture-scale run on 11 W2 pairs and the W1 synthetic estate; not the Kaggle 2x T4 recipe"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 2.468693256378174,
+            "linkBce": 0.6837360858917236,
+            "crossclr": 2.1630663871765137,
+            "evidence": 3.472806453704834,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.08862636983394623,
+            "modality": 0.0
+          },
+          {
+            "epoch": 2,
+            "loss": 2.011368751525879,
+            "linkBce": 0.6008201241493225,
+            "crossclr": 1.4207484722137451,
+            "evidence": 3.4697775840759277,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.06218884140253067,
+            "modality": 0.0
+          },
+          {
+            "epoch": 3,
+            "loss": 1.7641923427581787,
+            "linkBce": 0.5263829827308655,
+            "crossclr": 1.071763277053833,
+            "evidence": 3.472747802734375,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.07378125935792923,
+            "modality": 0.0
+          },
+          {
+            "epoch": 4,
+            "loss": 1.6659553050994873,
+            "linkBce": 0.461016446352005,
+            "crossclr": 1.0046634674072266,
+            "evidence": 3.4750218391418457,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.07602636516094208,
+            "modality": 0.0
+          },
+          {
+            "epoch": 5,
+            "loss": 1.5937060117721558,
+            "linkBce": 0.4100245535373688,
+            "crossclr": 0.9630849957466125,
+            "evidence": 3.465404987335205,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.09057863801717758,
+            "modality": 0.0
+          },
+          {
+            "epoch": 6,
+            "loss": 1.5103555917739868,
+            "linkBce": 0.3401438891887665,
+            "crossclr": 0.935870885848999,
+            "evidence": 3.4624266624450684,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.09790868312120438,
+            "modality": 0.0
+          },
+          {
+            "epoch": 7,
+            "loss": 1.4448658227920532,
+            "linkBce": 0.2709740698337555,
+            "crossclr": 0.9333235025405884,
+            "evidence": 3.4680371284484863,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.13622500002384186,
+            "modality": 0.0
+          },
+          {
+            "epoch": 8,
+            "loss": 1.3862253427505493,
+            "linkBce": 0.2149442583322525,
+            "crossclr": 0.9315484762191772,
+            "evidence": 3.459150791168213,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.13676796853542328,
+            "modality": 0.0
+          },
+          {
+            "epoch": 9,
+            "loss": 1.3246814012527466,
+            "linkBce": 0.15391959249973297,
+            "crossclr": 0.9202690720558167,
+            "evidence": 3.461822032928467,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.18262805044651031,
+            "modality": 0.0
+          },
+          {
+            "epoch": 10,
+            "loss": 1.3049657344818115,
+            "linkBce": 0.13368406891822815,
+            "crossclr": 0.9240168929100037,
+            "evidence": 3.4576168060302734,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.17749768495559692,
+            "modality": 0.0
+          },
+          {
+            "epoch": 11,
+            "loss": 1.2580088376998901,
+            "linkBce": 0.08301593363285065,
+            "crossclr": 0.9210555553436279,
+            "evidence": 3.4597535133361816,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.22514453530311584,
+            "modality": 0.0
+          },
+          {
+            "epoch": 12,
+            "loss": 1.2421842813491821,
+            "linkBce": 0.06881783157587051,
+            "crossclr": 0.9213957190513611,
+            "evidence": 3.4530692100524902,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.22054797410964966,
+            "modality": 0.0
+          },
+          {
+            "epoch": 13,
+            "loss": 1.2160106897354126,
+            "linkBce": 0.03901273012161255,
+            "crossclr": 0.9202234745025635,
+            "evidence": 3.457549571990967,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.253762811422348,
+            "modality": 0.0
+          },
+          {
+            "epoch": 14,
+            "loss": 1.2045104503631592,
+            "linkBce": 0.021157247945666313,
+            "crossclr": 0.9220882654190063,
+            "evidence": 3.458644151687622,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.3058033585548401,
+            "modality": 0.0
+          },
+          {
+            "epoch": 15,
+            "loss": 1.19537353515625,
+            "linkBce": 0.01807594858109951,
+            "crossclr": 0.9213760495185852,
+            "evidence": 3.448040723800659,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.2700137495994568,
+            "modality": 0.0
+          },
+          {
+            "epoch": 16,
+            "loss": 1.1857601404190063,
+            "linkBce": 0.009806334041059017,
+            "crossclr": 0.9171775579452515,
+            "evidence": 3.4506211280822754,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.27240896224975586,
+            "modality": 0.0
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1854400634765625,
+            "linkBce": 0.0075083523988723755,
+            "crossclr": 0.9181460738182068,
+            "evidence": 3.4489619731903076,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.29066339135169983,
+            "modality": 0.0
+          },
+          {
+            "epoch": 18,
+            "loss": 1.1833865642547607,
+            "linkBce": 0.0058998833410441875,
+            "crossclr": 0.9187774062156677,
+            "evidence": 3.447326183319092,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.2863270342350006,
+            "modality": 0.0
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1810170412063599,
+            "linkBce": 0.0031193310860544443,
+            "crossclr": 0.9202322363853455,
+            "evidence": 3.451056718826294,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.27570241689682007,
+            "modality": 0.0
+          },
+          {
+            "epoch": 20,
+            "loss": 1.178075909614563,
+            "linkBce": 0.002123395213857293,
+            "crossclr": 0.918627142906189,
+            "evidence": 3.4529309272766113,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.26052725315093994,
+            "modality": 0.0
+          }
+        ],
+        "wallSeconds": 6.4973876000149176,
+        "parameters": 23156610
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.7266066670417786,
+          "pairwise": {
+            "precision": 0.33935018050541516,
+            "recall": 0.2611111111111111,
+            "f1": 0.29513343799058084,
+            "truePositivePairs": 282,
+            "falsePositivePairs": 549,
+            "falseNegativePairs": 798,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 831
+          },
+          "pairwiseF1CI95": [
+            0.2646121147715197,
+            0.3168421052631579
+          ],
+          "falseMerge": {
+            "count": 549,
+            "rate": 0.6606498194945848,
+            "predictedPositivePairs": 831
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.0024407252440725243,
+              "achievedFalseMergeRate": 0.04285714285714286,
+              "threshold": 0.7885441184043884,
+              "predictedPositivePairs": 70,
+              "truePositivePairs": 67
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.002684797768479777,
+              "achievedFalseMergeRate": 0.09090909090909091,
+              "threshold": 0.7847639918327332,
+              "predictedPositivePairs": 77,
+              "truePositivePairs": 70
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.3597315436241611,
+              "recall": 0.2596899224806202,
+              "f1": 0.3016319639842432,
+              "truePositivePairs": 268,
+              "falsePositivePairs": 477,
+              "falseNegativePairs": 764,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 745
+            },
+            "cross_modality": {
+              "precision": 0.3673469387755102,
+              "recall": 0.2625,
+              "f1": 0.30619684082624543,
+              "truePositivePairs": 252,
+              "falsePositivePairs": 434,
+              "falseNegativePairs": 708,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 686
+            },
+            "identity_overlap": {
+              "precision": 0.36470588235294116,
+              "recall": 0.2152777777777778,
+              "f1": 0.27074235807860264,
+              "truePositivePairs": 31,
+              "falsePositivePairs": 54,
+              "falseNegativePairs": 113,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 85
+            },
+            "identity_disjoint": {
+              "precision": 0.33646112600536193,
+              "recall": 0.26816239316239315,
+              "f1": 0.29845422116527937,
+              "truePositivePairs": 251,
+              "falsePositivePairs": 495,
+              "falseNegativePairs": 685,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 746
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.3397129186602871,
+                "recall": 0.2689393939393939,
+                "f1": 0.30021141649048627,
+                "truePositivePairs": 71,
+                "falsePositivePairs": 138,
+                "falseNegativePairs": 193,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 209
+              },
+              "Finance": {
+                "precision": 0.49122807017543857,
+                "recall": 0.21212121212121213,
+                "f1": 0.2962962962962963,
+                "truePositivePairs": 56,
+                "falsePositivePairs": 58,
+                "falseNegativePairs": 208,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 114
+              },
+              "Legal": {
+                "precision": 0.4357142857142857,
+                "recall": 0.23106060606060605,
+                "f1": 0.30198019801980197,
+                "truePositivePairs": 61,
+                "falsePositivePairs": 79,
+                "falseNegativePairs": 203,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 140
+              },
+              "Operations": {
+                "precision": 0.35833333333333334,
+                "recall": 0.32575757575757575,
+                "f1": 0.3412698412698413,
+                "truePositivePairs": 86,
+                "falsePositivePairs": 154,
+                "falseNegativePairs": 178,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 240
+              },
+              "People": {
+                "precision": 0.30708661417322836,
+                "recall": 0.29545454545454547,
+                "f1": 0.3011583011583011,
+                "truePositivePairs": 78,
+                "falsePositivePairs": 176,
+                "falseNegativePairs": 186,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 254
+              },
+              "Research": {
+                "precision": 0.2749003984063745,
+                "recall": 0.26136363636363635,
+                "f1": 0.26796116504854367,
+                "truePositivePairs": 69,
+                "falsePositivePairs": 182,
+                "falseNegativePairs": 195,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 251
+              },
+              "Sales": {
+                "precision": 0.31666666666666665,
+                "recall": 0.2878787878787879,
+                "f1": 0.3015873015873016,
+                "truePositivePairs": 76,
+                "falsePositivePairs": 164,
+                "falseNegativePairs": 188,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 240
+              },
+              "Support": {
+                "precision": 0.4140625,
+                "recall": 0.20075757575757575,
+                "f1": 0.27040816326530615,
+                "truePositivePairs": 53,
+                "falsePositivePairs": 75,
+                "falseNegativePairs": 211,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 128
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.4375,
+                "recall": 0.2916666666666667,
+                "f1": 0.35000000000000003,
+                "truePositivePairs": 119,
+                "falsePositivePairs": 153,
+                "falseNegativePairs": 289,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 272
+              },
+              "memo": {
+                "precision": 0.29464285714285715,
+                "recall": 0.2426470588235294,
+                "f1": 0.2661290322580645,
+                "truePositivePairs": 99,
+                "falsePositivePairs": 237,
+                "falseNegativePairs": 309,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 336
+              },
+              "slide": {
+                "precision": 0.34627831715210355,
+                "recall": 0.2622549019607843,
+                "f1": 0.29846582984658304,
+                "truePositivePairs": 107,
+                "falsePositivePairs": 202,
+                "falseNegativePairs": 301,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 309
+              },
+              "ticket": {
+                "precision": 0.35687732342007433,
+                "recall": 0.23529411764705882,
+                "f1": 0.28360413589364847,
+                "truePositivePairs": 96,
+                "falsePositivePairs": 173,
+                "falseNegativePairs": 312,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 269
+              },
+              "transcript": {
+                "precision": 0.3413897280966767,
+                "recall": 0.2769607843137255,
+                "f1": 0.3058186738836265,
+                "truePositivePairs": 113,
+                "falsePositivePairs": 218,
+                "falseNegativePairs": 295,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 331
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.4990956072351411,
+            "recall": 0.5183333333333323,
+            "f1": 0.5085325951228999
+          },
+          "conllStyle": {
+            "precision": 0.06080426356589147,
+            "recall": 0.4648148148148148,
+            "f1": 0.1075407026563839,
+            "truePositivePairs": 502,
+            "falsePositivePairs": 7754,
+            "falseNegativePairs": 578,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 8256
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 19,
+            "meanThemesPerCluster": 1.1607142857142858,
+            "maxClusterSize": 129,
+            "contaminatedClusters": 1,
+            "contaminatedDocuments": 129
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.3521545319465082,
+            "recall": 0.2668918918918919,
+            "f1": 0.3036515054452274,
+            "truePositivePairs": 237,
+            "falsePositivePairs": 436,
+            "falseNegativePairs": 651,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 673
+          },
+          "identityDisjointCrossDepartmentPairs": 23256,
+          "latency": {
+            "encodeMsPerDocument": 5.681512083295577,
+            "evaluatedPairs": 28680
+          },
+          "estate": {
+            "version": "weft-synthetic-v1",
+            "seed": 20261127,
+            "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+            "documents": 240,
+            "pairs": 28680
+          }
+        },
+        "deltaVsW3Bare": {
+          "baseline": {
+            "artifact": "results/weft-specialist-training.json",
+            "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+            "metric": "identity_disjoint_cross_department_pairwise_f1",
+            "f1": 0.29610046265697293,
+            "harness": {
+              "path": "scripts/run-weft-baseline-shootout.py",
+              "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+              "estateVersion": "weft-synthetic-v1",
+              "estateSeed": 20261127,
+              "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+              "documents": 240,
+              "pairs": 28680,
+              "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+            },
+            "seeds": {
+              "python": 20261127,
+              "numpy": 20261127,
+              "torch": 20261127,
+              "evaluation": 20261127,
+              "resampleSeed": 20261127
+            },
+            "baseEncoderDigest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b"
+          },
+          "stageF1": 0.3036515054452274,
+          "delta": 0.0075510427882544695,
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "status": "positive",
+          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+        }
+      },
+      "probeBattery": {
+        "target": "author identity on the evaluation estate theme embeddings",
+        "classes": 16,
+        "documents": 240,
+        "split": {
+          "train": 164,
+          "test": 76,
+          "fraction": 0.7,
+          "seed": 20261127
+        },
+        "chanceAccuracy": 0.0625,
+        "majorityBaseline": 0.09210526315789473,
+        "linear": {
+          "testAccuracy": 0.19736842811107635,
+          "trainAccuracy": 0.9512194991111755,
+          "steps": 200,
+          "hidden": null
+        },
+        "nonlinearMlp": {
+          "testAccuracy": 0.2763157784938812,
+          "trainAccuracy": 1.0,
+          "steps": 200,
+          "hidden": 64
+        },
+        "wording": "identity-blind: this battery measures residual identity information in the exported theme embedding",
+        "note": "accuracy is measured on a held-out document split; values near or below chance on this fixture are reported as measured"
+      },
+      "identitySuppression": {
+        "wording": "identity-blind",
+        "h2Metric": "post-hoc classifier battery (linear and small MLP) on exported theme embeddings, never the in-training adversary alone",
+        "caveat": "Elazar & Goldberg (2018) report that a post-hoc classifier still recovers the attribute when an in-training adversary reaches chance, and advise against relying on adversarial training for invariant representations.",
+        "inTrainingAdversary": {
+          "enabled": false,
+          "mechanism": "gradient-reversal identity-overlap classifier on the link representation",
+          "accuracyHistory": [],
+          "finalAccuracy": null,
+          "note": "in-training accuracy is not a leak guarantee; the post-hoc battery is authoritative"
+        },
+        "postHocInlp": {
+          "enabled": true,
+          "mechanism": "INLP null-space projection fitted on identity labels over the evaluation estate",
+          "probeAccuracyBefore": {
+            "linear": 0.19736842811107635,
+            "nonlinearMlp": 0.2763157784938812
+          },
+          "probeAccuracyAfter": {
+            "linear": 0.03947368264198303,
+            "nonlinearMlp": 0.03947368264198303
+          },
+          "iterationsOnTheme": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.1184210553765297,
+              "nonlinearProbeAccuracy": 0.2368421107530594
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.14473684132099152
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.06578947603702545
+            },
+            {
+              "iteration": 4,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.05263157933950424,
+              "nonlinearProbeAccuracy": 0.09210526198148727
+            }
+          ],
+          "iterationsOnPooled": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.2368421107530594,
+              "nonlinearProbeAccuracy": 0.21052631735801697
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.03947368264198303
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.02631578966975212,
+              "nonlinearProbeAccuracy": 0.03947368264198303
+            }
+          ],
+          "linkF1Before": 0.3036515054452274,
+          "linkF1After": 0.283480979676915,
+          "note": "INLP is the canonical linear-erasure baseline; nonlinear recovery is known and is measured in the battery above"
+        },
+        "founderDecision": "pending: the evidence above informs the GRL-versus-INLP decision"
+      },
+      "notes": [
+        "One extra per stage; the bare stage reproduces the W3 bare specialist under identical seeds.",
+        "Deltas are versus the W3 bare specialist on the same W1 harness estate and threshold sweep.",
+        "Set-conditioning builds up to four same-theme anchors per training item; W1 evaluation pairs remain single-document.",
+        "The INLP projection is fitted on the evaluation estate's identity labels; link labels are never used.",
+        "Fixture-scale compute is disclosed in environment.computeDisclosure.",
+        "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
+      ]
+    },
+    {
+      "runId": "281e6dccf76100f6d7a6c3e57665674b6130ae2f4f2462f519fc0c8657238de4",
+      "ticket": "W4",
+      "status": "ran",
+      "stage": "modality",
+      "extras": [
+        "modality"
+      ],
+      "createdAt": "2026-11-27T15:24:59.271432+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127,
+        "probe": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1)",
+        "parameterCount": 23156610,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs/train.jsonl",
+        "trainSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+        "trainRawSha256": "aadb874dda643a661369eb7735a8c19444c11d1f4e1215160ccb5e5ca7c48655",
+        "receiptPath": "results/weft-training-pairs/receipt.json",
+        "receiptSha256": "03e5f4d21c88fce65260304a4131bef59bd453a44ad508fa5d91741024eac848",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 11,
+        "scale": "fixture",
+        "licenceTrace": {
+          "usedSources": {
+            "synthetic-estate": "green"
+          },
+          "teacher": "not used for fixture pairs",
+          "baseEncoder": "Apache-2.0"
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 11,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "extraWeights": {
+          "adversary": 0.0,
+          "setConditioning": 0.0,
+          "triangle": 0.0,
+          "modality": 0.1
+        },
+        "adversaryLambda": 1.0,
+        "triangleMargin": 0.1,
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "extrasEnabled": [
+          "modality"
+        ],
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head"
+      },
+      "environment": {
+        "device": "cpu",
+        "cudaAvailable": false,
+        "cudaVersion": null,
+        "gpuCount": 0,
+        "gpuNames": [],
+        "torch": "2.10.0+cpu",
+        "transformers": "4.57.6",
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "kaggle": false,
+        "computeDisclosure": "CPU fixture-scale run on 11 W2 pairs and the W1 synthetic estate; not the Kaggle 2x T4 recipe"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 2.496159076690674,
+            "linkBce": 0.6837360858917236,
+            "crossclr": 2.1630663871765137,
+            "evidence": 3.472806453704834,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.36328575015068054
+          },
+          {
+            "epoch": 2,
+            "loss": 2.0315897464752197,
+            "linkBce": 0.6007285714149475,
+            "crossclr": 1.4133063554763794,
+            "evidence": 3.4698023796081543,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.3024734556674957
+          },
+          {
+            "epoch": 3,
+            "loss": 1.7783960103988647,
+            "linkBce": 0.5268449187278748,
+            "crossclr": 1.0689520835876465,
+            "evidence": 3.472806930541992,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.22513499855995178
+          },
+          {
+            "epoch": 4,
+            "loss": 1.6772831678390503,
+            "linkBce": 0.4616330862045288,
+            "crossclr": 1.0025699138641357,
+            "evidence": 3.475151538848877,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.19334815442562103
+          },
+          {
+            "epoch": 5,
+            "loss": 1.5986324548721313,
+            "linkBce": 0.41081610321998596,
+            "crossclr": 0.9595337510108948,
+            "evidence": 3.4655299186706543,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.1494348794221878
+          },
+          {
+            "epoch": 6,
+            "loss": 1.5128253698349,
+            "linkBce": 0.34075748920440674,
+            "crossclr": 0.9346517324447632,
+            "evidence": 3.4625205993652344,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.12237854301929474
+          },
+          {
+            "epoch": 7,
+            "loss": 1.4412158727645874,
+            "linkBce": 0.2723311185836792,
+            "crossclr": 0.9288699626922607,
+            "evidence": 3.468151092529297,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.10819562524557114
+          },
+          {
+            "epoch": 8,
+            "loss": 1.3811018466949463,
+            "linkBce": 0.21527385711669922,
+            "crossclr": 0.9289793372154236,
+            "evidence": 3.4592387676239014,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.09490438550710678
+          },
+          {
+            "epoch": 9,
+            "loss": 1.314184308052063,
+            "linkBce": 0.15407314896583557,
+            "crossclr": 0.9195899963378906,
+            "evidence": 3.4620108604431152,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.07913930714130402
+          },
+          {
+            "epoch": 10,
+            "loss": 1.2927935123443604,
+            "linkBce": 0.1343754082918167,
+            "crossclr": 0.9194545745849609,
+            "evidence": 3.457744598388672,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.07141821086406708
+          },
+          {
+            "epoch": 11,
+            "loss": 1.2400932312011719,
+            "linkBce": 0.08292067795991898,
+            "crossclr": 0.918425977230072,
+            "evidence": 3.4596588611602783,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.06027641147375107
+          },
+          {
+            "epoch": 12,
+            "loss": 1.2255009412765503,
+            "linkBce": 0.06858941912651062,
+            "crossclr": 0.9197794198989868,
+            "evidence": 3.4529731273651123,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.0642722100019455
+          },
+          {
+            "epoch": 13,
+            "loss": 1.1950833797454834,
+            "linkBce": 0.0387270413339138,
+            "crossclr": 0.9200061559677124,
+            "evidence": 3.457669734954834,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.04819226264953613
+          },
+          {
+            "epoch": 14,
+            "loss": 1.177180528640747,
+            "linkBce": 0.020826151594519615,
+            "crossclr": 0.9190772771835327,
+            "evidence": 3.458535671234131,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.051085829734802246
+          },
+          {
+            "epoch": 15,
+            "loss": 1.170876383781433,
+            "linkBce": 0.017442945390939713,
+            "crossclr": 0.9181964993476868,
+            "evidence": 3.4482150077819824,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.04692138358950615
+          },
+          {
+            "epoch": 16,
+            "loss": 1.1627418994903564,
+            "linkBce": 0.009531566873192787,
+            "crossclr": 0.9170219898223877,
+            "evidence": 3.450568675994873,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.04585681110620499
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1589714288711548,
+            "linkBce": 0.006708894390612841,
+            "crossclr": 0.9173133969306946,
+            "evidence": 3.448615550994873,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.03882716968655586
+          },
+          {
+            "epoch": 18,
+            "loss": 1.1566449403762817,
+            "linkBce": 0.005369353573769331,
+            "crossclr": 0.9168663024902344,
+            "evidence": 3.447047710418701,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.034328557550907135
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1551135778427124,
+            "linkBce": 0.002470722422003746,
+            "crossclr": 0.9177843332290649,
+            "evidence": 3.450421094894409,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.03666486591100693
+          },
+          {
+            "epoch": 20,
+            "loss": 1.1539632081985474,
+            "linkBce": 0.001669611781835556,
+            "crossclr": 0.917332649230957,
+            "evidence": 3.4515392780303955,
+            "adversary": 0.0,
+            "setConsistency": 0.0,
+            "triangle": 0.0,
+            "modality": 0.03319389745593071
+          }
+        ],
+        "wallSeconds": 6.423810200009029,
+        "parameters": 23156610
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.6930744051933289,
+          "pairwise": {
+            "precision": 0.25071225071225073,
+            "recall": 0.32592592592592595,
+            "f1": 0.28341384863124,
+            "truePositivePairs": 352,
+            "falsePositivePairs": 1052,
+            "falseNegativePairs": 728,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 1404
+          },
+          "pairwiseF1CI95": [
+            0.24737267582861763,
+            0.29620661824051653
+          ],
+          "falseMerge": {
+            "count": 1052,
+            "rate": 0.7492877492877493,
+            "predictedPositivePairs": 1404
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.0019525801952580196,
+              "achievedFalseMergeRate": 0.03571428571428571,
+              "threshold": 0.7868584394454956,
+              "predictedPositivePairs": 56,
+              "truePositivePairs": 54
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.002615062761506276,
+              "achievedFalseMergeRate": 0.09333333333333334,
+              "threshold": 0.7737162709236145,
+              "predictedPositivePairs": 75,
+              "truePositivePairs": 68
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.268370607028754,
+              "recall": 0.32558139534883723,
+              "f1": 0.29422066549912435,
+              "truePositivePairs": 336,
+              "falsePositivePairs": 916,
+              "falseNegativePairs": 696,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 1252
+            },
+            "cross_modality": {
+              "precision": 0.270293609671848,
+              "recall": 0.3260416666666667,
+              "f1": 0.295561850802644,
+              "truePositivePairs": 313,
+              "falsePositivePairs": 845,
+              "falseNegativePairs": 647,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 1158
+            },
+            "identity_overlap": {
+              "precision": 0.2773722627737226,
+              "recall": 0.2638888888888889,
+              "f1": 0.27046263345195726,
+              "truePositivePairs": 38,
+              "falsePositivePairs": 99,
+              "falseNegativePairs": 106,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 137
+            },
+            "identity_disjoint": {
+              "precision": 0.2478295185477506,
+              "recall": 0.33547008547008544,
+              "f1": 0.2850658193372674,
+              "truePositivePairs": 314,
+              "falsePositivePairs": 953,
+              "falseNegativePairs": 622,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 1267
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.2621951219512195,
+                "recall": 0.32575757575757575,
+                "f1": 0.29054054054054057,
+                "truePositivePairs": 86,
+                "falsePositivePairs": 242,
+                "falseNegativePairs": 178,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 328
+              },
+              "Finance": {
+                "precision": 0.34934497816593885,
+                "recall": 0.30303030303030304,
+                "f1": 0.32454361054766734,
+                "truePositivePairs": 80,
+                "falsePositivePairs": 149,
+                "falseNegativePairs": 184,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 229
+              },
+              "Legal": {
+                "precision": 0.27626459143968873,
+                "recall": 0.2689393939393939,
+                "f1": 0.27255278310940495,
+                "truePositivePairs": 71,
+                "falsePositivePairs": 186,
+                "falseNegativePairs": 193,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 257
+              },
+              "Operations": {
+                "precision": 0.2631578947368421,
+                "recall": 0.3787878787878788,
+                "f1": 0.31055900621118004,
+                "truePositivePairs": 100,
+                "falsePositivePairs": 280,
+                "falseNegativePairs": 164,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 380
+              },
+              "People": {
+                "precision": 0.21445221445221446,
+                "recall": 0.3484848484848485,
+                "f1": 0.2655122655122656,
+                "truePositivePairs": 92,
+                "falsePositivePairs": 337,
+                "falseNegativePairs": 172,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 429
+              },
+              "Research": {
+                "precision": 0.21962616822429906,
+                "recall": 0.3560606060606061,
+                "f1": 0.2716763005780347,
+                "truePositivePairs": 94,
+                "falsePositivePairs": 334,
+                "falseNegativePairs": 170,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 428
+              },
+              "Sales": {
+                "precision": 0.25,
+                "recall": 0.35984848484848486,
+                "f1": 0.2950310559006211,
+                "truePositivePairs": 95,
+                "falsePositivePairs": 285,
+                "falseNegativePairs": 169,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 380
+              },
+              "Support": {
+                "precision": 0.3111111111111111,
+                "recall": 0.26515151515151514,
+                "f1": 0.28629856850715746,
+                "truePositivePairs": 70,
+                "falsePositivePairs": 155,
+                "falseNegativePairs": 194,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 225
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.2821576763485477,
+                "recall": 0.3333333333333333,
+                "f1": 0.3056179775280899,
+                "truePositivePairs": 136,
+                "falsePositivePairs": 346,
+                "falseNegativePairs": 272,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 482
+              },
+              "memo": {
+                "precision": 0.23376623376623376,
+                "recall": 0.3088235294117647,
+                "f1": 0.26610348468849,
+                "truePositivePairs": 126,
+                "falsePositivePairs": 413,
+                "falseNegativePairs": 282,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 539
+              },
+              "slide": {
+                "precision": 0.2634730538922156,
+                "recall": 0.3235294117647059,
+                "f1": 0.29042904290429045,
+                "truePositivePairs": 132,
+                "falsePositivePairs": 369,
+                "falseNegativePairs": 276,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 501
+              },
+              "ticket": {
+                "precision": 0.271523178807947,
+                "recall": 0.3014705882352941,
+                "f1": 0.2857142857142857,
+                "truePositivePairs": 123,
+                "falsePositivePairs": 330,
+                "falseNegativePairs": 285,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 453
+              },
+              "transcript": {
+                "precision": 0.252129471890971,
+                "recall": 0.3627450980392157,
+                "f1": 0.29748743718592957,
+                "truePositivePairs": 148,
+                "falsePositivePairs": 439,
+                "falseNegativePairs": 260,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 587
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.38659188034188097,
+            "recall": 0.6058333333333317,
+            "f1": 0.47199576205803934
+          },
+          "conllStyle": {
+            "precision": 0.05020678246484698,
+            "recall": 0.562037037037037,
+            "f1": 0.09217919514047077,
+            "truePositivePairs": 607,
+            "falsePositivePairs": 11483,
+            "falseNegativePairs": 473,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 12090
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 23,
+            "meanThemesPerCluster": 1.2588235294117647,
+            "maxClusterSize": 156,
+            "contaminatedClusters": 1,
+            "contaminatedDocuments": 156
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.26163301141352063,
+            "recall": 0.3355855855855856,
+            "f1": 0.29403058707449437,
+            "truePositivePairs": 298,
+            "falsePositivePairs": 841,
+            "falseNegativePairs": 590,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 1139
+          },
+          "identityDisjointCrossDepartmentPairs": 23256,
+          "latency": {
+            "encodeMsPerDocument": 5.43689083327384,
+            "evaluatedPairs": 28680
+          },
+          "estate": {
+            "version": "weft-synthetic-v1",
+            "seed": 20261127,
+            "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+            "documents": 240,
+            "pairs": 28680
+          }
+        },
+        "deltaVsW3Bare": {
+          "baseline": {
+            "artifact": "results/weft-specialist-training.json",
+            "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+            "metric": "identity_disjoint_cross_department_pairwise_f1",
+            "f1": 0.29610046265697293,
+            "harness": {
+              "path": "scripts/run-weft-baseline-shootout.py",
+              "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+              "estateVersion": "weft-synthetic-v1",
+              "estateSeed": 20261127,
+              "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+              "documents": 240,
+              "pairs": 28680,
+              "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+            },
+            "seeds": {
+              "python": 20261127,
+              "numpy": 20261127,
+              "torch": 20261127,
+              "evaluation": 20261127,
+              "resampleSeed": 20261127
+            },
+            "baseEncoderDigest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b"
+          },
+          "stageF1": 0.29403058707449437,
+          "delta": -0.002069875582478564,
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "status": "negative",
+          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+        }
+      },
+      "probeBattery": {
+        "target": "author identity on the evaluation estate theme embeddings",
+        "classes": 16,
+        "documents": 240,
+        "split": {
+          "train": 164,
+          "test": 76,
+          "fraction": 0.7,
+          "seed": 20261127
+        },
+        "chanceAccuracy": 0.0625,
+        "majorityBaseline": 0.09210526315789473,
+        "linear": {
+          "testAccuracy": 0.18421052396297455,
+          "trainAccuracy": 0.9268292784690857,
+          "steps": 200,
+          "hidden": null
+        },
+        "nonlinearMlp": {
+          "testAccuracy": 0.28947368264198303,
+          "trainAccuracy": 1.0,
+          "steps": 200,
+          "hidden": 64
+        },
+        "wording": "identity-blind: this battery measures residual identity information in the exported theme embedding",
+        "note": "accuracy is measured on a held-out document split; values near or below chance on this fixture are reported as measured"
+      },
+      "identitySuppression": {
+        "wording": "identity-blind",
+        "h2Metric": "post-hoc classifier battery (linear and small MLP) on exported theme embeddings, never the in-training adversary alone",
+        "caveat": "Elazar & Goldberg (2018) report that a post-hoc classifier still recovers the attribute when an in-training adversary reaches chance, and advise against relying on adversarial training for invariant representations.",
+        "inTrainingAdversary": {
+          "enabled": false,
+          "mechanism": "gradient-reversal identity-overlap classifier on the link representation",
+          "accuracyHistory": [],
+          "finalAccuracy": null,
+          "note": "in-training accuracy is not a leak guarantee; the post-hoc battery is authoritative"
+        },
+        "postHocInlp": {
+          "enabled": true,
+          "mechanism": "INLP null-space projection fitted on identity labels over the evaluation estate",
+          "probeAccuracyBefore": {
+            "linear": 0.18421052396297455,
+            "nonlinearMlp": 0.28947368264198303
+          },
+          "probeAccuracyAfter": {
+            "linear": 0.05263157933950424,
+            "nonlinearMlp": 0.06578947603702545
+          },
+          "iterationsOnTheme": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.10526315867900848,
+              "nonlinearProbeAccuracy": 0.19736842811107635
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.17105263471603394
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.10526315867900848
+            },
+            {
+              "iteration": 4,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.03947368264198303,
+              "nonlinearProbeAccuracy": 0.09210526198148727
+            }
+          ],
+          "iterationsOnPooled": [
+            {
+              "iteration": 1,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.2368421107530594,
+              "nonlinearProbeAccuracy": 0.21052631735801697
+            },
+            {
+              "iteration": 2,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.07894736528396606,
+              "nonlinearProbeAccuracy": 0.07894736528396606
+            },
+            {
+              "iteration": 3,
+              "removedDirections": 16,
+              "linearProbeAccuracy": 0.02631578966975212,
+              "nonlinearProbeAccuracy": 0.03947368264198303
+            }
+          ],
+          "linkF1Before": 0.29403058707449437,
+          "linkF1After": 0.3051037577117218,
+          "note": "INLP is the canonical linear-erasure baseline; nonlinear recovery is known and is measured in the battery above"
+        },
+        "founderDecision": "pending: the evidence above informs the GRL-versus-INLP decision"
+      },
+      "notes": [
+        "One extra per stage; the bare stage reproduces the W3 bare specialist under identical seeds.",
+        "Deltas are versus the W3 bare specialist on the same W1 harness estate and threshold sweep.",
+        "Set-conditioning builds up to four same-theme anchors per training item; W1 evaluation pairs remain single-document.",
+        "The INLP projection is fitted on the evaluation estate's identity labels; link labels are never used.",
+        "Fixture-scale compute is disclosed in environment.computeDisclosure.",
+        "Identity is described as identity-blind; the post-hoc battery reports residual leakage honestly."
+      ]
     }
   ]
 }
