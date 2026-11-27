@@ -701,9 +701,16 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const docKey = (type, doc) => `${type}\u0000${doc.id}`;
   const docUnderCap = (type, doc) => (perDocPairs.get(docKey(type, doc)) || 0) < capPerDoc;
   const docBump = (type, doc) => perDocPairs.set(docKey(type, doc), (perDocPairs.get(docKey(type, doc)) || 0) + 1);
-  // Chunk identity lives in the doc id (theme-cN-doc-M); ids without the
-  // marker are each their own chunk, so the fixture corpus is unaffected.
-  const chunkOf = (doc) => doc.id.split('-doc-')[0];
+  // Chunk identity is the leftmost `-c<digits>-` marker that generateTeacherEstates
+  // prefixes onto every live doc id; fixture and hand-written ids without the
+  // marker are each their own chunk. (A plain -doc- split silently broke when a
+  // teacher emitted ids without that substring, which voided the
+  // within-chunk exclusion flag.)
+  const CHUNK_MARKER = /-c\d+-/;
+  const chunkOf = (doc) => {
+    const m = CHUNK_MARKER.exec(doc.id);
+    return m ? doc.id.slice(0, m.index + m[0].length - 1) : doc.id;
+  };
 
   const reject = (doc, status) => {
     const bucket = (rejected[doc.source] ||= { count: 0, status });
