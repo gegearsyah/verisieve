@@ -314,3 +314,57 @@ test('W2 5: artifacts end to end — JSONL + receipt + audit, deterministic, com
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('W2 6: opt-in recipe flags — disjoint negatives emitted, within-chunk pairs excluded, defaults untouched', () => {
+  const doc = (id, theme, key) => ({
+    id,
+    source: 'synthetic-estate',
+    format: 'text',
+    department: 'ops',
+    theme,
+    text: `A document about ${theme} mentioning ${key}.`,
+    identities: [{ key, surface: key.toUpperCase(), class: 'person' }],
+  });
+  // Two single-theme chunks: budget-c1 and travel-c2. The within-chunk pairs are
+  // the style shortcut the live recipe taught the W4 run (#52).
+  const corpus = {
+    docs: [
+      doc('budget-c1-doc-001', 'budget', 'emp-x'),
+      doc('budget-c1-doc-002', 'budget', 'emp-y'),
+      doc('travel-c2-doc-001', 'travel', 'emp-z'),
+      doc('travel-c2-doc-002', 'travel', 'emp-x'),
+    ],
+    links: [],
+  };
+  const chunkOf = (id) => id.split('-doc-')[0];
+  const pairsWith = (compiled, docId) => compiled.pairs.filter((p) => p.provenance.docIds.includes(docId));
+
+  const plain = compileWeftTrainingPairs(corpus);
+  assert.ok(
+    plain.pairs.some((p) => p.provenance.docIds.join('|') === 'budget-c1-doc-001|budget-c1-doc-002'),
+    'the default recipe still emits the within-chunk disjoint positive'
+  );
+  assert.ok(!plain.receipt.recipeOptions, 'the default recipe records no recipeOptions block');
+
+  const fixed = compileWeftTrainingPairs(corpus, {
+    includeDisjointNegatives: true,
+    excludeWithinChunk: true,
+  });
+  for (const p of fixed.pairs) {
+    const [a, b] = p.provenance.docIds;
+    assert.notEqual(chunkOf(a), chunkOf(b), 'no within-chunk pair may survive the exclusion flag');
+  }
+  const disjointNegatives = fixed.pairs.filter((p) => p.pairType === 'identity-disjoint-theme-different-negative');
+  assert.ok(disjointNegatives.length >= 2, 'the counterweight negative type is emitted');
+  for (const p of disjointNegatives) assert.equal(p.label, 'negative');
+  assert.ok(
+    disjointNegatives.some((p) => p.provenance.docIds.join('|') === 'budget-c1-doc-001|travel-c2-doc-001'),
+    'a disjoint cross-theme pair is now a negative'
+  );
+  assert.equal(pairsWith(fixed, 'travel-c2-doc-002').length > 0, true, 'matched negatives still flow');
+  assert.deepEqual(fixed.receipt.recipeOptions, {
+    includeDisjointNegatives: true,
+    excludeWithinChunk: true,
+    corpusProvided: false,
+  });
+});
