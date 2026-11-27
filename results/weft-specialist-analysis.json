@@ -1,0 +1,142 @@
+{
+  "kind": "weft-specialist-analysis",
+  "schemaVersion": 1,
+  "analysisScript": "scripts/analyze-weft-specialist-gate.py",
+  "analysisSeed": 20261127,
+  "recordedAt": "2026-11-27T15:22:52.562998+00:00",
+  "note": "Two-domain decisive matrices recorded by the analysis script for the W4-std and W4-frz runs. Every metric block is the max-F1 sweep result of the named scorer path on the fixed fixture gate subset (23,256 identity-disjoint cross-department pairs) and the live holdout (2,000 pairs). Reproduce with the named model dir populated and: python scripts/analyze-weft-specialist-gate.py",
+  "runs": [
+    {
+      "ticket": "W4-std",
+      "runId": "24dbf0ab75fbdc20c53b2cd789d868bc997731adce82977f1852fe6f81a27417",
+      "modelPath": "models/weft-specialist-w4std",
+      "fixtureGate": {
+        "linkHead": {
+          "maxF1": 0.3073,
+          "precision": 0.3155,
+          "recall": 0.2995,
+          "threshold": 0.999908,
+          "enrichment": 7.99
+        },
+        "pooledCosine": {
+          "maxF1": 0.674,
+          "precision": 0.7328,
+          "recall": 0.6239,
+          "threshold": 0.646071,
+          "enrichment": 17.34
+        },
+        "themeCosine": {
+          "maxF1": 0.3585,
+          "precision": 0.3353,
+          "recall": 0.3851,
+          "threshold": 0.964872,
+          "enrichment": 9.14
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.9977,
+          "precision": 0.9977,
+          "recall": 0.9977,
+          "threshold": 0.60561,
+          "enrichment": 26.13
+        }
+      },
+      "linkHeadScoreDistribution": {
+        "p10": 0.189136,
+        "p25": 0.499177,
+        "p50": 0.75926,
+        "p75": 0.995924,
+        "p90": 0.999602,
+        "p99": 0.999986,
+        "fracAbove0p99": 0.3004
+      },
+      "liveHoldout": {
+        "linkHead": {
+          "maxF1": 0.995,
+          "precision": 0.99,
+          "recall": 1.0,
+          "threshold": 0.658662,
+          "enrichment": 4.02
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.5081,
+          "precision": 0.4091,
+          "recall": 0.67,
+          "threshold": 0.274777,
+          "enrichment": 1.88
+        },
+        "rawMiniLMErrorsAtBestThreshold": {
+          "identity-disjoint-theme-different-negative": 191,
+          "identity-matched-theme-different-negative": 287,
+          "identity-disjoint-same-theme-positive": 156,
+          "identity-masked-positive": 7
+        }
+      }
+    },
+    {
+      "ticket": "W4-frz",
+      "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
+      "modelPath": "models/weft-specialist",
+      "fixtureGate": {
+        "linkHead": {
+          "maxF1": 0.297,
+          "precision": 0.3589,
+          "recall": 0.2534,
+          "threshold": 1.0,
+          "enrichment": 7.55
+        },
+        "pooledCosine": {
+          "maxF1": 0.9977,
+          "precision": 0.9977,
+          "recall": 0.9977,
+          "threshold": 0.606483,
+          "enrichment": 26.13
+        },
+        "themeCosine": {
+          "maxF1": 0.6404,
+          "precision": 0.639,
+          "recall": 0.6419,
+          "threshold": 0.962669,
+          "enrichment": 16.75
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.9977,
+          "precision": 0.9977,
+          "recall": 0.9977,
+          "threshold": 0.60561,
+          "enrichment": 26.13
+        }
+      },
+      "linkHeadScoreDistribution": {
+        "p10": 0.495241,
+        "p25": 0.500004,
+        "p50": 0.653023,
+        "p75": 0.994357,
+        "p90": 0.999968,
+        "p99": 1.0,
+        "fracAbove0p99": 0.2724
+      },
+      "liveHoldout": {
+        "linkHead": {
+          "maxF1": 0.9748,
+          "precision": 0.9699,
+          "recall": 0.9798,
+          "threshold": 0.500033,
+          "enrichment": 3.93
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.5081,
+          "precision": 0.4091,
+          "recall": 0.67,
+          "threshold": 0.274777,
+          "enrichment": 1.88
+        },
+        "rawMiniLMErrorsAtBestThreshold": {
+          "identity-disjoint-theme-different-negative": 191,
+          "identity-matched-theme-different-negative": 287,
+          "identity-disjoint-same-theme-positive": 156,
+          "identity-masked-positive": 7
+        }
+      }
+    }
+  ]
+}

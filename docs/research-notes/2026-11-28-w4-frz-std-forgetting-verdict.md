@@ -130,6 +130,10 @@ is available, is arXiv:2305.05968.
 
 ## 8. Reproduction
 
+Both matrices are also recorded as committed artifact numbers in
+`results/weft-specialist-analysis.json` (per-run scorer blocks, max-F1 sweeps,
+enrichment factors, and the link-head score distributions).
+
 ```bash
 python scripts/analyze-weft-specialist-gate.py        # section 2 matrix
 node --test test/weft-specialist-contract.test.js    # 7 pass (newest entry = W4-frz)
