@@ -120,7 +120,9 @@ def draw(seed, dash_off):
     _stroke(ax, k7._rrect_pts(sx, yy, sw, sh, 8), lw=1.8, close=True)
     rects.append((sx, 480, sw, sh))
     _txt(ax, 64, k7.GIF_H - 506, "W4 ablation ladder", 10.6, bold=True, ha="left")
-    _txt(ax, 64, k7.GIF_H - 528, "specialist theme-F1", 8.7, ha="left")
+    _txt(ax, 64, k7.GIF_H - 524, "specialist theme-F1 (fixture)", 8.7, ha="left")
+    _txt(ax, 64, k7.GIF_H - 542, "full-scale live 0.208, gate not met", 8.7,
+         ha="left", color=BAD)
     chips = [
         ("bare", "0.392, baseline", INK_G),
         ("+adversary", "0.339, hurts", BAD),
