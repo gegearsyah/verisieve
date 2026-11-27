@@ -30,7 +30,7 @@ NAME = "end-to-end-pipeline.gif"
 
 GIF_H = 460
 FRAMES = 10
-DUR_MS = 120
+DUR_MS = 140
 COLORS = 32
 GLOW = "#f7efd4"
 RED = "#b91c1c"
@@ -156,7 +156,8 @@ def draw(seed, dash_off, frame=0):
                       "sftJsonl · ptlmSftJsonl",
                       "Doc-QA · 6 SFT exporters",
                       "shadowAudit · Merkle receipt",
-                      "certificates · timeline"])
+                      "certificates · timeline",
+                      "themeLinks (post-T12)"], step=16)
 
     # 5. Into the model, three lanes
     _card(ax, XS[4], _icon_gradcap, "Into the model")
@@ -209,7 +210,8 @@ def build():
     paths = []
     for f in range(FRAMES):
         # Fixed seed: the ink stays still, only the dashes and halo move.
-        fig = draw(20301125, DASH_PERIOD * f / FRAMES, f)
+        # Three dash periods per cycle so the march reads at 140 ms/frame.
+        fig = draw(20301125, (3 * DASH_PERIOD) * f / FRAMES, f)
         _check(fig)
         p = frames_dir / f"frame_{f}.png"
         fig.savefig(p, dpi=100)

@@ -838,8 +838,10 @@ const BIB_CG = tex('versieve-graph-grounded-enterprise-corpus.bib');
 const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
 
 {
-  // 1. README conformal gate table (including E2E leak of released column)
-  ok('readme:gate.header', 'E2E Leak (of Released)', README);
+  // 1. Conformal gate table. Post novelty-framing rewrite the full table moved
+  // into Paper D tab:gt-ltt; only the FPR<=alpha list and the a=0.10 yield
+  // survive verbatim in the README.
+  ok('paperD:gate.header', '\\textbf{E2E Leak}', M);
   const commaPlain = v => f0(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const readmeGateRows = [
     ['naive10', GT.detectorInformedHybridLtt.find(e => e.alpha === 0.10)],
@@ -852,12 +854,25 @@ const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
     ['eltt05', eLtt05],
     ['eltt10', eLtt10],
   ];
+  // fields still quoted verbatim in the README prose
+  const README_GATE_FIELDS = new Set([
+    'naive10.fpr', 'hc01.fpr', 'hc02.fpr', 'hc05.fpr', 'hc10.fpr',
+    'hc15.fpr', 'hc20.fpr', 'eltt05.fpr', 'hc10.yield',
+  ]);
   for (const [tag, row] of readmeGateRows) {
-    ok(`readme:gate.${tag}.fpr`, `${f2(row.testConditionalFprPct)}%`, README);
-    ok(`readme:gate.${tag}.yield`, `${f2(row.testSafeYieldPct)}%`, README);
-    ok(`readme:gate.${tag}.autoRel`, `${f2(row.overallAutoReleasePct)}%`, README);
-    ok(`readme:gate.${tag}.e2eLeak`, `${f2(row.e2eResidualLeakOfReleasedPct)}%`, README);
-    ok(`readme:gate.${tag}.e2eCount`, `(\`${row.e2eResidualLeakCount}\`)`, README);
+    for (const [field, v] of Object.entries({
+      fpr: row.testConditionalFprPct,
+      yield: row.testSafeYieldPct,
+      autoRel: row.overallAutoReleasePct,
+      e2eLeak: row.e2eResidualLeakOfReleasedPct,
+    })) {
+      if (README_GATE_FIELDS.has(`${tag}.${field}`)) {
+        ok(`readme:gate.${tag}.${field}`, `${f2(v)}%`, README);
+      } else {
+        ok(`paperD:gate.${tag}.${field}`, P(f2(v)), M);
+      }
+    }
+    ok(`paperD:gate.${tag}.e2eCount`, `($${comma(row.e2eResidualLeakCount)}$)`, M);
   }
 
   // 2. Reconciled 5 WASM kernels, 18 MCP tools, 174 Unicode cases, CI test count
@@ -883,7 +898,8 @@ const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
   ok('paperD:mcp.count', `exposes $${mcpCount}$ tools`, M);
 
   const unicodeTotal = EU.zwsp.total + EU.homoglyph.total + EU.fullwidth.total;
-  ok('readme:unicode.total', `\`${unicodeTotal}\` adversarial cases`, README);
+  // the case count was cut from the README retelling; it lives in Paper D Exp.2
+  ok('paperD:unicode.caseTotal', `$${unicodeTotal}$ cases`, M);
   ok('paperD:unicode.total', `$${unicodeTotal}$ cases`, M);
 
   const ciTestFiles = [...PKG.scripts['test:ci'].matchAll(/test\/[a-zA-Z0-9._-]+\.test\.js/g)].map(m => m[0]);
@@ -1157,19 +1173,21 @@ for (const [name, body] of ALL_DOCS) {
   const cPlain = v => f0(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const cComma2 = v => { const s = f2(v); const [i, d] = s.split('.'); return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d ? `.${d}` : ''); };
 
-  // 1. T8 gate-over-best-detector + stitched shootout
+  // 1. T8 gate-over-best-detector + stitched shootout. Counts/yields the README
+  // retelling dropped are retargeted to Paper D tab:gate-over-detector.
   const t8arm = T8.gateOverDetectorArms.presidio_plus_stage3a;
   ok('u2:t8.alone', `${f2(t8arm.detectorAlone.e2eResidualLeakOfReleasedPct)}%`, README);
-  ok('u2:t8.aloneCount', `(\`${t8arm.detectorAlone.e2eResidualLeakCount}\`)`, README);
+  ok('paperD:t8.aloneCount', `($${comma(t8arm.detectorAlone.e2eResidualLeakCount)}$ paragraphs)`, M);
   for (const [tag, a] of [['hc01', 0.01], ['hc05', 0.05]]) {
     const e = t8arm.hcCrcSweep.find(e => e.alpha === a);
-    ok(`u2:t8.${tag}.yield`, `${f2(e.testSafeYieldPct)}%`, README);
+    if (tag === 'hc05') ok('paperD:t8.hc05.yield', P(f2(e.testSafeYieldPct)), M);
+    else ok(`u2:t8.${tag}.yield`, `${f2(e.testSafeYieldPct)}%`, README);
     ok(`u2:t8.${tag}.e2e`, `${f2(e.e2eResidualLeakOfReleasedPct)}%`, README);
-    ok(`u2:t8.${tag}.count`, `(\`${e.e2eResidualLeakCount}\`)`, README);
+    ok(`paperD:t8.${tag}.count`, `($${comma(e.e2eResidualLeakCount)}$)`, M);
   }
   const t8cmp = T8.stitchedBaselineShootout[0].matchedSafeYieldComparisons.find(e => e.alpha === 0.01);
   ok('u2:t8.stitchedLeak', `${f2(t8cmp.stitchedE2eLeakOfReleasedPct)}%`, README);
-  ok('u2:t8.stitchedP', `p = ${f4(t8cmp.pairedDocPermutationP)}`, README);
+  ok('u2:t8.stitchedP', `p=${f4(t8cmp.pairedDocPermutationP)}`, README);
 
   // 2. T9 measured ease + forensic parity
   const eas = EASE.versieve, easSt = EASE.stitchedPythonStack;
@@ -1194,14 +1212,15 @@ for (const [name, body] of ALL_DOCS) {
   ok('u2:screenleak.imageIou', '`IoU >= 0.30`', README);
   ok('u2:screenleak.imageCount', `(\`${sl.image.zeroLeakFrameCount}/${sl.image.totalFrames}\``, README);
 
-  // 3. T11 CPA attacker audit + scanner-missed canaries
+  // 3. T11 CPA attacker audit + scanner-missed canaries (details cut from the
+  // README retelling; ambiguity sets / Fisher / pair count live in Paper D Exp.7)
   ok('u2:cpa.released', `${f1(CPA.released.top1ReIdRatePct)}%`, README);
-  ok('u2:cpa.releasedCadv', `${f2(CPA.released.meanAmbiguitySetSize)}`, README);
+  ok('paperD:cpa.releasedCadv', `mean ambiguity-set size $${f2(CPA.released.meanAmbiguitySetSize)}$`, M);
   ok('u2:cpa.withheld', `${f1(CPA.withheld.top1ReIdRatePct)}%`, README);
   ok('u2:cpa.withheldCadv', `${f2(CPA.withheld.meanAmbiguitySetSize)}`, README);
-  ok('u2:cpa.fisher', `${f1(CPA.hypothesisTests.fisherExactTop1.pValueTwoSided * 1e5)}e-5`, README);
+  ok('paperD:cpa.fisher', `Fisher exact two-sided $p = ${f1(CPA.hypothesisTests.fisherExactTop1.pValueTwoSided * 1e5)}\\times 10^{-5}$`, M);
   ok('u2:cpa.mcnemar', `${f1(CPA.hypothesisTests.withinRulingPairedAudit.mcnemarTwoSidedPValue * 1e5)}e-5`, README);
-  ok('u2:cpa.pairCount', `\`${CPA.hypothesisTests.withinRulingPairedAudit.nPairs}\` within-ruling paired audits`, README);
+  ok('paperD:cpa.pairCount', `within-ruling paired audit on $${CPA.hypothesisTests.withinRulingPairedAudit.nPairs}$ pairs`, M);
   ok('u2:cpa.ppDelta', `${f1(CPA.hypothesisTests.withheldMinusReleasedTop1Pp)} pp`, README);
   const canA = CAN.arms.stage3a_ptlm.exposure.scannerMissedFormats;
   const canB = CAN.arms.stage3a_3b_ptlm.exposure.scannerMissedFormats;
@@ -1211,31 +1230,33 @@ for (const [name, body] of ALL_DOCS) {
   ok('u2:canary.stage3a3b.r1', canB.r1Fraction, README);
   ok('u2:canary.unredacted', f2(CAN.arms.unredacted.exposure.scannerMissedFormats.meanExposureBits), README);
 
-  // 4. T11 scale document-QA + T12 IB-PT-LM
+  // 4. T11 scale document-QA + T12 IB-PT-LM. Per-seed spread, composed arm and
+  // row accounting were cut from the README retelling; retargeted to Paper C S-scale.
   ok('u2:qa.docqa', `${f2(QA.honestSummary.documentQaExactMatchMeanPct)}%`, README);
-  ok('u2:qa.docqaRiB', f2(QA.arms.document_qa.byStratum.all.seedExactMatchValues[0]), README);
-  ok('u2:qa.composed', `${f2(QA.honestSummary.composedUncappedExactMatchMeanPct)}%`, README);
+  ok('paperC:qa.docqaRiB', `${f2(QA.arms.document_qa.byStratum.all.seedExactMatchValues[0])}\\%`, L);
+  ok('paperC:qa.composed', `${f2(QA.honestSummary.composedUncappedExactMatchMeanPct)}\\%`, L);
   ok('u2:qa.delta', `${f2(QA.comparisons.documentQa_vs_composedUncapped.exactMatchPctGap.meanGap)} pp`, README);
-  ok('u2:qa.deltaP', `p = ${f4(QA.comparisons.documentQa_vs_composedUncapped.exactMatchPctGap.pairedPermutationPValue)}`, README);
+  ok('u2:qa.deltaP', `p=${f4(QA.comparisons.documentQa_vs_composedUncapped.exactMatchPctGap.pairedPermutationPValue)}`, README);
   ok('u2:qa.bm25', `${f2(QA.honestSummary.bm25RetrievalExactMatchPct)}%`, README);
   ok('u2:qa.bm25Gap', f2(QA.comparisons.documentQa_vs_bm25Retrieval.exactMatchPctGap.meanGap), README);
-  ok('u2:qa.bm25GapP', `p = ${f3(QA.comparisons.documentQa_vs_bm25Retrieval.exactMatchPctGap.pairedPermutationPValue)}`, README);
-  ok('u2:qa.rows', `\`${cPlain(QA.arms.document_qa.tokenAccounting.rows)}\` rows`, README);
-  ok('u2:qa.truncated', `\`${QA.arms.document_qa.tokenAccounting.truncatedRows}\` truncated`, README);
+  ok('u2:qa.bm25GapP', `p=${f3(QA.comparisons.documentQa_vs_bm25Retrieval.exactMatchPctGap.pairedPermutationPValue)}`, README);
+  ok('paperC:qa.tokRows', `$${comma(QA.arms.document_qa.tokenAccounting.rows)}$ rows`, L);
+  ok('paperC:qa.truncated', `truncated rows $= ${QA.arms.document_qa.tokenAccounting.truncatedRows}$ for every training arm`, L);
   const iPt = IB.arms.pt_lm.aggregate, iIb = IB.arms.ib_pt_lm.aggregate;
   ok('u2:ib.ptBits', f2(iPt.contextualSurrogateInversionMeanBits.mean), README);
-  ok('u2:ib.ptR1', `${f2(iPt.contextualSurrogateInversionR1Count.mean)}/12`, README);
+  // rank-1/delta/wall/beta receipts moved into Paper C's IB paragraph
+  ok('paperC:ib.ptR1', `${f2(iPt.contextualSurrogateInversionR1Count.mean)}/12`, L);
   ok('u2:ib.ibBits', f2(iIb.contextualSurrogateInversionMeanBits.mean), README);
   ok('u2:ib.ibR1', `${f1(iIb.contextualSurrogateInversionR1Count.mean)}/12`, README);
-  ok('u2:ib.bitsDelta', f2(iIb.contextualSurrogateInversionMeanBits.mean - iPt.contextualSurrogateInversionMeanBits.mean), README);
+  ok('paperC:ib.bitsDelta', `a $${f2(IB.deltas.ibPtLm_vs_ptLm.contextualSurrogateInversionMeanBits.mean)}$-bit change`, L);
   ok('u2:ib.probePt', `${f2(iPt.linearProbeIdentityAccPct.mean)}%`, README);
-  ok('u2:ib.probeChance', `${f2(IB.arms.pt_lm.chanceProbeAccPct)}%`, README);
+  ok('paperC:ib.probeChance', `chance $${f2(IB.arms.pt_lm.chanceProbeAccPct)}\\%$`, L);
   ok('u2:ib.probeIb', `${f2(iIb.linearProbeIdentityAccPct.mean)}%`, README);
-  ok('u2:ib.probeDelta', `${f2(iIb.linearProbeIdentityAccPct.mean - iPt.linearProbeIdentityAccPct.mean)} pp`, README);
+  ok('paperC:ib.probeDelta', `$${f2(IB.deltas.ibPtLm_vs_ptLm.linearProbeIdentityAccPct.mean)}$\\,pp`, L);
   ok('u2:ib.wallRatio', `${f2(iIb.trainWallSec.mean / iPt.trainWallSec.mean)}x`, README);
-  ok('u2:ib.wallRange', f2(iPt.trainWallSec.mean), README);
-  ok('u2:ib.wallIb', f2(iIb.trainWallSec.mean), README);
-  ok('u2:ib.beta', `beta = ${f1(IB.hyperparameters.betaKl)}`, README);
+  ok('paperC:ib.wallRange', `rises from $${f2(iPt.trainWallSec.mean)}$\\,s to`, L);
+  ok('paperC:ib.wallIb', `to $${f2(iIb.trainWallSec.mean)}$\\,s per seed`, L);
+  ok('paperC:ib.beta', `$\\beta{=}${f1(IB.hyperparameters.betaKl)}$`, L);
 }
 
 /* ---------------- U3: Papers C/D Wave 2-3 sync ---------------- */
@@ -1282,7 +1303,7 @@ for (const r of U3plateau) {
   }
 }
 ok('u3:t8.plateau.row', `Stitched stack, plain $\\tau \\in [${f2(U3pl.threshold)}, ${f2(U3plateau[U3plateau.length - 1].threshold)}]$ & ${U3fprCell(U3pl)} & ${U3leakCell(U3pl)} & ${U3ciCell(U3pl)}`, M);
-ok('u3:t8.plateau.prose', `every stitched plain-confidence threshold from $${f2(U3pl.threshold)}$ through $${f2(U3plateau[U3plateau.length - 1].threshold)}$ produces the identical operating point ($${f2(U3pl.e2eResidualLeakOfReleasedPct)}\\%$ leak, $${U3pl.e2eResidualLeakCount}$ paragraphs, $${f2(U3pl.testSafeYieldPct)}\\%$ Safe Yield)`, M);
+ok('u3:t8.plateau.prose', `every stitched plain-confidence threshold from $${f2(U3pl.threshold)}$ through $${f2(U3plateau[U3plateau.length - 1].threshold)}$ produces the identical operating point, so threshold tuning cannot improve the stitched release`, M);
 
 const U3hc = a => U3t8g.presidio_plus_stage3a.hcCrcSweep.find(s => s.alpha === a);
 const U3hc01 = U3hc(0.01), U3hc02 = U3hc(0.02), U3hc05 = U3hc(0.05);
@@ -1304,7 +1325,7 @@ const U3gl05 = U3t8g.gliner_edge_dev_filtered.hcCrcSweep.find(s => s.alpha === 0
 const U3glp05 = U3t8g.gliner_plus_stage3a.hcCrcSweep.find(s => s.alpha === 0.05);
 ok('u3:t8.row.glinerGate', `GLiNER-Edge + HC-CRC, $\\alpha{=}0.05$ & ${U3fprCell(U3gl05)} & ${U3leakCell(U3gl05)} & ${U3ciCell(U3gl05)}`, M);
 ok('u3:t8.row.glinerStage3a', `Stage 3A + GLiNER + HC-CRC, $\\alpha{=}0.05$ & ${U3fprCell(U3glp05)} & ${U3leakCell(U3glp05)} & ${U3ciCell(U3glp05)}`, M);
-ok('u3:t8.boundary', `($${f2(U3glAlone.e2eResidualLeakOfReleasedPct)}\\%$, $${comma(U3glAlone.e2eResidualLeakCount)}$ paragraphs, alone), the certified gate at $\\alpha{=}0.05$ still releases $${f2(U3gl05.e2eResidualLeakOfReleasedPct)}\\%$ ($${U3gl05.e2eResidualLeakCount}$) at $${f2(U3gl05.testSafeYieldPct)}\\%$ Safe Yield (with Stage 3A coupling: $${f2(U3glp05.e2eResidualLeakOfReleasedPct)}\\%$, $${U3glp05.e2eResidualLeakCount}$, at $${f2(U3glp05.testSafeYieldPct)}\\%$)`, M);
+ok('u3:t8.boundary', `still releases $${f2(U3gl05.e2eResidualLeakOfReleasedPct)}\\%$ ($${U3gl05.e2eResidualLeakCount}$; with Stage 3A coupling $${f2(U3glp05.e2eResidualLeakOfReleasedPct)}\\%$) at roughly $40\\%$ Safe Yield`, M);
 ok('u3:t8.glinerSize', `$${f1(T8U3.environment.models.glinerEdge.onnxBytes / 1e6)}$\\,MB GLiNER-Edge detector`, M);
 
 /* ---- Paper D, Exp. 7: t11-cpa-attacker-audit.json + exploratory-ac-crc.json ---- */
@@ -1322,7 +1343,7 @@ const U3hyp = CPAU3.hypothesisTests;
 checks++;
 if (U3hyp.withheldMinusReleasedTop1Pp !== 28 || U3hyp.fisherExactTop1.pValueTwoSided !== 0.000016) { fails++; console.error('FAIL [u3:cpa.hyp.artifact] gap/fisher mismatch'); }
 ok('u3:cpa.gap', `$${f2(U3hyp.withheldMinusReleasedTop1Pp)}$\\,pp (bootstrap $95\\%$ CI $[${U3hyp.withheldMinusReleasedTop1Bootstrap95CI[0]}, ${U3hyp.withheldMinusReleasedTop1Bootstrap95CI[1]}]$); Fisher exact two-sided $p = ${f1(U3hyp.fisherExactTop1.pValueTwoSided * 1e5)}\\times 10^{-5}$; within-ruling paired audit on $100$ pairs: $${U3hyp.withinRulingPairedAudit.releasedOnlyReId}$ released-only versus $${U3hyp.withinRulingPairedAudit.withheldOnlyReId}$ withheld-only re-identifications, McNemar $p = ${f1(U3hyp.withinRulingPairedAudit.mcnemarTwoSidedPValue * 1e5)}\\times 10^{-5}$; ambiguity-set mean difference $+${f2(U3hyp.withinRulingPairedAudit.ambiguitySetMeanDiff)}$ (paired permutation $p{=}${U3hyp.withinRulingPairedAudit.pairedAmbiguityPermutationPValue}$)`, M);
-ok('u3:cpa.floor', `The released residual is $${f2(U3rel.top1ReIdRatePct - CPAU3.protocol.chanceTop1Pct)}$\\,pp above the $${CPAU3.protocol.chanceTop1Pct}\\%$ chance floor`, M);
+ok('u3:cpa.floor', `The released residual sits $${f2(U3rel.top1ReIdRatePct - CPAU3.protocol.chanceTop1Pct)}$\\,pp above the $${CPAU3.protocol.chanceTop1Pct}\\%$ chance floor`, M);
 
 const U3acBase = ACU3.baselines.hcCrcSingleChannel.metrics, U3acW = ACU3.weightSweep.w_05_05.metrics, U3acD = ACU3.deltasVsBaselines.w_05_05_vs_hc_crc;
 ok('u3:ac.reid', `held-out released top-1 re-identification moves from $${f2(U3acBase.releasedTop1ReIdRatePct.mean)}\\%$ (single-channel HC-CRC) to $${f2(U3acW.releasedTop1ReIdRatePct.mean)}\\%$ ($${f2(ACU3.honestAssessment.balancedWeightDeltaTop1ReIdPctVsHcCrc)}$\\,pp; per-seed $${f2(U3acD.releasedTop1ReIdRatePct.perSeed[0])}$, $${f2(U3acD.releasedTop1ReIdRatePct.perSeed[1])}$, $${f2(U3acD.releasedTop1ReIdRatePct.perSeed[2])}$)`, M);
@@ -1389,8 +1410,8 @@ ok('u3:qa.f1', `mean token F1 is $${f2(QAU3.arms.document_qa.byStratum.all.token
 checks++;
 if (IBMU3.status !== 'exploratory' || IBMU3.hyperparameters.betaKl !== 0.2 || IBMU3.hyperparameters.effectiveBatchSize !== 8 || IBMU3.provenance.nTrainExamples !== 152 || IBMU3.provenance.nCanaries !== 12 || IBMU3.provenance.surrogatePoolAudit.poolOverlapCount !== 0 || String(IBMU3.seeds) !== '42,43,44') { fails++; console.error('FAIL [u3:ib.artifact] IB-PT-LM artifact header mismatch'); }
 ok('u3:ib.header', `three seeds ($42$, $43$, $44$; $80$ steps, lr $2\\mathrm{e}{-4}$, effective batch $${IBMU3.hyperparameters.effectiveBatchSize}$, $${IBMU3.provenance.nTrainExamples}$ training examples, $${IBMU3.provenance.nCanaries}$ canaries)`, L);
-ok('u3:ib.beta', `counterfactual symmetric KL term, $\\beta{=}${f1(IBMU3.hyperparameters.betaKl)}$, between the two views`, L);
-ok('u3:ib.pool', `pool A and pool B overlap $${IBMU3.provenance.surrogatePoolAudit.poolOverlapCount}$ for every surrogate category`, L);
+ok('u3:ib.beta', `never re-introduces pressure to emit tags), $\\beta{=}${f1(IBMU3.hyperparameters.betaKl)}$`, L);
+ok('u3:ib.pool', `Pool disjointness is audited and checked in ($${IBMU3.provenance.surrogatePoolAudit.poolOverlapCount}$ shared strings per surrogate category)`, L);
 const U3pt = IBMU3.arms.pt_lm.aggregate, U3mo = IBMU3.arms.masking_only.aggregate, U3ib = IBMU3.arms.ib_pt_lm.aggregate, U3dIB = IBMU3.deltas.ibPtLm_vs_ptLm;
 ok('u3:ib.pt.bits', `contextual surrogate-inversion exposure at $${f2(U3pt.contextualSurrogateInversionMeanBits.mean)}$ bits $[${f2(U3pt.contextualSurrogateInversionMeanBits.bootstrapCi95[0])}, ${f2(U3pt.contextualSurrogateInversionMeanBits.bootstrapCi95[1])}]$ under static \\texttt{PT-LM} ($${f2(U3pt.contextualSurrogateInversionR1Count.mean)}/12$ rank-1)`, L);
 checks++;

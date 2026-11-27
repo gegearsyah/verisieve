@@ -167,7 +167,7 @@ A DIY local pipeline (separate PDF/Office parsers + Presidio/GLiNER + `detect-se
 |---|---|---|
 | **Core kernel footprint** | **5 zero-import WASM kernels (`388,797 B` combined)** | Multi-package Python/C++/Go installs (`~401 MB` for Presidio `en_core_web_lg` alone) |
 | **Cold process startup & RSS (Paper 1, 7-trial median)** | **C99: `14.12 ms` / `6.08 MB` RSS**; **Node+WASM: `106.22 ms` (`1.045 ms` WASM init) / `55.97 MB` RSS** | **`PyTorch+DuckDB` (NOT Presidio):** `12,917.14 ms` (`12.9 s`) / `432.3 MB` RSS; Python+NumPy: `388.79 ms` / `31.49 MB` RSS |
-| **Raw TAB NER speed & F1 (Paper 2)** | `versieve_media.wasm` Stage 3A `0.29 ms/doc` (`46.66%` F1); GLiNER-Edge `510.74 ms/doc` (`45.91%` hybrid F1) | **Microsoft Presidio (`en_core_web_lg`, `400.7 MB`)** steady-state `30.67 ms/doc`, **`79.26%` F1** (intended to plug underneath Versieve's gate) |
+| **Raw TAB NER speed & F1 (Paper 2)** | `versieve_media.wasm` Stage 3A `0.29 ms/doc` (`46.66%` F1); GLiNER-Edge `510.74 ms/doc` (`41.49%` vanilla, `44.23%` dev-filtered) | **Microsoft Presidio (`en_core_web_lg`, `400.7 MB`)** steady-state `30.67 ms/doc`, **`79.26%` F1** (intended to plug underneath Versieve's gate) |
 | **Load-time capability audit** | `imports.length === 0` across all 5 WASM kernels (`audit-wasm`) | Policy-only local execution across host runtimes |
 | **Cross-modal identity, gating & erasure** | Single call emits shared entity graph, conformal gate (`allow`/`redact`/`deny`), and `eraseEntity` byte-diff receipt | Separate tools with custom glue; no shared entity graph, finite-sample abstention, or byte-diff erasure receipt |
 
@@ -368,142 +368,35 @@ The stack runs in four layers. Scattered estate documents (SQL, CSV, email, tran
 
 ## 📊 Empirical Benchmarks Across All Four Papers
 
-### 1. `GC-CRC` Cross-Modal Context-Horizon Benchmark (`60` Cases, `240` Multimodal Blocks)
+Headline numbers here, one reading per paper, and the caveats that keep the claims honest. Every full table, confidence interval, and baseline-by-baseline comparison lives in the papers in `paper/`, and every figure below is verified in CI (`node scripts/check-paper-numbers.mjs`, `0` failures).
 
-Reproduced via `node scripts/eval-gccrc-benchmark.mjs` (`results/gccrc-cross-modal-benchmark.json`) across 4 linked modalities per case (Page-1 Ruling/Email Anchor, Follow-up Paragraph with bare surname, Noisy Whisper ASR Turn with homophone drift, and Dark-Mode Video Slide OCR with character substitution + domain clinical terms):
+### 1. `GC-CRC` Cross-Modal Context Relay (`60` cases, `240` multimodal blocks, `results/gccrc-cross-modal-benchmark.json`)
 
-| Redaction Regime | Cross-Modal Follow-Up Recall | Overall Recall (`360` GT spans) | Domain False Positives | Precision | Overall F1 | Consistent Entity Link Rate |
-|---|---:|---:|---:|---:|---:|---:|
-| **Isolated Stage 3A (WASM Regex + Lexicon)** | `0.00%` | `34.72%` (`125`) | `75` | `62.50%` | `44.64%` | `0.00%` |
-| **Isolated Hybrid ($\tau = 0.60$, high-precision)** | `0.00%` | `34.72%` (`125`) | `75` | `62.50%` | `44.64%` | `0.00%` |
-| **Isolated Hybrid ($\tau = 0.20$, low-threshold)** | **`100.00%`** | **`84.72%` (`305`)** | `180` (`+140%` FPs) | `62.89%` | `72.19%` | `100.00%` |
-| **Versieve `GC-CRC` ($\tau_{\text{anchor}} = 0.60$ + 128-bit Anchor Pool)** | **`76.11%`** | `72.78%` (`262`) | **`75` (`0` extra FPs)** | **`77.74%`** | **`75.18%`** | **`83.03%`** |
+Across linked ruling anchor, follow-up paragraph, ASR turn, and dark-slide OCR modalities, `GC-CRC` recovers `76.11%` of noisy cross-modal follow-ups at `75.18%` F1 with zero extra domain false positives; the isolated pipeline misses `100%` of those follow-ups at high precision, and dropping its threshold to reach `84.72%` recall costs `+140%` false positives (`75 -> 180`). Full table in [Paper 2](paper/versieve-multimodal-sanitization-benchmark.pdf).
 
----
+### 2. Paper 1: Extraction and Fail-Closed Gatekeeping (`1,207` public docs, `npm run bench:scale`)
 
-### 2. Paper 1: Document Extraction, PII Disambiguation & LTT Conformal Gatekeeping (`1,207` Public Docs)
+Scoped `/ToUnicode` CMap resolution and kerning reconstruction extract `8/8` PMC PDFs (`8,134` lines, `55,099` words) in `209.02 ms` total without raster OCR, and `512x512` 2D tiled chunking keeps `97.38%` of `30,595` FUNSD word boxes where untiled `512px` chunking keeps `20.53%`. On resources, C99 starts in `14.12 ms` / `6.08 MB` RSS against PyTorch+DuckDB at `12,917.14 ms` / `432.3 MB` RSS; NumPy still wins warm batched matrix ops once imported. Full curves in [Paper 1](paper/versieve-extraction-redaction-benchmark.pdf).
 
-Measured via `npm run bench:scale` (`results/scale-and-paradigm-benchmark.json`) across **ICDAR-2019 FUNSD** (`199` scanned forms, `30,595` word boxes), **PMC Full-Text** (`8` clinical PDFs), **PubMedQA** (`500` abstracts), and **`ai4privacy-200k`** (`500` records):
+### 3. Paper 2: TAB ECHR, Secrets, and Audio (`127` held-out rulings)
 
-- **Born-Digital PDF CMap & Kerning (`8/8` PMC PDFs):** Scoped 1-byte/2-byte `/ToUnicode` CMap resolution and negative-kerning `TJ` (`<= -110`) space reconstruction extract `8,134` lines (`55,099` words) in `209.02 ms` total (`26.13 ms/paper`) without raster OCR.
-- **ICDAR-2019 FUNSD Geometric Box Survival (`30,595` word boxes $\ge 8\times 4\text{ px}$):**
-  - `stock_capped_8`: `5.20%` (`1,592`) | `untiled_512`: `20.53%` (`6,281`) | `horizontal_1d_band`: `71.29%` (`21,811`) | `tile_2d_zero_overlap`: `92.44%` (`28,283`) | **`tile_2d` ($512\times 512$, 32px overlap): `97.38%` (`29,793`)**.
-- **Deterministic Regex Recall Ceiling & `334`-Word Lexicon False-Positive Reduction:**
-  - On `ai4privacy-200k` (`500` records), deterministic regex recalls **`78.6%`** (`110/140`) of contact/card/IPv4 spans, **`62.8%`** (`159/253`) of targeted 8 patterns, **`49.6%`** (`118/238`) of bare person names, and **`31.0%`** (`180/580`) across the 26 structured tags evaluated out of the dataset's 56 span categories.
-  - On blind `PubMedQA` test abstracts (`250` docs, `63,739` words), the pre-committed `334`-word clinical/technical exclusion lexicon reduces Title-Case false positives by **`2.72x`** (`5.46 -> 2.01` hits/1k words; `45.2% -> 26.0%` affected docs).
-- **7-Trial Interleaved Runtime Substrates (AMD Ryzen 7 7840HS, Windows 11):**
-  - **C99 (`include/versieve.h`)**: `14.12 ms` process spawn | `6.08 MB` RSS | `0.745 ms` warm `1,207×520` logistic.
-  - **Node.js + `versieve_dl.wasm`**: `106.22 ms` spawn (`1.045 ms` WASM init) | `55.97 MB` RSS (**`121.6x` faster spawn, `7.7x` lower RSS** than PyTorch+DuckDB at `12,917.14 ms` / `432.3 MB`).
-  - **Python 3.12 + NumPy 2.4.3**: `388.79 ms` spawn | `31.49 MB` RSS | **`0.207 ms` warm `1,207×520` logistic** (NumPy BLAS wins warm batched matrix dot products once imported).
+On human-annotated TAB, the honest top line is Microsoft Presidio (`en_core_web_lg`, `401 MB`): `79.26%` F1 with the same ECHR regex, versus `45.91%` for the zero-import hybrid (which reaches `100.00%` DIRECT recall, and is the only arm measured under a zero-import runtime split). Latency from the same sweep: Stage 3A `0.29 ms/doc`, Presidio `30.67 ms/doc`, GLiNER-Edge `510.74 ms/doc`. The gate is the calibrated half of the paper: naive paragraph-IID LTT overshoots its `10.0%` risk budget (`10.10%` conditional FPR), while document-clustered `HC-CRC` holds `8.19%` at the same budget with `65.16%` safe yield, and streaming `E-LTT` stays anytime-valid (`HC-CRC` is a conservative design-effect adjustment, not a proven finite-sample guarantee). The certificate is detector-closed: it bounds release risk against scanner-derived labels, not independent PII truth. On audio (`25` TTS calls, `97` planted tokens), `SR-MP` cuts cross-model attacker leakage from `20.62%` to `8.25%` with `21/25` calls at zero residual leak; plain Jaro-Winkler on the same anchors reaches `7.22%`, so the ring's measured audio contribution is salted anchor privacy, not matching accuracy. On enterprise secrets, Yelp `detect-secrets` leads on F1 (`86.27%` vs `72.25%`) while Stage 3A leads steady-state throughput (`2.51` vs `0.11 MB/s`), and all three scanners score `0/375` clean-file false positives. Unicode anti-evasion (`versieve_media.wasm`) sustains `94.25%` on zero-width spaces where normalized regex catches `35.63%`; salted Bloom+Soundex PPRL matches plaintext Jaro-Winkler at `83.33%` F1 without storing plaintext. Full tables in [Paper 2](paper/versieve-multimodal-sanitization-benchmark.pdf).
 
----
+### 4. Paper 3: `PT-LM` Training vs Graph-PPR Retrieval (RTX 4070, `results/track-d-ptlm-ablation.json`)
 
-### 3. Paper 2: Multimodal Sanitization vs. External Baselines (`TAB`, Presidio, Gitleaks, detect-secrets, Whisper)
+Across `Qwen2.5-0.5B`, `Qwen2.5-1.5B`, and `LFM3-1.7B` LoRAs, `PT-LM` masking cuts held-out tag echo of seen `<PII>` tokens from `40.0-85.0%` to `0.0%`, false refusal from `20.0-47.5%` to `0.0%`, and lifts seen-doc F1 by `+0.194` / `+0.087` / `+0.117`. The honest edges: on `Qwen2.5-1.5B`, `PT-LM` seen F1 (`0.190`) stays below the untrained base (`0.202`); the `LFM3-1.7B` F1 gain is not significant (`p=0.083`), and its rank-1 result is a one-question difference (`2/12` vs `1/12`); the planted Carlini canaries use scanner-detectable formats (scanner-missed formats are measured separately in T11 below); the effect is attributed to masking-plus-surrogate substitution together, with a masking-only ablation not yet run. At this scale retrieval is the stronger default: zero-training Graph-PPR beats every closed-book LoRA arm, including `PT-LM`, on held-out QA (`p=0.0005` on F1) at lower latency, though untruncated Native CAG wins inside VRAM (`94.8-99.6%` reuse) until truncation flips it (`75.0%` vs `41.7%` for Graph-PPR at `14k` tokens). Full grid in [Paper 3](paper/versieve-local-training-benchmark.pdf).
 
-Reproduced via `python scripts/run-reviewer-tab-and-ltt.py` and `python scripts/run-reviewer-secrets-audio-pprl.py` (`results/reviewer-tab-and-ltt-benchmarks.json`, `results/reviewer-secrets-audio-pprl-benchmarks.json`):
+### 5. Gate-Over-Best-Detector Shootout (`T8`, `results/t8-gate-over-detector-and-stitched-shootout.json`)
 
-#### A. Human-Annotated Legal PII: Text Anonymization Benchmark (`TAB`, `127` Held-Out ECHR Rulings)
+The best external detector on TAB (Presidio + ECHR, `79.26%` F1) leaks `27.31%` end to end when it releases without a gate; wrapped in `HC-CRC`, the same detector releases `0.00%` unsafe at `alpha=0.01` (`27.13%` yield) and `9.06%` at `alpha=0.05`. Against the honest plain-confidence-threshold control at matched safe yield, the calibrated gate's `0.00%` beats `9.06%` (`p=0.0002`, paired document-level permutation), and the certificate stays detector-closed.
 
-Table 1 of Paper 2, reproduced. The `All Maskable` block scores `DIRECT+QUASI` (`5,161` spans, `365` DIRECT); the `PERSON` block scores person entities (`958` spans, `226` DIRECT). F1 intervals are `95%` bootstrap.
+### 6. Adversarial Re-ID and Scanner-Missed Canaries (`T11`)
 
-| Block | System (threshold) | Prec. | Rec. | F1 | DIRECT recall |
-|---|---|---:|---:|---:|---:|
-| All Maskable | Stage 3A WASM only | `61.35%` | `37.65%` | `46.66%` | `56.71%` |
-| All Maskable | Stage 3A + ECHR code regex | `64.41%` | `43.13%` | `51.67%` | `93.70%` |
-| All Maskable | Vanilla GLiNER-Edge (`τ=0.30`) | `35.15%` | `50.61%` | `41.49%` | `94.25%` |
-| All Maskable | Dev-Filtered GLiNER (`τ=0.30`) | `40.14%` | `49.23%` | `44.23%` | `94.25%` |
-| All Maskable | Hybrid (3A + code + Dev-Filt GLiNER) | `41.29%` | `51.70%` | `45.91%` | **`100.00%`** |
-| All Maskable | Hybrid + `WASM SR-MP` (`τ=0.30`) | `40.30%` | `51.77%` | `45.32%` | **`100.00%`** |
-| All Maskable | Presidio default (`en_core_web_lg`, `401 MB`) | `77.07%` | `75.16%` | `76.10%` | `61.37%` |
-| All Maskable | **Presidio + ECHR code** | **`78.17%`** | **`80.39%`** | **`79.26%`** | `98.08%` |
-| PERSON | Companion regex + lexicon | `32.84%` | `74.32%` | `45.55%` | `85.40%` |
-| PERSON | Vanilla GLiNER-Edge (`τ=0.50`) | `65.39%` | `85.39%` | `74.06%` | `89.82%` |
-| PERSON | Dev-Filtered GLiNER (`τ=0.50`) | `65.60%` | `85.39%` | `74.20%` | `89.82%` |
-| PERSON | Dumb same-document name propagation | `47.28%` | `86.22%` | `61.07%` | `89.82%` |
-| PERSON | **`WASM SR-MP` + GLiNER (`τ=0.50`)** | `62.56%` | **`88.41%`** | `73.27%` | **`91.15%`** |
-| PERSON | `WASM SR-MP` + GLiNER (`τ=0.70`) | `91.94%` | `26.20%` | `40.78%` | `45.13%` |
-| PERSON | **Presidio `en_core_web_lg`** | **`80.60%`** | **`92.80%`** | **`86.27%`** | **`98.23%`** |
+A CPA attack (`protocol of arXiv:2609.21340`) re-identifies `14.0%` of `HC-CRC`-released paragraphs versus `42.0%` on the same number of withheld paragraphs (paired McNemar `p=4.1e-5`); both rates carry wide intervals at `n=100` per arm, so the honest reading is the paired `28.0 pp` difference, not either rate alone. On the `12` canary formats no regex scanner catches (bare names, free-form addresses, usernames, prose employers), static Stage 3A redaction plus `PT-LM` training leaves exposure indistinguishable from the unredacted control (`9.75` vs `9.73` bits); adding Stage 3B cuts it to `6.27` bits (`6/12` rank-1, not zero).
 
-Latency from the same sweep: Stage 3A `0.29 ms/doc`, Presidio `30.67 ms/doc`, GLiNER-Edge `510.74 ms/doc`. Presidio leads overall F1; the edge model plus `SR-MP` is the local-only option and the only one measured under a zero-import runtime split.
+### 7. Scale Document-QA SFT and `IB-PT-LM` Surrogates (`T11` + `T12`)
 
-#### B. Non-Circular Ground-Truth LTT vs. Document-Clustered `HC-CRC` & Streaming `E-LTT` (`1,999` TAB Paragraphs Across `127` Rulings)
-
-Labels are derived **strictly from human TAB annotations** ($Y_i = 1$ iff human annotators marked $\ge 1$ maskable PII span). Across the `67` unsafe calibration court rulings (`916` unsafe paragraphs), measured intra-cluster correlation is $\mathrm{ICC} = 0.1276$, yielding a **Cluster Design Effect $\mathrm{DEFF} = 2.62$** ($N_{\text{eff}} = 350$). Evaluation uses `1,999` held-out paragraphs (`1,623` unsafe, `376` safe):
-
-| Gate & Calibration Regime ($\delta = 0.05$) | Risk Budget $\alpha$ | Conditional FPR (`1,623` Unsafe) | Certified? | Safe Paragraph Yield (`376` Safe) | Auto-Release Rate | E2E Leak (of Released) |
-|---|---:|---:|---|---:|---:|---:|
-| **Naive Paragraph-IID Hybrid LTT (ignores $\mathrm{DEFF}=2.62$)** | `10.0%` | `10.10%` | ❌ **Overshoots (`>10%`)** | `67.55%` | `20.91%` | `38.52%` (`161`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `1.0%` | **`0.18%`** | ✅ **`<= 1.0%`** | `32.98%` | `6.35%` | **`2.36%`** (`3`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `2.0%` | **`0.92%`** | ✅ **`<= 2.0%`** | `35.64%` | `7.45%` | **`10.07%`** (`15`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `5.0%` | **`2.53%`** | ✅ **`<= 5.0%`** | `39.89%` | `9.55%` | **`21.47%`** (`41`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `10.0%` | **`8.19%`** | ✅ **`<= 10.0%`** | **`65.16%`** | `18.91%` | **`35.19%`** (`133`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `15.0%` | **`12.57%`** | ✅ **`<= 15.0%`** | `70.48%` | `23.46%` | **`40.72%`** (`191`) |
-| **Document-Clustered `HC-CRC` (`src/gatekeeper.js`)** | `20.0%` | **`15.77%`** | ✅ **`<= 20.0%`** | `72.87%` | `26.51%` | **`44.72%`** (`237`) |
-| **Streaming Ville Martingale `E-LTT` ($E_{\max} = 23.76 \ge 20$)** | `5.0%` | **`0.18%`** | ✅ **Anytime-Valid** | `32.98%` | `6.35%` | **`2.36%`** (`3`) |
-| **Streaming Ville Martingale `E-LTT` ($E_{\max} = 26.84 \ge 20$)** | `10.0%` | **`5.73%`** | ✅ **Anytime-Valid** | `55.85%` | `15.16%` | **`30.69%`** (`93`) |
-
-Because `81.2%` of held-out TAB paragraphs are unsafe (`1,623 / 1,999`), even a low conditional FPR yields a higher end-to-end leak share among released paragraphs (for example, `HC-CRC` at `α=0.05` leaks `41` unsafe paragraphs out of `191` auto-released paragraphs = `21.47%`; at `α=0.01`, `3` of `127` = `2.36%`). `E-LTT` fails closed at `α ≤ 0.02` (`E_max = 1`, zero auto-release). `HC-CRC` is a conservative design-effect adjustment, not a proven finite-sample guarantee; `E-LTT` is the anytime-valid arm. Gate decisions map `KEEP` -> `allow`, `ABSTAIN` -> `redact` / human review, and `DROP` -> `deny`.
-
-#### C. Enterprise Secrets (`520` Files: `145` Positive Credentials + `375` Short Clean Python Files, `78.1 KB`)
-
-| Scanner | Recall | F1 | Cold `1x` | Steady `1x` | Throughput |
-|---|---:|---:|---:|---:|---:|
-| **Yelp `detect-secrets`** | **`75.86%`** | **`86.27%`** | `716.9 ms` | `692.4 ms` | `0.11 MB/s` |
-| **Versieve Stage 3A (`versieve_media.wasm`)** | `56.55%` | `72.25%` | **`131.4 ms`** | **`29.7 ms`** | **`2.51 MB/s`** |
-| **Gitleaks `v8.30.1` (Native Go)** | `49.66%` | `66.36%` | `1018.8 ms` | `43.2 ms` | `1.72 MB/s` |
-
-Steady-state marginal latency drops the `7.8x` cold-start advantage to **`1.5x` over Gitleaks** (`2.51` vs. `1.72 MB/s`) and **`22.8x` over Yelp** (`0.11 MB/s`). By F1, Yelp leads; our misses concentrate in generic `JWT_SECRET=` assignments, Gitleaks' in single-line PEM headers (`0/35`). All three hit `0/375` clean FP, but the `MBPP` files are short scripts, so that rate carries little precision evidence for noisy production repos.
-
-#### D. Unicode Evasion, End-to-End Whisper Audio Redaction with `WASM SR-MP`, PPRL Scale & GDPR Erasure
-
-- **Unicode Anti-Evasion (`174` adversarial cases: `87` zero-width space, `47` Cyrillic homoglyph, `40` fullwidth):** Unnormalized regex catches `35.63%` of zero-width cases (`31/87`) and `0.0%` of homoglyphs (`0/47`) and fullwidth digits (`0/40`). Python `unicodedata.normalize('NFKC')` solves fullwidth digits (`100.0%`) but still misses zero-width spaces (`29.89%`) and Cyrillic homoglyphs (`0.0%`). **`versieve_media.wasm`** sustains `94.25%` (`82/87`) on zero-width characters, `100.0%` (`47/47`) on Cyrillic homoglyphs, and `87.5%` (`35/40`) on fullwidth digits.
-- **End-to-End Spoken Audio PII Redaction (`25` neural TTS calls, `97` planted PII tokens, cross-model `faster-whisper base.en` redactor vs. `small.en` attacker):** Unredacted audio exposes **`94.85%` (`92/97`)** of planted tokens to `small.en`, and isolated Spoken ITN + GLiNER leaves **`20.62%` (`20/97`, `15/25` zero-leak calls)** exposed due to ASR homophone and word-boundary drift. Enabling **`versieve_media.wasm` `SR-MP` phonetic anchor coupling** with `60 ms` padding and `5 ms` cosine fade cuts residual exposure to **`8.25%` (`8/97`, Wilson 95% CI `[4.24%, 15.44%]`)**, an **`-86.60 pp` absolute drop** and **`91.30%` relative reduction of exposed tokens** (`84/92` removed), with **`21/25` calls (`84%`) at zero residual leak** and **`100.0%` of the `59` pre-declared non-PII context words** retained under the attacker transcription. A plain Jaro-Winkler baseline on the same anchors reaches `7.22%` leakage, so the ring's measured contribution here is salted anchor privacy.
-- **128-Bit Salted Bloom+Soundex PPRL (`vs_media_pprl_signature`):** On `40` held-out noisy pairs, zero-import salted Bloom+Soundex PPRL matches plaintext Jaro-Winkler at **`83.33%` F1** (`71.4%` precision, `100%` recall) and sits near plaintext Levenshtein (`85.11%` F1) without storing plaintext. On all `124,750` pairs from `500` common names, `τ=0.60` gives `4.88%` false links; tightening to `τ=0.75` gives **`0.270%`**, `3.7x` fewer than plaintext Jaro-Winkler (`1.007%`). The filter is a local-only noisy erasure index, not an external export format.
-- **GDPR Art. 17 Erasure & $O(1)$ MP4 Scrubbing:** Cross-modal `blast_radius` and streaming MP4 atom scrubbing are implemented as construction properties in this paper; the measured byte-diff erasure receipt is in Paper 4.
-
----
-
-### 4. Paper 3: Local Open-Weight Model Training (`PT-LM` LoRA) vs. Dual-CSR Graph-PPR & Native CAG (8 GB RTX 4070)
-
-Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7B-Base` (matched Raw vs. Versieve-Safe vs. **`PT-LM` Privacy-Token Loss Masking** assistant-only `T2-Chat` LoRA adapters, graded by both blinded `qwen2.5:7b` and cross-family `llama3.2:3b` judges) plus `lfm3:latest`, `llama3.2:3b`, and `qwen2.5:7b` (`results/track-d-ptlm-ablation.json`):
-
-| Model (VRAM) | Carlini $20\times$ Canary Exposure: Raw $\rightarrow$ Safe $\rightarrow$ **`PT-LM`** | Seen-Doc `<PII>` Tag Echo: Safe $\rightarrow$ **`PT-LM`** | Held-Out False Refusal: Safe $\rightarrow$ **`PT-LM`** | Seen-Doc Token F1: Safe $\rightarrow$ **`PT-LM`** | Held-Out In-Scope Judge: Safe $\rightarrow$ **`PT-LM`** $\rightarrow$ **`T0+Graph-PPR`** | Held-Out All Judge (`Qwen` / `Llama`): **`T0+Graph-PPR`** |
-|---|---|---|---|---|---|---|
-| **`Qwen2.5-0.5B-Instruct`** (`2.06–2.29 GB`) | `8.25` $\rightarrow$ `3.32` $\rightarrow$ **`3.18 bits`** (`1/12` R1) | `85.0%` $\rightarrow$ **`0.0%`** | `30.0%` $\rightarrow$ **`0.0%`** | `0.077` $\rightarrow$ **`0.271` (`+0.194`, $p=0.0005$)** | `6.2%` $\rightarrow$ **`16.2%`** $\rightarrow$ **`46.2%`** | **`55.0%` / `59.0%`** |
-| **`Qwen2.5-1.5B-Instruct`** (`4.15–4.41 GB`) | `8.40` $\rightarrow$ `2.70` $\rightarrow$ **`2.63 bits`** (**`0/12` R1**) | `65.0%` $\rightarrow$ **`0.0%`** | `47.5%` $\rightarrow$ **`0.0%`** | `0.103` $\rightarrow$ **`0.190` (`+0.087`, $p=0.001$)** | `18.8%` $\rightarrow$ **`36.2%`** $\rightarrow$ **`61.2%`** | **`69.0%` / `62.0%`** |
-| **`LFM3-1.7B-Base`** (`4.31–4.55 GB`) | `8.25` $\rightarrow$ **`2.81`** $\rightarrow$ `3.51 bits` (`2/12` R1) | `40.0%` $\rightarrow$ **`0.0%`** | `20.0%` $\rightarrow$ **`0.0%`** | `0.083` $\rightarrow$ **`0.200` (`+0.117`, $p=0.083$, not significant)** | `17.5%` $\rightarrow$ **`25.0%`** $\rightarrow$ **`52.5%`** | **`62.0%` / `58.0%`** |
-
-**Caveats:** The `12` planted Carlini canaries use scanner-detectable formats (emails, phones, SSNs, structured names); scanner-missed formats (bare names, free-form addresses, usernames, employers) are not evaluated in these numbers. On `Qwen2.5-1.5B`, `PT-LM` seen-doc token F1 (`0.190`) lifts over `Safe` (`0.103`) but remains below the untrained base (`0.202`). The `LFM3-1.7B` rank-1 result is `2/12` against its base's `1/12`, a one-question difference. The `PT-LM` comparison changes backward loss masking and forward-surrogate substitution together; a masking-only ablation is not yet run.
-
-- **Adversarial Context Extraction & Utility Cost (`qwen2.5:7b`):** Pre-processing redaction cuts verbatim secret leakage under adversarial extraction prompts from **`11/12` (`100%` of probes) to `0/12` (`0.0%`)** while matching unredacted compliance QA accuracy at **`75.0%` (`9/12` each, $\Delta = 0.0\%$)**.
-- **Retrieval is the stronger default at this scale:** zero-training Graph-PPR beats every closed-book LoRA arm, including `PT-LM`, on held-out compliance QA across both blinded judges (`p=0.0005` on F1), at lower latency. `PT-LM`'s niche is weight-held redacted fine-tuning for offline or re-indexing-free deployment.
-- **Native KV-Cached CAG vs. Dual-CSR Graph-PPR Crossover:** When the sanitized dossier fits untruncated in VRAM (`~19–20k` tokens on `lfm3` and `llama3.2:3b`), Native CAG (`src/cag-dossier.js`) achieves `94.8–99.6%` KV token reuse and `11.8x–16.6x` repeat-turn speedups with `<1 ms` GDPR Art. 17 KV-slot eviction. When VRAM forces truncation (`qwen2.5:7b` at `14k` tokens), sub-millisecond `versieve_graph.wasm` Graph-PPR (`0.62 ms`) beats truncated CAG by **`+33.3` accuracy points** (`75.0%` vs. `41.7%`; `100%` vs. `0%` multi-hop).
-
----
-
-### 5. Wave 2-3: Gate-Over-Best-Detector & the Stitched Shootout (`T8`)
-
-Reproduced via `results/t8-gate-over-detector-and-stitched-shootout.json` on the `1,999` held-out TAB paragraphs. The best external detector on TAB (`Presidio + ECHR`, `79.26%` F1) leaks end to end when it releases without a gate: `27.31%` of released paragraphs are unsafe (`546` paragraphs). Wrapping that same detector (`HC-CRC + Stage 3A + Presidio`) in the calibrated gate:
-
-| Operating point (`alpha`, `delta = 0.05`) | Safe paragraph yield | E2E leak of released (leaked paragraphs) |
-|---|---:|---:|
-| `Presidio + ECHR` alone (no gate) | `100.00%` | **`27.31%`** (`546`) |
-| `HC-CRC + Stage 3A + Presidio`, `alpha = 0.01` | `27.13%` | **`0.00%`** (`0`) |
-| `HC-CRC + Stage 3A + Presidio`, `alpha = 0.05` | `77.39%` | **`9.06%`** (`29`) |
-
-The honest stitched contrast is the plain-confidence-threshold control, not the uncalibrated release-everything arm: spaCy's discrete confidence grid plateaus, so plain thresholds over the stitched stack hold one operating point, and at matched safe yield it releases `9.06%` unsafe paragraphs against `0.00%` for the calibrated gate at `alpha = 0.01` (`p = 0.0002`, paired document-level permutation). The certificate stays detector-closed: it bounds release risk relative to the scanner-derived labels.
-
-### 6. Wave 2-3: Adversarial Re-ID Audit (`CPA`) & Scanner-Missed Canaries (`T11`)
-
-**Conformal Privacy Auditing attacker study (`results/t11-cpa-attacker-audit.json`, protocol of `arXiv:2609.21340`).** A local `qwen2.5:7b` attacker re-identifies `14.0%` of `HC-CRC`-released paragraphs at `alpha = 0.05`, against `42.0%` on the same number of withheld paragraphs, with a larger ambiguity set for the released arm (`|C_adv| = 9.98` released vs. `8.41` withheld; Fisher exact `p = 1.6e-5`, paired McNemar `p = 4.1e-5` over the `100` within-ruling paired audits). Both rates carry wide intervals at `n = 100` per arm, so the honest reading is the paired `28.0 pp` difference, not either rate alone.
-
-**Scanner-missed canaries (`results/t11-scanner-missed-canaries.json`).** The `12` planted canary formats no regex scanner catches (bare lowercase names, free-form street addresses, usernames, prose employers) still echo under static `Stage 3A` redaction plus `PT-LM` training: mean exposure `9.75` bits (`11/12` rank-1), indistinguishable from the unredacted control (`9.73` bits). Adding Stage 3B (`SR-MP` cross-document anchors + local GLiNER-PII-Edge) under `PT-LM` training cuts exposure to `6.27` bits (`6/12` rank-1) on the same suite.
-
-### 7. Wave 2-3: Scale Document-QA SFT & `IB-PT-LM` Surrogate Memorization (`T11` + `T12`)
-
-**540-question, 3-seed uncapped document-QA SFT (`results/t11-scale-qa-training.json`).** With the per-arm token cap removed (`document_qa` trains on all `1,125` rows, `0` truncated), 3-seed mean exact match over the 540-question suite reaches `30.56%` (per-seed `30.19` / `30.37` / `31.11`), `+11.11 pp` over the same-model composed-corpus arm (`19.45%`, `p = 0.0005`). That narrows the gap to the zero-training `BM25` retrieval control (`34.26%`) to `-3.70 pp` (`p = 0.175`, not significant at this sample size).
-
-**`IB-PT-LM` counterfactual surrogate LoRA (`results/exploratory-ib-ptlm.json`, exploratory).** Static `PT-LM` memorizes the surrogate seam: suffix-inversion canary exposure `5.27` bits (`5.67/12` rank-1) and an 8-way neighboring non-PII hidden-state identity probe at `37.50%` (chance `12.50%`). The counterfactual information-bottleneck variant (`beta = 0.2`, disjoint surrogate pools) drops the canary to `1.15` bits (`0.0/12` rank-1, `-4.12` bits) and the probe to `19.79%` (`-17.71 pp`) with tag echo and seen-doc F1 unchanged, at `~2.05x` training wall-clock (`137.96 s -> 282.37 s` median per seed) and zero inference overhead.
+Uncapped 3-seed document-QA SFT reaches `30.56%` exact match (`+11.11 pp` over its composed-corpus arm, `p=0.0005`), still `-3.70 pp` short of the zero-training `BM25` control (`34.26%`, `p=0.175`, not significant at this sample size). The exploratory `IB-PT-LM` counterfactual surrogate drops suffix-inversion canary exposure from `5.27` to `1.15` bits (`0.0/12` rank-1) and an 8-way hidden-state identity probe from `37.50%` to `19.79%`, with tag echo and seen-doc F1 unchanged, at `~2.05x` training wall-clock and zero inference overhead.
 
 ---
 
@@ -549,7 +442,7 @@ versieve/
 ## 🔬 Reproducing the Benchmarks & Test Suites
 
 ```bash
-# 1. Run the 181-test portable CI suite across 31 test files (WASM zero-import census, parsers, redaction, SR-MP, HC-CRC, PT-LM, MCP, paper-number checks)
+# 1. Run the 220-test portable CI suite across 38 test files (WASM zero-import census, parsers, redaction, SR-MP, HC-CRC, PT-LM, MCP, paper-number checks)
 npm run test:ci
 
 # 2. Reproduce the GC-CRC / SR-MP Cross-Modal Context-Horizon benchmark (60 cases, 240 blocks)

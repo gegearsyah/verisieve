@@ -35,7 +35,7 @@ NODE_GAP = 44
 X0 = 238
 Y_TOP = 96
 FRAMES = 10
-DUR_MS = 30
+DUR_MS = 140
 TEXT_MAX = NODE_W - 8
 
 
@@ -210,13 +210,24 @@ def draw_paper2(seed, dash_off):
     _node(ax, xs[0], 330, NODE_W, _icon_plates,
           ["Archive paths"], ["sanitize_archive_path"], fc=FILL)
     _vlink(ax, xs[0] + NODE_W / 2, boxes[0][2], 330, dash_off)
-    _node(ax, xs[2], 330, NODE_W, k7._icon_lock, ["Ring hit?"], ["reuse HMAC id"], fc=YELLOW)
+    _node(ax, xs[2], 330, NODE_W, k7._icon_lock, ["Ring hit"], ["reuse HMAC id"], fc=YELLOW)
     _vlink(ax, xs[2] + NODE_W / 2, boxes[2][2], 330, dash_off)
-    _tag(ax, xs[2] + NODE_W / 2 + 25, k7.GIF_H - 312, "YES", OK)
     _node(ax, xs[3], 330, NODE_W, k7._icon_cross, ["ABSTAIN"], ["no certificate"], fc=FILL)
     _vlink(ax, xs[3] + NODE_W / 2, boxes[3][2], 330, dash_off)
     _tag(ax, xs[3] + NODE_W / 2 + 24, k7.GIF_H - 312, "NO", BAD)
     _tag(ax, (xs[3] + NODE_W + xs[4]) / 2, _center(boxes[0]) - 17, "YES", OK)
+    _tag(ax, 881, k7.GIF_H - 86, "online default", OK)
+
+    # AC-CRC: opt-in offline audit beside the online default gate.
+    _detail(ax, 1000, 585, ["AC-CRC (opt-in", "offline audit)"],
+            ["dual-channel e-value"], w=150)
+    # Drop out of the gate's lower flank and run down the gap right of the
+    # branch box, so the route never crosses the "YES" keep-branch label.
+    _link_pts(ax, [(xs[3] + NODE_W + 6, _center(boxes[3]) - 40),
+                   (986, _center(boxes[3]) - 40),
+                   (986, k7.GIF_H - 617),
+                   (997, k7.GIF_H - 617)], dash_off)
+    _tag(ax, 1002, k7.GIF_H - 320, "OPT-IN, OFFLINE", OK)
 
     # Streaming loop: the next container re-enters the kernel from below, on the
     # open lane under the branch boxes, so it crosses neither box nor arrow.
@@ -239,7 +250,7 @@ def draw_paper2(seed, dash_off):
 # --- Paper 3: what data should carry ---------------------------------------
 def draw_paper3(seed, dash_off):
     _seed(seed)
-    k7.GIF_H = 720
+    k7.GIF_H = 640
     fig, ax = _canvas()
     _sidebar(ax, "Paper 3", "what data\nshould carry")
 
@@ -254,33 +265,41 @@ def draw_paper3(seed, dash_off):
     _link_h(ax, xs[0] + NODE_W, xs[1], y, dash_off, 1)
     _link_h(ax, xs[1] + NODE_W, xs[2], y, dash_off, 2)
 
-    qa = _node(ax, 850, 170, 200, _icon_plates, ["Held-out QA"], ["two blind", "judges"], fc=FILL)
-    lora_right = xs[2] + NODE_W
-    _link_pts(ax, [(lora_right + 6, _center(boxes[2])),
-                   (846, _center(qa))], dash_off, badge=3,
-              badge_at=(806, (_center(boxes[2]) + _center(qa)) / 2))
+    # IB-PT-LM: an exploratory offshoot of PT-LM, off the main path.
+    _detail(ax, 421, 425, ["IB-PT-LM", "(exploratory)"],
+            ["disjoint surrogate", "pools + symmetric KL,", "beta=0.2, ~2.05x cost"],
+            w=160)
+    _vlink(ax, xs[1] + NODE_W / 2, boxes[1][2], 425, dash_off)
+    _tag(ax, 560, k7.GIF_H - 333, "EXPLORATORY", BAD)
+
+    # Held-out QA shares the top row so all four stages sit on one line and the
+    # LoRA -> QA link is a short in-row hop with badge 3 in the gap.
+    qa = _node(ax, 850, Y_TOP, 200, _icon_plates, ["Held-out QA"],
+               ["two blind", "judges"], fc=FILL)
+    _link_h(ax, xs[2] + NODE_W, 850, _center(boxes[2]), dash_off, 3)
 
     ret = _node(ax, xs[2], 350, NODE_W, _icon_magnifier,
                 ["Graph-PPR", "retrieval"], ["pprRetrieve,", "15 iterations"], fc=SIDE)
-    _link_pts(ax, [(xs[2] + NODE_W + 4, _center(ret)),
-                   (950, _center(ret)),
+    ret_c = _center(ret)
+    # Retrieval answers QA: out of the right edge, up into QA's bottom centre.
+    _link_pts(ax, [(xs[2] + NODE_W + 4, ret_c),
+                   (950, ret_c),
                    (950, k7.GIF_H - qa[2])], dash_off, badge=4,
-              badge_at=(950, (_center(ret) + k7.GIF_H - qa[2]) / 2))
+              badge_at=(950, (ret_c + (k7.GIF_H - qa[2])) / 2))
     # Corpus feeds retrieval directly: the zero-training arm skips PT-LM and SFT.
     _link_pts(ax, [(xs[0] + NODE_W / 2, k7.GIF_H - boxes[0][2]),
-                   (xs[0] + NODE_W / 2, k7.GIF_H - 325),
-                   (xs[2] + NODE_W / 2, k7.GIF_H - 325),
+                   (xs[0] + NODE_W / 2, k7.GIF_H - 315),
+                   (xs[2] + NODE_W / 2, k7.GIF_H - 315),
                    (xs[2] + NODE_W / 2, k7.GIF_H - 350)], dash_off)
     _tag(ax, 365, k7.GIF_H - 300, "NO RETRAIN", OK)
 
     # Judge refuses the answer: rewrite the query and retrieve again.
-    _link_pts(ax, [(1000, k7.GIF_H - qa[2]),
-                   (1000, k7.GIF_H - 540),
-                   (740, k7.GIF_H - 540),
-                   (740, k7.GIF_H - ret[2])], dash_off)
-    _tag(ax, 870, k7.GIF_H - 552, "NO: re-query", BAD)
+    _link_pts(ax, [(1010, k7.GIF_H - qa[2]),
+                   (1010, k7.GIF_H - 460),
+                   (xs[2] + NODE_W + 4, k7.GIF_H - 460)], dash_off)
+    _tag(ax, 935, k7.GIF_H - 474, "NO: re-query", BAD)
 
-    _details(ax, 570, [
+    _details(ax, 530, [
         (["matched pairs"], ["assistant-only", "loss"]),
         (["computePtlm", "MaskedSpans"], ["labels[t] = -100", "+ surrogates"]),
         (["PEFT LoRA"], ["80 steps,", "seed 42"]),
@@ -362,7 +381,9 @@ def build(name, draw, strict_width):
     frames_dir.mkdir(exist_ok=True)
     paths = []
     for f in range(FRAMES):
-        fig = draw(20251125 + f, DASH_PERIOD * f / FRAMES)
+        # Three dash periods per cycle: the 6.6 px/frame march reads as motion
+        # while the border-flush dash alignment stays phase-stable.
+        fig = draw(20251125 + f, (3 * DASH_PERIOD) * f / FRAMES)
         _check(fig, strict_width)
         p = frames_dir / f"{name}_{f}.png"
         fig.savefig(p, dpi=100)

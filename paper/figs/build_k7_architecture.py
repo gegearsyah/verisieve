@@ -58,8 +58,8 @@ RED_X = "#e05a6b"     # cross-out icon
 
 GIF_W, GIF_H = 1160, 750
 GIF_FONT = "Comic Sans MS"  # hand-drawn register; falls back if absent
-DASH = (8, 8)               # dash/gap in px
-DASH_PERIOD = 16
+DASH = (13.0, 9.0)          # dash/gap phase in data px, dash>gap so no phase reads empty
+DASH_PERIOD = 22.0          # visual dash-march period in data px: dash + gap
 
 _rng = random.Random(0)
 
@@ -136,9 +136,13 @@ def _arrow_head(ax, tip, direction, size=10.0, width=7.5):
 
 
 def _dashed(ax, pts, dash_off, lw=1.9, z=2.5):
-    # dash march moves toward pts[0], so callers order pts destination-first
+    # dash march moves toward pts[0], so callers order pts destination-first.
+    # agg scales dash lengths/offsets by lw, so the px phase is converted here:
+    # px = spec * dpi/72 * lw, i.e. spec = px * 0.72 / lw
+    s = 0.72 / lw
     xs, ys = zip(*_rough(pts, amp=0.5, skip_ends=True))
-    ax.plot(xs, ys, color=INK_G, lw=lw, linestyle=(dash_off, DASH),
+    ax.plot(xs, ys, color=INK_G, lw=lw,
+            linestyle=(dash_off * s, (DASH[0] * s, DASH[1] * s)),
             solid_capstyle="butt", zorder=z)
 
 
@@ -318,13 +322,14 @@ def draw_scene(seed, dash_off):
 def build_gif():
     from PIL import Image
 
-    frames = 10          # 10 x 30 ms = 300 ms cycle; dash period 16 px closes exactly
-    dur = 30             # Pillow quantises GIF delays to centiseconds
+    frames = 10          # 10 x 140 ms = 1.4 s cycle; dash period 22 px closes exactly
+    dur = 140            # Pillow quantises GIF delays to centiseconds
     frames_dir = OUT_DIR / "_gif_frames"
     frames_dir.mkdir(exist_ok=True)
     paths = []
     for f in range(frames):
-        fig = draw_scene(20251104 + f, DASH_PERIOD * f / frames)
+        # Three dash periods per cycle so the march reads at 140 ms/frame.
+        fig = draw_scene(20251104 + f, (3 * DASH_PERIOD) * f / frames)
         p = frames_dir / f"frame_{f}.png"
         fig.savefig(p, dpi=100)
         plt.close(fig)
