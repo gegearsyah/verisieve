@@ -88,8 +88,18 @@ is available, is arXiv:2305.05968.
    exactly the failure W5 must catch: an in-domain-calibrated head with a
    fixture distribution that no threshold serves (max-F1 sweeps to saturation
    at 1.000000). The conformal design question from the handoff (does it answer
-   "refuse when out of domain" or need an explicit OOD detector) is now the
-   concrete next engineering question on this track.
+   "refuse when out of domain" or need an explicit OOD detector) is answered by
+   the 2026-11-28 literature pass: conformal abstention is valid only under
+   exchangeability between calibration and test data, and the measured
+   covariate shift breaks it (arXiv:2202.13439); a saturated binary head is
+   the worst case because the calibration quantile is meaningless when the
+   score distribution collapses. Recommended design, ranked: (a) an explicit
+   OOD detector as the tripwire, kNN cosine distance in the frozen encoder's
+   embedding space (arXiv:2204.13600), wired to a cosine-routing fallback for
+   out-of-domain inputs (learning-to-defer basis, arXiv:2007.07361), with
+   conformal used only inside the in-domain route; (b) cosine routing without
+   the detector, which works but cannot distinguish handled from silently
+   degraded; (c) conformal-only, which is not adequate as the OOD gate.
 3. **Multi-style corpus regeneration (Mistral, standing-authorized credit) is
    still unspent.** It is now the confirmation run for a different claim than
    planned: the head's live competence at 0.9748 is measured on one style and
@@ -113,6 +123,10 @@ is available, is arXiv:2305.05968.
 - Saturated benchmarks stop discriminating (gate-design precedent):
   arXiv:2104.14337
 - Rank-based embedding evaluation (the enrichment column above): arXiv:2210.07316
+- Conformal coverage under shift (why conformal is not the OOD gate):
+  arXiv:2202.13439, arXiv:1904.06019
+- kNN distance as the OOD detector in embedding space: arXiv:2204.13600
+- Learning-to-defer / routing to a fallback expert: arXiv:2007.07361
 
 ## 8. Reproduction
 
