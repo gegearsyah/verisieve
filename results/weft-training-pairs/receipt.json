@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "weft-training-pairs",
+  "policy": "weft-pairs-v1",
+  "mode": "fixture",
+  "generator": "fixture",
+  "targetPairs": 5000,
+  "pairCount": 14,
+  "trainCount": 11,
+  "evalCount": 3,
+  "evalPairIds": [
+    "0e4aef309e1483b84ca409226e2ee9d26979714177198d36fa8e8db5c0a4fc5c",
+    "14ebf65476659d6022e40350022a845b69eb7fe21335841fad43df12ad6e3dae",
+    "3c31efa73e52d0d3b3b09482ffdcd43717123ea38c3301f498e625db969002be"
+  ],
+  "byType": {
+    "identity-masked-positive": 3,
+    "identity-disjoint-same-theme-positive": 4,
+    "identity-matched-theme-different-negative": 7
+  },
+  "byLabel": {
+    "positive": 7,
+    "negative": 7
+  },
+  "augmentations": {
+    "asr": 1,
+    "ocr": 1,
+    "slide-fragmentation": 1
+  },
+  "usedSources": {
+    "synthetic-estate": "green"
+  },
+  "rejected": {},
+  "pairJsonlSha256": "97984536b5afb85ffa9d939c7a52e4fbe814a7f0d51662c92117b9dda7ddf698",
+  "trainJsonlSha256": "52f3f45d01790a2417926bef8cd7a605c510754d8ffcadd28b7450dcd9b4ed59",
+  "evalJsonlSha256": "19257af699f659703192233c6b99bc46f0abed2ad861bc92da5c9ef299432758"
+}
