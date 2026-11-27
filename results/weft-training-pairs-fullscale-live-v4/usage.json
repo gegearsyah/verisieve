@@ -1,0 +1,37 @@
+{
+  "kind": "weft-api-teacher-usage",
+  "model": "mistral-medium",
+  "startedAt": "2026-11-27T18:08:33.970Z",
+  "finishedAt": "2026-11-27T21:17:41.496Z",
+  "wallclockMs": 11347526,
+  "teacherCalls": 632,
+  "promptTokens": 399450,
+  "completionTokens": 1962686,
+  "totalTokens": 2362136,
+  "corpus": {
+    "docs": 6250,
+    "links": 4471
+  },
+  "themes": [
+    "annual budget planning",
+    "summer team offsite logistics",
+    "api gateway migration",
+    "customer onboarding revamp",
+    "supplier risk review",
+    "product launch readiness",
+    "data retention audit",
+    "remote work stipend policy",
+    "warehouse safety inspection",
+    "q3 earnings call preparation"
+  ],
+  "styleHints": [
+    "terse operational: clipped imperative sentences, no greetings, like a duty officer log",
+    "formal executive: measured top-down prose, formal salutations, full titles",
+    "chatty informal: contractions, asides, casual workplace tone",
+    "technical jargon-heavy: acronym-dense engineer writing about systems and tickets",
+    "procedural compliance: numbered clauses, passive voice, policy-citation tone",
+    "narrative meeting style: quoted dialogue lines with hand-offs between speakers"
+  ],
+  "lengthHint": "roughly half the documents 30 to 80 words, a third 100 to 250 words, and the rest 300 to 600 words; transcripts and reports should be among the longest",
+  "seed": 20261129
+}
