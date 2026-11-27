@@ -51,3 +51,4 @@ secrets/
 
 # scratch corpora kept on disk for follow-up audits, never committed
 results/*.tmp.json
+results/tmp-kaggle/

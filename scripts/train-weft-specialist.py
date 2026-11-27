@@ -559,7 +559,7 @@ def plan(args) -> dict:
     return {
         "kind": "weft-specialist-plan",
         "schemaVersion": SCHEMA_VERSION,
-        "ticket": "W3",
+        "ticket": args.ticket,
         "seeds": {"run": args.seed},
         "baseEncoder": {"modelId": BASE_MODEL, "license": BASE_LICENSE,
                         "digest": base_digest, "localWeights": base_digest is not None},
@@ -720,7 +720,7 @@ def run_training(args) -> dict:
     manifest = {
         "kind": "weft-specialist",
         "schemaVersion": SCHEMA_VERSION,
-        "ticket": "W3",
+        "ticket": args.ticket,
         "baseEncoder": {"modelId": BASE_MODEL, "digest": base_digest, "license": BASE_LICENSE},
         "trainingData": {"trainSha256": sha256_file_lf(train_path)},
         "seeds": {"run": args.seed},
@@ -730,7 +730,7 @@ def run_training(args) -> dict:
     artifact = save_model(model, tokenizer, Path(args.model_dir), manifest)
 
     entry = {
-        "ticket": "W3",
+        "ticket": args.ticket,
         "status": "ran",
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "seeds": {"python": args.seed, "numpy": args.seed, "torch": args.seed,
@@ -751,7 +751,7 @@ def run_training(args) -> dict:
             "receiptSha256": sha256_file_lf(receipt_path) if receipt_path.is_file() else None,
             "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
             "pairCount": len(pairs),
-            "scale": "fixture",
+            "scale": args.data_scale,
             "byPairType": {t: sum(1 for p in pairs if p["pairType"] == t)
                            for t in sorted({p["pairType"] for p in pairs})},
         },
@@ -763,7 +763,7 @@ def run_training(args) -> dict:
         "artifact": artifact,
         "notes": [
             "Bare specialist only: no identity adversary, no set-conditioning term, no triangle term.",
-            "Anchors are one chunk per pair in this fixture-scale run; the interface accepts up to four.",
+            "Anchors are one chunk per pair in this run; the interface accepts up to four.",
             "W2 pairs carry no evidence-span labels, so the evidence head is trained with a token-similarity proxy; no evidence-F1 is claimed.",
             "Threshold selection is in-sample on the evaluation pairs for both sides (W1 convention, disclosed).",
         ],
@@ -802,6 +802,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--harness", default=str(ROOT / "scripts/run-weft-baseline-shootout.py"))
     parser.add_argument("--out", default=str(ROOT / "results/weft-specialist-training.json"))
     parser.add_argument("--model-dir", default=str(ROOT / "models/weft-specialist"))
+    parser.add_argument("--ticket", default="W3",
+                        help="ticket label recorded in the plan, manifest, and results entry")
+    parser.add_argument("--data-scale", default="fixture",
+                        help="training-data scale label recorded in the results entry")
     parser.add_argument("--emit-kaggle-notebook", action="store_true",
                         help="print a ready-to-run Kaggle 2x T4 notebook JSON and exit")
     args = parser.parse_args(argv)
