@@ -1078,7 +1078,7 @@ if (flags.help || rawArgs.includes('-h') || command === 'help') {
   console.log('  versieve decide --bundle <bundle.json> (--text <string> | --input <file>)');
   console.log('  versieve audit-wasm [<wasmPath>]');
   console.log('  versieve selftest\n');
-  console.log('Supported training export formats (--format): llama-factory-sharegpt, llama-factory-alpaca, unsloth, oumi, nemo, document-qa\n');
+  console.log('Supported training export formats (--format): llama-factory-sharegpt, llama-factory-alpaca, unsloth, oumi, nemo, document-qa, ib-ptlm\n');
   console.log(formatFootprintText(fp));
 } else if (!command || command === 'selftest') {
   console.log('Versieve CLI v1.0.0');

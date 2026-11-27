@@ -136,6 +136,7 @@ def draw(seed, dash_off, frame=0):
     _card(ax, XS[1], _icon_magnifier, "perceiveMulti()")
     _rows(ax, XS[1], ["one call, any mix",
                       "5 zero-import WASM kernels",
+                      "pluggable NER · 27 forensics",
                       "one salted vault · one graph",
                       "0 B network egress"])
 
@@ -145,16 +146,17 @@ def draw(seed, dash_off, frame=0):
         "PDF · Office · AV · text",
         ("P1 · redact · LTT", FILL, None),
         ("P2 · SR-MP · HC-CRC", YELLOW, None),
-        ("P3 · PT-LM · LoRA", GREEN, None),
+        ("P3 · IB-PT-LM · LoRA", GREEN, None),
         ("P4 · graph · erase", SIDE, None),
     ])
 
     # 4. Every output
     _card(ax, XS[3], _icon_plates, "Every output")
-    _rows(ax, XS[3], ["markdown · chunks",
+    _rows(ax, XS[3], ["markdown · chunks · graph",
                       "sftJsonl · ptlmSftJsonl",
-                      "sceneTimeline · graph",
-                      "certificates · receipts"])
+                      "Doc-QA · 6 SFT exporters",
+                      "shadowAudit · Merkle receipt",
+                      "certificates · timeline"])
 
     # 5. Into the model, three lanes
     _card(ax, XS[4], _icon_gradcap, "Into the model")

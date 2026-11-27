@@ -70,6 +70,19 @@ const scoped = await perceiveMulti('./company-drive', {
 console.log(scoped.redactedValues); // [{ value, token, type, category }, ...]
 ```
 
+**Advanced `perceiveMulti` options.** Everything below is local, and defaults stay out of the box:
+
+| Option | Example | Effect |
+|---|---|---|
+| `detectors` | Adapters built with `createDetectorAdapter` | Plugs external text and image detectors into the same estate: local Presidio, GLiNER-Edge (`63.5 MB` INT8), ONNX Stage 3B; missing components fail closed |
+| `shadowAudit` | `true` | Re-runs the active Stage 3A detectors over the redacted output and attaches a residual-leakage report to the receipt (`throwOnResidual` fails the call loudly) |
+| `numGuard` | `true` | `verifyNumericIntegrity` checksums the numerics that survive redaction so no digit is silently mutated |
+| HIPAA Safe Harbor validators | `{ hipaaPack: true }` (default on) | Checksum-verified `NPI`, `DEA`, `MBI`, `CLIA`, MRN, and date validators feed Stage 3A |
+| `createReversibleVault` / `restoreFromVault` | Opt-in | The default salted vault is one-way irreversible; the opt-in reversible vault adds structured restoration that fails closed on errors |
+| `includeMerkleRoot` | `true` | Adds an entity-sorted Merkle root and per-entity Merkle proofs to the corpus receipt, with zero drift to the base `corpusSha256` digest |
+
+`exportTrainingDataset(perceived, { format })` writes the training files the estate already implies, in any of `llama-factory-sharegpt`, `llama-factory-alpaca`, `unsloth`, `oumi`, `nemo`, `document-qa`, and `ib-ptlm` (see What Comes Out).
+
 Every input in one call shares a single GC-CRC anchor pool and entity graph, so a noisy later mention resolves to the same `<PII:PERSON_1>`:
 
 ```javascript
@@ -109,9 +122,11 @@ cp -r skills/versieve-local-train ~/.claude/skills/
 ```bash
 npx versieve audit-wasm
 npx versieve ingest --input ./scanned-document.pdf --out ./results/ingest.json
+npx versieve sanitize report.pdf --diff-report diff.json
+npx versieve footprint
 ```
 
-From a clone, use `node bin/versieve.mjs` with the same arguments. `audit-wasm` verifies at load time that all five WebAssembly kernels have zero host imports (`imports.length === 0`), so the kernels themselves have no network or filesystem surface (host runtimes, local binaries, and cached weights sit outside the WASM boundary and fail closed when absent).
+From a clone, use `node bin/versieve.mjs` with the same arguments. `audit-wasm` verifies at load time that all five WebAssembly kernels have zero host imports (`imports.length === 0`), so the kernels themselves have no network or filesystem surface (host runtimes, local binaries, and cached weights sit outside the WASM boundary and fail closed when absent). `sanitize` redacts one local file with zero network egress and writes the redacted copy plus a per-value redaction diff report (`--diff-report diff.json`) you can archive next to the receipt. `footprint` prints the local install surface (WASM kernel sizes, export counts, and the load-time import census) and exits nonzero if any kernel carries host imports.
 
 ---
 
@@ -155,6 +170,17 @@ A DIY local pipeline (separate PDF/Office parsers + Presidio/GLiNER + `detect-se
 | **Raw TAB NER speed & F1 (Paper 2)** | `versieve_media.wasm` Stage 3A `0.29 ms/doc` (`46.66%` F1); GLiNER-Edge `510.74 ms/doc` (`45.91%` hybrid F1) | **Microsoft Presidio (`en_core_web_lg`, `400.7 MB`)** steady-state `30.67 ms/doc`, **`79.26%` F1** (intended to plug underneath Versieve's gate) |
 | **Load-time capability audit** | `imports.length === 0` across all 5 WASM kernels (`audit-wasm`) | Policy-only local execution across host runtimes |
 | **Cross-modal identity, gating & erasure** | Single call emits shared entity graph, conformal gate (`allow`/`redact`/`deny`), and `eraseEntity` byte-diff receipt | Separate tools with custom glue; no shared entity graph, finite-sample abstention, or byte-diff erasure receipt |
+
+**Measured, not estimated (`results/ease-benchmark.json`).** Same host (AMD Ryzen 7 7840HS, Windows 11, 5-run medians):
+
+| Dimension | Versieve (`perceive`) | Stitched Python stack (Presidio + spaCy `en_core_web_lg` + detect-secrets) |
+|---|---|---|
+| **On-disk footprint** | **`1.49 MB` total (`388,797 B` WASM + `1,170,401 B` JS)** | `518.86 MB` (`348.9x` larger) |
+| **External runtimes required** | **`1` (Node.js)** | `4` |
+| **Lines of code to receipted redaction** | **`3 LOC`** | `26 LOC` |
+| **Cold-start median (5 runs)** | **`115.67 ms`** | `14,745.83 ms` (`127.48x` slower) |
+
+Forensics land on the same numbers measured against the competitor tools (`results/competitor-benchmarks.json`): `27/27` Unmasker specimen categories covered, `7/7` MAT2 formats with `0` residual metadata bytes, and on the screenleak specimen suite `91.67%` text zero-leak (`11/12` PII-bearing specimens) and `87.50%` image zero-leak at `IoU >= 0.30` (`7/8` frames). The single missed image frame holds a non-textual face/avatar region, which the built-in blind OCR text channel does not detect without a plugged visual detector.
 
 Every number in the four papers in `paper/` is verified through the CI check chain (`node scripts/check-paper-numbers.mjs`, `0` failures); the round-1 panel review and revision response are in `docs/review/paper4-round1/`.
 
@@ -273,6 +299,8 @@ Each line is one sample with a system prompt, a user prompt naming the source, a
 Feed either file to any SFT trainer. The recipe this repository measures is in `scripts/run-track-d-fair-lora.py`: a PEFT `LoraConfig`, assistant-only loss (prompt tokens are labeled `-100` so the model is graded only on the answer), 80 steps, seed 42, on `Qwen2.5-0.5B/1.5B` and `LFM3-1.7B`, inside 8 GB of GPU memory. The PT-LM arm also masks placeholder subwords out of the loss and forward-substitutes a same-length surrogate, so the model learns the identity slot without ever learning the value that filled it.
 
 Nothing about that needs the graph. The graph stays separate from training.
+
+`exportTrainingDataset(perceived, { format })` reshapes the same records into the trainer dialect you already run: `llama-factory-sharegpt`, `llama-factory-alpaca`, `unsloth`, `oumi`, `nemo`, `document-qa` (question-answer supervision over the estate's documents), and `ib-ptlm` (paired counterfactual surrogate views for the IB-PT-LM trainer).
 
 ### Three ways to consume the same data
 
@@ -450,6 +478,32 @@ Evaluated across `Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, and `LFM3-1.7
 - **Adversarial Context Extraction & Utility Cost (`qwen2.5:7b`):** Pre-processing redaction cuts verbatim secret leakage under adversarial extraction prompts from **`11/12` (`100%` of probes) to `0/12` (`0.0%`)** while matching unredacted compliance QA accuracy at **`75.0%` (`9/12` each, $\Delta = 0.0\%$)**.
 - **Retrieval is the stronger default at this scale:** zero-training Graph-PPR beats every closed-book LoRA arm, including `PT-LM`, on held-out compliance QA across both blinded judges (`p=0.0005` on F1), at lower latency. `PT-LM`'s niche is weight-held redacted fine-tuning for offline or re-indexing-free deployment.
 - **Native KV-Cached CAG vs. Dual-CSR Graph-PPR Crossover:** When the sanitized dossier fits untruncated in VRAM (`~19–20k` tokens on `lfm3` and `llama3.2:3b`), Native CAG (`src/cag-dossier.js`) achieves `94.8–99.6%` KV token reuse and `11.8x–16.6x` repeat-turn speedups with `<1 ms` GDPR Art. 17 KV-slot eviction. When VRAM forces truncation (`qwen2.5:7b` at `14k` tokens), sub-millisecond `versieve_graph.wasm` Graph-PPR (`0.62 ms`) beats truncated CAG by **`+33.3` accuracy points** (`75.0%` vs. `41.7%`; `100%` vs. `0%` multi-hop).
+
+---
+
+### 5. Wave 2-3: Gate-Over-Best-Detector & the Stitched Shootout (`T8`)
+
+Reproduced via `results/t8-gate-over-detector-and-stitched-shootout.json` on the `1,999` held-out TAB paragraphs. The best external detector on TAB (`Presidio + ECHR`, `79.26%` F1) leaks end to end when it releases without a gate: `27.31%` of released paragraphs are unsafe (`546` paragraphs). Wrapping that same detector (`HC-CRC + Stage 3A + Presidio`) in the calibrated gate:
+
+| Operating point (`alpha`, `delta = 0.05`) | Safe paragraph yield | E2E leak of released (leaked paragraphs) |
+|---|---:|---:|
+| `Presidio + ECHR` alone (no gate) | `100.00%` | **`27.31%`** (`546`) |
+| `HC-CRC + Stage 3A + Presidio`, `alpha = 0.01` | `27.13%` | **`0.00%`** (`0`) |
+| `HC-CRC + Stage 3A + Presidio`, `alpha = 0.05` | `77.39%` | **`9.06%`** (`29`) |
+
+The honest stitched contrast is the plain-confidence-threshold control, not the uncalibrated release-everything arm: spaCy's discrete confidence grid plateaus, so plain thresholds over the stitched stack hold one operating point, and at matched safe yield it releases `9.06%` unsafe paragraphs against `0.00%` for the calibrated gate at `alpha = 0.01` (`p = 0.0002`, paired document-level permutation). The certificate stays detector-closed: it bounds release risk relative to the scanner-derived labels.
+
+### 6. Wave 2-3: Adversarial Re-ID Audit (`CPA`) & Scanner-Missed Canaries (`T11`)
+
+**Conformal Privacy Auditing attacker study (`results/t11-cpa-attacker-audit.json`, protocol of `arXiv:2609.21340`).** A local `qwen2.5:7b` attacker re-identifies `14.0%` of `HC-CRC`-released paragraphs at `alpha = 0.05`, against `42.0%` on the same number of withheld paragraphs, with a larger ambiguity set for the released arm (`|C_adv| = 9.98` released vs. `8.41` withheld; Fisher exact `p = 1.6e-5`, paired McNemar `p = 4.1e-5` over the `100` within-ruling paired audits). Both rates carry wide intervals at `n = 100` per arm, so the honest reading is the paired `28.0 pp` difference, not either rate alone.
+
+**Scanner-missed canaries (`results/t11-scanner-missed-canaries.json`).** The `12` planted canary formats no regex scanner catches (bare lowercase names, free-form street addresses, usernames, prose employers) still echo under static `Stage 3A` redaction plus `PT-LM` training: mean exposure `9.75` bits (`11/12` rank-1), indistinguishable from the unredacted control (`9.73` bits). Adding Stage 3B (`SR-MP` cross-document anchors + local GLiNER-PII-Edge) under `PT-LM` training cuts exposure to `6.27` bits (`6/12` rank-1) on the same suite.
+
+### 7. Wave 2-3: Scale Document-QA SFT & `IB-PT-LM` Surrogate Memorization (`T11` + `T12`)
+
+**540-question, 3-seed uncapped document-QA SFT (`results/t11-scale-qa-training.json`).** With the per-arm token cap removed (`document_qa` trains on all `1,125` rows, `0` truncated), 3-seed mean exact match over the 540-question suite reaches `30.56%` (per-seed `30.19` / `30.37` / `31.11`), `+11.11 pp` over the same-model composed-corpus arm (`19.45%`, `p = 0.0005`). That narrows the gap to the zero-training `BM25` retrieval control (`34.26%`) to `-3.70 pp` (`p = 0.175`, not significant at this sample size).
+
+**`IB-PT-LM` counterfactual surrogate LoRA (`results/exploratory-ib-ptlm.json`, exploratory).** Static `PT-LM` memorizes the surrogate seam: suffix-inversion canary exposure `5.27` bits (`5.67/12` rank-1) and an 8-way neighboring non-PII hidden-state identity probe at `37.50%` (chance `12.50%`). The counterfactual information-bottleneck variant (`beta = 0.2`, disjoint surrogate pools) drops the canary to `1.15` bits (`0.0/12` rank-1, `-4.12` bits) and the probe to `19.79%` (`-17.71 pp`) with tag echo and seen-doc F1 unchanged, at `~2.05x` training wall-clock (`137.96 s -> 282.37 s` median per seed) and zero inference overhead.
 
 ---
 

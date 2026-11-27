@@ -164,3 +164,19 @@ Build: `latexmk -pdf -interaction=nonstopmode -f versieve-multimodal-sanitizatio
    - **`LibriSpeech` (OpenSLR SLR12):** CC-BY-4.0 (Track E 40 real utterances).
    - **Models:** `knowledgator/gliner-pii-edge-v1.0` (Apache-2.0), Microsoft Presidio + spaCy `en_core_web_lg` (MIT), `faster-whisper` `base.en` & `small.en` (MIT).
    - **Local synthetic suites (25-call SAPI TTS audio, PPRL dev/test/500-name, 174-case Unicode evasion, 60-case `GC-CRC`):** MIT License (repository-authored fixtures); strictly deterministic over fixed scripts and fixed salts (`audio-srmp-call_XX`, `pprl-v2-salt`, `pprl-scale-salt`, `gccrc-<idx>`), invoking zero PRNG calls.
+
+## U3: Gate-Over-Best-Detector Shootout + CPA/AC-CRC (2026-11-27, `main` @ `3ece86d`)
+
+Build: `latexmk -pdf -interaction=nonstopmode -f` run twice, exit 0, 0 undefined references/citations, 0 overfull hboxes. Two new subsections added at the end of Section 4 (after Exp. 5), no existing number, table, or section touched.
+
+1. **Exp. 6 (sec:exp6, `tab:gate-over-detector`)** from `results/t8-gate-over-detector-and-stitched-shootout.json` (seed 42, 1,000 bootstraps, 5,000 permutations; 1,150 calibration / 1,999 held-out):
+   - Presidio + ECHR code alone: 27.31% (546) E2E leak, Wilson CI [25.41, 29.31] (`gateOverDetectorArms.presidio_fair_echr.detectorAlone`).
+   - HC-CRC over Stage 3A + Presidio (`presidio_plus_stage3a.hcCrcSweep`): alpha=0.01 -> 0.00% (0), bootstrap CI [0, 0], 27.13% Safe Yield; alpha=0.02 -> 2.44% (4); alpha=0.05 -> 9.06% (29) at 77.39% Safe Yield.
+   - Stitched plain-threshold plateau: identical operating point (9.06%, 29, 77.39%, FPR 1.79%) at every recorded grid threshold from 0.16 through 0.99 (`stitched_presidio_detect_secrets_forensic.plainConfidenceThresholdCurve`); HC-CRC beats the plateau at p=0.0002 (paired per-document permutation, `vsDetectorAlone.pairedDocPermutationP` / alpha=0.01 `vsPlainThresholdAtMatchedSafeYield.pairedDocPermutationP`).
+   - Honest GLiNER-Edge boundary: GLiNER alone 62.83% (1,256); HC-CRC at alpha=0.05 over GLiNER-Edge 22.16% (43) at 40.16% yield, with Stage 3A 23.23% (46) at 40.43%; detector floor statement at alpha >= 0.05.
+   - Prose notes the distinct gate configuration (T8) and non-comparability with Table 2 (520-d gatekeeper).
+2. **Exp. 7 (sec:exp7)** from `results/t11-cpa-attacker-audit.json` + `results/exploratory-ac-crc.json`:
+   - CPA (attacker qwen2.5:7b, k=10, chance 10%; 100 released / 100 withheld of the 182/1,817 alpha=0.05 split): released 14.00% (14/100, CP CI [7.87, 22.37]), |C_adv| 9.98, coverage 100%; withheld 42.00% (42/100, [32.20, 52.29]), 8.41, coverage 92%; gap 28.00 pp [15, 39]; Fisher 1.6e-5; paired 100-pair audit 9 vs 37, McNemar 4.1e-5; ambiguity mean diff +1.57 (permutation p=0.0002); zero singleton singling-out; residual detector leak 13% / 97%.
+   - Prose states the released residual is 4.00 pp above the 10% chance floor (operating point, not a cleared threshold).
+   - AC-CRC note: w=(0.5, 0.5) over 3 document-cluster splits: held-out released top-1 re-ID 12.22% -> 10.90% (-1.32 pp; per-seed -2.92, 0.00, -1.04), E2E detector leak 4.10% -> 4.94% (+0.84 pp), Safe Yield delta 0.00 pp; 10,000-trial dependent-channel Monte Carlo across five copula correlations passes; operational cost stated; HC-CRC stays the online default. Exploratory status stated once, plainly (artifact `status` field).
+   - Citation: reuses existing `cpa2026auditing` (arXiv:2609.21340, already in the .bib); no bib edits.

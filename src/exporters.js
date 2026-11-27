@@ -15,6 +15,9 @@
  *   - oumi                   : { messages: [{ role, content }], metadata: { source, entityIds, receiptSha256 } }
  *   - nemo                   : { id, text, filename, source_type, redaction_count, entity_ids, receipt_sha256 }
  *   - document-qa            : { messages: [...], metadata } knowledge-bearing QA over resolved entity records
+ *   - ib-ptlm               : { id, maskedText, viewA, viewB, metadata } paired disjoint-surrogate counterfactual views
+ *                             (viewA from poolA / viewB from poolB; piiSpans carry label -100; nonPiiSegments[i] is
+ *                              the identical non-PII text in both views so a trainer can align causal positions)
  *
  * Every export returns `{ format, jsonl, records, manifest, manifestJson }`. The manifest is the sidecar
  * provenance record: `{ receiptSha256, format, recordCount, zeroEgress: true, ... }`. No timestamps are
@@ -739,8 +742,193 @@ export function exportDocumentGroundedQA(perceived, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Dispatcher + sidecar writer
+// IB-PT-LM paired counterfactual surrogate export (verified semantics ported
+// byte-compatibly from scripts/run-exploratory-ib-ptlm.py, T12)
 // ---------------------------------------------------------------------------
+
+/**
+ * Disjoint surrogate pools for the IB-PT-LM counterfactual objective. Must mirror
+ * `scripts/run-exploratory-ib-ptlm.py` `SURROGATE_POOLS` (poolA / poolB only): pool A and pool B
+ * have ZERO shared values per category, verified by `verifyIbPtlmPoolsDisjoint`, so the two
+ * views of the same masked span can never collapse to the same synthetic surface.
+ */
+export const IB_PTLM_SURROGATE_POOLS = Object.freeze({
+  PERSON: Object.freeze({
+    poolA: Object.freeze([
+      'Dr. Arthur Pendelton', 'Dr. Beatrice Halvorsen', 'Dr. Cedric Montclair', 'Dr. Diana Korhonen',
+      'Dr. Edward Bellamy', 'Dr. Fiona MacAllister', 'Dr. Gabriel Okafor', 'Dr. Helena Bergstrom',
+      'Dr. Isaac Lindholm', 'Dr. Justine Beaumont', 'Dr. Kenneth Dalrymple', 'Dr. Lydia Vestergaard',
+    ]),
+    poolB: Object.freeze([
+      'Dr. Martin Solberg', 'Dr. Natalie Ravenscroft', 'Dr. Oliver Lindqvist', 'Dr. Patricia Castellano',
+      'Dr. Quentin Ashworth', 'Dr. Rebecca Sundqvist', 'Dr. Sebastian Delacroix', 'Dr. Theresa Nystrom',
+      'Dr. Ulrich Lindemann', 'Dr. Valerie Kingsford', 'Dr. Wesley Hawthorne', 'Dr. Yvonne Lindberg',
+    ]),
+  }),
+  EMAIL: Object.freeze({
+    poolA: Object.freeze(Array.from({ length: 12 }, (_, i) => `liaison.alpha${10 + i}@pool-a-routing.example`)),
+    poolB: Object.freeze(Array.from({ length: 12 }, (_, i) => `steward.bravo${50 + i}@pool-b-routing.example`)),
+  }),
+  PHONE: Object.freeze({
+    poolA: Object.freeze(Array.from({ length: 12 }, (_, i) => `303-555-${String(120 + i).padStart(4, '0')}`)),
+    poolB: Object.freeze(Array.from({ length: 12 }, (_, i) => `503-555-${String(240 + i).padStart(4, '0')}`)),
+  }),
+  SSN: Object.freeze({
+    poolA: Object.freeze(Array.from({ length: 12 }, (_, i) => `284-31-${String(4100 + i).padStart(4, '0')}`)),
+    poolB: Object.freeze(Array.from({ length: 12 }, (_, i) => `395-47-${String(6200 + i).padStart(4, '0')}`)),
+  }),
+  GENERIC: Object.freeze({
+    poolA: Object.freeze(Array.from({ length: 12 }, (_, i) => `Charter Entity ${i + 1}`)),
+    poolB: Object.freeze(Array.from({ length: 12 }, (_, i) => `Ledger Counterparty ${i + 1}`)),
+  }),
+});
+
+export const IB_PTLM_PLACEHOLDER_RX = /(<(?:PII|SECRET):[A-Za-z0-9_]+>)/g;
+
+const IB_PTLM_TAG_RX = /^<(?:PII|SECRET):[A-Za-z0-9_]+>$/;
+
+const IB_PTLM_CATEGORY_KEYS = ['PERSON', 'EMAIL', 'PHONE', 'SSN'];
+
+function ibPtlmCategoryForTag(tag) {
+  const inner = tag.replace(/^<|>$/g, '').split(':', 2).pop().toUpperCase();
+  for (const cat of IB_PTLM_CATEGORY_KEYS) {
+    if (inner.startsWith(cat)) return cat;
+  }
+  return 'GENERIC';
+}
+
+/** SHA-256 based deterministic pool index (mirrors `deterministic_tag_index` in the Python reference). */
+function ibPtlmDeterministicIndex(tag, modulus) {
+  const digest = crypto.createHash('sha256').update(tag, 'utf8').digest();
+  return digest.readUInt32BE(0) % Math.max(1, modulus);
+}
+
+function ibPtlmSurrogateForTag(tag, poolKey) {
+  const pools = IB_PTLM_SURROGATE_POOLS[ibPtlmCategoryForTag(tag)];
+  return pools[poolKey][ibPtlmDeterministicIndex(tag, pools[poolKey].length)];
+}
+
+/** Verifies strict poolA/poolB disjointness per category; throws ExportError on any overlap. */
+export function verifyIbPtlmPoolsDisjoint() {
+  const categories = {};
+  let overlapCount = 0;
+  let poolACount = 0;
+  let poolBCount = 0;
+  for (const [category, pools] of Object.entries(IB_PTLM_SURROGATE_POOLS)) {
+    const a = new Set(pools.poolA);
+    const b = new Set(pools.poolB);
+    const ov = pools.poolA.filter((v) => b.has(v)).length;
+    overlapCount += ov;
+    poolACount += a.size;
+    poolBCount += b.size;
+    categories[category] = {
+      nPoolA: a.size,
+      nPoolB: b.size,
+      overlapPoolAPoolB: ov,
+    };
+  }
+  if (overlapCount !== 0) {
+    throw new ExportError('IB_PTLM_POOL_OVERLAP', `surrogate poolA and poolB overlap in ${overlapCount} value(s); refusing to export`);
+  }
+  return { categories, poolOverlapCount: overlapCount, poolACount, poolBCount, poolAuditSha256: sha256Hex(JSON.stringify(IB_PTLM_SURROGATE_POOLS)) };
+}
+
+/**
+ * IB-PT-LM paired counterfactual training export. Each sanitized (masked / vaulted) sample emits
+ * TWO records-bearing counterfactual views: viewA draws its per-tag surrogates exclusively from
+ * poolA and viewB exclusively from poolB (deterministic SHA-256 index per placeholder tag, so the
+ * same tag always resolves to the same surrogate; disjoint pools force `surrogateA != surrogateB`).
+ * Both views keep the non-PII text byte-identical with per-view char spans, and every surrogate
+ * span carries `label: -100`, so a causal trainer can align exactly the non-PII prediction
+ * positions across views (mirrors `encode_aligned_counterfactual_pair`).
+ */
+export function exportIbPtlmJsonl(perceived, options = {}) {
+  const poolAudit = verifyIbPtlmPoolsDisjoint();
+  const norm = normalizePerceived(perceived, options);
+  const records = norm.records.map((rec) => {
+    const segments = rec.text
+      .split(IB_PTLM_PLACEHOLDER_RX)
+      .map((chunk) => ({ isTag: IB_PTLM_TAG_RX.test(chunk), chunk }))
+      .filter((seg) => seg.chunk.length > 0);
+    const buildView = (poolKey) => {
+      const view = { pool: poolKey, text: '', piiSpans: [], nonPiiSegments: [] };
+      let cursor = 0;
+      for (const seg of segments) {
+        if (seg.isTag) {
+          const surrogate = ibPtlmSurrogateForTag(seg.chunk, poolKey);
+          // Disjoint pools guarantee surrogateA != surrogateB for the same tag; assert once here.
+          const otherPool = IB_PTLM_SURROGATE_POOLS[ibPtlmCategoryForTag(seg.chunk)][poolKey === 'poolA' ? 'poolB' : 'poolA'];
+          if (otherPool.includes(surrogate)) {
+            throw new ExportError('IB_PTLM_POOL_OVERLAP', `surrogate for tag ${seg.chunk} leaked across pools`);
+          }
+          const start = cursor;
+          view.text += surrogate;
+          cursor += surrogate.length;
+          view.piiSpans.push({ start, end: cursor, tag: seg.chunk, category: ibPtlmCategoryForTag(seg.chunk), surrogate, label: -100 });
+        } else {
+          const start = cursor;
+          view.text += seg.chunk;
+          cursor += seg.chunk.length;
+          // Segment index is the alignment key: nonPiiSegments[i] holds the identical non-PII
+          // text in both views, so a trainer can pair up causal prediction positions.
+          view.nonPiiSegments.push({ index: view.nonPiiSegments.length, text: seg.chunk, start, end: cursor });
+        }
+      }
+      return view;
+    };
+    const viewA = buildView('poolA');
+    const viewB = buildView('poolB');
+    assertIbPtlmViewNoResidual(viewA, viewB, norm, `block ${rec.blockId ?? rec.id}`);
+    return {
+      id: rec.id,
+      maskedText: rec.text,
+      viewA,
+      viewB,
+      metadata: {
+        ...commonMetadata(rec, norm),
+        surrogateChoice: 'sha256-deterministic-per-tag',
+        surrogateViewAlignment: 'nonPiiSegments[i] is the identical text in both views',
+      },
+    };
+  });
+  return buildResult('ib-ptlm', 'IB-PT-LM', records, norm, { ibPtlm: poolAudit });
+}
+
+/**
+ * Fail-closed leak guard for IB-PT-LM views. Unlike the other exporters, this format intentionally
+ * emits realistic-looking synthetic personal names / emails / numbers, so a blind re-scan would flag
+ * every synthetic surrogate. Instead: (1) any known raw redacted value in the emitted text is an
+ * unconditional leak, and (2) the scanners re-run on the text with surrogate spans hidden behind
+ * `PII:SURROGATE` tags (`PLACEHOLDER_RX` strips those, so only non-PII text is scanned).
+ */
+function assertIbPtlmViewNoResidual(viewA, viewB, norm, label) {
+  for (const view of [viewA, viewB]) {
+    for (const v of norm.knownRawValues) {
+      if (containsRawValueStripPlaceholders(view.text, v)) {
+        throw new ExportError('EXPORT_RESIDUAL_PII', `IB-PT-LM ${label} view leaks raw redacted value; refusing to export`);
+      }
+    }
+    const hidden = hideSurrogateSpans(view);
+    assertNoResidual([hidden], norm, `IB-PT-LM view (${label})`);
+  }
+}
+
+// The `containsRawValue` check is mirrored with placeholder stripping (same as `shadowAuditText`).
+function containsRawValueStripPlaceholders(haystack, rawValue) {
+  return containsRawValue(String(haystack ?? '').replace(PLACEHOLDER_RX, ' '), rawValue);
+}
+
+function hideSurrogateSpans(view) {
+  if (view.piiSpans.length === 0) return view.text;
+  let out = '';
+  let cursor = 0;
+  for (const span of view.piiSpans) {
+    out += view.text.slice(cursor, span.start) + '<PII:SURROGATE>';
+    cursor = span.end;
+  }
+  out += view.text.slice(cursor);
+  return out;
+}
 
 export const TRAINING_EXPORT_FORMATS = Object.freeze([
   'llama-factory-sharegpt',
@@ -749,6 +937,7 @@ export const TRAINING_EXPORT_FORMATS = Object.freeze([
   'oumi',
   'nemo',
   'document-qa',
+  'ib-ptlm',
 ]);
 
 const FORMAT_ALIASES = Object.freeze({
@@ -756,6 +945,7 @@ const FORMAT_ALIASES = Object.freeze({
   alpaca: 'llama-factory-alpaca',
   'nemo-curator': 'nemo',
   qa: 'document-qa',
+  ib_ptlm: 'ib-ptlm',
 });
 
 export function resolveTrainingFormat(format) {
@@ -782,6 +972,8 @@ export function exportTrainingDataset(perceived, options = {}) {
       return exportOumiJsonl(perceived, rest);
     case 'nemo':
       return exportNemoCuratorJsonl(perceived, rest);
+    case 'ib-ptlm':
+      return exportIbPtlmJsonl(perceived, rest);
     default:
       return exportDocumentGroundedQA(perceived, rest);
   }

@@ -369,6 +369,47 @@ To make both the privacy protection and the retrieval-versus-LoRA gap directly i
 \vskip -0.14in
 \end{table*}
 
+\subsection{Scanner-Missed Canary Formats and Full-Scale Document-QA SFT}
+\label{sec:scanner-missed-qa}
+
+The canary suite of Table~\ref{tab:canary} uses scanner-detectable formats (emails, phones, SSNs, structured names). A second, $24$-canary suite splits equally into $12$ scanner-caught canaries (the same four categories) and $12$ scanner-missed canaries: bare lowercase names, free-form street addresses, alphanumeric usernames, and prose employer references, at $1\times$, $5\times$, and $20\times$ repetitions over $208$ repeated turns on $24$ background estate documents. Each arm trains on \texttt{Qwen2.5-0.5B-Instruct} (LoRA $r{=}16$, $\alpha{=}32$, $100$ steps, lr $2\mathrm{e}{-4}$, seed $42$, the same 8\,GB RTX~4070) and Table~\ref{tab:scanner-canaries} reports $12$-canary mean exposure with $N{=}1{,}000$ decoys and rank-1 memorized counts per stratum.
+
+\begin{table}[t]
+\caption{Scanner-caught versus scanner-missed canary exposure (bits, max $9.97$) on the $24$-canary suite ($12$ caught + $12$ missed; \texttt{Qwen2.5-0.5B-Instruct}, $100$ steps, lr $2\mathrm{e}{-4}$, seed $42$). ``Stage 3A'' is the deterministic redaction stage; ``Stage 3B'' adds the SR-MP cross-document anchors plus local GLiNER-PII-Edge NER; both trained arms use PT-LM loss masking.}
+\label{tab:scanner-canaries}
+\vskip 0.08in
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Arm} & \textbf{Caught} & \textbf{Missed} \\
+\midrule
+Base (untrained) & $7.49$ ($7/12$) & $5.22$ ($5/12$) \\
+Raw unredacted chat & $9.97$ ($12/12$) & $9.73$ ($11/12$) \\
+Stage 3A + PT-LM & $7.42$ ($7/12$) & $9.75$ ($11/12$) \\
+\textbf{Stage 3A + 3B + PT-LM} & $\mathbf{6.68}$ ($6/12$) & $\mathbf{6.27}$ ($6/12$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+Stage 3A redaction fully masks $12/12$ caught canaries, and exposure on that stratum stays suppressed ($7.42$ bits, $7/12$). On the missed stratum the same Stage 3A redaction is worth nothing: exposure sits at $9.75$ bits ($11/12$), the unredacted arm's $9.73$ bits ($11/12$), well above the untrained base's $5.22$ ($5/12$). Pairing Stage 3B (SR-MP cross-document anchors + GLiNER-PII-Edge) with Stage 3A lowers missed-format exposure to $6.27$ bits ($6/12$) while the caught stratum stays at $6.68$ ($6/12$). The Stage 3B redaction receipt itself records $7$ fully masked, $2$ partial, and $3$ unmasked on the missed formats (residual partial-span exposure on free-form prose addresses is disclosed in the artifact), so the remaining bits concentrate on canaries no local redaction stage covered; missed-format exposure is reduced, not closed.
+
+Second, the document-grounded QA SFT path of Section~\ref{sec:corpus} is measured at scale under an uncapped protocol. The earlier Track K3 comparisons truncated the composed corpus from $1{,}106$ to $41$ rows and the flat corpus from $178$ to $100$ rows to match a $25{,}755$-token budget; this run removes the cap (truncated rows $= 0$ for every training arm) and evaluates $540$ manifest-derived questions across five strata ($60$ canonical K3, $84$ Q1, $48$ Q2, $68$ Q3, $280$ directory) over three seeds ($42$, $43$, $44$). The document-grounded QA corpus carries $1{,}125$ rows ($147{,}910$ tokens, $101{,}584$ learnable) with zero manifest access during construction. Across the $540$ questions, \texttt{document\_qa} reaches $\mathbf{30.56\%}$ exact match $[26.79, 34.14]$ ($30.19\%$/$30.37\%$/$31.11\%$ per seed) against composed \texttt{uncapped} at $19.45\%$ $[16.48, 22.35]$, a $+11.11$\,pp gap $[8.21, 14.07]$ with paired permutation $p{=}0.0005$; flat \texttt{uncapped} sits between at $26.48\%$. Lexical BM25 retrieval answers $34.26\%$ $[30.37, 38.33]$, so \texttt{document\_qa} narrows its exact-match gap to BM25 from $-14.81$\,pp (composed versus BM25, $p{=}0.0005$) to $-3.70$\,pp $[-9.38, 1.42]$, which does not separate at this $n$ ($p{=}0.175$); BM25 remains the exact-match leader among these arms, with \texttt{document\_qa} the trained arm that comes closest to it in this run. The trade is on partial overlap: \texttt{document\_qa} mean token F1 is $9.47$ against composed $15.57$ ($-6.09$\,pp, $p{=}0.0005$).
+
+\subsection{Counterfactual Surrogate Information-Bottleneck LoRA (\texttt{IB-PT-LM})}
+\label{sec:ib-ptlm}
+
+Static \texttt{PT-LM} still substitutes a fixed surrogate into the forward context, and the multi-seed ablation (Section~\ref{sec:ptlm-r4}) leaves one measurable residue: after masking, the adapter conditions on that surrogate. A counterfactual surrogate information-bottleneck variant (\texttt{IB-PT-LM}) generates the two surrogate views from strictly disjoint pools (pool A and pool B overlap $0$ for every surrogate category in the checked-in audit) and adds a position-aligned, non-PII-token-restricted counterfactual symmetric KL term, $\beta{=}0.2$, between the two views during training. Trained on \texttt{Qwen2.5-0.5B-Instruct} across three seeds ($42$, $43$, $44$; $80$ steps, lr $2\mathrm{e}{-4}$, effective batch $8$, $152$ training examples, $12$ canaries):
+
+\begin{itemize}
+    \item \textbf{Surrogate memorization:} a suffix-inversion probe measures contextual surrogate-inversion exposure at $5.27$ bits $[4.95, 5.66]$ under static \texttt{PT-LM} ($5.67/12$ rank-1). \texttt{IB-PT-LM} brings it to $\mathbf{1.15}$ bits $[0.85, 1.40]$ ($0/12$ rank-1 in every seed), a $-4.12$-bit change.
+    \item \textbf{Neighboring hidden-state leakage:} an $8$-way linear probe on neighboring non-PII hidden-state identity (chance $12.50\%$) reads $37.50\%$ $[35.94, 39.06]$ under \texttt{PT-LM} and $25.00\%$ under \texttt{Masking-only}; \texttt{IB-PT-LM} lowers it to $\mathbf{19.79\%}$ $[17.19, 21.88]$, $-17.71$\,pp versus \texttt{PT-LM}.
+    \item \textbf{Cost and side effects:} mean training wall-clock rises from $137.96$\,s to $282.37$\,s per seed ($\approx 2.05\times$), from the dual counterfactual forward passes; the adapter footprint and the inference path are unchanged. Raw canary exposure changes by $-0.06$ bits with the bootstrap CI $[-0.30, 0.19]$ including zero, seen-document token F1 by $+0.00$\,pp, and tag echo by $+0.00$\,pp versus \texttt{Masking-only}.
+\end{itemize}
+
+The checked-in artifact carries this arm's status as exploratory. Its reading in this paper is narrow: on the two memorization side-channels the static surrogate leaves measurable residue in, the counterfactual objective reduces that residue at twice the training cost, without a measurable change on the canary and utility axes of Section~\ref{sec:ptlm-r4}.
+
 \section{Limitations}
 \label{sec:limitations}
 
@@ -376,7 +417,7 @@ To make both the privacy protection and the retrieval-versus-LoRA gap directly i
     \item Automated lexical metrics and our blinded local \texttt{qwen2.5:7b} judge quantify factual and rubric alignment rather than expert legal advice; formal human legal adjudication remains outside the automated harness.
     \item The three-seed ablation (Section~\ref{sec:ptlm-r4}) shows that \texttt{PT-LM}'s gains are decomposable rather than monolithic: backward $-100$ masking alone (or static surrogate substitution alone) removes \texttt{<PII:...>} tag echo across all models and recovers seen-document F1 on \texttt{Qwen2.5-0.5B} and \texttt{Qwen2.5-1.5B}, whereas removing in-scope false refusals at $80$ steps is driven by abstention-turn subsampling ($593$ vs.\ $636$ rows) at the cost of $0\%$ $80$-step out-of-scope refusal.
     \item No API-based cross-check of the blinded local judges was run; the two local judges disagree (row-level agreement on the partial-credit threshold between $31.4\%$ and $62.9\%$ on the grid).
-    \item The retrieval comparison is scoped to retrieval-augmented versus closed-book: no BM25 or dense-retrieval arm is run, so the comparison does not isolate what the graph structure adds over a lexical retriever.
+    \item The retrieval comparison is scoped to retrieval-augmented versus closed-book on the $50$-question suite: no BM25 or dense-retrieval arm is run on that suite, so the comparison does not isolate what the graph structure adds over a lexical retriever; a lexical BM25 arm appears only on the separate $540$-question scale suite (Section~\ref{sec:scanner-missed-qa}).
     \item Each adapter cell in Tables~\ref{tab:canary}, \ref{tab:trackd-3model}, and \ref{tab:ptlm-sweep} is a single seed-$42$ training run; multi-seed dispersion ($3$ seeds: $42, 43, 44$) is reported in Table~\ref{tab:ptlm-r4-multiseed} for the four redacted LoRA arms, while blinded judge scores in that table are evaluated at seed $42$.
     \item Our local LoRA budget ($80$ steps on $636$ chat rows, $r=16$) reflects practical laptop fine-tuning; larger models ($7$B--$32$B) or multi-epoch synthetic-QA distillation may narrow the closed-book gap, though they would further increase weight-memorization risk without redaction.
     \item Synthetic canary exposure evaluates $12$ planted secrets in scanner-detectable formats (emails, phones, SSNs, structured names) excluded from safe training, measuring pre-training removal efficacy rather than equal-data memorization or scanner-missed formats (bare names, free-form addresses, usernames, employers).

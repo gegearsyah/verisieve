@@ -370,6 +370,56 @@ Graph GDPR Blast Radius & $5{,}000$ blocks / $20{,}200$ edges ($5$ modalities, W
 \vskip -0.14in
 \end{table}
 
+\subsection{Exp.~6: Gate-Over-Best-Detector and the Stitched TAB Shootout}
+\label{sec:exp6}
+
+Exp.~\ref{sec:exp2} gates the project's $520$-d gatekeeper score. A separate configuration asks whether the certified gate also transfers over the strongest external detector of Exp.~\ref{sec:exp1}: the gate consumes the Presidio (\texttt{en\_core\_web\_lg} + ECHR code) detector score directly on the TAB ECHR paragraphs ($1{,}150$ calibration paragraphs, $916$ unsafe, across $67$ calibration rulings; $1{,}999$ held-out test paragraphs, seed~$42$, $1{,}000$ bootstrap resamples, $5{,}000$ paired permutations, $\delta{=}0.05$), so these operating points are a distinct gate configuration and are not comparable cell-for-cell with Table~\ref{tab:gt-ltt}. Table~\ref{tab:gate-over-detector} reports the head-to-head.
+
+\begin{table}[t]
+\caption{Gate-over-best-detector shootout on the $1{,}999$ held-out TAB ECHR paragraphs (distinct from the $520$-d gatekeeper configuration of Table~\ref{tab:gt-ltt}). The gate input is the detector score itself (``+ Stage 3A'' adds the deterministic stage under the Versieve release policy). $\delta{=}0.05$; leak intervals are bootstrap $95\%$ CIs.}
+\label{tab:gate-over-detector}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Release Policy} & \textbf{Cond.\ FPR} & \textbf{Safe Yld} & \textbf{E2E Leak} & \textbf{Leak CI} \\
+\midrule
+\textbf{Presidio + ECHR code (no gate)} & $100.00\%$ & $100.00\%$ & $27.31\%$ ($546$) & \scriptsize{[23.9, 30.8]} \\
+Stitched stack, plain $\tau{=}0.50$ & $1.79\%$ & $77.39\%$ & $9.06\%$ ($29$) & \scriptsize{[6.1, 12.3]} \\
+Stitched stack, plain $\tau \in [0.16, 0.99]$ & $1.79\%$ & $77.39\%$ & $9.06\%$ ($29$) & \scriptsize{[6.1, 12.3]} \\
+\textbf{HC-CRC over Stage 3A + Presidio, $\alpha{=}0.01$} & $0.00\%$ & $27.13\%$ & $\mathbf{0.00\%}$ ($0$) & \scriptsize{[0.0, 0.0]} \\
+HC-CRC over Stage 3A + Presidio, $\alpha{=}0.02$ & $0.25\%$ & $42.55\%$ & $2.44\%$ ($4$) & \scriptsize{[0.0, 5.3]} \\
+HC-CRC over Stage 3A + Presidio, $\alpha{=}0.05$ & $1.79\%$ & $77.39\%$ & $9.06\%$ ($29$) & \scriptsize{[6.1, 12.3]} \\
+\textbf{GLiNER-Edge (no gate)} & $100.00\%$ & $100.00\%$ & $62.83\%$ ($1{,}256$) & \scriptsize{[59.9, 65.8]} \\
+GLiNER-Edge + HC-CRC, $\alpha{=}0.05$ & $2.65\%$ & $40.16\%$ & $22.16\%$ ($43$) & \scriptsize{[15.2, 28.9]} \\
+Stage 3A + GLiNER + HC-CRC, $\alpha{=}0.05$ & $2.83\%$ & $40.43\%$ & $23.23\%$ ($46$) & \scriptsize{[16.2, 29.7]} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+Three findings follow from Table~\ref{tab:gate-over-detector}. (i)~\textbf{The best detector is not a release policy:} Presidio + ECHR code, the F1 winner of Table~\ref{tab:tab-bench}, releases everything and carries a $27.31\%$ ($546$ paragraphs) end-to-end residual leak into release (Wilson $95\%$ CI $[25.41\%, 29.31\%]$). (ii)~\textbf{Wrapping it in the certified gate moves the frontier:} \texttt{HC-CRC} over Stage 3A + Presidio certified at $\alpha{=}0.01$ releases $0$ unsafe paragraphs ($0.00\%$ end-to-end leak, [0, 0] CI) at $27.13\%$ Safe Yield, and certified at $\alpha{=}0.05$ releases $9.06\%$ ($29$) at $77.39\%$ Safe Yield. (iii)~\textbf{Plain threshold tuning plateaus before the gate is reached:} every stitched plain-confidence threshold from $0.16$ through $0.99$ produces the identical operating point ($9.06\%$ leak, $29$ paragraphs, $77.39\%$ Safe Yield), so threshold tuning cannot improve the stitched release, and \texttt{HC-CRC} at $\alpha{=}0.01$ beats the plateau decisively (paired per-document permutation, $p{=}0.0002$).
+
+The zero-leak operating point is detector-bound, and the boundary is Presidio's. Over the $45.8$\,MB GLiNER-Edge detector ($62.83\%$, $1{,}256$ paragraphs, alone), the certified gate at $\alpha{=}0.05$ still releases $22.16\%$ ($43$) at $40.16\%$ Safe Yield (with Stage 3A coupling: $23.23\%$, $46$, at $40.43\%$), so at $\alpha \ge 0.05$ the detector floor, not the gate, sets the leak. The certified zero-leak release budget of this experiment is reachable over the Presidio score, not over the compact edge detector's score.
+
+\subsection{Exp.~7: Adversarial Re-Identification Audit (CPA) and the Dual-Channel AC-CRC Note}
+\label{sec:exp7}
+
+Detector-closed gating leaves one residual channel open: the released text itself. Following conformal privacy auditing \citep{cpa2026auditing}, a post-release audit scores top-1 re-identification under a local attacker LLM (\texttt{qwen2.5:7b}, $7.6$B Q4\_K\_M) over $k{=}10$-candidate ambiguity sets (chance rate $10.00\%$), on $100$ released and $100$ withheld test paragraphs of the $\alpha{=}0.05$ split ($182$ released, $1{,}817$ withheld), with the same certified HC-CRC threshold ($\tau_{\text{keep}}{=}0.30$, $\tau_{\text{drop}}{=}0.26$, $67$ unsafe clusters; calibrated at seed $42$ with resamples and $5{,}000$ permutations):
+
+\begin{itemize}
+    \item \textbf{Released paragraphs:} $14/100 = \mathbf{14.00\%}$ top-1 re-identification (Clopper--Pearson $95\%$ CI $[7.87\%, 22.37\%]$), mean ambiguity-set size $9.98$, residual detector leak $13\%$, zero singleton singling-out, empirical ambiguity coverage $100\%$ against the $90\%$ target.
+    \item \textbf{Withheld paragraphs:} $42/100 = \mathbf{42.00\%}$ top-1 re-identification (Clopper--Pearson $95\%$ CI $[32.20\%, 52.29\%]$), mean ambiguity-set size $8.41$, residual detector leak $97\%$, zero singleton singling-out, coverage $92\%$.
+    \item \textbf{Gap and tests:} $28.00$\,pp (bootstrap $95\%$ CI $[15, 39]$); Fisher exact two-sided $p = 1.6\times 10^{-5}$; within-ruling paired audit on $100$ pairs: $9$ released-only versus $37$ withheld-only re-identifications, McNemar $p = 4.1\times 10^{-5}$; ambiguity-set mean difference $+1.57$ (paired permutation $p{=}0.0002$).
+\end{itemize}
+
+The certified gate cuts the attacker's top-1 re-identification from $42.00\%$ to $14.00\%$ while it is also what withholds those paragraphs. The released residual is $4.00$\,pp above the $10\%$ chance floor, so the audit reads as a measured operating point, not a cleared threshold.
+
+\paragraph{Dual-channel AC-CRC note.} A dual-channel convex e-gate (AC-CRC) combines the detector-channel and an adversary-channel e-value, $E^{\text{joint}} = w_1 E^{\text{det}} + w_2 E^{\text{adv}}$ with $w_1 + w_2 = 1$. At balanced weights $(w_1, w_2) = (0.5, 0.5)$ across three document-cluster splits, held-out released top-1 re-identification moves from $12.22\%$ (single-channel HC-CRC) to $10.90\%$ ($-1.32$\,pp; per-seed $-2.92$, $0.00$, $-1.04$), while the end-to-end detector leak moves from $4.10\%$ to $4.94\%$ ($+0.84$\,pp) and Safe Yield is unchanged ($0.00$\,pp). The dependent-channel Monte Carlo control ($10{,}000$ trials across five copula correlations, horizon $80$) holds $\mathbb{E}[E^{\text{joint}}] \le 1$ with anytime exceedance $\le \delta{=}0.05$ in every regime. Computing the adversary channel costs one auxiliary $k$-candidate dossier scoring pass per paragraph through a local LLM attacker, so this paper's online default stays the single-channel HC-CRC gate and AC-CRC is recorded as an opt-in offline compliance-audit mode; the checked-in artifact carries the run's status as exploratory.
+
 \section{Limitations and Operating Boundaries}
 \label{sec:limitations}
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import gc
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -2056,6 +2057,374 @@ def run_r4_multiseed_ablation(args) -> None:
     print(f"\n================ TRACK D R4 MULTI-SEED ABLATION COMPLETE -> {out_path} ================")
 
 
+# ---- Upgrade U1: flag-gated IB-PT-LM trainer (counterfactual surrogate information bottleneck) ----
+# The disjoint pools, pool audit, and aligned counterfactual encoder are loaded straight from the
+# verified T12 implementation (scripts/run-exploratory-ib-ptlm.py) via importlib so the math is
+# never forked. The default (non-flagged) invocation never touches this section.
+
+_IB_PTLM_REFERENCE_PATH = Path(__file__).resolve().parent / "run-exploratory-ib-ptlm.py"
+_IB_PTLM_REF: Any = None
+
+
+def _load_ib_ptlm_reference() -> Any:
+    global _IB_PTLM_REF
+    if _IB_PTLM_REF is None:
+        spec = importlib.util.spec_from_file_location("run_exploratory_ib_ptlm", _IB_PTLM_REFERENCE_PATH)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _IB_PTLM_REF = module
+    return _IB_PTLM_REF
+
+
+def build_ib_ptlm_pair_features(rows: list[dict], tok, max_len: int = 768) -> tuple[list[dict], dict]:
+    """Paired tokenized examples: view 1 (assistant-only CE) + view 2 for the symmetric-KL term.
+
+    Reuses `encode_aligned_counterfactual_pair` / `verify_disjoint_surrogate_pools` verbatim from
+    the reference script. Per-row surrogates are drawn with a deterministic SHA-256-seeded rng on
+    the strictly disjoint poolA/poolB pools, so surrogate(s^1) != surrogate(s^2) for every tag and
+    the whole feature build is reproducible.
+    """
+    ref = _load_ib_ptlm_reference()
+    pool_audit = ref.verify_disjoint_surrogate_pools()
+    if pool_audit["poolOverlapCount"] != 0:
+        raise RuntimeError(f"IB-PT-LM surrogate pools are not disjoint: {pool_audit}")
+
+    eos_id = tok.eos_token_id
+
+    def encode_fn(text: str) -> list[int]:
+        return list(tok.encode(text, add_special_tokens=False))
+
+    feats: list[dict] = []
+    for r in rows:
+        msgs = r["messages"]
+        prompt_ids = tok.encode(render_chat_prompt(tok, msgs[:-1], add_gen=True), add_special_tokens=False)
+        asst_text = str(msgs[-1]["content"]).strip()
+        row_rng = random.Random(hashlib.sha256(asst_text.encode("utf-8")).hexdigest())
+        enc = ref.encode_aligned_counterfactual_pair(
+            encode_fn=encode_fn,
+            prompt_ids=prompt_ids,
+            eos_id=eos_id,
+            masked_assistant_text=asst_text,
+            mode_view1="poolA",
+            mode_view2="poolB",
+            rng=row_rng,
+            max_length=max_len,
+        )
+        feats.append(
+            {
+                "input_ids_1": enc["input_ids_1"],
+                "attention_mask_1": [1] * len(enc["input_ids_1"]),
+                "labels_1": enc["labels_1"],
+                "aligned_pos_1": enc["aligned_pred_pos_1"],
+                "input_ids_2": enc["input_ids_2"],
+                "attention_mask_2": [1] * len(enc["input_ids_2"]),
+                "labels_2": enc["labels_2"],
+                "aligned_pos_2": enc["aligned_pred_pos_2"],
+            }
+        )
+    stats = {
+        "ib_ptlm_train_rows": len(feats),
+        "ib_pool_overlap_count": int(pool_audit["poolOverlapCount"]),
+    }
+    return feats, stats
+
+
+class IbPtlmPairedCollator:
+    """Pads both counterfactual views (right-padding only, so aligned prediction positions stay
+    valid) and forwards the aligned position index lists to the trainer."""
+
+    def __init__(self, pad_token_id: int):
+        self.pad_token_id = pad_token_id
+
+    @staticmethod
+    def _pad(seqs: list[list[int]], fill: int) -> list[list[int]]:
+        max_l = max(len(s) for s in seqs)
+        return [s + [fill] * (max_l - len(s)) for s in seqs]
+
+    def __call__(self, batch: list[dict]) -> dict[str, Any]:
+        return {
+            "input_ids_1": torch.tensor(self._pad([x["input_ids_1"] for x in batch], self.pad_token_id), dtype=torch.long),
+            "input_ids_2": torch.tensor(self._pad([x["input_ids_2"] for x in batch], self.pad_token_id), dtype=torch.long),
+            "attention_mask_1": torch.tensor(self._pad([x["attention_mask_1"] for x in batch], 0), dtype=torch.long),
+            "attention_mask_2": torch.tensor(self._pad([x["attention_mask_2"] for x in batch], 0), dtype=torch.long),
+            "labels_1": torch.tensor(self._pad([x["labels_1"] for x in batch], -100), dtype=torch.long),
+            "labels_2": torch.tensor(self._pad([x["labels_2"] for x in batch], -100), dtype=torch.long),
+            "aligned_pos_1": [x["aligned_pos_1"] for x in batch],
+            "aligned_pos_2": [x["aligned_pos_2"] for x in batch],
+        }
+
+
+def ib_ptlm_trainer_class():
+    """Builds the Trainer subclass only when the real Trainer module is loaded (torch present)."""
+
+    class IbPtlmTrainer(Trainer):
+        """Loss = assistant-only CE (view 1) + beta * 0.5 * (KL(p1||p2) + KL(p2||p1)) over the aligned
+        non-PII causal prediction positions (identical math to the reference `ib_pt_lm` arm)."""
+
+        def __init__(self, *args, ib_beta: float = 0.2, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+            self._ib_beta = float(ib_beta)
+
+        def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):  # noqa: ANN001
+            out_1 = model(
+                input_ids=inputs["input_ids_1"],
+                attention_mask=inputs["attention_mask_1"],
+                labels=inputs["labels_1"],
+            )
+            ce_loss = out_1.loss
+            pos_1 = [p for p in inputs.get("aligned_pos_1", []) if p]
+            pos_2 = [p for p in inputs.get("aligned_pos_2", []) if p]
+            if not pos_1 or not pos_2:
+                return (ce_loss, out_1) if return_outputs else ce_loss
+
+            F = torch.nn.functional
+            device_1 = inputs["input_ids_1"].device
+            gathered_1 = []
+            for b_idx, p1s in enumerate(pos_1):
+                idx1 = torch.tensor(p1s, dtype=torch.long, device=device_1)
+                gathered_1.append(out_1.logits[b_idx, idx1, :])
+            out_2 = model(input_ids=inputs["input_ids_2"], attention_mask=inputs["attention_mask_2"])
+            device_2 = inputs["input_ids_2"].device
+            gathered_2 = []
+            for b_idx, p2s in enumerate(pos_2):
+                idx2 = torch.tensor(p2s, dtype=torch.long, device=device_2)
+                gathered_2.append(out_2.logits[b_idx, idx2, :])
+
+            logits_v1 = torch.cat(gathered_1, dim=0).float()
+            logits_v2 = torch.cat(gathered_2, dim=0).float()
+            log_p1 = F.log_softmax(logits_v1, dim=-1)
+            log_p2 = F.log_softmax(logits_v2, dim=-1)
+            kl_12 = F.kl_div(log_p2, log_p1, log_target=True, reduction="batchmean")
+            kl_21 = F.kl_div(log_p1, log_p2, log_target=True, reduction="batchmean")
+            sym_kl = 0.5 * (kl_12 + kl_21)
+            total_loss = ce_loss + self._ib_beta * sym_kl
+            return (total_loss, out_1) if return_outputs else total_loss
+
+    return IbPtlmTrainer
+
+
+def run_ib_ptlm_dry_run(args) -> dict[str, Any]:
+    """CPU-safe contract verification: pool disjointness, non-PII token alignment, and the
+    beta-weighted loss composition (worked example, no torch required)."""
+    ref = _load_ib_ptlm_reference()
+    pool_audit = ref.verify_disjoint_surrogate_pools()
+
+    toy_vocab: dict[str, int] = {"<eos>": 1, "<prompt>": 2}
+
+    def toy_encode(txt: str) -> list[int]:
+        ids: list[int] = []
+        for tk in txt.split(" "):
+            if not tk:
+                continue
+            if tk not in toy_vocab:
+                toy_vocab[tk] = len(toy_vocab) + 10
+            ids.append(toy_vocab[tk])
+        return ids
+
+    masked_fixtures = [
+        "Signed attestation by <PII:PERSON_1> confirmed vault parity across <PII:EMAIL_1> today.",
+        "Duty callback <PII:PHONE_1> reached steward <PII:EMAIL_2> for field containment <PII:SSN_1>.",
+        "Benign compliance note with no placeholder spans at all.",
+    ]
+    aligned_pred_pos = 0
+    surrogate_pairs_equal = 0
+    surrogate_pairs_total = 0
+    alignment_targets_mismatched = 0
+    for fid, masked in enumerate(masked_fixtures):
+        enc = ref.encode_aligned_counterfactual_pair(
+            encode_fn=toy_encode,
+            prompt_ids=[2, 2],
+            eos_id=1,
+            masked_assistant_text=masked,
+            mode_view1="poolA",
+            mode_view2="poolB",
+            rng=random.Random(42 + fid),
+        )
+        aligned_pred_pos += len(enc["aligned_pred_pos_1"])
+        assert len(enc["aligned_pred_pos_1"]) == len(enc["aligned_pred_pos_2"]), "non-PII alignment mismatch"
+        for p1, p2 in zip(enc["aligned_pred_pos_1"], enc["aligned_pred_pos_2"]):
+            assert (p1 + 1) < len(enc["input_ids_1"]) and (p2 + 1) < len(enc["input_ids_2"])
+            if enc["input_ids_1"][p1 + 1] != enc["input_ids_2"][p2 + 1]:
+                alignment_targets_mismatched += 1
+            assert alignment_targets_mismatched == 0, "aligned non-PII target tokens must be identical across views"
+        for tag, s1 in enc["surrogates_1"].items():
+            surrogate_pairs_total += 1
+            if s1 == enc["surrogates_2"][tag]:
+                surrogate_pairs_equal += 1
+    alignment_contract = {
+        "fixtures": len(masked_fixtures),
+        "alignedPredPosTotal": aligned_pred_pos,
+        "surrogatePairsTotal": surrogate_pairs_total,
+        "surrogatePairsEqualAcrossViews": surrogate_pairs_equal,
+        "viewASurrogateEqualsViewB": surrogate_pairs_equal > 0,
+        "alignmentTargetsMismatched": alignment_targets_mismatched,
+    }
+    assert aligned_pred_pos >= 1, "expected at least one aligned non-PII prediction position"
+    assert surrogate_pairs_total >= 1 and surrogate_pairs_equal == 0, "disjoint pools must force different surrogates"
+
+    # Worked example (independent hand-computed constant) for the composed loss:
+    # KL(0.8/0.2 || 0.6/0.4) = 0.0915162218, KL(0.6/0.4 || 0.8/0.2) = 0.1046496288, sym = 0.0980829253.
+    def _toy_sym_kl(p: list[float], q: list[float]) -> float:
+        kl_pq = sum(p[i] * math.log(p[i] / q[i]) for i in range(len(p)) if p[i] > 0 and q[i] > 0)
+        kl_qp = sum(q[i] * math.log(q[i] / p[i]) for i in range(len(p)) if p[i] > 0 and q[i] > 0)
+        return 0.5 * (kl_pq + kl_qp)
+
+    toy_sym_kl = _toy_sym_kl([0.8, 0.2], [0.6, 0.4])
+    toy_ce = 1.0
+    expected_sym_kl = 0.09808292530117261
+    assert abs(toy_sym_kl - expected_sym_kl) < 1e-9, "symmetric KL worked example drifted"
+    beta = float(args.ib_beta)
+    beta_contract = {
+        "beta": beta,
+        "betaApplied": abs((toy_ce + beta * toy_sym_kl) - toy_ce) > 0.0,
+        "lossZeroBeta": toy_ce,
+        "lossToyBeta": toy_ce + beta * toy_sym_kl,
+        "symKlToy": toy_sym_kl,
+    }
+    assert beta_contract["betaApplied"], "beta must be applied to the composed loss"
+
+    out_path = Path(getattr(args, "ib_out", None) or (RESULTS_DIR / "ib-ptlm-dry-run.json"))
+    artifact = {
+        "kind": "track-d-ib-ptlm-dry-run",
+        "dryRun": True,
+        "ibBeta": beta,
+        "poolAudit": {
+            "poolOverlapCount": int(pool_audit["poolOverlapCount"]),
+            "categories": pool_audit["categories"],
+            "poolAuditSha256": hashlib.sha256(
+                json.dumps(_load_ib_ptlm_reference().SURROGATE_POOLS, sort_keys=True).encode("utf-8")
+            ).hexdigest(),
+        },
+        "alignmentContract": alignment_contract,
+        "betaContract": beta_contract,
+        "referenceImplementation": str(_IB_PTLM_REFERENCE_PATH),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(artifact, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"ok": True, "dryRun": True, "out": str(out_path)}, indent=2))
+    print(f"[track-d] IB-PT-LM dry-run contract verified -> {out_path}")
+    return artifact
+
+
+def run_ib_ptlm_training(args) -> dict:
+    """Live GPU-only IB-PT-LM LoRA run (flag-gated; default invocation never reaches here)."""
+    t0 = time.perf_counter()
+    hw = require_gpu_runtime(require_cuda=not args.allow_cpu, require_peft=True)
+    os.environ.setdefault("HF_HOME", "D:/rtio-hf-cache")
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+    selected = [s for s in MODEL_SPECS if s["key"] in {m.strip() for m in args.models.split(",") if m.strip()}]
+    if not selected:
+        raise ValueError(f"No valid --models matched in {[s['key'] for s in MODEL_SPECS]}")
+    spec = selected[0]
+    safe_train = Path(args.safe_train)
+    if not safe_train.exists():
+        raise FileNotFoundError(f"Missing --safe-train dataset: {safe_train}")
+
+    seed = int(args.seeds.split(",")[0])
+    out_dir = ADAPTERS_DIR / f"{spec['key']}-ib-ptlm-chat"
+    meta_path = out_dir / "train_meta.json"
+    if (out_dir / "adapter_model.safetensors").exists() and meta_path.exists():
+        print(f"[track-d] Reusing existing IB-PT-LM adapter {out_dir}")
+        return json.loads(meta_path.read_text(encoding="utf-8"))
+
+    print(
+        f"\n[track-d] === Training {spec['label']} [ib_ptlm, seed={seed}, beta={args.ib_beta}] "
+        f"({args.max_steps} steps, assistant-only CE + beta*symKL) ==="
+    )
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+    tok = AutoTokenizer.from_pretrained(spec["model_id"], trust_remote_code=spec["trust_remote_code"])
+    configure_tokenizer(tok)
+
+    raw_rows = load_jsonl(safe_train)
+    feats, ib_stats = build_ib_ptlm_pair_features(raw_rows, tok, max_len=768)
+    ds = Dataset.from_list(feats)
+
+    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    model = AutoModelForCausalLM.from_pretrained(
+        spec["model_id"],
+        trust_remote_code=spec["trust_remote_code"],
+        torch_dtype=dtype,
+        device_map="auto",
+    )
+    model.config.use_cache = False
+    target_modules = detect_target_modules(model)
+    lora_cfg = LoraConfig(
+        r=16,
+        lora_alpha=32,
+        lora_dropout=0.05,
+        target_modules=target_modules,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, lora_cfg)
+    model.enable_input_require_grads()
+
+    torch.cuda.reset_peak_memory_stats()
+    train_args = TrainingArguments(
+        output_dir=str(out_dir),
+        max_steps=args.max_steps,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        warmup_steps=8,
+        lr_scheduler_type="cosine",
+        logging_steps=10,
+        save_strategy="no",
+        bf16=torch.cuda.is_bf16_supported(),
+        fp16=not torch.cuda.is_bf16_supported(),
+        gradient_checkpointing=True,
+        report_to="none",
+        seed=seed,
+        data_seed=seed,
+        remove_unused_columns=False,
+    )
+    trainer = ib_ptlm_trainer_class()(
+        model=model,
+        args=train_args,
+        train_dataset=ds,
+        data_collator=IbPtlmPairedCollator(tok.pad_token_id),
+        ib_beta=args.ib_beta,
+    )
+    train_result = trainer.train()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(str(out_dir))
+    tok.save_pretrained(str(out_dir))
+
+    elapsed_s = round(time.perf_counter() - t0, 1)
+    loss_hist = [h["loss"] for h in trainer.state.log_history if "loss" in h]
+    meta = {
+        "model": spec["label"],
+        "arm": "ib_ptlm",
+        "seed": seed,
+        "max_steps": args.max_steps,
+        "ibBeta": float(args.ib_beta),
+        "train_rows": len(feats),
+        "target_modules": target_modules,
+        "final_loss": round(float(train_result.training_loss), 4),
+        "first_logged_loss": round(float(loss_hist[0]), 4) if loss_hist else None,
+        "last_logged_loss": round(float(loss_hist[-1]), 4) if loss_hist else None,
+        "peak_vram_gb": round(torch.cuda.max_memory_allocated() / (1024**3), 2),
+        "elapsed_s": elapsed_s,
+        "hardware": hw,
+        **ib_stats,
+    }
+    out_dir.joinpath("train_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    print(
+        f"[track-d] Trained {spec['key']}/ib_ptlm/seed{seed} in {elapsed_s}s | "
+        f"loss={meta['last_logged_loss']} | VRAM={meta['peak_vram_gb']} GB"
+    )
+    del trainer, model
+    gc.collect()
+    torch.cuda.empty_cache()
+    return meta
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-steps", type=int, default=80)
@@ -2096,12 +2465,41 @@ def main() -> None:
         action="store_true",
         help="CPU-safe deterministic dry-run for --ablation-r4 feature contracts and schema validation",
     )
+    parser.add_argument(
+        "--ib-ptlm",
+        action="store_true",
+        help="Upgrade U1: opt-in IB-PT-LM LoRA (disjoint counterfactual surrogates + beta*symmetric-KL "
+        "on aligned non-PII positions); use with --dry-run for a CPU-safe contract check",
+    )
+    parser.add_argument(
+        "--ib-beta",
+        type=float,
+        default=0.2,
+        help="IB-PT-LM counterfactual symmetry loss weight (default: 0.2)",
+    )
+    parser.add_argument(
+        "--ib-out",
+        default=str(RESULTS_DIR / "ib-ptlm-dry-run.json"),
+        help="Output JSON path for --ib-ptlm --dry-run",
+    )
     parser.add_argument("--safe-train", default=str(DATA_DIR / "train-safe-chat.jsonl"))
     parser.add_argument("--seen-20q", default=str(DATA_DIR / "seen_20q.jsonl"))
     parser.add_argument("--heldout-50q", default=str(HELD_OUT_50Q))
     parser.add_argument("--canaries", default=str(CANARIES_JSON))
     parser.add_argument("--allow-cpu", action="store_true", help="Allow CPU execution if CUDA is unavailable")
     args = parser.parse_args()
+
+    if args.ib_ptlm:
+        try:
+            if args.dry_run:
+                run_ib_ptlm_dry_run(args)
+                return
+            require_gpu_runtime(require_cuda=not args.allow_cpu, require_peft=True)
+            run_ib_ptlm_training(args)
+            return
+        except Exception as exc:
+            print(f"[track-d] ERROR (fail-closed): {exc}", file=sys.stderr)
+            sys.exit(2)
 
     if args.ablation_r4:
         try:
