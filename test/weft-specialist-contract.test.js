@@ -122,7 +122,7 @@ test('W3 4: committed artifact schema — seeds, digests, licences, hyperparamet
 
   const entry = artifact.entries[artifact.entries.length - 1];
   assert.ok(isDigest(entry.runId));
-  assert.equal(entry.ticket, 'W4-data', 'the newest entry is the W4-data recipe-fixed run');
+  assert.equal(entry.ticket, 'W4-frz', 'the newest entry is the W4-frz frozen-base run');
   assert.equal(entry.status, 'ran');
   assert.ok(entry.createdAt && !Number.isNaN(Date.parse(entry.createdAt)));
 
