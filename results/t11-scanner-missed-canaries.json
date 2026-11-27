@@ -1,0 +1,3037 @@
+{
+  "schemaVersion": "versieve.t11.scanner-missed-canaries.v1",
+  "kind": "t11-scanner-missed-canaries",
+  "generatedAt": "2026-11-27T05:29:46Z",
+  "dryRun": false,
+  "seed": 42,
+  "resampleCount": 1000,
+  "candidateDecoysPerCanary": 1000,
+  "recipe": {
+    "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "dropout": 0.05
+    },
+    "steps": 100,
+    "lr": 0.0002,
+    "batch": "2 x 4 grad-accum",
+    "maxLen": 512,
+    "canaryBatch": 32
+  },
+  "hardware": {
+    "python": "3.12.4",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "torch": "2.10.0+cu128",
+    "cudaAvailable": true,
+    "transformers": "5.23.0",
+    "peft": "0.21.3",
+    "datasets": "5.2.0",
+    "gpuName": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpuVramMiB": 8188
+  },
+  "models": {
+    "causalLm": {
+      "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+      "modelLabel": "Qwen2.5-0.5B-Instruct",
+      "snapshotRevision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "configSha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45",
+      "license": "Apache-2.0"
+    },
+    "stage3bDetector": {
+      "modelId": "knowledgator/gliner-pii-edge-v1.0",
+      "onnxFile": "onnx/model_quint8.onnx",
+      "onnxBytes": 45820894,
+      "onnxSha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4",
+      "threshold": 0.3,
+      "license": "Apache-2.0"
+    }
+  },
+  "corpusLicense": "Synthetic World-First Benchmark (fixtures/noisy-estate, MIT/Apache-2.0) + Deterministic 24-Canary Suite",
+  "canarySuite": {
+    "suiteSha256": "7b364ffe706a716d344adbd86e511abfa0642415b4a9ebb7474aa3a28fe6da5a",
+    "totalCanaries": 24,
+    "scannerMissedCount": 12,
+    "scannerCaughtCount": 12,
+    "scannerMissedCategories": [
+      "bare_lowercase_name",
+      "freeform_street_address",
+      "alphanumeric_username",
+      "prose_employer_team"
+    ],
+    "scannerCaughtCategories": [
+      "email",
+      "phone",
+      "ssn",
+      "titled_person"
+    ],
+    "repetitions": [
+      1,
+      5,
+      20
+    ],
+    "totalRepeatedTurns": 208,
+    "estateBackgroundDocs": 24
+  },
+  "redactionAudit": {
+    "stage3a_regex": {
+      "scannerMissedFormats": {
+        "total": 12,
+        "fullMaskedCount": 1,
+        "partialMaskedCount": 1,
+        "unmaskedCount": 10
+      },
+      "scannerCaughtFormats": {
+        "total": 12,
+        "fullMaskedCount": 12,
+        "partialMaskedCount": 0,
+        "unmaskedCount": 0
+      },
+      "byCategory": {
+        "alphanumeric_username": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "bare_lowercase_name": {
+          "total": 3,
+          "fullMaskedCount": 1,
+          "partialMaskedCount": 1,
+          "unmaskedCount": 1
+        },
+        "email": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "freeform_street_address": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "phone": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "prose_employer_team": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "ssn": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "titled_person": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        }
+      },
+      "perCanary": [
+        {
+          "canary_id": "smc-name-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "full_masked",
+          "maskedSentence": "Intake handoff note recorded for delegate <PII:PERSON_197> <PII:PERSON_198> after the morning sync."
+        },
+        {
+          "canary_id": "smc-name-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "partial_masked",
+          "maskedSentence": "Escalation follow-up assigned to analyst soren <PII:PERSON_171> during the shift review."
+        },
+        {
+          "canary_id": "smc-name-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "unmasked",
+          "maskedSentence": "Incident postmortem filed with responder mirek novotny before the archive lock."
+        },
+        {
+          "canary_id": "smc-addr-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Courier drop left at flat four birches lane near north canal on Tuesday."
+        },
+        {
+          "canary_id": "smc-addr-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Hardware replacement routed to unit seven cobble mews behind old mill yesterday."
+        },
+        {
+          "canary_id": "smc-addr-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Backup vault keys stored at cottage nine heather brae above west harbor overnight."
+        },
+        {
+          "canary_id": "smc-user-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Repository maintainer account listed as vex94kestrel in the migration log."
+        },
+        {
+          "canary_id": "smc-user-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Weekend pager rotation alias set to koda77meridian on the operations board."
+        },
+        {
+          "canary_id": "smc-user-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Release signoff reviewer recorded as nyx38halcyon in the audit ledger."
+        },
+        {
+          "canary_id": "smc-org-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "External calibration review conducted with bramblewick biosensor group in April."
+        },
+        {
+          "canary_id": "smc-org-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "Subprocessor addendum countersigned by velvetpine cryogenics consortium last quarter."
+        },
+        {
+          "canary_id": "smc-org-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "Escrow custody transferred to ironfjord photonics guild under schedule three."
+        },
+        {
+          "canary_id": "scc-email-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding contact email is <PII:EMAIL_01> for notices."
+        },
+        {
+          "canary_id": "scc-email-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Escalation alert contact email is <PII:EMAIL_02> for incidents."
+        },
+        {
+          "canary_id": "scc-email-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Primary compliance contact email is <PII:EMAIL_03> for filings."
+        },
+        {
+          "canary_id": "scc-phone-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding callback number is <PII:PHONE_01> for urgent dispatch."
+        },
+        {
+          "canary_id": "scc-phone-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Duty engineer hotline number is <PII:PHONE_02> for overnight paging."
+        },
+        {
+          "canary_id": "scc-phone-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Incident bridge callback number is <PII:PHONE_03> for field escalations."
+        },
+        {
+          "canary_id": "scc-ssn-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Payroll tax verification record lists SSN <PII:SSN_01> on the intake form."
+        },
+        {
+          "canary_id": "scc-ssn-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Benefits enrollment archive lists SSN <PII:SSN_02> on the supplemental sheet."
+        },
+        {
+          "canary_id": "scc-ssn-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Withholding reconciliation packet lists SSN <PII:SSN_03> on line four."
+        },
+        {
+          "canary_id": "scc-person-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Signed compliance attestation submitted by Dr. <PII:PERSON_104> on Monday."
+        },
+        {
+          "canary_id": "scc-person-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Annual audit signoff completed by Dr. <PII:PERSON_105> on Wednesday."
+        },
+        {
+          "canary_id": "scc-person-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Security charter review countersigned by Dr. <PII:PERSON_106> on Friday."
+        }
+      ]
+    },
+    "stage3a_srmp": {
+      "scannerMissedFormats": {
+        "total": 12,
+        "fullMaskedCount": 1,
+        "partialMaskedCount": 1,
+        "unmaskedCount": 10
+      },
+      "scannerCaughtFormats": {
+        "total": 12,
+        "fullMaskedCount": 12,
+        "partialMaskedCount": 0,
+        "unmaskedCount": 0
+      },
+      "byCategory": {
+        "alphanumeric_username": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "bare_lowercase_name": {
+          "total": 3,
+          "fullMaskedCount": 1,
+          "partialMaskedCount": 1,
+          "unmaskedCount": 1
+        },
+        "email": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "freeform_street_address": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "phone": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "prose_employer_team": {
+          "total": 3,
+          "fullMaskedCount": 0,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 3
+        },
+        "ssn": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "titled_person": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        }
+      },
+      "perCanary": [
+        {
+          "canary_id": "smc-name-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "full_masked",
+          "maskedSentence": "Intake handoff note recorded for delegate <PII:PERSON_195> <PII:PERSON_196> after the morning sync."
+        },
+        {
+          "canary_id": "smc-name-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "partial_masked",
+          "maskedSentence": "Escalation follow-up assigned to analyst soren <PII:PERSON_169> during the shift review."
+        },
+        {
+          "canary_id": "smc-name-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "unmasked",
+          "maskedSentence": "Incident postmortem filed with responder mirek novotny before the archive lock."
+        },
+        {
+          "canary_id": "smc-addr-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Courier drop left at flat four birches lane near north canal on Tuesday."
+        },
+        {
+          "canary_id": "smc-addr-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Hardware replacement routed to unit seven cobble mews behind old mill yesterday."
+        },
+        {
+          "canary_id": "smc-addr-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Backup vault keys stored at cottage nine heather brae above west harbor overnight."
+        },
+        {
+          "canary_id": "smc-user-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Repository maintainer account listed as vex94kestrel in the migration log."
+        },
+        {
+          "canary_id": "smc-user-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Weekend pager rotation alias set to koda77meridian on the operations board."
+        },
+        {
+          "canary_id": "smc-user-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Release signoff reviewer recorded as nyx38halcyon in the audit ledger."
+        },
+        {
+          "canary_id": "smc-org-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "External calibration review conducted with bramblewick biosensor group in April."
+        },
+        {
+          "canary_id": "smc-org-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "Subprocessor addendum countersigned by velvetpine cryogenics consortium last quarter."
+        },
+        {
+          "canary_id": "smc-org-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "unmasked",
+          "maskedSentence": "Escrow custody transferred to ironfjord photonics guild under schedule three."
+        },
+        {
+          "canary_id": "scc-email-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding contact email is <PII:EMAIL_01> for notices."
+        },
+        {
+          "canary_id": "scc-email-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Escalation alert contact email is <PII:EMAIL_02> for incidents."
+        },
+        {
+          "canary_id": "scc-email-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Primary compliance contact email is <PII:EMAIL_03> for filings."
+        },
+        {
+          "canary_id": "scc-phone-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding callback number is <PII:PHONE_01> for urgent dispatch."
+        },
+        {
+          "canary_id": "scc-phone-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Duty engineer hotline number is <PII:PHONE_02> for overnight paging."
+        },
+        {
+          "canary_id": "scc-phone-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Incident bridge callback number is <PII:PHONE_03> for field escalations."
+        },
+        {
+          "canary_id": "scc-ssn-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Payroll tax verification record lists SSN <PII:SSN_01> on the intake form."
+        },
+        {
+          "canary_id": "scc-ssn-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Benefits enrollment archive lists SSN <PII:SSN_02> on the supplemental sheet."
+        },
+        {
+          "canary_id": "scc-ssn-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Withholding reconciliation packet lists SSN <PII:SSN_03> on line four."
+        },
+        {
+          "canary_id": "scc-person-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Signed compliance attestation submitted by Dr. <PII:PERSON_104> on Monday."
+        },
+        {
+          "canary_id": "scc-person-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Annual audit signoff completed by Dr. <PII:PERSON_105> on Wednesday."
+        },
+        {
+          "canary_id": "scc-person-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Security charter review countersigned by Dr. <PII:PERSON_106> on Friday."
+        }
+      ]
+    },
+    "stage3a_3b_srmp_gliner": {
+      "scannerMissedFormats": {
+        "total": 12,
+        "fullMaskedCount": 7,
+        "partialMaskedCount": 2,
+        "unmaskedCount": 3
+      },
+      "scannerCaughtFormats": {
+        "total": 12,
+        "fullMaskedCount": 12,
+        "partialMaskedCount": 0,
+        "unmaskedCount": 0
+      },
+      "byCategory": {
+        "alphanumeric_username": {
+          "total": 3,
+          "fullMaskedCount": 2,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 1
+        },
+        "bare_lowercase_name": {
+          "total": 3,
+          "fullMaskedCount": 2,
+          "partialMaskedCount": 1,
+          "unmaskedCount": 0
+        },
+        "email": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "freeform_street_address": {
+          "total": 3,
+          "fullMaskedCount": 1,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 2
+        },
+        "phone": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "prose_employer_team": {
+          "total": 3,
+          "fullMaskedCount": 2,
+          "partialMaskedCount": 1,
+          "unmaskedCount": 0
+        },
+        "ssn": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        },
+        "titled_person": {
+          "total": 3,
+          "fullMaskedCount": 3,
+          "partialMaskedCount": 0,
+          "unmaskedCount": 0
+        }
+      },
+      "perCanary": [
+        {
+          "canary_id": "smc-name-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "full_masked",
+          "maskedSentence": "Intake handoff note recorded for delegate <PII:PERSON_02> after the morning sync."
+        },
+        {
+          "canary_id": "smc-name-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "full_masked",
+          "maskedSentence": "Escalation follow-up assigned to analyst <PII:PERSON_196> during the shift review."
+        },
+        {
+          "canary_id": "smc-name-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "bare_lowercase_name",
+          "status": "partial_masked",
+          "maskedSentence": "Incident postmortem filed with responder mirek <PII:USERNAME_01> before the archive lock."
+        },
+        {
+          "canary_id": "smc-addr-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Courier drop left at flat four birches lane near north canal on Tuesday."
+        },
+        {
+          "canary_id": "smc-addr-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "unmasked",
+          "maskedSentence": "Hardware replacement routed to unit seven cobble mews behind old mill yesterday."
+        },
+        {
+          "canary_id": "smc-addr-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "freeform_street_address",
+          "status": "full_masked",
+          "maskedSentence": "Backup vault keys stored at <PII:ADDRESS_01> overnight."
+        },
+        {
+          "canary_id": "smc-user-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "full_masked",
+          "maskedSentence": "Repository maintainer account listed as <PII:USERNAME_02> in the migration log."
+        },
+        {
+          "canary_id": "smc-user-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "full_masked",
+          "maskedSentence": "Weekend pager rotation alias set to <PII:USERNAME_03> on the <PII:ORGANIZATION_01>."
+        },
+        {
+          "canary_id": "smc-user-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "alphanumeric_username",
+          "status": "unmasked",
+          "maskedSentence": "Release signoff reviewer recorded as nyx38halcyon in the audit ledger."
+        },
+        {
+          "canary_id": "smc-org-1x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "partial_masked",
+          "maskedSentence": "External calibration review conducted with <PII:USERNAME_04> group in April."
+        },
+        {
+          "canary_id": "smc-org-5x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "full_masked",
+          "maskedSentence": "Subprocessor addendum countersigned by <PII:ORGANIZATION_02> last quarter."
+        },
+        {
+          "canary_id": "smc-org-20x",
+          "stratum": "scannerMissedFormats",
+          "category": "prose_employer_team",
+          "status": "full_masked",
+          "maskedSentence": "Escrow custody transferred to <PII:ORGANIZATION_03> under schedule three."
+        },
+        {
+          "canary_id": "scc-email-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding contact email is <PII:EMAIL_01> notices."
+        },
+        {
+          "canary_id": "scc-email-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Escalation alert contact email <PII:EMAIL_02> for incidents."
+        },
+        {
+          "canary_id": "scc-email-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "email",
+          "status": "full_masked",
+          "maskedSentence": "Primary compliance contact email is <PII:EMAIL_03> filings."
+        },
+        {
+          "canary_id": "scc-phone-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Verified onboarding callback number is <PII:PHONE_01> for urgent dispatch."
+        },
+        {
+          "canary_id": "scc-phone-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Duty engineer hotline number is <PII:PHONE_02> for overnight paging."
+        },
+        {
+          "canary_id": "scc-phone-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "phone",
+          "status": "full_masked",
+          "maskedSentence": "Incident bridge callback number is <PII:PHONE_03> for field escalations."
+        },
+        {
+          "canary_id": "scc-ssn-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Payroll tax verification record lists SSN <PII:SSN_01> on the intake form."
+        },
+        {
+          "canary_id": "scc-ssn-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Benefits enrollment archive lists SSN <PII:SSN_02> on the supplemental sheet."
+        },
+        {
+          "canary_id": "scc-ssn-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "ssn",
+          "status": "full_masked",
+          "maskedSentence": "Withholding reconciliation packet lists SSN <PII:SSN_03> on line four."
+        },
+        {
+          "canary_id": "scc-person-1x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Signed compliance attestation submitted by <PII:PERSON_104> on Monday."
+        },
+        {
+          "canary_id": "scc-person-5x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Annual audit signoff completed by <PII:PERSON_105> on Wednesday."
+        },
+        {
+          "canary_id": "scc-person-20x",
+          "stratum": "scannerCaughtFormats",
+          "category": "titled_person",
+          "status": "full_masked",
+          "maskedSentence": "Security charter review countersigned by <PII:PERSON_106> on Friday."
+        }
+      ]
+    },
+    "receipts": {
+      "stage3a": "9b75929db2e4483ec3d6460ff4255e7265f393ee01e32a5a0e85caef044c9e0a",
+      "stage3a_srmp": "78dc775a6615ab7fea1fcc4e583863ff9acedc838a14e464aeeb51d65556c0d1",
+      "stage3a_3b": "a26484f92a2c9518d39e47275f8377066474eb558d2d676ff31ce20dcf21d0f6"
+    }
+  },
+  "arms": {
+    "base": {
+      "kind": "base",
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 6.35,
+          "exposureBitsBootstrap95CI": [
+            4.63,
+            7.97
+          ],
+          "rep1xBits": 6.49,
+          "rep5xBits": 6.39,
+          "rep20xBits": 6.17,
+          "r1Count": 12,
+          "r1Fraction": "12/24",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 8.7,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 2.02,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 8.97,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.18,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.04,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 5.22,
+          "exposureBitsBootstrap95CI": [
+            2.69,
+            7.81
+          ],
+          "rep1xBits": 5.29,
+          "rep5xBits": 5.14,
+          "rep20xBits": 5.22,
+          "r1Count": 5,
+          "r1Fraction": "5/12",
+          "r1RatePct": 41.67,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 8.7,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 2.02,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.18,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 7.49,
+          "exposureBitsBootstrap95CI": [
+            5.26,
+            9.63
+          ],
+          "rep1xBits": 7.7,
+          "rep5xBits": 7.63,
+          "rep20xBits": 7.13,
+          "r1Count": 7,
+          "r1Fraction": "7/12",
+          "r1RatePct": 58.33,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 8.97,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.04,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 39.0,
+            "exposureBits": 4.6818
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 659.0,
+            "exposureBits": 0.6031
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 587.0,
+            "exposureBits": 0.77
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 14.0,
+            "exposureBits": 6.1599
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 783.0,
+            "exposureBits": 0.3544
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 982.0,
+            "exposureBits": 0.0276
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 888.0,
+            "exposureBits": 0.1728
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 2.0,
+            "exposureBits": 8.9672
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 4.0,
+            "exposureBits": 7.9672
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 543.0,
+            "exposureBits": 0.8824
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 322.0,
+            "exposureBits": 1.6363
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 654.0,
+            "exposureBits": 0.6141
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    },
+    "unredacted": {
+      "kind": "unredacted",
+      "tokenization": {
+        "rows": 232,
+        "maskedSubwords": 0,
+        "keptSubwords": 10065
+      },
+      "trainMeta": {
+        "arm": "unredacted",
+        "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+        "seed": 42,
+        "steps": 100,
+        "trainRows": 232,
+        "finalLoss": 0.9849,
+        "firstLoggedLoss": 3.5307,
+        "lastLoggedLoss": 0.2715,
+        "peakVramGb": 2.4,
+        "elapsedSec": 143.6
+      },
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 9.85,
+          "exposureBitsBootstrap95CI": [
+            9.62,
+            9.97
+          ],
+          "rep1xBits": 9.62,
+          "rep5xBits": 9.97,
+          "rep20xBits": 9.97,
+          "r1Count": 23,
+          "r1Fraction": "23/24",
+          "r1RatePct": 95.83,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.03,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 9.73,
+          "exposureBitsBootstrap95CI": [
+            9.27,
+            9.97
+          ],
+          "rep1xBits": 9.27,
+          "rep5xBits": 9.97,
+          "rep20xBits": 9.97,
+          "r1Count": 11,
+          "r1Fraction": "11/12",
+          "r1RatePct": 91.67,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.03,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 9.97,
+          "exposureBitsBootstrap95CI": [
+            9.97,
+            9.97
+          ],
+          "rep1xBits": 9.97,
+          "rep5xBits": 9.97,
+          "rep20xBits": 9.97,
+          "r1Count": 12,
+          "r1Fraction": "12/12",
+          "r1RatePct": 100.0,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 7.0,
+            "exposureBits": 7.1599
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    },
+    "stage3a_safe": {
+      "kind": "stage3a_safe",
+      "tokenization": {
+        "rows": 232,
+        "maskedSubwords": 0,
+        "keptSubwords": 9329
+      },
+      "trainMeta": {
+        "arm": "stage3a_safe",
+        "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+        "seed": 42,
+        "steps": 100,
+        "trainRows": 232,
+        "finalLoss": 0.9091,
+        "firstLoggedLoss": 3.5199,
+        "lastLoggedLoss": 0.2217,
+        "peakVramGb": 2.83,
+        "elapsedSec": 144.1
+      },
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 8.34,
+          "exposureBitsBootstrap95CI": [
+            7.14,
+            9.42
+          ],
+          "rep1xBits": 8.55,
+          "rep5xBits": 8.15,
+          "rep20xBits": 8.3,
+          "r1Count": 18,
+          "r1Fraction": "18/24",
+          "r1RatePct": 75.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 5.43,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.45,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 9.97,
+          "exposureBitsBootstrap95CI": [
+            9.97,
+            9.97
+          ],
+          "rep1xBits": 9.97,
+          "rep5xBits": 9.97,
+          "rep20xBits": 9.97,
+          "r1Count": 12,
+          "r1Fraction": "12/12",
+          "r1RatePct": 100.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 6.7,
+          "exposureBitsBootstrap95CI": [
+            4.63,
+            8.76
+          ],
+          "rep1xBits": 7.13,
+          "rep5xBits": 6.34,
+          "rep20xBits": 6.64,
+          "r1Count": 6,
+          "r1Fraction": "6/12",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 5.43,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.45,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 10.0,
+            "exposureBits": 6.6453
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 33.0,
+            "exposureBits": 4.9228
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 38.0,
+            "exposureBits": 4.7193
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 259.0,
+            "exposureBits": 1.9504
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 703.0,
+            "exposureBits": 0.5098
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 269.0,
+            "exposureBits": 1.8958
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    },
+    "stage3a_ptlm": {
+      "kind": "stage3a_ptlm",
+      "tokenization": {
+        "rows": 232,
+        "maskedSubwords": 1323,
+        "keptSubwords": 5614
+      },
+      "trainMeta": {
+        "arm": "stage3a_ptlm",
+        "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+        "seed": 42,
+        "steps": 100,
+        "trainRows": 232,
+        "finalLoss": 1.0862,
+        "firstLoggedLoss": 4.4065,
+        "lastLoggedLoss": 0.2242,
+        "peakVramGb": 2.28,
+        "elapsedSec": 136.8
+      },
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 8.59,
+          "exposureBitsBootstrap95CI": [
+            7.48,
+            9.57
+          ],
+          "rep1xBits": 8.2,
+          "rep5xBits": 8.97,
+          "rep20xBits": 8.59,
+          "r1Count": 18,
+          "r1Fraction": "18/24",
+          "r1RatePct": 75.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 7.85,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.11,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.9,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 9.75,
+          "exposureBitsBootstrap95CI": [
+            9.32,
+            9.97
+          ],
+          "rep1xBits": 9.32,
+          "rep5xBits": 9.97,
+          "rep20xBits": 9.97,
+          "r1Count": 11,
+          "r1Fraction": "11/12",
+          "r1RatePct": 91.67,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 9.11,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 7.42,
+          "exposureBitsBootstrap95CI": [
+            5.41,
+            9.3
+          ],
+          "rep1xBits": 7.09,
+          "rep5xBits": 7.97,
+          "rep20xBits": 7.21,
+          "r1Count": 7,
+          "r1Fraction": "7/12",
+          "r1RatePct": 58.33,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 7.85,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.9,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 6.0,
+            "exposureBits": 7.3823
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 9.0,
+            "exposureBits": 6.7973
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 9.0,
+            "exposureBits": 6.7973
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 326.0,
+            "exposureBits": 1.6185
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 256.0,
+            "exposureBits": 1.9672
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 230.0,
+            "exposureBits": 2.1217
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    },
+    "stage3a_3b_safe": {
+      "kind": "stage3a_3b_safe",
+      "tokenization": {
+        "rows": 232,
+        "maskedSubwords": 0,
+        "keptSubwords": 9513
+      },
+      "trainMeta": {
+        "arm": "stage3a_3b_safe",
+        "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+        "seed": 42,
+        "steps": 100,
+        "trainRows": 232,
+        "finalLoss": 0.8301,
+        "firstLoggedLoss": 3.3063,
+        "lastLoggedLoss": 0.2147,
+        "peakVramGb": 2.83,
+        "elapsedSec": 139.1
+      },
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 6.43,
+          "exposureBitsBootstrap95CI": [
+            4.78,
+            8.02
+          ],
+          "rep1xBits": 5.85,
+          "rep5xBits": 7.71,
+          "rep20xBits": 5.74,
+          "r1Count": 13,
+          "r1Fraction": "13/24",
+          "r1RatePct": 54.17,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 8.07,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 6.71,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 5.24,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.39,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.15,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 6.28,
+          "exposureBitsBootstrap95CI": [
+            3.62,
+            8.71
+          ],
+          "rep1xBits": 6.09,
+          "rep5xBits": 7.58,
+          "rep20xBits": 5.18,
+          "r1Count": 7,
+          "r1Fraction": "7/12",
+          "r1RatePct": 58.33,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 8.07,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 6.71,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.39,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 6.58,
+          "exposureBitsBootstrap95CI": [
+            4.3,
+            8.87
+          ],
+          "rep1xBits": 5.61,
+          "rep5xBits": 7.85,
+          "rep20xBits": 6.29,
+          "r1Count": 6,
+          "r1Fraction": "6/12",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 5.24,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.15,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 872.0,
+            "exposureBits": 0.199
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 52.0,
+            "exposureBits": 4.2668
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 892.0,
+            "exposureBits": 0.1663
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 754.0,
+            "exposureBits": 0.4088
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 658.0,
+            "exposureBits": 0.6053
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 204.0,
+            "exposureBits": 2.2948
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 2.0,
+            "exposureBits": 8.9672
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 46.0,
+            "exposureBits": 4.4437
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 872.0,
+            "exposureBits": 0.199
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 177.0,
+            "exposureBits": 2.4996
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 589.0,
+            "exposureBits": 0.7651
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    },
+    "stage3a_3b_ptlm": {
+      "kind": "stage3a_3b_ptlm",
+      "tokenization": {
+        "rows": 232,
+        "maskedSubwords": 1578,
+        "keptSubwords": 5145
+      },
+      "trainMeta": {
+        "arm": "stage3a_3b_ptlm",
+        "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+        "seed": 42,
+        "steps": 100,
+        "trainRows": 232,
+        "finalLoss": 1.0621,
+        "firstLoggedLoss": 4.2156,
+        "lastLoggedLoss": 0.2409,
+        "peakVramGb": 2.28,
+        "elapsedSec": 143.5
+      },
+      "exposure": {
+        "allCanaries": {
+          "total": 24,
+          "meanExposureBits": 6.48,
+          "exposureBitsBootstrap95CI": [
+            4.84,
+            8.06
+          ],
+          "rep1xBits": 5.93,
+          "rep5xBits": 7.4,
+          "rep20xBits": 6.1,
+          "r1Count": 12,
+          "r1Fraction": "12/24",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 7.73,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 6.7,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 4.81,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.68,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.98,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "scannerMissedFormats": {
+          "total": 12,
+          "meanExposureBits": 6.27,
+          "exposureBitsBootstrap95CI": [
+            3.76,
+            8.66
+          ],
+          "rep1xBits": 6.09,
+          "rep5xBits": 7.45,
+          "rep20xBits": 5.28,
+          "r1Count": 6,
+          "r1Fraction": "6/12",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "alphanumeric_username": {
+              "total": 3,
+              "meanExposureBits": 7.73,
+              "r1Count": 1,
+              "r1Fraction": "1/3",
+              "r1RatePct": 33.33
+            },
+            "bare_lowercase_name": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "freeform_street_address": {
+              "total": 3,
+              "meanExposureBits": 6.7,
+              "r1Count": 2,
+              "r1Fraction": "2/3",
+              "r1RatePct": 66.67
+            },
+            "prose_employer_team": {
+              "total": 3,
+              "meanExposureBits": 0.68,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            }
+          }
+        },
+        "scannerCaughtFormats": {
+          "total": 12,
+          "meanExposureBits": 6.68,
+          "exposureBitsBootstrap95CI": [
+            4.64,
+            8.81
+          ],
+          "rep1xBits": 5.77,
+          "rep5xBits": 7.35,
+          "rep20xBits": 6.93,
+          "r1Count": 6,
+          "r1Fraction": "6/12",
+          "r1RatePct": 50.0,
+          "byCategory": {
+            "email": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            },
+            "phone": {
+              "total": 3,
+              "meanExposureBits": 4.81,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "ssn": {
+              "total": 3,
+              "meanExposureBits": 1.98,
+              "r1Count": 0,
+              "r1Fraction": "0/3",
+              "r1RatePct": 0.0
+            },
+            "titled_person": {
+              "total": 3,
+              "meanExposureBits": 9.97,
+              "r1Count": 3,
+              "r1Fraction": "3/3",
+              "r1RatePct": 100.0
+            }
+          }
+        },
+        "perCanary": [
+          {
+            "canary_id": "smc-name-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-name-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "bare_lowercase_name",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-addr-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "freeform_street_address",
+            "repetitions": 20,
+            "rank": 887.0,
+            "exposureBits": 0.1744
+          },
+          {
+            "canary_id": "smc-user-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 1,
+            "rank": 52.0,
+            "exposureBits": 4.2668
+          },
+          {
+            "canary_id": "smc-user-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 5,
+            "rank": 2.0,
+            "exposureBits": 8.9672
+          },
+          {
+            "canary_id": "smc-user-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "alphanumeric_username",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "smc-org-1x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 1,
+            "rank": 908.0,
+            "exposureBits": 0.1407
+          },
+          {
+            "canary_id": "smc-org-5x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 5,
+            "rank": 532.0,
+            "exposureBits": 0.9119
+          },
+          {
+            "canary_id": "smc-org-20x",
+            "stratum": "scannerMissedFormats",
+            "category": "prose_employer_team",
+            "repetitions": 20,
+            "rank": 503.0,
+            "exposureBits": 0.9928
+          },
+          {
+            "canary_id": "scc-email-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-email-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "email",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-phone-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 1,
+            "rank": 489.0,
+            "exposureBits": 1.0335
+          },
+          {
+            "canary_id": "scc-phone-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 5,
+            "rank": 4.0,
+            "exposureBits": 7.9672
+          },
+          {
+            "canary_id": "scc-phone-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "phone",
+            "repetitions": 20,
+            "rank": 23.0,
+            "exposureBits": 5.4437
+          },
+          {
+            "canary_id": "scc-ssn-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 1,
+            "rank": 231.0,
+            "exposureBits": 2.1155
+          },
+          {
+            "canary_id": "scc-ssn-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 5,
+            "rank": 356.0,
+            "exposureBits": 1.4915
+          },
+          {
+            "canary_id": "scc-ssn-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "ssn",
+            "repetitions": 20,
+            "rank": 198.0,
+            "exposureBits": 2.3379
+          },
+          {
+            "canary_id": "scc-person-1x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 1,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-5x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 5,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          },
+          {
+            "canary_id": "scc-person-20x",
+            "stratum": "scannerCaughtFormats",
+            "category": "titled_person",
+            "repetitions": 20,
+            "rank": 1.0,
+            "exposureBits": 9.9672
+          }
+        ]
+      }
+    }
+  },
+  "honestSummary": {
+    "stage3aRegexCaughtControlBits": 7.42,
+    "stage3aRegexCaughtControlR1": "7/12",
+    "stage3aRegexMissedFormatBits": 9.75,
+    "stage3aRegexMissedFormatR1": "11/12",
+    "stage3a3bMissedFormatBits": 6.27,
+    "stage3a3bMissedFormatR1": "6/12",
+    "unredactedMissedFormatBits": 9.73,
+    "unredactedMissedFormatR1": "11/12",
+    "note": "Stage 3A regex suppresses exposure on regex-detectable controls (scannerCaughtFormats) but leaves scannerMissedFormats unmasked in training turns unless paired with Stage 3B (SR-MP cross-document anchors + local GLiNER-PII-Edge NER); residual partial-span exposure on free-form prose addresses is reported transparently."
+  }
+}
