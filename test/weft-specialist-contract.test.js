@@ -16,8 +16,8 @@ const SCRIPT = path.join(ROOT, 'scripts', 'train-weft-specialist.py');
 const ARTIFACT = path.join(ROOT, 'results', 'weft-specialist-training.json');
 const TRAIN = path.join(ROOT, 'results', 'weft-training-pairs', 'train.jsonl');
 const RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs', 'receipt.json');
-const FULLSCALE_TRAIN = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v2', 'train.jsonl');
-const FULLSCALE_RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v2', 'receipt.json');
+const FULLSCALE_TRAIN = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v4', 'train.jsonl');
+const FULLSCALE_RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v4', 'receipt.json');
 const PYTHON = process.env.PYTHON || 'python';
 const BUCKETS = ['cross_department', 'cross_modality', 'identity_overlap', 'identity_disjoint'];
 // Built from fragments so this compliance check does not carry the literal terms.
@@ -122,7 +122,7 @@ test('W3 4: committed artifact schema — seeds, digests, licences, hyperparamet
 
   const entry = artifact.entries[artifact.entries.length - 1];
   assert.ok(isDigest(entry.runId));
-  assert.equal(entry.ticket, 'W4-frz', 'the newest entry is the W4-frz frozen-base run');
+  assert.equal(entry.ticket, 'W4-v4', 'the newest entry is the W4-v4 style-varied frozen-base run');
   assert.equal(entry.status, 'ran');
   assert.ok(entry.createdAt && !Number.isNaN(Date.parse(entry.createdAt)));
 

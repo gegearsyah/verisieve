@@ -2681,6 +2681,567 @@
         "W2 pairs carry no evidence-span labels, so the evidence head is trained with a token-similarity proxy; no evidence-F1 is claimed.",
         "Threshold selection is in-sample on the evaluation pairs for both sides (W1 convention, disclosed)."
       ]
+    },
+    {
+      "runId": "ee94a246102532c547bd9d0df2017f312a974037a2f49864dd51db11bab563ad",
+      "ticket": "W4-v4",
+      "status": "ran",
+      "createdAt": "2026-11-27T23:34:54.096311+00:00",
+      "seeds": {
+        "python": 20261127,
+        "numpy": 20261127,
+        "torch": 20261127,
+        "evaluation": 20261127,
+        "resampleSeed": 20261127
+      },
+      "baseEncoder": {
+        "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+        "digest": "39e4ffe8bc341674b2500d49df210eeca22eed21150b04805dcfe6a4be96de5b",
+        "license": "Apache-2.0",
+        "licenseVerifiedFrom": "results/weft-baselines.json entry 2 (W1), model digest recorded there",
+        "parameterCount": 23156610,
+        "initialization": "fine-tuned from local open-encoder weights, never from scratch"
+      },
+      "trainingData": {
+        "trainPath": "results/weft-training-pairs-fullscale-live-v4/train.jsonl",
+        "trainSha256": "7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "trainRawSha256": "7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "receiptPath": "results/weft-training-pairs-fullscale-live-v4/receipt.json",
+        "receiptSha256": "6ffac6ebbf801580494186ad9a457215cd622a8d2c073b80301296a6db9c16ff",
+        "lineEndings": "LF-normalized digest (matches the W2 receipt on a CRLF checkout)",
+        "pairCount": 48000,
+        "scale": "fullscale-live-v4",
+        "byPairType": {
+          "identity-disjoint-same-theme-positive": 8782,
+          "identity-disjoint-theme-different-negative": 19533,
+          "identity-matched-theme-different-negative": 19685
+        }
+      },
+      "hyperparameters": {
+        "epochs": 20,
+        "batchSize": 16,
+        "learningRateBase": 0.0,
+        "learningRateHeads": 0.001,
+        "weightDecay": 0.01,
+        "gradClip": 1.0,
+        "maxLength": 128,
+        "optimizer": "AdamW",
+        "temperature": 0.07,
+        "positiveWeight": 1.5,
+        "hardNegativeTopK": 3,
+        "hubPower": 0.5,
+        "lossWeights": {
+          "linkBce": 1.0,
+          "crossclrContrastive": 0.5,
+          "evidenceProxy": 0.2
+        },
+        "themeDim": 128,
+        "headHidden": 256,
+        "anchorSetMax": 4,
+        "architecture": "MiniLM-L6 encoder + anchor-set pooling + link-logit MLP + theme projection + token evidence head",
+        "excludedByTicket": "identity adversary, set-conditioning term, triangle term"
+      },
+      "environment": {
+        "device": "cuda",
+        "cudaAvailable": true,
+        "cudaVersion": "13.0",
+        "gpuCount": 2,
+        "gpuNames": [
+          "Tesla T4",
+          "Tesla T4"
+        ],
+        "torch": "2.11.0+cu130",
+        "transformers": "5.20.2",
+        "python": "3.13.16",
+        "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+        "kaggle": true,
+        "computeDisclosure": "GPU run on 2 x Tesla T4; Kaggle recipe uses 2x Tesla T4"
+      },
+      "training": {
+        "epochsRun": 20,
+        "lossHistory": [
+          {
+            "epoch": 1,
+            "loss": 1.3265642191382745,
+            "linkBce": 0.13869682876650768,
+            "crossclr": 0.6328283332212207,
+            "evidence": 4.357266060511271
+          },
+          {
+            "epoch": 2,
+            "loss": 1.2136650778992721,
+            "linkBce": 0.05053622272437217,
+            "crossclr": 0.5919098039295446,
+            "evidence": 4.335869701703389
+          },
+          {
+            "epoch": 3,
+            "loss": 1.1957196540138295,
+            "linkBce": 0.031238153759654635,
+            "crossclr": 0.596277583003471,
+            "evidence": 4.331713482856751
+          },
+          {
+            "epoch": 4,
+            "loss": 1.1796406111152222,
+            "linkBce": 0.0212120908554235,
+            "crossclr": 0.5924730426394478,
+            "evidence": 4.310959941705068
+          },
+          {
+            "epoch": 5,
+            "loss": 1.1757459812741726,
+            "linkBce": 0.01624768618862579,
+            "crossclr": 0.5892278033181598,
+            "evidence": 4.324421912193299
+          },
+          {
+            "epoch": 6,
+            "loss": 1.1621716078545044,
+            "linkBce": 0.01190273541915161,
+            "crossclr": 0.5802591497419732,
+            "evidence": 4.300696430206298
+          },
+          {
+            "epoch": 7,
+            "loss": 1.158412743322435,
+            "linkBce": 0.009051688563722269,
+            "crossclr": 0.5795972545237116,
+            "evidence": 4.297812082926432
+          },
+          {
+            "epoch": 8,
+            "loss": 1.1573301051261369,
+            "linkBce": 0.008365610320415598,
+            "crossclr": 0.5734628752372518,
+            "evidence": 4.311165233850479
+          },
+          {
+            "epoch": 9,
+            "loss": 1.1666992347063108,
+            "linkBce": 0.005163954495451021,
+            "crossclr": 0.5923736987680507,
+            "evidence": 4.326742096662521
+          },
+          {
+            "epoch": 10,
+            "loss": 1.1598535766303346,
+            "linkBce": 0.006928381392833509,
+            "crossclr": 0.5870672681159728,
+            "evidence": 4.296957746982574
+          },
+          {
+            "epoch": 11,
+            "loss": 1.161019523453666,
+            "linkBce": 0.005357059028108124,
+            "crossclr": 0.5872493711897211,
+            "evidence": 4.31018884118398
+          },
+          {
+            "epoch": 12,
+            "loss": 1.1619386989785319,
+            "linkBce": 0.004708224635849263,
+            "crossclr": 0.5924215073413603,
+            "evidence": 4.3050985472997025
+          },
+          {
+            "epoch": 13,
+            "loss": 1.1544750426120978,
+            "linkBce": 0.005841233677473507,
+            "crossclr": 0.5755835694743485,
+            "evidence": 4.304210057497024
+          },
+          {
+            "epoch": 14,
+            "loss": 1.1460851830709338,
+            "linkBce": 0.0043055672296470355,
+            "crossclr": 0.5656149568653879,
+            "evidence": 4.294860629161199
+          },
+          {
+            "epoch": 15,
+            "loss": 1.1511734325295935,
+            "linkBce": 0.0030381061640772076,
+            "crossclr": 0.576153212885644,
+            "evidence": 4.300293546120326
+          },
+          {
+            "epoch": 16,
+            "loss": 1.1541890338466037,
+            "linkBce": 0.004294992105633665,
+            "crossclr": 0.5750472956783779,
+            "evidence": 4.311851908842723
+          },
+          {
+            "epoch": 17,
+            "loss": 1.1493721129735932,
+            "linkBce": 0.004916893064594217,
+            "crossclr": 0.5668980773780203,
+            "evidence": 4.305030852556229
+          },
+          {
+            "epoch": 18,
+            "loss": 1.1497528713033534,
+            "linkBce": 0.004112831699103379,
+            "crossclr": 0.5740712805987569,
+            "evidence": 4.293021943330765
+          },
+          {
+            "epoch": 19,
+            "loss": 1.1556998493776967,
+            "linkBce": 0.003618006705848258,
+            "crossclr": 0.5824795163165157,
+            "evidence": 4.304210367441177
+          },
+          {
+            "epoch": 20,
+            "loss": 1.1474446326875671,
+            "linkBce": 0.003758962043837328,
+            "crossclr": 0.5672674860498228,
+            "evidence": 4.300259586572647
+          }
+        ],
+        "wallSeconds": 7699.252575694,
+        "parameters": 23156610
+      },
+      "evaluation": {
+        "harness": {
+          "path": "scripts/run-weft-baseline-shootout.py",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
+          "estateVersion": "weft-synthetic-v1",
+          "estateSeed": 20261127,
+          "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+          "documents": 240,
+          "pairs": 28680,
+          "thresholdSelection": "in-sample max-F1 sweep on the evaluation pairs (disclosed, same as W1)"
+        },
+        "specialist": {
+          "threshold": 0.9999995231628418,
+          "pairwise": {
+            "precision": 0.34053156146179403,
+            "recall": 0.37962962962962965,
+            "f1": 0.35901926444833626,
+            "truePositivePairs": 410,
+            "falsePositivePairs": 794,
+            "falseNegativePairs": 670,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 1204
+          },
+          "pairwiseF1CI95": [
+            0.3321460373998219,
+            0.3829236739974127
+          ],
+          "falseMerge": {
+            "count": 794,
+            "rate": 0.659468438538206,
+            "predictedPositivePairs": 1204
+          },
+          "abstainAtTargetError": [
+            {
+              "alpha": 0.05,
+              "coverage": 0.0,
+              "achievedFalseMergeRate": 0.0,
+              "threshold": null,
+              "predictedPositivePairs": 0,
+              "truePositivePairs": 0
+            },
+            {
+              "alpha": 0.1,
+              "coverage": 0.0,
+              "achievedFalseMergeRate": 0.0,
+              "threshold": null,
+              "predictedPositivePairs": 0,
+              "truePositivePairs": 0
+            }
+          ],
+          "buckets": {
+            "cross_department": {
+              "precision": 0.3617021276595745,
+              "recall": 0.37887596899224807,
+              "f1": 0.3700899195456697,
+              "truePositivePairs": 391,
+              "falsePositivePairs": 690,
+              "falseNegativePairs": 641,
+              "truthPositivePairs": 1032,
+              "predictedPositivePairs": 1081
+            },
+            "cross_modality": {
+              "precision": 0.3659022931206381,
+              "recall": 0.38229166666666664,
+              "f1": 0.3739174732552216,
+              "truePositivePairs": 367,
+              "falsePositivePairs": 636,
+              "falseNegativePairs": 593,
+              "truthPositivePairs": 960,
+              "predictedPositivePairs": 1003
+            },
+            "identity_overlap": {
+              "precision": 0.4909090909090909,
+              "recall": 0.375,
+              "f1": 0.42519685039370075,
+              "truePositivePairs": 54,
+              "falsePositivePairs": 56,
+              "falseNegativePairs": 90,
+              "truthPositivePairs": 144,
+              "predictedPositivePairs": 110
+            },
+            "identity_disjoint": {
+              "precision": 0.32541133455210236,
+              "recall": 0.3803418803418803,
+              "f1": 0.35073891625615766,
+              "truePositivePairs": 356,
+              "falsePositivePairs": 738,
+              "falseNegativePairs": 580,
+              "truthPositivePairs": 936,
+              "predictedPositivePairs": 1094
+            }
+          },
+          "splits": {
+            "leave_one_department_out": {
+              "Engineering": {
+                "precision": 0.2857142857142857,
+                "recall": 0.3560606060606061,
+                "f1": 0.31703204047217537,
+                "truePositivePairs": 94,
+                "falsePositivePairs": 235,
+                "falseNegativePairs": 170,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 329
+              },
+              "Finance": {
+                "precision": 0.4714285714285714,
+                "recall": 0.375,
+                "f1": 0.4177215189873417,
+                "truePositivePairs": 99,
+                "falsePositivePairs": 111,
+                "falseNegativePairs": 165,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 210
+              },
+              "Legal": {
+                "precision": 0.421455938697318,
+                "recall": 0.4166666666666667,
+                "f1": 0.41904761904761906,
+                "truePositivePairs": 110,
+                "falsePositivePairs": 151,
+                "falseNegativePairs": 154,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 261
+              },
+              "Operations": {
+                "precision": 0.36213991769547327,
+                "recall": 0.3333333333333333,
+                "f1": 0.3471400394477317,
+                "truePositivePairs": 88,
+                "falsePositivePairs": 155,
+                "falseNegativePairs": 176,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 243
+              },
+              "People": {
+                "precision": 0.2736318407960199,
+                "recall": 0.4166666666666667,
+                "f1": 0.33033033033033027,
+                "truePositivePairs": 110,
+                "falsePositivePairs": 292,
+                "falseNegativePairs": 154,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 402
+              },
+              "Research": {
+                "precision": 0.37283236994219654,
+                "recall": 0.48863636363636365,
+                "f1": 0.4229508196721311,
+                "truePositivePairs": 129,
+                "falsePositivePairs": 217,
+                "falseNegativePairs": 135,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 346
+              },
+              "Sales": {
+                "precision": 0.3893805309734513,
+                "recall": 0.3333333333333333,
+                "f1": 0.3591836734693878,
+                "truePositivePairs": 88,
+                "falsePositivePairs": 138,
+                "falseNegativePairs": 176,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 226
+              },
+              "Support": {
+                "precision": 0.30970149253731344,
+                "recall": 0.3143939393939394,
+                "f1": 0.31203007518796994,
+                "truePositivePairs": 83,
+                "falsePositivePairs": 185,
+                "falseNegativePairs": 181,
+                "truthPositivePairs": 264,
+                "predictedPositivePairs": 268
+              }
+            },
+            "leave_one_modality_out": {
+              "email": {
+                "precision": 0.32926829268292684,
+                "recall": 0.39705882352941174,
+                "f1": 0.36,
+                "truePositivePairs": 162,
+                "falsePositivePairs": 330,
+                "falseNegativePairs": 246,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 492
+              },
+              "memo": {
+                "precision": 0.35545023696682465,
+                "recall": 0.36764705882352944,
+                "f1": 0.3614457831325302,
+                "truePositivePairs": 150,
+                "falsePositivePairs": 272,
+                "falseNegativePairs": 258,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 422
+              },
+              "slide": {
+                "precision": 0.3752808988764045,
+                "recall": 0.40931372549019607,
+                "f1": 0.391559202813599,
+                "truePositivePairs": 167,
+                "falsePositivePairs": 278,
+                "falseNegativePairs": 241,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 445
+              },
+              "ticket": {
+                "precision": 0.3657289002557545,
+                "recall": 0.35049019607843135,
+                "f1": 0.357947434292866,
+                "truePositivePairs": 143,
+                "falsePositivePairs": 248,
+                "falseNegativePairs": 265,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 391
+              },
+              "transcript": {
+                "precision": 0.33916849015317285,
+                "recall": 0.3799019607843137,
+                "f1": 0.3583815028901734,
+                "truePositivePairs": 155,
+                "falsePositivePairs": 302,
+                "falseNegativePairs": 253,
+                "truthPositivePairs": 408,
+                "predictedPositivePairs": 457
+              }
+            }
+          },
+          "evaluatedPairs": 28680,
+          "bCubed": {
+            "precision": 0.44794973544973465,
+            "recall": 0.6166666666666661,
+            "f1": 0.5189393468762288
+          },
+          "conllStyle": {
+            "precision": 0.0759524684552248,
+            "recall": 0.5740740740740741,
+            "f1": 0.1341555771935519,
+            "truePositivePairs": 620,
+            "falsePositivePairs": 7543,
+            "falseNegativePairs": 460,
+            "truthPositivePairs": 1080,
+            "predictedPositivePairs": 8163
+          },
+          "blastRadius": {
+            "maxThemesPerCluster": 20,
+            "meanThemesPerCluster": 1.3013698630136987,
+            "maxClusterSize": 126,
+            "contaminatedClusters": 3,
+            "contaminatedDocuments": 154
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.3442288049029622,
+            "recall": 0.3795045045045045,
+            "f1": 0.3610069630423139,
+            "truePositivePairs": 337,
+            "falsePositivePairs": 642,
+            "falseNegativePairs": 551,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 979
+          },
+          "identityDisjointCrossDepartmentPairs": 23256
+        },
+        "staticBaseline": {
+          "modelId": "minishlab/potion-base-32M",
+          "modelDigest": "816f4bbccbffd2f47476868a0bb16069df5c39c1b7a56939cd97f8f0f62fe1a2",
+          "license": "MIT",
+          "threshold": 0.6121533452765209,
+          "identityDisjoint": {
+            "precision": 0.9967982924226254,
+            "recall": 0.9978632478632479,
+            "f1": 0.997330485851575,
+            "truePositivePairs": 934,
+            "falsePositivePairs": 3,
+            "falseNegativePairs": 2,
+            "truthPositivePairs": 936,
+            "predictedPositivePairs": 937
+          },
+          "identityDisjointCrossDepartment": {
+            "precision": 0.9977477477477478,
+            "recall": 0.9977477477477478,
+            "f1": 0.9977477477477478,
+            "truePositivePairs": 886,
+            "falsePositivePairs": 2,
+            "falseNegativePairs": 2,
+            "truthPositivePairs": 888,
+            "predictedPositivePairs": 888
+          }
+        },
+        "gate": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "specialist": 0.3610069630423139,
+          "baseline": 0.9977477477477478,
+          "delta": -0.6367407847054338,
+          "status": "at_risk_negative_result",
+          "releaseGate": "story 36 (release stays at risk while the delta is not positive)",
+          "thresholdSelection": "in-sample max-F1 sweep, identical for both sides (W1 harness)"
+        },
+        "evidencePointersSample": {
+          "pairIndex": 0,
+          "side": "candidate",
+          "spans": [
+            {
+              "text": "onboard",
+              "start": 7,
+              "end": 14
+            },
+            {
+              "text": "for",
+              "start": 25,
+              "end": 28
+            },
+            {
+              "text": "onboard",
+              "start": 44,
+              "end": 51
+            }
+          ]
+        },
+        "latency": {
+          "encodeMsPerDocument": 0.3432227041647214,
+          "pairScoringMsPerPair": 0.006320046792177769
+        }
+      },
+      "artifact": {
+        "path": "models/weft-specialist",
+        "bytes": 93377835,
+        "fileCount": 4,
+        "sha256": "a9d78b79accb7a137dad9db717dfc4b29a7a2f9bede4c2fb72e1e2da30eda3db",
+        "unquantized": true,
+        "note": "Quantization-aware export is W5; this artifact is the un-quantized specialist."
+      },
+      "notes": [
+        "Bare specialist only: no identity adversary, no set-conditioning term, no triangle term.",
+        "Anchors are one chunk per pair in this run; the interface accepts up to four.",
+        "W2 pairs carry no evidence-span labels, so the evidence head is trained with a token-similarity proxy; no evidence-F1 is claimed.",
+        "Threshold selection is in-sample on the evaluation pairs for both sides (W1 convention, disclosed)."
+      ]
     }
   ]
 }

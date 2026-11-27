@@ -7,7 +7,11 @@ Scores the fixture-gate estate with the saved W4-data specialist four ways:
   4. raw MiniLM-L6-v2 mean-pooled cosine (pre-fine-tune control)
 then scores the live 2,000-pair holdout with the link head and the raw control.
 Requires models/weft-specialist and the local HF cache (offline).
+
+--eval-jsonl / --model-dir override the v2 defaults so cross-run style and
+model comparisons reuse the same scorer (W4-v4 confirmation, 2026-11-28).
 """
+import argparse
 import importlib.util
 import json
 import os
@@ -83,12 +87,17 @@ def report(name, labels, scores, subset_mask=None):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--eval-jsonl", default=str(EVAL_JSONL))
+    ap.add_argument("--model-dir", default=str(MODEL_DIR))
+    args = ap.parse_args()
+    eval_jsonl, model_dir = Path(args.eval_jsonl), Path(args.model_dir)
     harness = load_module("weft_w1_harness", HARNESS)
     trainer = load_module("weft_trainer", TRAINER)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     base = AutoModel.from_pretrained(BASE_MODEL)
     model = trainer.build_model(base, 128, 256)
-    model.load_state_dict(torch.load(MODEL_DIR / "model.pt", map_location="cpu",
+    model.load_state_dict(torch.load(model_dir / "model.pt", map_location="cpu",
                                      weights_only=True))
     model.eval()
     raw = AutoModel.from_pretrained(BASE_MODEL)
@@ -125,10 +134,10 @@ def main():
         print(f"  p{pct}: {np.percentile(s, pct):.6f}")
     print(f"  frac > 0.99: {float((s > 0.99).mean()):.4f}")
 
-    # ---- live holdout (in-domain): the v2 eval pairs ----
+    # ---- live holdout (in-domain): the eval pairs under test ----
     live = [json.loads(line) for line in
-            EVAL_JSONL.read_text(encoding="utf8").splitlines() if line.strip()]
-    print(f"\nlive holdout: {len(live)} pairs")
+            eval_jsonl.read_text(encoding="utf8").splitlines() if line.strip()]
+    print(f"\nlive holdout ({eval_jsonl.parent.name}): {len(live)} pairs")
     live_texts = sorted({p["textA"] for p in live} | {p["textB"] for p in live})
     with torch.no_grad():
         enc = model.encode(tokenizer, live_texts, 128, "cpu")

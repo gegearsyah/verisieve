@@ -3,8 +3,8 @@
   "schemaVersion": 1,
   "analysisScript": "scripts/analyze-weft-specialist-gate.py",
   "analysisSeed": 20261127,
-  "recordedAt": "2026-11-27T15:22:52.562998+00:00",
-  "note": "Two-domain decisive matrices recorded by the analysis script for the W4-std and W4-frz runs. Every metric block is the max-F1 sweep result of the named scorer path on the fixed fixture gate subset (23,256 identity-disjoint cross-department pairs) and the live holdout (2,000 pairs). Reproduce with the named model dir populated and: python scripts/analyze-weft-specialist-gate.py",
+  "recordedAt": "2026-11-27T23:49:43.573249+00:00",
+  "note": "Two-domain decisive matrices recorded by the analysis script for the W4-std, W4-frz, and W4-v4 runs. Every metric block is the max-F1 sweep result of the named scorer path on the fixed fixture gate subset (23,256 identity-disjoint cross-department pairs) and the live holdout (2,000 pairs). The W4-v4 block adds the styleRobustness cross-matrix (both models scored on both live corpora). Reproduce with the named model dir populated and: python scripts/analyze-weft-specialist-gate.py [--eval-jsonl results/weft-training-pairs-fullscale-live-v4/eval.jsonl] [--model-dir models/weft-specialist-w4frz]",
   "runs": [
     {
       "ticket": "W4-std",
@@ -136,6 +136,116 @@
           "identity-disjoint-same-theme-positive": 156,
           "identity-masked-positive": 7
         }
+      }
+    },
+    {
+      "ticket": "W4-v4",
+      "runId": "ee94a246102532c547bd9d0df2017f312a974037a2f49864dd51db11bab563ad",
+      "modelPath": "models/weft-specialist",
+      "fixtureGate": {
+        "linkHead": {
+          "maxF1": 0.3617,
+          "precision": 0.3445,
+          "recall": 0.3806,
+          "threshold": 0.999999,
+          "enrichment": 9.23
+        },
+        "pooledCosine": {
+          "maxF1": 0.9989,
+          "precision": 0.9978,
+          "recall": 1.0,
+          "threshold": 0.589306,
+          "enrichment": 26.16
+        },
+        "themeCosine": {
+          "maxF1": 0.7231,
+          "precision": 0.815,
+          "recall": 0.6498,
+          "threshold": 0.924408,
+          "enrichment": 18.61
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.9977,
+          "precision": 0.9977,
+          "recall": 0.9977,
+          "threshold": 0.60561,
+          "enrichment": 26.13
+        }
+      },
+      "linkHeadScoreDistribution": {
+        "p10": 0.011541,
+        "p25": 0.486568,
+        "p50": 0.509251,
+        "p75": 0.972715,
+        "p90": 0.999892,
+        "p99": 1.0,
+        "fracAbove0p99": 0.2141
+      },
+      "liveHoldout": {
+        "evalSet": "results/weft-training-pairs-fullscale-live-v4/eval.jsonl",
+        "linkHead": {
+          "maxF1": 0.9652,
+          "precision": 0.9932,
+          "recall": 0.9387,
+          "threshold": 0.687813,
+          "enrichment": 6.2
+        },
+        "ftPooledCosine": {
+          "maxF1": 0.5393,
+          "precision": 0.5367,
+          "recall": 0.5419,
+          "threshold": 0.387134
+        },
+        "rawMiniLMCosine": {
+          "maxF1": 0.4882,
+          "precision": 0.4508,
+          "recall": 0.5323,
+          "threshold": 0.363911,
+          "enrichment": 3.06
+        },
+        "rawMiniLMErrorsAtBestThreshold": {
+          "identity-disjoint-theme-different-negative": 80,
+          "identity-disjoint-same-theme-positive": 145,
+          "identity-matched-theme-different-negative": 121
+        }
+      },
+      "styleRobustness": {
+        "question": "Was the 0.9748 live competence style memorization? Link head, 2,000-pair holdouts, both models cross-scored on both corpora.",
+        "cells": {
+          "w4frz_on_v2eval": {
+            "maxF1": 0.9748,
+            "source": "the committed W4-frz block of this ledger"
+          },
+          "w4frz_on_v4eval": {
+            "maxF1": 0.4798,
+            "precision": 0.4482,
+            "recall": 0.5161,
+            "threshold": 0.999896,
+            "enrichment": 2.93
+          },
+          "w4v4_on_v4eval": {
+            "maxF1": 0.9652,
+            "precision": 0.9932,
+            "recall": 0.9387,
+            "threshold": 0.687813,
+            "enrichment": 6.2
+          },
+          "w4v4_on_v2eval": {
+            "maxF1": 0.6695,
+            "precision": 0.5737,
+            "recall": 0.8036,
+            "threshold": 0.999156,
+            "enrichment": 2.63
+          }
+        },
+        "ftPooledCosineCrossCells": {
+          "w4frz_on_v2eval": 0.5481,
+          "w4frz_on_v4eval": 0.5304,
+          "w4v4_on_v2eval": 0.5476,
+          "w4v4_on_v4eval": 0.5393,
+          "note": "the fine-tuned pooled cosine is live-blind in every cell; its competence is fixture-only"
+        },
+        "reading": "The v2-trained head collapses to 0.4798 under style variance; v4 training restores within-coverage competence (0.9652, above the 0.90 bar) but transfer to the unseen single voice is partial (0.6695). Style robustness is a training-coverage property of the head, not a property it already had."
       }
     }
   ]
