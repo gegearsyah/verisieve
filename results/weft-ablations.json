@@ -3528,7 +3528,7 @@
       "runId": "f40c17ad9c40b308c9a618afe6975bb6ab74ae9252127687453da3b0957c4ea4",
       "ticket": "W4",
       "status": "ran",
-      "stage": "bare",
+      "stage": "bare-frozen",
       "extras": [],
       "createdAt": "2026-11-27T15:24:08.379439+00:00",
       "seeds": {
@@ -4031,6 +4031,17 @@
           }
         },
         "deltaVsW3Bare": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "baseline": {
+            "f1": 0.39927184466019416,
+            "note": "the committed W3 bare specialist"
+          },
+          "stageF1": 0.2947845804988662,
+          "delta": -0.10448726416132798,
+          "status": "negative"
+        },
+        "deltaVsW4frzFrozen": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
           "baseline": {
             "artifact": "results/weft-specialist-training.json",
             "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
@@ -4057,9 +4068,7 @@
           },
           "stageF1": 0.2947845804988662,
           "delta": -0.0013158821581067404,
-          "metric": "identity_disjoint_cross_department_pairwise_f1",
-          "status": "negative",
-          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+          "status": "negative"
         }
       },
       "probeBattery": {
@@ -4176,7 +4185,7 @@
       "runId": "519933af276a5ccf9fd591bd0bd723bada25ac79eca507f478d9a85b2bc71920",
       "ticket": "W4",
       "status": "ran",
-      "stage": "adversary",
+      "stage": "adversary-frozen",
       "extras": [
         "adversary"
       ],
@@ -4783,6 +4792,17 @@
           }
         },
         "deltaVsW3Bare": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "baseline": {
+            "f1": 0.39927184466019416,
+            "note": "the committed W3 bare specialist"
+          },
+          "stageF1": 0.29563492063492064,
+          "delta": -0.10363692402527352,
+          "status": "negative"
+        },
+        "deltaVsW4frzFrozen": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
           "baseline": {
             "artifact": "results/weft-specialist-training.json",
             "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
@@ -4809,9 +4829,7 @@
           },
           "stageF1": 0.29563492063492064,
           "delta": -0.0004655420220522899,
-          "metric": "identity_disjoint_cross_department_pairwise_f1",
-          "status": "negative",
-          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+          "status": "negative"
         }
       },
       "probeBattery": {
@@ -4949,7 +4967,7 @@
       "runId": "99f9843248ca3efdc6b66126ff882687a6457a97161a8fe87562e0362bc2e461",
       "ticket": "W4",
       "status": "ran",
-      "stage": "set-conditioning",
+      "stage": "set-conditioning-frozen",
       "extras": [
         "set-conditioning"
       ],
@@ -5536,6 +5554,17 @@
           }
         },
         "deltaVsW3Bare": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "baseline": {
+            "f1": 0.39927184466019416,
+            "note": "the committed W3 bare specialist"
+          },
+          "stageF1": 0.3587786259541985,
+          "delta": -0.04049321870599565,
+          "status": "negative"
+        },
+        "deltaVsW4frzFrozen": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
           "baseline": {
             "artifact": "results/weft-specialist-training.json",
             "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
@@ -5562,9 +5591,7 @@
           },
           "stageF1": 0.3587786259541985,
           "delta": 0.06267816329722559,
-          "metric": "identity_disjoint_cross_department_pairwise_f1",
-          "status": "positive",
-          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+          "status": "positive"
         }
       },
       "probeBattery": {
@@ -5681,7 +5708,7 @@
       "runId": "5bb89df520067ac6a3daf1e3f5c68eb19d87e99a2dc7774e25d4ddd808c587e6",
       "ticket": "W4",
       "status": "ran",
-      "stage": "triangle",
+      "stage": "triangle-frozen",
       "extras": [
         "triangle"
       ],
@@ -6268,6 +6295,17 @@
           }
         },
         "deltaVsW3Bare": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "baseline": {
+            "f1": 0.39927184466019416,
+            "note": "the committed W3 bare specialist"
+          },
+          "stageF1": 0.3036515054452274,
+          "delta": -0.09562033921496677,
+          "status": "negative"
+        },
+        "deltaVsW4frzFrozen": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
           "baseline": {
             "artifact": "results/weft-specialist-training.json",
             "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
@@ -6294,9 +6332,7 @@
           },
           "stageF1": 0.3036515054452274,
           "delta": 0.0075510427882544695,
-          "metric": "identity_disjoint_cross_department_pairwise_f1",
-          "status": "positive",
-          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+          "status": "positive"
         }
       },
       "probeBattery": {
@@ -6413,7 +6449,7 @@
       "runId": "281e6dccf76100f6d7a6c3e57665674b6130ae2f4f2462f519fc0c8657238de4",
       "ticket": "W4",
       "status": "ran",
-      "stage": "modality",
+      "stage": "modality-frozen",
       "extras": [
         "modality"
       ],
@@ -7000,6 +7036,17 @@
           }
         },
         "deltaVsW3Bare": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
+          "baseline": {
+            "f1": 0.39927184466019416,
+            "note": "the committed W3 bare specialist"
+          },
+          "stageF1": 0.29403058707449437,
+          "delta": -0.1052412575856998,
+          "status": "negative"
+        },
+        "deltaVsW4frzFrozen": {
+          "metric": "identity_disjoint_cross_department_pairwise_f1",
           "baseline": {
             "artifact": "results/weft-specialist-training.json",
             "runId": "6869acc685bb485f7eff187d07b081dd65b38449439eec95cdc6038c9700f585",
@@ -7026,9 +7073,7 @@
           },
           "stageF1": 0.29403058707449437,
           "delta": -0.002069875582478564,
-          "metric": "identity_disjoint_cross_department_pairwise_f1",
-          "status": "negative",
-          "note": "honest delta versus the W3 bare specialist; negative results are recorded, never overwritten"
+          "status": "negative"
         }
       },
       "probeBattery": {

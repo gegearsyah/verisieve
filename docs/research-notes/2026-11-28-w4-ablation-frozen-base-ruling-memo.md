@@ -73,3 +73,20 @@ python scripts/run-weft-ablations.py --device cpu --lr-base 0 --stage all
 # appends the five frozen-base entries to results/weft-ablations.json
 node --test test/weft-specialist-contract.test.js
 ```
+
+## 5. Ledger correction (2026-11-28, post-W4-v4)
+
+The frozen arms were appended (71dc695) with two labeling errors that the
+ablation contract test caught once the full suite ran after the W4-v4
+pipeline: they reused the tuned stage names, so the test read them as the
+canonical entries for those stages, and they recorded their deltas against
+the W4-frz full-scale run inside the `deltaVsW3Bare` field, whose declared
+meaning is the committed W3 bare specialist. Corrected in the same ledger:
+the five frozen entries now carry their own stage names
+(`bare-frozen` and so on), their `deltaVsW3Bare` is the honest difference
+against the W3 bare specialist (0.39927), and the intended frozen-run
+comparison against W4-frz (0.2961) is preserved verbatim under a new
+`deltaVsW4frzFrozen` field. No measured number changed; only the attribution
+of two existing numbers. The section 2 readings above cite the W4-frz
+comparison and are unaffected. The full-suite failure was introduced by the
+mislabeling at 71dc695, before the W4-v4 work, and was not caused by it.
