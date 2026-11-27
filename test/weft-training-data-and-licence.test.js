@@ -55,7 +55,10 @@ function docById(corpus) {
 test('W2 1: licence audit artifact — complete schema, all three statuses, verified drop reasons', () => {
   assert.ok(fs.existsSync(OUT_AUDIT), 'the audit artifact must be committed at results/weft-licence-audit.json');
   const artifact = JSON.parse(fs.readFileSync(OUT_AUDIT, 'utf8'));
-  assert.deepEqual(artifact, LICENCE_AUDIT, 'the committed artifact must equal the exported audit (single source of truth)');
+  // Append-only: later tickets (W-Data) may append teacher entries; the original W2 entries must stay unchanged.
+  assert.deepEqual({ ...artifact, sources: artifact.sources.slice(0, LICENCE_AUDIT.sources.length) }, LICENCE_AUDIT,
+    'the committed artifact must retain the exported audit unchanged (appended entries allowed)');
+  assert.ok(artifact.sources.length >= LICENCE_AUDIT.sources.length, 'appends are allowed, rewrites are not');
   assert.equal(artifact.schemaVersion, '1.0');
   assert.equal(artifact.kind, 'weft-licence-audit');
   assert.equal(artifact.policy, 'weft-licence-v1');

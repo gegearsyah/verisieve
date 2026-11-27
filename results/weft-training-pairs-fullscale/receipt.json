@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "weft-training-pairs",
+  "policy": "weft-pairs-v1",
+  "mode": "live",
+  "generator": "local-teacher",
+  "targetPairs": 40,
+  "pairCount": 40,
+  "trainCount": 30,
+  "evalCount": 10,
+  "evalPairIds": [
+    "000d1c48695063850cd72ddf206be24cb1ddf0a757ea3d8751ac9223ed9605f8",
+    "009dd1cb6cf862f643add5d07c78a2381e271c08ec087a1e6387b6e267332843",
+    "01f40ebbb8355621330c90614c8823312eaf6c7e81e90749de728dbf753a3595",
+    "067737c0668a4b8db090845095279b6fdfbc2bda80194b15a519e764f8afdd39",
+    "07a591f3c9cc589f4bda304d62fc2e7f8236c6204e9a7c12879f2bec5b91342d",
+    "08e18cd0907ed05a02806f3686b6e521a99f35a8b693b713c2fd503ba28d45b2",
+    "0a1e048cb9e073dd1519d25026b1d98add237dbcb56c9cc29f7a21965621e8cc",
+    "0c0aa9def6a3a1cd841795d0633519c0911a078ff3fee529dbdb5ab62cc7b8b3",
+    "0c79bf2dcd55a2ed70c515e7d98fc639240a0696b2d10b094203598812b88e67",
+    "0dd53a38962511e24935d0d5fbdc733490109bd42f4e3cde59af8cb404bafe78"
+  ],
+  "byType": {
+    "identity-matched-theme-different-negative": 31,
+    "identity-disjoint-same-theme-positive": 7,
+    "identity-masked-positive": 2
+  },
+  "byLabel": {
+    "positive": 9,
+    "negative": 31
+  },
+  "augmentations": {
+    "asr": 0,
+    "ocr": 0,
+    "slide-fragmentation": 0
+  },
+  "usedSources": {
+    "synthetic-estate": "green"
+  },
+  "rejected": {},
+  "pairJsonlSha256": "957f5be42fc45ae9645dbc0e9e408aba0696687c32ef838c73fa28aa5630204c",
+  "trainJsonlSha256": "a2469f407df85e7f3963cb0b0a9ae594bbbfe6326e38f94e98b55495baab3dfd",
+  "evalJsonlSha256": "a3f9766bf4f584803933c9ec8b473b520b6c3b58ac96cbf1290f5fb45c7e3c46",
+  "fullscale": {
+    "ticket": "W-Data",
+    "scale": "fixture-smoke",
+    "seeds": {
+      "generation": 20261127,
+      "embedding": 20261127
+    },
+    "teacher": {
+      "kind": "fixture-smoke",
+      "modelId": "in-repo-fixture-teacher",
+      "weightDigest": null,
+      "adapterSha256": "2501e266086f4be83fd4d2c2285f08330900cc9e4c44f17796104f60109810ac",
+      "licence": "MIT",
+      "licenceTrace": {
+        "auditPath": "results/weft-licence-audit.json",
+        "auditSha256": "5293924b1db474457ce5c3f7db0b2c17a95bb242a9901d947718cee2b5d3c23c",
+        "entryId": "synthetic-estate",
+        "entryStatus": "green",
+        "entryLicence": "project-generated",
+        "verifiedFrom": "package.json declares the repository MIT licence; the fixture adapter is in-repo code and emits no third-party text"
+      }
+    },
+    "digests": {
+      "trainJsonlSha256": "a2469f407df85e7f3963cb0b0a9ae594bbbfe6326e38f94e98b55495baab3dfd",
+      "evalJsonlSha256": "a3f9766bf4f584803933c9ec8b473b520b6c3b58ac96cbf1290f5fb45c7e3c46",
+      "pairJsonlSha256": "957f5be42fc45ae9645dbc0e9e408aba0696687c32ef838c73fa28aa5630204c",
+      "matchesW2Receipt": true
+    },
+    "compute": {
+      "device": "cpu",
+      "cudaAvailable": false,
+      "gpuCount": 0,
+      "gpuNames": [],
+      "torch": "2.10.0+cpu",
+      "transformers": "4.57.6",
+      "python": "3.12.4",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "kaggle": false,
+      "node": "v24.13.1",
+      "computeDisclosure": "CPU fixture-scale smoke run; not the Kaggle T4 recipe. The 50k-pair live generation runs on Kaggle, and these numbers must not be read as full-scale."
+    },
+    "targetPairs": 40,
+    "note": "Live mode through the W2 teacher adapter. CPU entries are fixture-scale smoke tests; the 50k-pair generation runs on the Kaggle T4."
+  }
+}

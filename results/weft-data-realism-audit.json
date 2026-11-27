@@ -1,0 +1,206 @@
+{
+ "kind": "weft-data-realism-audit",
+ "schemaVersion": 1,
+ "appendOnly": true,
+ "entries": [
+  {
+   "runId": "50f1ba903e1351e309ae0f6e95f156963541e4d5df7483022cdfd876d58d34b3",
+   "ticket": "W-Data",
+   "createdAt": "2026-11-27T04:14:50.634640+00:00",
+   "scale": "fixture-smoke",
+   "seeds": {
+    "generation": 20261127,
+    "embedding": 20261127
+   },
+   "pairs": {
+    "path": "results/weft-training-pairs-fullscale",
+    "pairCount": 40,
+    "trainCount": 30,
+    "evalCount": 10,
+    "trainJsonlSha256": "a2469f407df85e7f3963cb0b0a9ae594bbbfe6326e38f94e98b55495baab3dfd",
+    "evalJsonlSha256": "a3f9766bf4f584803933c9ec8b473b520b6c3b58ac96cbf1290f5fb45c7e3c46",
+    "mode": "live",
+    "generator": "local-teacher",
+    "byType": {
+     "identity-matched-theme-different-negative": 31,
+     "identity-disjoint-same-theme-positive": 7,
+     "identity-masked-positive": 2
+    }
+   },
+   "reference": {
+    "id": "wikipedia-dumps",
+    "licence": "CC-BY-SA-4.0",
+    "status": "green",
+    "path": "C:/Users/GEYE ARDIANSYAH/AppData/Local/Temp/weft-wiki-ref/wikipedia-sample.jsonl",
+    "sha256": "0699cc0d151db05980bbb508b77720edb004906cf84e31e55428448b7fce25af",
+    "documentCount": 16,
+    "totalChars": 919414,
+    "retrieval": "Wikimedia action=query prop=extracts explaintext; 16 fixed English titles; operator-supplied local sample",
+    "note": "operator-supplied local file; the audit reads it and never downloads"
+   },
+   "metrics": {
+    "typeTokenRatio": {
+     "generated": {
+      "tokens": 1746,
+      "types": 80,
+      "typeTokenRatio": 0.045819014891179836
+     },
+     "reference": {
+      "tokens": 141907,
+      "types": 16411,
+      "typeTokenRatio": 0.11564616262763641
+     },
+     "sizeMatched": {
+      "tokenCount": 1746,
+      "generated": {
+       "tokens": 1746,
+       "types": 80,
+       "typeTokenRatio": 0.045819014891179836
+      },
+      "reference": {
+       "tokens": 1746,
+       "types": 700,
+       "typeTokenRatio": 0.4009163802978236
+      }
+     }
+    },
+    "distinctN": {
+     "generated": {
+      "1": {
+       "total": 1746,
+       "distinct": 80,
+       "ratio": 0.045819014891179836
+      },
+      "2": {
+       "total": 1745,
+       "distinct": 201,
+       "ratio": 0.1151862464183381
+      },
+      "3": {
+       "total": 1744,
+       "distinct": 317,
+       "ratio": 0.18176605504587157
+      }
+     },
+     "reference": {
+      "1": {
+       "total": 141907,
+       "distinct": 16411,
+       "ratio": 0.11564616262763641
+      },
+      "2": {
+       "total": 141906,
+       "distinct": 88324,
+       "ratio": 0.6224120192239934
+      },
+      "3": {
+       "total": 141905,
+       "distinct": 128757,
+       "ratio": 0.907346464183785
+      }
+     },
+     "noveltyFraction": {
+      "1": 0.3625,
+      "2": 0.9502487562189055,
+      "3": 0.9968454258675079
+     }
+    },
+    "embedding": {
+     "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+     "modelDigest": "c45358b5788ba09030325a414213b3d0fba26804780985481934cf95a505a8df",
+     "licence": "Apache-2.0",
+     "generatedDocsTotal": 80,
+     "referenceDocsTotal": 16,
+     "generatedDocsEmbedded": 80,
+     "referenceDocsEmbedded": 16,
+     "sampled": false,
+     "generatedDispersion": 0.5089525053772745,
+     "referenceDispersion": 0.8998923301696777,
+     "coverage": {
+      "meanNearestCosine": 0.13191351294517517,
+      "medianNearestCosine": 0.12147640436887741,
+      "coveredFractionAt05": 0.0
+     }
+    },
+    "documentLength": {
+     "unit": "whitespace tokens",
+     "generated": {
+      "count": 80,
+      "mean": 23.3375,
+      "median": 22.0,
+      "min": 18,
+      "p10": 18.0,
+      "p90": 29.0,
+      "max": 30
+     },
+     "reference": {
+      "count": 16,
+      "mean": 8790.125,
+      "median": 8380.5,
+      "min": 2504,
+      "p10": 3548.5,
+      "p90": 15447.0,
+      "max": 15676
+     }
+    },
+    "formatDistribution": {
+     "unit": "pair sides",
+     "generated": {
+      "email": 21,
+      "slides": 15,
+      "table": 17,
+      "ticket": 14,
+      "transcript": 13
+     },
+     "reference": {
+      "wikipedia-dumps": 16
+     }
+    },
+    "departmentBalance": {
+     "counts": {
+      "engineering": 13,
+      "finance": 35,
+      "operations": 15,
+      "sales": 17
+     },
+     "distinct": 4,
+     "entropy": 1.299940338866153,
+     "normalizedEntropy": 0.9377087401668588
+    },
+    "themeBalance": {
+     "counts": {
+      "annual budget planning": 15,
+      "api gateway migration": 10,
+      "customer onboarding revamp": 16,
+      "product launch readiness": 12,
+      "summer team offsite logistics": 14,
+      "supplier risk review": 13
+     },
+     "distinct": 6,
+     "entropy": 1.7805510401566353,
+     "normalizedEntropy": 0.9937444566282948
+    },
+    "identityBearingTokenDensity": {
+     "generated": {
+      "tokenCount": 1746,
+      "roleTokens": 12,
+      "roleTokensPer1k": 6.8728522336769755,
+      "capitalizedSequences": 167,
+      "capitalizedSequencesPer1k": 95.64719358533792
+     },
+     "reference": {
+      "roleTokensPer1k": 0.0,
+      "capitalizedSequencesPer1k": 22.4442768855659
+     }
+    }
+   },
+   "gaps": [
+    "The reference is an operator-supplied local sample; the script never downloads and the sample is not committed.",
+    "The generated corpus (1746 tokens) and reference (141907 tokens) differ in size; size-matched values are reported next to full-corpus values.",
+    "Identity-bearing density uses role-token and capitalized-sequence proxies, not a named-entity recognizer.",
+    "Embedding metrics sampled up to 2000 documents per side; dispersion and coverage are descriptive, not a release gate.",
+    "This entry was produced on CPU with the deterministic fixture teacher and is a fixture-scale smoke test only; its text is not teacher-generated prose."
+   ]
+  }
+ ]
+}

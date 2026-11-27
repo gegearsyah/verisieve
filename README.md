@@ -487,7 +487,7 @@ versieve/
 ├── scripts/                          # Reproducible benchmark runners (Paper 1, Paper 2, Paper 3, GC-CRC)
 ├── results/                          # Deterministic JSON benchmark artifacts & SHA-256 receipts
 ├── paper/                            # Four MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
-└── test/                             # 202 portable CI tests across 35 files + scale & multimodal regression suites
+└── test/                             # 209 portable CI tests across 36 files + scale & multimodal regression suites
 ```
 
 ---

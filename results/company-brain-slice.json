@@ -3009,19 +3009,21 @@
     "receipt": {
       "engine": "versieve-gccrc-v1",
       "blockCount": 24,
+      "sourceBlockCount": 24,
+      "keywords": [],
       "chunkCount": 30,
       "anchorPoolSize": 82,
       "propagatedSpansCount": 7,
       "forensicFindingsCount": 2,
       "perceptionSha256": "667e73ef4fff3bcae05ccd1b6a2a5e23fe7d2a0780a10921820d1c8427a0b905",
-      "receiptSha256": "9cc6fb1fbb22193762387e01243187a0cf6ac019aa5efc7265f2c1053a1e6665"
+      "receiptSha256": "35caee76caf889a92dbbc78da2d8248fc8d7cab5a32e8975aec1925055827e5d"
     },
     "blockCount": 24,
     "anchorPoolSize": 82,
     "propagatedSpansCount": 7
   },
   "wallclock": {
-    "perceptionWallclockMs": 106.82939999999996,
-    "totalWallclockMs": 292.9554
+    "perceptionWallclockMs": 111.23069999999996,
+    "totalWallclockMs": 224.07149999999996
   }
 }
