@@ -16,8 +16,8 @@ const SCRIPT = path.join(ROOT, 'scripts', 'train-weft-specialist.py');
 const ARTIFACT = path.join(ROOT, 'results', 'weft-specialist-training.json');
 const TRAIN = path.join(ROOT, 'results', 'weft-training-pairs', 'train.jsonl');
 const RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs', 'receipt.json');
-const FULLSCALE_TRAIN = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live', 'train.jsonl');
-const FULLSCALE_RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live', 'receipt.json');
+const FULLSCALE_TRAIN = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v2', 'train.jsonl');
+const FULLSCALE_RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live-v2', 'receipt.json');
 const PYTHON = process.env.PYTHON || 'python';
 const BUCKETS = ['cross_department', 'cross_modality', 'identity_overlap', 'identity_disjoint'];
 // Built from fragments so this compliance check does not carry the literal terms.
@@ -118,10 +118,11 @@ test('W3 4: committed artifact schema — seeds, digests, licences, hyperparamet
   assert.ok(Array.isArray(artifact.entries) && artifact.entries.length >= 1);
 
   assert.equal(artifact.entries[0].ticket, 'W3', 'the W3 fixture entry must keep its place in the append-only prefix');
+  assert.equal(artifact.entries[1].ticket, 'W4', 'the W4 live entry must keep its place in the append-only prefix');
 
   const entry = artifact.entries[artifact.entries.length - 1];
   assert.ok(isDigest(entry.runId));
-  assert.equal(entry.ticket, 'W4', 'the newest entry is the W4 full-scale run');
+  assert.equal(entry.ticket, 'W4-data', 'the newest entry is the W4-data recipe-fixed run');
   assert.equal(entry.status, 'ran');
   assert.ok(entry.createdAt && !Number.isNaN(Date.parse(entry.createdAt)));
 
