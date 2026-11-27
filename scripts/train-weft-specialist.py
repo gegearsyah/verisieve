@@ -335,9 +335,8 @@ def train(model, tokenizer, pairs: list[dict], args, device):
     import torch
     torch.manual_seed(args.seed)
     labels = torch.tensor([p["label"] for p in pairs], device=device)
-    same_theme_all = torch.tensor(
-        [[p["anchorTheme"] == q["candidateTheme"] for q in pairs] for p in pairs],
-        dtype=torch.bool, device=device)
+    # The same-theme matrix is built per batch, not precomputed over all pairs:
+    # a full N x N precompute is quadratic in memory and would not survive full-scale runs.
 
     head_params, base_params = [], []
     for name, param in model.named_parameters():
@@ -360,7 +359,9 @@ def train(model, tokenizer, pairs: list[dict], args, device):
             idx = order[start:start + args.batch_size]
             batch = [pairs[int(i)] for i in idx]
             labels_b = labels[idx]
-            same_theme = same_theme_all[idx][:, idx]
+            same_theme = torch.tensor(
+                [[p["anchorTheme"] == q["candidateTheme"] for q in batch] for p in batch],
+                dtype=torch.bool, device=device)
             optimizer.zero_grad()
             anchor_enc = model.encode_anchor_set(
                 tokenizer, [[p["anchor"]] for p in batch], args.max_length, device)
@@ -388,6 +389,8 @@ def train(model, tokenizer, pairs: list[dict], args, device):
                 totals[key] += float(value.detach()) * len(batch)
             seen += len(batch)
         history.append({"epoch": epoch + 1, **{k: v / max(1, seen) for k, v in totals.items()}})
+        print(f"epoch {epoch + 1}/{args.epochs} " +
+              " ".join(f"{k}={v / max(1, seen):.4f}" for k, v in totals.items()), flush=True)
     wall = time.perf_counter() - t0
     return history, wall
 
