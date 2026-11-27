@@ -434,7 +434,7 @@ versieve/
 ├── scripts/                          # Reproducible benchmark runners (Paper 1, Paper 2, Paper 3, GC-CRC)
 ├── results/                          # Deterministic JSON benchmark artifacts & SHA-256 receipts
 ├── paper/                            # Four MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
-└── test/                             # 220 portable CI tests across 38 files + scale & multimodal regression suites
+└── test/                             # 221 portable CI tests across 38 files + scale & multimodal regression suites
 ```
 
 ---
@@ -442,7 +442,7 @@ versieve/
 ## 🔬 Reproducing the Benchmarks & Test Suites
 
 ```bash
-# 1. Run the 220-test portable CI suite across 38 test files (WASM zero-import census, parsers, redaction, SR-MP, HC-CRC, PT-LM, MCP, paper-number checks)
+# 1. Run the 221-test portable CI suite across 38 test files (WASM zero-import census, parsers, redaction, SR-MP, HC-CRC, PT-LM, MCP, paper-number checks)
 npm run test:ci
 
 # 2. Reproduce the GC-CRC / SR-MP Cross-Modal Context-Horizon benchmark (60 cases, 240 blocks)

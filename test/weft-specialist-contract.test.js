@@ -16,6 +16,8 @@ const SCRIPT = path.join(ROOT, 'scripts', 'train-weft-specialist.py');
 const ARTIFACT = path.join(ROOT, 'results', 'weft-specialist-training.json');
 const TRAIN = path.join(ROOT, 'results', 'weft-training-pairs', 'train.jsonl');
 const RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs', 'receipt.json');
+const FULLSCALE_TRAIN = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live', 'train.jsonl');
+const FULLSCALE_RECEIPT = path.join(ROOT, 'results', 'weft-training-pairs-fullscale-live', 'receipt.json');
 const PYTHON = process.env.PYTHON || 'python';
 const BUCKETS = ['cross_department', 'cross_modality', 'identity_overlap', 'identity_disjoint'];
 // Built from fragments so this compliance check does not carry the literal terms.
@@ -115,9 +117,11 @@ test('W3 4: committed artifact schema — seeds, digests, licences, hyperparamet
   assert.equal(artifact.appendOnly, true);
   assert.ok(Array.isArray(artifact.entries) && artifact.entries.length >= 1);
 
+  assert.equal(artifact.entries[0].ticket, 'W3', 'the W3 fixture entry must keep its place in the append-only prefix');
+
   const entry = artifact.entries[artifact.entries.length - 1];
   assert.ok(isDigest(entry.runId));
-  assert.equal(entry.ticket, 'W3');
+  assert.equal(entry.ticket, 'W4', 'the newest entry is the W4 full-scale run');
   assert.equal(entry.status, 'ran');
   assert.ok(entry.createdAt && !Number.isNaN(Date.parse(entry.createdAt)));
 
@@ -135,8 +139,8 @@ test('W3 4: committed artifact schema — seeds, digests, licences, hyperparamet
   assert.match(base.initialization, /never from scratch/);
 
   const data = entry.trainingData;
-  assert.equal(data.trainSha256, lfDigest(TRAIN), 'training-data digest matches the committed pairs');
-  assert.equal(data.trainSha256, JSON.parse(fs.readFileSync(RECEIPT, 'utf8')).trainJsonlSha256);
+  assert.equal(data.trainSha256, lfDigest(FULLSCALE_TRAIN), 'training-data digest matches the committed full-scale pairs');
+  assert.equal(data.trainSha256, JSON.parse(fs.readFileSync(FULLSCALE_RECEIPT, 'utf8')).trainJsonlSha256);
   assert.ok(isDigest(data.receiptSha256));
   assert.ok(Number.isInteger(data.pairCount) && data.pairCount > 0);
 

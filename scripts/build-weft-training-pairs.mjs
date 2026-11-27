@@ -17,7 +17,11 @@
  *                                            a role token;
  *   identity-matched-theme-different-negative shared identity, different theme (the signature
  *                                            hard negative);
- *   identity-disjoint-same-theme-positive    same theme, zero shared identities.
+ *   identity-disjoint-same-theme-positive    same theme, zero shared identities;
+ *   identity-disjoint-theme-different-negative zero shared identities, different theme
+ *                                            (opt-in: the counterweight that keeps
+ *                                            identity-disjointness from predicting
+ *                                            "positive" on its own).
  *
  * Teacher policy: synthetic estates are generated only by a local, permissively-licensed
  * open-weight LLM. OpenAI-hosted teachers are barred. With no local runtime configured the
@@ -653,9 +657,9 @@ function sharedIdentityKeys(a, b) {
  */
 export function compileWeftTrainingPairs(input, options = {}) {
   const mode = options.mode === 'live' ? 'live' : 'fixture';
-  if (mode === 'live' && !options.teacher) {
+  if (mode === 'live' && !options.teacher && options.corpusProvided !== true) {
     throw new WeftTeacherUnavailableError(
-      'live pair compilation requires a resolved local teacher; refusing to fall back to fixtures',
+      'live pair compilation requires a resolved local teacher or a provided corpus; refusing to fall back to fixtures',
       'runtime-absent'
     );
   }
@@ -664,6 +668,11 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const targetPairs = Number.isInteger(options.targetPairs) && options.targetPairs > 0 ? options.targetPairs : mode === 'live' ? 50000 : 5000;
   const augmentOn = options.augment !== false;
   const generator = mode === 'live' ? 'local-teacher' : 'fixture';
+  // Opt-in recipe flags (ticket #52): default-off keeps the committed fixture
+  // baseline byte-stable; the live recompile turns both on.
+  const includeDisjointNegatives = options.includeDisjointNegatives === true;
+  const excludeWithinChunk = options.excludeWithinChunk === true;
+  const corpusProvided = options.corpusProvided === true;
 
   const rejected = {};
   const emitted = new Set();
@@ -677,6 +686,9 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const docKey = (type, doc) => `${type}\u0000${doc.id}`;
   const docUnderCap = (type, doc) => (perDocPairs.get(docKey(type, doc)) || 0) < capPerDoc;
   const docBump = (type, doc) => perDocPairs.set(docKey(type, doc), (perDocPairs.get(docKey(type, doc)) || 0) + 1);
+  // Chunk identity lives in the doc id (theme-cN-doc-M); ids without the
+  // marker are each their own chunk, so the fixture corpus is unaffected.
+  const chunkOf = (doc) => doc.id.split('-doc-')[0];
 
   const reject = (doc, status) => {
     const bucket = (rejected[doc.source] ||= { count: 0, status });
@@ -697,6 +709,9 @@ export function compileWeftTrainingPairs(input, options = {}) {
 
   function emit(pairType, a, b, extra) {
     if (!admitted(a) || !admitted(b)) return;
+    // Within-chunk pairs share a teacher call's style, which is a label shortcut
+    // in the live recipe (every within-chunk pair was a positive); excluded on demand.
+    if (excludeWithinChunk && chunkOf(a) === chunkOf(b)) return;
     const docIds = [a.id, b.id].sort();
     const dedupe = docIds.join('|');
     if (emitted.has(dedupe)) return;
@@ -720,7 +735,7 @@ export function compileWeftTrainingPairs(input, options = {}) {
       }
     }
 
-    const label = pairType === 'identity-matched-theme-different-negative' ? 'negative' : 'positive';
+    const label = pairType.endsWith('-negative') ? 'negative' : 'positive';
     const id = sha256Hex(`weft-pair\u0000${pairType}\u0000${docIds.join('\u0000')}`);
     pairs.push({
       id,
@@ -786,6 +801,24 @@ export function compileWeftTrainingPairs(input, options = {}) {
     }
   }
 
+  // (d) identity-disjoint, theme-different negatives (opt-in): without them,
+  // identity-disjointness alone predicts "positive" in training, which saturates
+  // the fixture gate where nearly every cross-department pair is disjoint.
+  if (includeDisjointNegatives) {
+    for (let i = 0; i < ordered.length; i++) {
+      for (let j = i + 1; j < ordered.length; j++) {
+        const a = ordered[i];
+        const b = ordered[j];
+        if (a.theme === b.theme) continue;
+        if (sharedIdentityKeys(a, b).length !== 0) continue;
+        if (!docUnderCap('identity-disjoint-theme-different-negative', a) || !docUnderCap('identity-disjoint-theme-different-negative', b)) continue;
+        docBump('identity-disjoint-theme-different-negative', a);
+        docBump('identity-disjoint-theme-different-negative', b);
+        emit('identity-disjoint-theme-different-negative', a, b, {});
+      }
+    }
+  }
+
   pairs.sort((a, b) => (a.id < b.id ? -1 : 1));
   let kept = pairs;
   if (pairs.length > targetPairs) {
@@ -842,6 +875,11 @@ export function compileWeftTrainingPairs(input, options = {}) {
     policy: PAIR_POLICY,
     mode,
     generator,
+    // Recipe flags are recorded only when a non-default recipe is used, so the
+    // committed default-recipe receipts keep their exact committed shape.
+    ...(includeDisjointNegatives || excludeWithinChunk || corpusProvided
+      ? { recipeOptions: { includeDisjointNegatives, excludeWithinChunk, corpusProvided } }
+      : {}),
     targetPairs,
     pairCount: kept.length,
     trainCount: trainPairs.length,
@@ -1005,17 +1043,25 @@ export function runWeftTrainingPairArtifacts(options = {}) {
   let corpus;
   let teacher = null;
   if (mode === 'live') {
-    teacher = options.teacher || resolveLocalTeacher(options.env || process.env);
-    corpus = generateTeacherEstates(teacher, {
-      themes: options.themes,
-      pairsTarget: options.targetPairs ?? 50000,
-    });
+    if (options.corpus) {
+      // Recompile path (#52): pairs from an already-generated corpus, no teacher calls.
+      corpus = options.corpus;
+    } else {
+      teacher = options.teacher || resolveLocalTeacher(options.env || process.env);
+      corpus = generateTeacherEstates(teacher, {
+        themes: options.themes,
+        pairsTarget: options.targetPairs ?? 50000,
+      });
+    }
   } else {
     corpus = options.corpus || fixtureCorpus();
   }
   const compiled = compileWeftTrainingPairs(corpus, {
     mode,
     teacher,
+    corpusProvided: Boolean(options.corpus),
+    includeDisjointNegatives: options.includeDisjointNegatives === true,
+    excludeWithinChunk: options.excludeWithinChunk === true,
     targetPairs: options.targetPairs,
     evalSize: options.evalSize,
     augment: options.augment,
@@ -1051,6 +1097,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const compiled = runWeftTrainingPairArtifacts({
     mode: args.mode === 'live' ? 'live' : 'fixture',
     outDir: args.out ? path.resolve(args.out) : OUT_DIR,
+    corpus: args.corpus ? JSON.parse(fs.readFileSync(path.resolve(String(args.corpus)), 'utf8')) : undefined,
+    // shortcut: a corpus-provided recompile never refreshes the committed audit baseline
+    writeAudit: args.corpus ? false : undefined,
+    includeDisjointNegatives: args['include-disjoint-negatives'] === true,
+    excludeWithinChunk: args['exclude-within-chunk'] === true,
     targetPairs: args['target-pairs'] ? Number.parseInt(String(args['target-pairs']), 10) : undefined,
     evalSize: args['eval-size'] ? Number.parseInt(String(args['eval-size']), 10) : undefined,
   });

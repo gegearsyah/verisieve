@@ -111,7 +111,7 @@ test('W4 3: committed artifact — one entry per stage, honest deltas, probe bat
   assert.equal(new Set(artifact.entries.map((e) => e.runId)).size, artifact.entries.length,
     'run ids are unique across appended entries');
 
-  const w3 = JSON.parse(fs.readFileSync(W3_ARTIFACT, 'utf8')).entries.at(-1);
+  const w3 = JSON.parse(fs.readFileSync(W3_ARTIFACT, 'utf8')).entries.find((e) => e.ticket === 'W3');
   const baselineF1 = w3.evaluation.specialist.identityDisjointCrossDepartment.f1;
   const receipt = JSON.parse(fs.readFileSync(RECEIPT, 'utf8'));
 
