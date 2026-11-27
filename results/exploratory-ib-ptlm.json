@@ -1,0 +1,1616 @@
+{
+  "status": "exploratory",
+  "schemaVersion": "1.0.0",
+  "kind": "exploratory-ib-ptlm-counterfactual-surrogate-lora",
+  "issue": "#39",
+  "parentIssue": "#27",
+  "mechanism": "IB-PT-LM (Counterfactual Surrogate Information-Bottleneck LoRA)",
+  "generatedAt": "2026-11-27T09:07:19.229442+00:00",
+  "dryRun": false,
+  "wallClockSec": 3716.217,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "hyperparameters": {
+    "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+    "steps": 80,
+    "learningRate": 0.0002,
+    "betaKl": 0.2,
+    "batchSize": 2,
+    "gradAccum": 4,
+    "effectiveBatchSize": 8,
+    "loraRank": 16,
+    "loraAlpha": 32,
+    "decoys": 500,
+    "surrogateCandidates": 200
+  },
+  "provenance": {
+    "mode": "live-gpu-lora-ablation",
+    "hardware": {
+      "python": "3.12.4",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "torch": "2.10.0+cu128",
+      "cudaAvailable": true,
+      "gpuName": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpuVramMiB": 8188,
+      "transformers": "5.23.0",
+      "peft": "0.21.3"
+    },
+    "model": {
+      "modelId": "Qwen/Qwen2.5-0.5B-Instruct",
+      "snapshotRevision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "configSha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45",
+      "license": "Apache-2.0"
+    },
+    "surrogatePoolAudit": {
+      "poolOverlapCount": 0,
+      "categories": {
+        "PERSON": {
+          "nStatic": 8,
+          "nPoolA": 12,
+          "nPoolB": 12,
+          "overlapPoolAPoolB": 0,
+          "overlapWithStatic": 0
+        },
+        "EMAIL": {
+          "nStatic": 6,
+          "nPoolA": 12,
+          "nPoolB": 12,
+          "overlapPoolAPoolB": 0,
+          "overlapWithStatic": 0
+        },
+        "PHONE": {
+          "nStatic": 6,
+          "nPoolA": 12,
+          "nPoolB": 12,
+          "overlapPoolAPoolB": 0,
+          "overlapWithStatic": 0
+        },
+        "SSN": {
+          "nStatic": 6,
+          "nPoolA": 12,
+          "nPoolB": 12,
+          "overlapPoolAPoolB": 0,
+          "overlapWithStatic": 0
+        },
+        "GENERIC": {
+          "nStatic": 4,
+          "nPoolA": 12,
+          "nPoolB": 12,
+          "overlapPoolAPoolB": 0,
+          "overlapWithStatic": 0
+        }
+      }
+    },
+    "versieveVaultEntities": 0,
+    "nTrainExamples": 152,
+    "nCanaries": 12,
+    "nSeenComplianceQa": 16,
+    "nRepProbeTemplates": 8
+  },
+  "objectiveFormulation": {
+    "lossEquation": "L_IB-PT-LM = L_CE(y_{~PII} | x(s^(1))) + beta * 0.5 * [D_KL(p_theta(.|x(s^(1)))_{~PII} || p_theta(.|x(s^(2)))_{~PII}) + D_KL(p_theta(.|x(s^(2)))_{~PII} || p_theta(.|x(s^(1)))_{~PII})]",
+    "tokenAlignmentNote": "Exact segment-wise causal predictive alignment pairs position (t1 - 1, t2 - 1) for every non-PII target token even when s^(1) in Pool_A and s^(2) in Pool_B tokenize to different subword lengths."
+  },
+  "arms": {
+    "base": {
+      "nSeeds": 1,
+      "totalCanaries": 12,
+      "chanceProbeAccPct": 12.5,
+      "aggregate": {
+        "rawCanaryMeanBits": {
+          "mean": 2.001,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            2.001,
+            2.001
+          ],
+          "perSeed": [
+            2.001
+          ]
+        },
+        "rawCanaryR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0
+          ]
+        },
+        "directSurrogateMeanBits": {
+          "mean": 3.8026,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            3.8026,
+            3.8026
+          ],
+          "perSeed": [
+            3.8026
+          ]
+        },
+        "directSurrogateR1Count": {
+          "mean": 2.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            2.0,
+            2.0
+          ],
+          "perSeed": [
+            2.0
+          ]
+        },
+        "contextualSurrogateInversionMeanBits": {
+          "mean": 1.3739,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            1.3739,
+            1.3739
+          ],
+          "perSeed": [
+            1.3739
+          ]
+        },
+        "contextualSurrogateInversionR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0
+          ]
+        },
+        "nonPiiSymmetricKl": {
+          "mean": 0.5686,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.5686,
+            0.5686
+          ],
+          "perSeed": [
+            0.5686
+          ]
+        },
+        "nonPiiHiddenCosineDistance": {
+          "mean": 0.0011,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0011,
+            0.0011
+          ],
+          "perSeed": [
+            0.0011
+          ]
+        },
+        "linearProbeIdentityAccPct": {
+          "mean": 37.5,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            37.5,
+            37.5
+          ],
+          "perSeed": [
+            37.5
+          ]
+        },
+        "cosineCentroidProbeAccPct": {
+          "mean": 37.5,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            37.5,
+            37.5
+          ],
+          "perSeed": [
+            37.5
+          ]
+        },
+        "tagEchoRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0
+          ]
+        },
+        "seenDocTokenF1Pct": {
+          "mean": 63.1293,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            63.1293,
+            63.1293
+          ],
+          "perSeed": [
+            63.1293
+          ]
+        },
+        "trainWallSec": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "rawCanaryMeanBits": 2.001,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 3.8026,
+          "directSurrogateR1Count": 2,
+          "contextualSurrogateInversionMeanBits": 1.3739,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 0.5686,
+          "nonPiiHiddenCosineDistance": 0.00106,
+          "linearProbeIdentityAccPct": 37.5,
+          "cosineCentroidProbeAccPct": 37.5,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 63.1293,
+          "trainWallSec": 0.0
+        }
+      ]
+    },
+    "unredacted": {
+      "nSeeds": 3,
+      "totalCanaries": 12,
+      "chanceProbeAccPct": 12.5,
+      "aggregate": {
+        "rawCanaryMeanBits": {
+          "mean": 8.573,
+          "sd": 0.0967,
+          "bootstrapCi95": [
+            8.465,
+            8.6514
+          ],
+          "perSeed": [
+            8.6026,
+            8.6514,
+            8.465
+          ]
+        },
+        "rawCanaryR1Count": {
+          "mean": 11.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            11.0,
+            11.0
+          ],
+          "perSeed": [
+            11.0,
+            11.0,
+            11.0
+          ]
+        },
+        "directSurrogateMeanBits": {
+          "mean": 0.7642,
+          "sd": 0.1845,
+          "bootstrapCi95": [
+            0.6148,
+            0.9704
+          ],
+          "perSeed": [
+            0.7074,
+            0.6148,
+            0.9704
+          ]
+        },
+        "directSurrogateR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "contextualSurrogateInversionMeanBits": {
+          "mean": 1.45,
+          "sd": 0.5758,
+          "bootstrapCi95": [
+            1.0613,
+            2.1115
+          ],
+          "perSeed": [
+            1.1773,
+            2.1115,
+            1.0613
+          ]
+        },
+        "contextualSurrogateInversionR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "nonPiiSymmetricKl": {
+          "mean": 1.3452,
+          "sd": 0.0737,
+          "bootstrapCi95": [
+            1.2862,
+            1.4278
+          ],
+          "perSeed": [
+            1.3215,
+            1.2862,
+            1.4278
+          ]
+        },
+        "nonPiiHiddenCosineDistance": {
+          "mean": 0.0034,
+          "sd": 0.0005,
+          "bootstrapCi95": [
+            0.0031,
+            0.0039
+          ],
+          "perSeed": [
+            0.0031,
+            0.0031,
+            0.0039
+          ]
+        },
+        "linearProbeIdentityAccPct": {
+          "mean": 17.7083,
+          "sd": 2.3868,
+          "bootstrapCi95": [
+            15.625,
+            20.3125
+          ],
+          "perSeed": [
+            15.625,
+            20.3125,
+            17.1875
+          ]
+        },
+        "cosineCentroidProbeAccPct": {
+          "mean": 15.625,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            15.625,
+            15.625
+          ],
+          "perSeed": [
+            15.625,
+            15.625,
+            15.625
+          ]
+        },
+        "tagEchoRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "seenDocTokenF1Pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            100.0,
+            100.0
+          ],
+          "perSeed": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "trainWallSec": {
+          "mean": 138.243,
+          "sd": 1.4252,
+          "bootstrapCi95": [
+            137.38,
+            139.888
+          ],
+          "perSeed": [
+            137.38,
+            139.888,
+            137.461
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "rawCanaryMeanBits": 8.6026,
+          "rawCanaryR1Count": 11,
+          "directSurrogateMeanBits": 0.7074,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 1.1773,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.32153,
+          "nonPiiHiddenCosineDistance": 0.00313,
+          "linearProbeIdentityAccPct": 15.625,
+          "cosineCentroidProbeAccPct": 15.625,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 137.38
+        },
+        {
+          "seed": 43,
+          "rawCanaryMeanBits": 8.6514,
+          "rawCanaryR1Count": 11,
+          "directSurrogateMeanBits": 0.6148,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 2.1115,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.2862,
+          "nonPiiHiddenCosineDistance": 0.00305,
+          "linearProbeIdentityAccPct": 20.3125,
+          "cosineCentroidProbeAccPct": 15.625,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 139.888
+        },
+        {
+          "seed": 44,
+          "rawCanaryMeanBits": 8.465,
+          "rawCanaryR1Count": 11,
+          "directSurrogateMeanBits": 0.9704,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 1.0613,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.42782,
+          "nonPiiHiddenCosineDistance": 0.00389,
+          "linearProbeIdentityAccPct": 17.1875,
+          "cosineCentroidProbeAccPct": 15.625,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 137.461
+        }
+      ]
+    },
+    "masking_only": {
+      "nSeeds": 3,
+      "totalCanaries": 12,
+      "chanceProbeAccPct": 12.5,
+      "aggregate": {
+        "rawCanaryMeanBits": {
+          "mean": 2.0048,
+          "sd": 0.3432,
+          "bootstrapCi95": [
+            1.6707,
+            2.3565
+          ],
+          "perSeed": [
+            2.3565,
+            1.9872,
+            1.6707
+          ]
+        },
+        "rawCanaryR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "directSurrogateMeanBits": {
+          "mean": 2.3506,
+          "sd": 0.1587,
+          "bootstrapCi95": [
+            2.1901,
+            2.5075
+          ],
+          "perSeed": [
+            2.1901,
+            2.5075,
+            2.3541
+          ]
+        },
+        "directSurrogateR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "contextualSurrogateInversionMeanBits": {
+          "mean": 2.5152,
+          "sd": 0.3374,
+          "bootstrapCi95": [
+            2.2496,
+            2.8948
+          ],
+          "perSeed": [
+            2.2496,
+            2.8948,
+            2.4012
+          ]
+        },
+        "contextualSurrogateInversionR1Count": {
+          "mean": 2.6667,
+          "sd": 0.5774,
+          "bootstrapCi95": [
+            2.0,
+            3.0
+          ],
+          "perSeed": [
+            2.0,
+            3.0,
+            3.0
+          ]
+        },
+        "nonPiiSymmetricKl": {
+          "mean": 1.0962,
+          "sd": 0.0834,
+          "bootstrapCi95": [
+            1.0128,
+            1.1796
+          ],
+          "perSeed": [
+            1.0128,
+            1.0962,
+            1.1796
+          ]
+        },
+        "nonPiiHiddenCosineDistance": {
+          "mean": 0.0033,
+          "sd": 0.0007,
+          "bootstrapCi95": [
+            0.0026,
+            0.0039
+          ],
+          "perSeed": [
+            0.0026,
+            0.0033,
+            0.0039
+          ]
+        },
+        "linearProbeIdentityAccPct": {
+          "mean": 25.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            25.0,
+            25.0
+          ],
+          "perSeed": [
+            25.0,
+            25.0,
+            25.0
+          ]
+        },
+        "cosineCentroidProbeAccPct": {
+          "mean": 23.9583,
+          "sd": 7.0457,
+          "bootstrapCi95": [
+            17.1875,
+            31.25
+          ],
+          "perSeed": [
+            23.4375,
+            17.1875,
+            31.25
+          ]
+        },
+        "tagEchoRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "seenDocTokenF1Pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            100.0,
+            100.0
+          ],
+          "perSeed": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "trainWallSec": {
+          "mean": 142.2343,
+          "sd": 6.0772,
+          "bootstrapCi95": [
+            137.929,
+            149.186
+          ],
+          "perSeed": [
+            139.588,
+            149.186,
+            137.929
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "rawCanaryMeanBits": 2.3565,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.1901,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 2.2496,
+          "contextualSurrogateInversionR1Count": 2,
+          "nonPiiSymmetricKl": 1.01275,
+          "nonPiiHiddenCosineDistance": 0.0026,
+          "linearProbeIdentityAccPct": 25.0,
+          "cosineCentroidProbeAccPct": 23.4375,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 139.588
+        },
+        {
+          "seed": 43,
+          "rawCanaryMeanBits": 1.9872,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.5075,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 2.8948,
+          "contextualSurrogateInversionR1Count": 3,
+          "nonPiiSymmetricKl": 1.09625,
+          "nonPiiHiddenCosineDistance": 0.00331,
+          "linearProbeIdentityAccPct": 25.0,
+          "cosineCentroidProbeAccPct": 17.1875,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 149.186
+        },
+        {
+          "seed": 44,
+          "rawCanaryMeanBits": 1.6707,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.3541,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 2.4012,
+          "contextualSurrogateInversionR1Count": 3,
+          "nonPiiSymmetricKl": 1.17956,
+          "nonPiiHiddenCosineDistance": 0.00393,
+          "linearProbeIdentityAccPct": 25.0,
+          "cosineCentroidProbeAccPct": 31.25,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 137.929
+        }
+      ]
+    },
+    "pt_lm": {
+      "nSeeds": 3,
+      "totalCanaries": 12,
+      "chanceProbeAccPct": 12.5,
+      "aggregate": {
+        "rawCanaryMeanBits": {
+          "mean": 1.9434,
+          "sd": 0.2297,
+          "bootstrapCi95": [
+            1.717,
+            2.1762
+          ],
+          "perSeed": [
+            1.717,
+            2.1762,
+            1.9371
+          ]
+        },
+        "rawCanaryR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "directSurrogateMeanBits": {
+          "mean": 1.9977,
+          "sd": 0.5679,
+          "bootstrapCi95": [
+            1.3764,
+            2.4899
+          ],
+          "perSeed": [
+            1.3764,
+            2.1267,
+            2.4899
+          ]
+        },
+        "directSurrogateR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "contextualSurrogateInversionMeanBits": {
+          "mean": 5.2653,
+          "sd": 0.3617,
+          "bootstrapCi95": [
+            4.9532,
+            5.6617
+          ],
+          "perSeed": [
+            5.181,
+            4.9532,
+            5.6617
+          ]
+        },
+        "contextualSurrogateInversionR1Count": {
+          "mean": 5.6667,
+          "sd": 0.5774,
+          "bootstrapCi95": [
+            5.0,
+            6.0
+          ],
+          "perSeed": [
+            6.0,
+            5.0,
+            6.0
+          ]
+        },
+        "nonPiiSymmetricKl": {
+          "mean": 0.8226,
+          "sd": 0.1615,
+          "bootstrapCi95": [
+            0.6407,
+            0.9491
+          ],
+          "perSeed": [
+            0.6407,
+            0.9491,
+            0.8779
+          ]
+        },
+        "nonPiiHiddenCosineDistance": {
+          "mean": 0.0059,
+          "sd": 0.0018,
+          "bootstrapCi95": [
+            0.0038,
+            0.0073
+          ],
+          "perSeed": [
+            0.0038,
+            0.0065,
+            0.0073
+          ]
+        },
+        "linearProbeIdentityAccPct": {
+          "mean": 37.5,
+          "sd": 1.5625,
+          "bootstrapCi95": [
+            35.9375,
+            39.0625
+          ],
+          "perSeed": [
+            37.5,
+            39.0625,
+            35.9375
+          ]
+        },
+        "cosineCentroidProbeAccPct": {
+          "mean": 36.4583,
+          "sd": 3.2526,
+          "bootstrapCi95": [
+            32.8125,
+            39.0625
+          ],
+          "perSeed": [
+            39.0625,
+            37.5,
+            32.8125
+          ]
+        },
+        "tagEchoRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "seenDocTokenF1Pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            100.0,
+            100.0
+          ],
+          "perSeed": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "trainWallSec": {
+          "mean": 137.956,
+          "sd": 4.0819,
+          "bootstrapCi95": [
+            134.42,
+            142.423
+          ],
+          "perSeed": [
+            134.42,
+            142.423,
+            137.025
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "rawCanaryMeanBits": 1.717,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 1.3764,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 5.181,
+          "contextualSurrogateInversionR1Count": 6,
+          "nonPiiSymmetricKl": 0.6407,
+          "nonPiiHiddenCosineDistance": 0.00381,
+          "linearProbeIdentityAccPct": 37.5,
+          "cosineCentroidProbeAccPct": 39.0625,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 134.42
+        },
+        {
+          "seed": 43,
+          "rawCanaryMeanBits": 2.1762,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.1267,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 4.9532,
+          "contextualSurrogateInversionR1Count": 5,
+          "nonPiiSymmetricKl": 0.94913,
+          "nonPiiHiddenCosineDistance": 0.00652,
+          "linearProbeIdentityAccPct": 39.0625,
+          "cosineCentroidProbeAccPct": 37.5,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 142.423
+        },
+        {
+          "seed": 44,
+          "rawCanaryMeanBits": 1.9371,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.4899,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 5.6617,
+          "contextualSurrogateInversionR1Count": 6,
+          "nonPiiSymmetricKl": 0.87794,
+          "nonPiiHiddenCosineDistance": 0.00731,
+          "linearProbeIdentityAccPct": 35.9375,
+          "cosineCentroidProbeAccPct": 32.8125,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 137.025
+        }
+      ]
+    },
+    "ib_pt_lm": {
+      "nSeeds": 3,
+      "totalCanaries": 12,
+      "chanceProbeAccPct": 12.5,
+      "aggregate": {
+        "rawCanaryMeanBits": {
+          "mean": 1.8837,
+          "sd": 0.2313,
+          "bootstrapCi95": [
+            1.6418,
+            2.1027
+          ],
+          "perSeed": [
+            1.9067,
+            2.1027,
+            1.6418
+          ]
+        },
+        "rawCanaryR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "directSurrogateMeanBits": {
+          "mean": 2.0805,
+          "sd": 0.6296,
+          "bootstrapCi95": [
+            1.6379,
+            2.8013
+          ],
+          "perSeed": [
+            1.6379,
+            2.8013,
+            1.8023
+          ]
+        },
+        "directSurrogateR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "contextualSurrogateInversionMeanBits": {
+          "mean": 1.1492,
+          "sd": 0.2769,
+          "bootstrapCi95": [
+            0.8549,
+            1.4046
+          ],
+          "perSeed": [
+            1.4046,
+            0.8549,
+            1.188
+          ]
+        },
+        "contextualSurrogateInversionR1Count": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "nonPiiSymmetricKl": {
+          "mean": 1.045,
+          "sd": 0.0275,
+          "bootstrapCi95": [
+            1.0204,
+            1.0746
+          ],
+          "perSeed": [
+            1.0204,
+            1.0746,
+            1.0401
+          ]
+        },
+        "nonPiiHiddenCosineDistance": {
+          "mean": 0.0019,
+          "sd": 0.0001,
+          "bootstrapCi95": [
+            0.0018,
+            0.002
+          ],
+          "perSeed": [
+            0.002,
+            0.0018,
+            0.0019
+          ]
+        },
+        "linearProbeIdentityAccPct": {
+          "mean": 19.7917,
+          "sd": 2.3868,
+          "bootstrapCi95": [
+            17.1875,
+            21.875
+          ],
+          "perSeed": [
+            17.1875,
+            20.3125,
+            21.875
+          ]
+        },
+        "cosineCentroidProbeAccPct": {
+          "mean": 22.9167,
+          "sd": 1.8042,
+          "bootstrapCi95": [
+            21.875,
+            25.0
+          ],
+          "perSeed": [
+            25.0,
+            21.875,
+            21.875
+          ]
+        },
+        "tagEchoRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "seenDocTokenF1Pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "bootstrapCi95": [
+            100.0,
+            100.0
+          ],
+          "perSeed": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "trainWallSec": {
+          "mean": 282.3707,
+          "sd": 5.9149,
+          "bootstrapCi95": [
+            276.361,
+            288.186
+          ],
+          "perSeed": [
+            282.565,
+            276.361,
+            288.186
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "rawCanaryMeanBits": 1.9067,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 1.6379,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 1.4046,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.02037,
+          "nonPiiHiddenCosineDistance": 0.00203,
+          "linearProbeIdentityAccPct": 17.1875,
+          "cosineCentroidProbeAccPct": 25.0,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 282.565
+        },
+        {
+          "seed": 43,
+          "rawCanaryMeanBits": 2.1027,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 2.8013,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 0.8549,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.07464,
+          "nonPiiHiddenCosineDistance": 0.00183,
+          "linearProbeIdentityAccPct": 20.3125,
+          "cosineCentroidProbeAccPct": 21.875,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 276.361
+        },
+        {
+          "seed": 44,
+          "rawCanaryMeanBits": 1.6418,
+          "rawCanaryR1Count": 0,
+          "directSurrogateMeanBits": 1.8023,
+          "directSurrogateR1Count": 0,
+          "contextualSurrogateInversionMeanBits": 1.188,
+          "contextualSurrogateInversionR1Count": 0,
+          "nonPiiSymmetricKl": 1.04011,
+          "nonPiiHiddenCosineDistance": 0.00191,
+          "linearProbeIdentityAccPct": 21.875,
+          "cosineCentroidProbeAccPct": 21.875,
+          "tagEchoRatePct": 0.0,
+          "seenDocTokenF1Pct": 100.0,
+          "trainWallSec": 288.186
+        }
+      ]
+    }
+  },
+  "deltas": {
+    "ibPtLm_vs_ptLm": {
+      "rawCanaryMeanBits": {
+        "mean": -0.0597,
+        "sd": 0.2428,
+        "bootstrapCi95": [
+          -0.2953,
+          0.1897
+        ],
+        "perSeed": [
+          0.1897,
+          -0.0735,
+          -0.2953
+        ]
+      },
+      "rawCanaryR1Count": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "directSurrogateMeanBits": {
+        "mean": 0.0828,
+        "sd": 0.6985,
+        "bootstrapCi95": [
+          -0.6876,
+          0.6746
+        ],
+        "perSeed": [
+          0.2615,
+          0.6746,
+          -0.6876
+        ]
+      },
+      "contextualSurrogateInversionMeanBits": {
+        "mean": -4.1161,
+        "sd": 0.349,
+        "bootstrapCi95": [
+          -4.4737,
+          -3.7764
+        ],
+        "perSeed": [
+          -3.7764,
+          -4.0983,
+          -4.4737
+        ]
+      },
+      "contextualSurrogateInversionR1Count": {
+        "mean": -5.6667,
+        "sd": 0.5774,
+        "bootstrapCi95": [
+          -6.0,
+          -5.0
+        ],
+        "perSeed": [
+          -6.0,
+          -5.0,
+          -6.0
+        ]
+      },
+      "nonPiiSymmetricKl": {
+        "mean": 0.2225,
+        "sd": 0.1374,
+        "bootstrapCi95": [
+          0.1255,
+          0.3797
+        ],
+        "perSeed": [
+          0.3797,
+          0.1255,
+          0.1622
+        ]
+      },
+      "nonPiiHiddenCosineDistance": {
+        "mean": -0.004,
+        "sd": 0.0019,
+        "bootstrapCi95": [
+          -0.0054,
+          -0.0018
+        ],
+        "perSeed": [
+          -0.0018,
+          -0.0047,
+          -0.0054
+        ]
+      },
+      "linearProbeIdentityAccPct": {
+        "mean": -17.7083,
+        "sd": 3.2526,
+        "bootstrapCi95": [
+          -20.3125,
+          -14.0625
+        ],
+        "perSeed": [
+          -20.3125,
+          -18.75,
+          -14.0625
+        ]
+      },
+      "cosineCentroidProbeAccPct": {
+        "mean": -13.5417,
+        "sd": 2.3868,
+        "bootstrapCi95": [
+          -15.625,
+          -10.9375
+        ],
+        "perSeed": [
+          -14.0625,
+          -15.625,
+          -10.9375
+        ]
+      },
+      "tagEchoRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "seenDocTokenF1Pct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "ibPtLm_vs_maskingOnly": {
+      "rawCanaryMeanBits": {
+        "mean": -0.1211,
+        "sd": 0.2937,
+        "bootstrapCi95": [
+          -0.4498,
+          0.1155
+        ],
+        "perSeed": [
+          -0.4498,
+          0.1155,
+          -0.0289
+        ]
+      },
+      "rawCanaryR1Count": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "directSurrogateMeanBits": {
+        "mean": -0.2701,
+        "sd": 0.4883,
+        "bootstrapCi95": [
+          -0.5522,
+          0.2938
+        ],
+        "perSeed": [
+          -0.5522,
+          0.2938,
+          -0.5518
+        ]
+      },
+      "contextualSurrogateInversionMeanBits": {
+        "mean": -1.366,
+        "sd": 0.6119,
+        "bootstrapCi95": [
+          -2.0399,
+          -0.845
+        ],
+        "perSeed": [
+          -0.845,
+          -2.0399,
+          -1.2132
+        ]
+      },
+      "contextualSurrogateInversionR1Count": {
+        "mean": -2.6667,
+        "sd": 0.5774,
+        "bootstrapCi95": [
+          -3.0,
+          -2.0
+        ],
+        "perSeed": [
+          -2.0,
+          -3.0,
+          -3.0
+        ]
+      },
+      "nonPiiSymmetricKl": {
+        "mean": -0.0511,
+        "sd": 0.0779,
+        "bootstrapCi95": [
+          -0.1394,
+          0.0076
+        ],
+        "perSeed": [
+          0.0076,
+          -0.0216,
+          -0.1394
+        ]
+      },
+      "nonPiiHiddenCosineDistance": {
+        "mean": -0.0014,
+        "sd": 0.0007,
+        "bootstrapCi95": [
+          -0.002,
+          -0.0006
+        ],
+        "perSeed": [
+          -0.0006,
+          -0.0015,
+          -0.002
+        ]
+      },
+      "linearProbeIdentityAccPct": {
+        "mean": -5.2083,
+        "sd": 2.3868,
+        "bootstrapCi95": [
+          -7.8125,
+          -3.125
+        ],
+        "perSeed": [
+          -7.8125,
+          -4.6875,
+          -3.125
+        ]
+      },
+      "cosineCentroidProbeAccPct": {
+        "mean": -1.0417,
+        "sd": 7.3841,
+        "bootstrapCi95": [
+          -9.375,
+          4.6875
+        ],
+        "perSeed": [
+          1.5625,
+          4.6875,
+          -9.375
+        ]
+      },
+      "tagEchoRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "seenDocTokenF1Pct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "ibPtLm_vs_unredacted": {
+      "rawCanaryMeanBits": {
+        "mean": -6.6893,
+        "sd": 0.1374,
+        "bootstrapCi95": [
+          -6.8232,
+          -6.5487
+        ],
+        "perSeed": [
+          -6.6959,
+          -6.5487,
+          -6.8232
+        ]
+      },
+      "rawCanaryR1Count": {
+        "mean": -11.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          -11.0,
+          -11.0
+        ],
+        "perSeed": [
+          -11.0,
+          -11.0,
+          -11.0
+        ]
+      },
+      "directSurrogateMeanBits": {
+        "mean": 1.3163,
+        "sd": 0.7552,
+        "bootstrapCi95": [
+          0.8319,
+          2.1865
+        ],
+        "perSeed": [
+          0.9305,
+          2.1865,
+          0.8319
+        ]
+      },
+      "contextualSurrogateInversionMeanBits": {
+        "mean": -0.3009,
+        "sd": 0.8292,
+        "bootstrapCi95": [
+          -1.2566,
+          0.2273
+        ],
+        "perSeed": [
+          0.2273,
+          -1.2566,
+          0.1267
+        ]
+      },
+      "contextualSurrogateInversionR1Count": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "nonPiiSymmetricKl": {
+        "mean": -0.3001,
+        "sd": 0.0881,
+        "bootstrapCi95": [
+          -0.3877,
+          -0.2116
+        ],
+        "perSeed": [
+          -0.3012,
+          -0.2116,
+          -0.3877
+        ]
+      },
+      "nonPiiHiddenCosineDistance": {
+        "mean": -0.0014,
+        "sd": 0.0005,
+        "bootstrapCi95": [
+          -0.002,
+          -0.0011
+        ],
+        "perSeed": [
+          -0.0011,
+          -0.0012,
+          -0.002
+        ]
+      },
+      "linearProbeIdentityAccPct": {
+        "mean": 2.0833,
+        "sd": 2.3868,
+        "bootstrapCi95": [
+          0.0,
+          4.6875
+        ],
+        "perSeed": [
+          1.5625,
+          0.0,
+          4.6875
+        ]
+      },
+      "cosineCentroidProbeAccPct": {
+        "mean": 7.2917,
+        "sd": 1.8042,
+        "bootstrapCi95": [
+          6.25,
+          9.375
+        ],
+        "perSeed": [
+          9.375,
+          6.25,
+          6.25
+        ]
+      },
+      "tagEchoRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "seenDocTokenF1Pct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "bootstrapCi95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "honestAssessment": {
+    "deltaNonPiiKlVsPtLm": 0.2225,
+    "deltaContextualSurrogateBitsVsPtLm": -4.1161,
+    "deltaLinearProbeAccPctVsPtLm": -17.7083,
+    "deltaSeenDocF1PctVsPtLm": 0.0,
+    "deltaTagEchoPctVsMaskingOnly": 0.0,
+    "summary": "Across 3 seeds ([42, 43, 44]) on Qwen/Qwen2.5-0.5B-Instruct (80 steps, lr=0.0002, beta=0.2), IB-PT-LM changes post-span non-PII logit sensitivity D_KL by +0.22250, contextual suffix-inversion surrogate exposure by -4.116 bits, and 8-way hidden-state identity linear-probe accuracy by -17.71 pp vs static PT-LM, while changing tag-echo by +0.00 pp vs Masking-only and seen-doc token F1 by +0.00 pp vs PT-LM. Training wall-clock increases ~2x per step due to dual counterfactual forward passes."
+  }
+}

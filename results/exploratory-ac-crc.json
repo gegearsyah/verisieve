@@ -1,0 +1,2045 @@
+{
+  "status": "exploratory",
+  "schemaVersion": "1.0.0",
+  "kind": "exploratory-ac-crc-dual-channel-egate",
+  "issue": "#39",
+  "parentIssue": "#27",
+  "mechanism": "AC-CRC (Adversary-Calibrated Conformal Risk Control / Dual-Channel Convex E-Gate)",
+  "generatedAt": "2026-11-27T08:02:25.890355+00:00",
+  "dryRun": false,
+  "wallClockSec": 0.76,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "provenance": {
+    "mode": "live-empirical-recalibration",
+    "gatekeeperJsSha256": "3558a54e95b035a663c9b6d423691334b0ddd8239e9a6b45c430b1da247260a4",
+    "cpaAuditJsonPath": "t11-cpa-attacker-audit.json",
+    "cpaAuditJsonSha256": "1dad2dc8894deb7e83a1da0425e66bf4e53ed551d1407b7cbdc2fe7e3c2e9dc8",
+    "tabBenchmarksJsonPath": "reviewer-tab-and-ltt-benchmarks.json",
+    "tabBenchmarksJsonSha256": "b3b6cb2fc7bfaa681e98ce800fceddfe4d268d96bd1b8f8986dd93369484b607",
+    "python": "3.12.4",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "datasetSummary": {
+    "totalAuditedItems": 200,
+    "totalDocClusters": 100,
+    "calClustersPerSeed": 65,
+    "holdoutClustersPerSeed": 35,
+    "source": "results/t11-cpa-attacker-audit.json",
+    "kCandidates": 10,
+    "miscoverageBeta": 0.1,
+    "attackerModel": "qwen2.5:7b",
+    "t11ReferenceReleasedTop1Pct": 14.0,
+    "t11ReferenceWithheldTop1Pct": 42.0,
+    "tabReference": {
+      "available": true,
+      "dataset": "NorskRegnesentral/text-anonymization-benchmark (TAB ECHR)",
+      "echrTestDocs": 127,
+      "t11HcCrcAlpha005": {
+        "method": "HC-CRC (Hierarchical Cluster-Robust Conformal Risk Control)",
+        "alpha": 0.05,
+        "delta": 0.05,
+        "tauKeep": 0.3,
+        "tauDrop": 0.26,
+        "nClusters": 67,
+        "nUnsafeClusters": 67,
+        "nUnsafeBlocks": 916,
+        "intraClusterCorrelation": 0.1304,
+        "designEffect": 2.652,
+        "effectiveSampleSize": 345,
+        "empiricalClusterLoss": 0.0186,
+        "empiricalBlockFpr": 0.0175,
+        "pValue": 0.00531,
+        "certified": true
+      }
+    }
+  },
+  "formulation": {
+    "detectorChannelEValue": "E_M^det(tau) = prod_{m=1}^M (1 + gamma_m^det * (alpha_det - L_m^det(tau)))",
+    "adversaryChannelEValue": "E_M^adv(tau) = prod_{m=1}^M (1 + gamma_m^adv * (alpha_adv - L_m^adv(tau)))",
+    "jointConvexEValue": "E_M^joint(tau) = w_1 * E_M^det(tau) + w_2 * E_M^adv(tau), w_1 + w_2 = 1",
+    "alphaDet": 0.1,
+    "alphaAdv": 0.16,
+    "delta": 0.05,
+    "kMinAmbiguity": 8,
+    "kCandidates": 10,
+    "miscoverageBeta": 0.1,
+    "theoreticalScopeNote": "Convex e-value averaging E_joint = w1*E_det + w2*E_adv preserves E[E_joint] <= 1 and anytime Ville error control P(sup_t E_t^joint >= 1/delta) <= delta under arbitrary inter-channel dependence for the intersection/safety-monitoring null (and composite risk w1*R_det + w2*R_adv). For offline simultaneous union-null certification, active channels additionally enforce non-losing channel drift E_i >= 1 alongside E_joint >= 1/delta."
+  },
+  "jsCrossCheck": {
+    "verified": true,
+    "casesChecked": 5,
+    "maxAbsDiff": 0.0,
+    "exceededMatches": 5,
+    "jsRejectsDegenerateZeroDualWeight": true
+  },
+  "typeIErrorControlUnderH0": {
+    "analyticalCheck": {
+      "linearityOfExpectationVerified": true,
+      "proofSummary": "For any w1, w2 >= 0 with w1 + w2 = 1 and any joint law P in H_0 (arbitrary correlation rho in [-1, 1]) satisfying E_P[E_t^det] <= 1 and E_P[E_t^adv] <= 1, E_P[w1*E_t^det + w2*E_t^adv] = w1*E_P[E_t^det] + w2*E_P[E_t^adv] <= w1 + w2 = 1; non-negative supermartingale closure implies P(sup_{t>=1} E_t^joint >= 1/delta) <= delta by Ville's maximal inequality."
+    },
+    "dependentChannelMonteCarlo": {
+      "nTrials": 10000,
+      "horizon": 80,
+      "alphaDet": 0.1,
+      "alphaAdv": 0.16,
+      "delta": 0.05,
+      "villeThreshold": 20.0,
+      "allRegimesPass": true,
+      "maxEmpiricalMeanEValue": 1.07183,
+      "maxAnytimeExceedanceRate": 0.0216,
+      "byCorrelation": [
+        {
+          "copulaRho": -0.9,
+          "empiricalLossCorrelation": -0.1453,
+          "weights": {
+            "w_10_00_detector_only": {
+              "w1": 1.0,
+              "w2": 0.0,
+              "meanFinalEValue": 1.03412,
+              "seFinalEValue": 0.03982,
+              "anytimeExceedanceRate": 0.016,
+              "anytimeExceedanceCount": 160,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_07_03": {
+              "w1": 0.7,
+              "w2": 0.3,
+              "meanFinalEValue": 1.05028,
+              "seFinalEValue": 0.04054,
+              "anytimeExceedanceRate": 0.012,
+              "anytimeExceedanceCount": 120,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_05_05": {
+              "w1": 0.5,
+              "w2": 0.5,
+              "meanFinalEValue": 1.06106,
+              "seFinalEValue": 0.05307,
+              "anytimeExceedanceRate": 0.0136,
+              "anytimeExceedanceCount": 136,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_03_07": {
+              "w1": 0.3,
+              "w2": 0.7,
+              "meanFinalEValue": 1.07183,
+              "seFinalEValue": 0.06997,
+              "anytimeExceedanceRate": 0.02,
+              "anytimeExceedanceCount": 200,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            }
+          }
+        },
+        {
+          "copulaRho": -0.5,
+          "empiricalLossCorrelation": -0.1295,
+          "weights": {
+            "w_10_00_detector_only": {
+              "w1": 1.0,
+              "w2": 0.0,
+              "meanFinalEValue": 0.99894,
+              "seFinalEValue": 0.03802,
+              "anytimeExceedanceRate": 0.0143,
+              "anytimeExceedanceCount": 143,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_07_03": {
+              "w1": 0.7,
+              "w2": 0.3,
+              "meanFinalEValue": 1.00839,
+              "seFinalEValue": 0.03531,
+              "anytimeExceedanceRate": 0.0113,
+              "anytimeExceedanceCount": 113,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_05_05": {
+              "w1": 0.5,
+              "w2": 0.5,
+              "meanFinalEValue": 1.0147,
+              "seFinalEValue": 0.04349,
+              "anytimeExceedanceRate": 0.0157,
+              "anytimeExceedanceCount": 157,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_03_07": {
+              "w1": 0.3,
+              "w2": 0.7,
+              "meanFinalEValue": 1.021,
+              "seFinalEValue": 0.05621,
+              "anytimeExceedanceRate": 0.0216,
+              "anytimeExceedanceCount": 216,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            }
+          }
+        },
+        {
+          "copulaRho": 0.0,
+          "empiricalLossCorrelation": 0.0011,
+          "weights": {
+            "w_10_00_detector_only": {
+              "w1": 1.0,
+              "w2": 0.0,
+              "meanFinalEValue": 0.94287,
+              "seFinalEValue": 0.0307,
+              "anytimeExceedanceRate": 0.0154,
+              "anytimeExceedanceCount": 154,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_07_03": {
+              "w1": 0.7,
+              "w2": 0.3,
+              "meanFinalEValue": 0.95629,
+              "seFinalEValue": 0.03219,
+              "anytimeExceedanceRate": 0.0113,
+              "anytimeExceedanceCount": 113,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_05_05": {
+              "w1": 0.5,
+              "w2": 0.5,
+              "meanFinalEValue": 0.96524,
+              "seFinalEValue": 0.04289,
+              "anytimeExceedanceRate": 0.0124,
+              "anytimeExceedanceCount": 124,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_03_07": {
+              "w1": 0.3,
+              "w2": 0.7,
+              "meanFinalEValue": 0.97419,
+              "seFinalEValue": 0.05689,
+              "anytimeExceedanceRate": 0.0193,
+              "anytimeExceedanceCount": 193,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            }
+          }
+        },
+        {
+          "copulaRho": 0.5,
+          "empiricalLossCorrelation": 0.2597,
+          "weights": {
+            "w_10_00_detector_only": {
+              "w1": 1.0,
+              "w2": 0.0,
+              "meanFinalEValue": 0.93583,
+              "seFinalEValue": 0.02913,
+              "anytimeExceedanceRate": 0.0146,
+              "anytimeExceedanceCount": 146,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_07_03": {
+              "w1": 0.7,
+              "w2": 0.3,
+              "meanFinalEValue": 0.92113,
+              "seFinalEValue": 0.02749,
+              "anytimeExceedanceRate": 0.0108,
+              "anytimeExceedanceCount": 108,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_05_05": {
+              "w1": 0.5,
+              "w2": 0.5,
+              "meanFinalEValue": 0.91133,
+              "seFinalEValue": 0.03285,
+              "anytimeExceedanceRate": 0.0121,
+              "anytimeExceedanceCount": 121,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_03_07": {
+              "w1": 0.3,
+              "w2": 0.7,
+              "meanFinalEValue": 0.90152,
+              "seFinalEValue": 0.04137,
+              "anytimeExceedanceRate": 0.0173,
+              "anytimeExceedanceCount": 173,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            }
+          }
+        },
+        {
+          "copulaRho": 0.99,
+          "empiricalLossCorrelation": 0.7611,
+          "weights": {
+            "w_10_00_detector_only": {
+              "w1": 1.0,
+              "w2": 0.0,
+              "meanFinalEValue": 0.95898,
+              "seFinalEValue": 0.03633,
+              "anytimeExceedanceRate": 0.0133,
+              "anytimeExceedanceCount": 133,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_07_03": {
+              "w1": 0.7,
+              "w2": 0.3,
+              "meanFinalEValue": 0.95022,
+              "seFinalEValue": 0.04179,
+              "anytimeExceedanceRate": 0.0117,
+              "anytimeExceedanceCount": 117,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_05_05": {
+              "w1": 0.5,
+              "w2": 0.5,
+              "meanFinalEValue": 0.94438,
+              "seFinalEValue": 0.05217,
+              "anytimeExceedanceRate": 0.0161,
+              "anytimeExceedanceCount": 161,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            },
+            "w_03_07": {
+              "w1": 0.3,
+              "w2": 0.7,
+              "meanFinalEValue": 0.93854,
+              "seFinalEValue": 0.0652,
+              "anytimeExceedanceRate": 0.0216,
+              "anytimeExceedanceCount": 216,
+              "deltaBudget": 0.05,
+              "passesExpectationBound": true,
+              "passesAnytimeVilleBound": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "baselines": {
+    "hcCrcSingleChannel": {
+      "label": "HC-CRC (Single-Channel Detector Binomial Risk Control)",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.3167,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 12.2159,
+          "sd": 5.1686,
+          "ci95": [
+            9.0909,
+            18.1818
+          ],
+          "perSeed": [
+            9.375,
+            9.0909,
+            18.1818
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 4.1035,
+          "sd": 1.8589,
+          "ci95": [
+            3.0303,
+            6.25
+          ],
+          "perSeed": [
+            6.25,
+            3.0303,
+            3.0303
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 94.9458,
+          "sd": 1.7624,
+          "ci95": [
+            93.75,
+            96.9697
+          ],
+          "perSeed": [
+            93.75,
+            94.1176,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 94.4368,
+          "sd": 1.7283,
+          "ci95": [
+            93.3333,
+            96.4286
+          ],
+          "perSeed": [
+            93.3333,
+            93.5484,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 46.6667,
+          "sd": 0.8248,
+          "ci95": [
+            45.7143,
+            47.1429
+          ],
+          "perSeed": [
+            45.7143,
+            47.1429,
+            47.1429
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "tauKeep": 0.31,
+            "certified": true,
+            "pValue": 0.03597,
+            "calClusterLoss": 0.0308
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 32,
+            "releaseRatePct": 45.7143,
+            "safeYieldPct": 93.75,
+            "jointSafeYieldPct": 93.3333,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.375,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 2,
+            "e2eDetectorLeakRatePct": 6.25
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "tauKeep": 0.32,
+            "certified": true,
+            "pValue": 0.03597,
+            "calClusterLoss": 0.0231
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 94.1176,
+            "jointSafeYieldPct": 93.5484,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.0909,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "tauKeep": 0.32,
+            "certified": true,
+            "pValue": 0.03597,
+            "calClusterLoss": 0.0231
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 18.1818,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        }
+      ]
+    },
+    "eLttDetectorOnly": {
+      "label": "E-LTT Single-Channel Detector-Only (w=[1.0, 0.0])",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.32,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 11.2414,
+          "sd": 6.1537,
+          "ci95": [
+            6.4516,
+            18.1818
+          ],
+          "perSeed": [
+            6.4516,
+            9.0909,
+            18.1818
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 3.0955,
+          "sd": 0.1129,
+          "ci95": [
+            3.0303,
+            3.2258
+          ],
+          "perSeed": [
+            3.2258,
+            3.0303,
+            3.0303
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 94.9458,
+          "sd": 1.7624,
+          "ci95": [
+            93.75,
+            96.9697
+          ],
+          "perSeed": [
+            93.75,
+            94.1176,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 94.4368,
+          "sd": 1.7283,
+          "ci95": [
+            93.3333,
+            96.4286
+          ],
+          "perSeed": [
+            93.3333,
+            93.5484,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 46.1905,
+          "sd": 1.6496,
+          "ci95": [
+            44.2857,
+            47.1429
+          ],
+          "perSeed": [
+            44.2857,
+            47.1429,
+            47.1429
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 30.4522,
+            "eAdv": 25.8217,
+            "eJoint": 30.4522,
+            "eMinUnion": 30.4522,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0769
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 31,
+            "releaseRatePct": 44.2857,
+            "safeYieldPct": 93.75,
+            "jointSafeYieldPct": 93.3333,
+            "releasedTop1ReIdCount": 2,
+            "releasedTop1ReIdRatePct": 6.4516,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.2258
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 30.4522,
+            "eAdv": 48.842,
+            "eJoint": 30.4522,
+            "eMinUnion": 30.4522,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0692
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 94.1176,
+            "jointSafeYieldPct": 93.5484,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.0909,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.9903,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 24.7602,
+            "eAdv": 125.8315,
+            "eJoint": 24.7602,
+            "eMinUnion": 24.7602,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0462
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 18.1818,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        }
+      ],
+      "weights": {
+        "w1": 1.0,
+        "w2": 0.0
+      }
+    }
+  },
+  "weightSweep": {
+    "w_10_00_detector_only": {
+      "label": "E-LTT Single-Channel Detector-Only (w=[1.0, 0.0])",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.32,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 11.2414,
+          "sd": 6.1537,
+          "ci95": [
+            6.4516,
+            18.1818
+          ],
+          "perSeed": [
+            6.4516,
+            9.0909,
+            18.1818
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 3.0955,
+          "sd": 0.1129,
+          "ci95": [
+            3.0303,
+            3.2258
+          ],
+          "perSeed": [
+            3.2258,
+            3.0303,
+            3.0303
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 94.9458,
+          "sd": 1.7624,
+          "ci95": [
+            93.75,
+            96.9697
+          ],
+          "perSeed": [
+            93.75,
+            94.1176,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 94.4368,
+          "sd": 1.7283,
+          "ci95": [
+            93.3333,
+            96.4286
+          ],
+          "perSeed": [
+            93.3333,
+            93.5484,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 46.1905,
+          "sd": 1.6496,
+          "ci95": [
+            44.2857,
+            47.1429
+          ],
+          "perSeed": [
+            44.2857,
+            47.1429,
+            47.1429
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 30.4522,
+            "eAdv": 25.8217,
+            "eJoint": 30.4522,
+            "eMinUnion": 30.4522,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0769
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 31,
+            "releaseRatePct": 44.2857,
+            "safeYieldPct": 93.75,
+            "jointSafeYieldPct": 93.3333,
+            "releasedTop1ReIdCount": 2,
+            "releasedTop1ReIdRatePct": 6.4516,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.2258
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 30.4522,
+            "eAdv": 48.842,
+            "eJoint": 30.4522,
+            "eMinUnion": 30.4522,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0692
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 94.1176,
+            "jointSafeYieldPct": 93.5484,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.0909,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 1.0,
+            "w2": 0.0,
+            "tauKeep": 0.32,
+            "qHatCal": 0.9903,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 24.7602,
+            "eAdv": 125.8315,
+            "eJoint": 24.7602,
+            "eMinUnion": 24.7602,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0462
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 18.1818,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        }
+      ],
+      "weights": {
+        "w1": 1.0,
+        "w2": 0.0
+      }
+    },
+    "w_07_03": {
+      "label": "AC-CRC Dual-Channel Convex E-Gate (w=[0.7, 0.3])",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.52,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 12.2159,
+          "sd": 5.1686,
+          "ci95": [
+            9.0909,
+            18.1818
+          ],
+          "perSeed": [
+            9.375,
+            9.0909,
+            18.1818
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 4.1035,
+          "sd": 1.8589,
+          "ci95": [
+            3.0303,
+            6.25
+          ],
+          "perSeed": [
+            6.25,
+            3.0303,
+            3.0303
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 94.9458,
+          "sd": 1.7624,
+          "ci95": [
+            93.75,
+            96.9697
+          ],
+          "perSeed": [
+            93.75,
+            94.1176,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 94.4368,
+          "sd": 1.7283,
+          "ci95": [
+            93.3333,
+            96.4286
+          ],
+          "perSeed": [
+            93.3333,
+            93.5484,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 46.6667,
+          "sd": 0.8248,
+          "ci95": [
+            45.7143,
+            47.1429
+          ],
+          "perSeed": [
+            45.7143,
+            47.1429,
+            47.1429
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.7,
+            "w2": 0.3,
+            "tauKeep": 0.52,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 30.4522,
+            "eAdv": 40.2424,
+            "eJoint": 33.3892,
+            "eMinUnion": 30.4522,
+            "calLossDet": 0.0231,
+            "calLossAdv": 0.0692
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 32,
+            "releaseRatePct": 45.7143,
+            "safeYieldPct": 93.75,
+            "jointSafeYieldPct": 93.3333,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.375,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 2,
+            "e2eDetectorLeakRatePct": 6.25
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.7,
+            "w2": 0.3,
+            "tauKeep": 0.52,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 15.9874,
+            "eAdv": 40.6963,
+            "eJoint": 23.4001,
+            "eMinUnion": 15.9874,
+            "calLossDet": 0.0308,
+            "calLossAdv": 0.0692
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 94.1176,
+            "jointSafeYieldPct": 93.5484,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.0909,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.7,
+            "w2": 0.3,
+            "tauKeep": 0.52,
+            "qHatCal": 0.9903,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 11.4581,
+            "eAdv": 112.8796,
+            "eJoint": 41.8845,
+            "eMinUnion": 11.4581,
+            "calLossDet": 0.0308,
+            "calLossAdv": 0.0462
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 18.1818,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        }
+      ],
+      "weights": {
+        "w1": 0.7,
+        "w2": 0.3
+      }
+    },
+    "w_05_05": {
+      "label": "AC-CRC Dual-Channel Convex E-Gate (w=[0.5, 0.5])",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.6467,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 10.8951,
+          "sd": 5.5693,
+          "ci95": [
+            6.4516,
+            17.1429
+          ],
+          "perSeed": [
+            6.4516,
+            9.0909,
+            17.1429
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 4.9425,
+          "sd": 3.1442,
+          "ci95": [
+            3.0303,
+            8.5714
+          ],
+          "perSeed": [
+            3.2258,
+            3.0303,
+            8.5714
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 94.9458,
+          "sd": 1.7624,
+          "ci95": [
+            93.75,
+            96.9697
+          ],
+          "perSeed": [
+            93.75,
+            94.1176,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 94.4368,
+          "sd": 1.7283,
+          "ci95": [
+            93.3333,
+            96.4286
+          ],
+          "perSeed": [
+            93.3333,
+            93.5484,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 47.1429,
+          "sd": 2.8572,
+          "ci95": [
+            44.2857,
+            50.0
+          ],
+          "perSeed": [
+            44.2857,
+            47.1429,
+            50.0
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.5,
+            "w2": 0.5,
+            "tauKeep": 0.66,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 46.939,
+            "eAdv": 40.2424,
+            "eJoint": 43.5907,
+            "eMinUnion": 40.2424,
+            "calLossDet": 0.0154,
+            "calLossAdv": 0.0692
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 31,
+            "releaseRatePct": 44.2857,
+            "safeYieldPct": 93.75,
+            "jointSafeYieldPct": 93.3333,
+            "releasedTop1ReIdCount": 2,
+            "releasedTop1ReIdRatePct": 6.4516,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.2258
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.5,
+            "w2": 0.5,
+            "tauKeep": 0.66,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 46.939,
+            "eAdv": 76.119,
+            "eJoint": 61.529,
+            "eMinUnion": 46.939,
+            "calLossDet": 0.0154,
+            "calLossAdv": 0.0615
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 33,
+            "releaseRatePct": 47.1429,
+            "safeYieldPct": 94.1176,
+            "jointSafeYieldPct": 93.5484,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.0909,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.0303
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.5,
+            "w2": 0.5,
+            "tauKeep": 0.62,
+            "qHatCal": 0.9903,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 1.0805,
+            "eAdv": 60.1272,
+            "eJoint": 30.6039,
+            "eMinUnion": 1.0805,
+            "calLossDet": 0.0692,
+            "calLossAdv": 0.0538
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 35,
+            "releaseRatePct": 50.0,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 17.1429,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 3,
+            "e2eDetectorLeakRatePct": 8.5714
+          }
+        }
+      ],
+      "weights": {
+        "w1": 0.5,
+        "w2": 0.5
+      }
+    },
+    "w_03_07": {
+      "label": "AC-CRC Dual-Channel Convex E-Gate (w=[0.3, 0.7])",
+      "certifiedRate": 1.0,
+      "meanTauKeep": 0.79,
+      "metrics": {
+        "releasedTop1ReIdRatePct": {
+          "mean": 10.9028,
+          "sd": 5.1721,
+          "ci95": [
+            6.6667,
+            16.6667
+          ],
+          "perSeed": [
+            6.6667,
+            9.375,
+            16.6667
+          ]
+        },
+        "releasedAmbiguityViolationRatePct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "perSeed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "releasedMeanAmbiguitySetSize": {
+          "mean": 10.0,
+          "sd": 0.0,
+          "ci95": [
+            10.0,
+            10.0
+          ],
+          "perSeed": [
+            10.0,
+            10.0,
+            10.0
+          ]
+        },
+        "e2eDetectorLeakRatePct": {
+          "mean": 5.8565,
+          "sd": 4.5518,
+          "ci95": [
+            3.125,
+            11.1111
+          ],
+          "perSeed": [
+            3.3333,
+            3.125,
+            11.1111
+          ]
+        },
+        "safeYieldPct": {
+          "mean": 92.9237,
+          "sd": 3.5147,
+          "ci95": [
+            90.625,
+            96.9697
+          ],
+          "perSeed": [
+            90.625,
+            91.1765,
+            96.9697
+          ]
+        },
+        "jointSafeYieldPct": {
+          "mean": 92.2504,
+          "sd": 3.622,
+          "ci95": [
+            90.0,
+            96.4286
+          ],
+          "perSeed": [
+            90.0,
+            90.3226,
+            96.4286
+          ]
+        },
+        "releaseRatePct": {
+          "mean": 46.6667,
+          "sd": 4.3644,
+          "ci95": [
+            42.8571,
+            51.4286
+          ],
+          "perSeed": [
+            42.8571,
+            45.7143,
+            51.4286
+          ]
+        }
+      },
+      "perSeed": [
+        {
+          "seed": 42,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.3,
+            "w2": 0.7,
+            "tauKeep": 0.8,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 72.3518,
+            "eAdv": 115.9132,
+            "eJoint": 102.8448,
+            "eMinUnion": 72.3518,
+            "calLossDet": 0.0077,
+            "calLossAdv": 0.0462
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 30,
+            "releaseRatePct": 42.8571,
+            "safeYieldPct": 90.625,
+            "jointSafeYieldPct": 90.0,
+            "releasedTop1ReIdCount": 2,
+            "releasedTop1ReIdRatePct": 6.6667,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.3333
+          }
+        },
+        {
+          "seed": 43,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.3,
+            "w2": 0.7,
+            "tauKeep": 0.8,
+            "qHatCal": 0.98854,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 72.3518,
+            "eAdv": 288.1332,
+            "eJoint": 223.3988,
+            "eMinUnion": 72.3518,
+            "calLossDet": 0.0077,
+            "calLossAdv": 0.0385
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 32,
+            "releaseRatePct": 45.7143,
+            "safeYieldPct": 91.1765,
+            "jointSafeYieldPct": 90.3226,
+            "releasedTop1ReIdCount": 3,
+            "releasedTop1ReIdRatePct": 9.375,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 1,
+            "e2eDetectorLeakRatePct": 3.125
+          }
+        },
+        {
+          "seed": 44,
+          "nCalClusters": 65,
+          "nHoldoutClusters": 35,
+          "calibration": {
+            "w1": 0.3,
+            "w2": 0.7,
+            "tauKeep": 0.77,
+            "qHatCal": 0.9903,
+            "kMinAmbiguity": 8,
+            "certified": true,
+            "targetWealth": 20.0,
+            "eDet": 1.0805,
+            "eAdv": 60.1272,
+            "eJoint": 42.4132,
+            "eMinUnion": 1.0805,
+            "calLossDet": 0.0692,
+            "calLossAdv": 0.0538
+          },
+          "holdout": {
+            "nHoldoutItems": 70,
+            "nReleasedItems": 36,
+            "releaseRatePct": 51.4286,
+            "safeYieldPct": 96.9697,
+            "jointSafeYieldPct": 96.4286,
+            "releasedTop1ReIdCount": 6,
+            "releasedTop1ReIdRatePct": 16.6667,
+            "releasedAmbiguityViolationCount": 0,
+            "releasedAmbiguityViolationRatePct": 0.0,
+            "releasedMeanAmbiguitySetSize": 10.0,
+            "e2eDetectorLeakCount": 4,
+            "e2eDetectorLeakRatePct": 11.1111
+          }
+        }
+      ],
+      "weights": {
+        "w1": 0.3,
+        "w2": 0.7
+      }
+    }
+  },
+  "deltasVsBaselines": {
+    "w_07_03_vs_hc_crc": {
+      "releasedTop1ReIdRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "safeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "w_07_03_vs_eltt_single": {
+      "releasedTop1ReIdRatePct": {
+        "mean": 0.9745,
+        "sd": 1.6878,
+        "ci95": [
+          0.0,
+          2.9234
+        ],
+        "perSeed": [
+          2.9234,
+          0.0,
+          0.0
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 1.0081,
+        "sd": 1.746,
+        "ci95": [
+          0.0,
+          3.0242
+        ],
+        "perSeed": [
+          3.0242,
+          0.0,
+          0.0
+        ]
+      },
+      "safeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": 0.4762,
+        "sd": 0.8248,
+        "ci95": [
+          0.0,
+          1.4286
+        ],
+        "perSeed": [
+          1.4286,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "w_05_05_vs_hc_crc": {
+      "releasedTop1ReIdRatePct": {
+        "mean": -1.3208,
+        "sd": 1.4819,
+        "ci95": [
+          -2.9234,
+          0.0
+        ],
+        "perSeed": [
+          -2.9234,
+          0.0,
+          -1.0389
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 0.839,
+        "sd": 4.3438,
+        "ci95": [
+          -3.0242,
+          5.5411
+        ],
+        "perSeed": [
+          -3.0242,
+          0.0,
+          5.5411
+        ]
+      },
+      "safeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": 0.4762,
+        "sd": 2.1822,
+        "ci95": [
+          -1.4286,
+          2.8571
+        ],
+        "perSeed": [
+          -1.4286,
+          0.0,
+          2.8571
+        ]
+      }
+    },
+    "w_05_05_vs_eltt_single": {
+      "releasedTop1ReIdRatePct": {
+        "mean": -0.3463,
+        "sd": 0.5998,
+        "ci95": [
+          -1.0389,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          -1.0389
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 1.847,
+        "sd": 3.1992,
+        "ci95": [
+          0.0,
+          5.5411
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          5.5411
+        ]
+      },
+      "safeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": 0.9524,
+        "sd": 1.6495,
+        "ci95": [
+          0.0,
+          2.8571
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          2.8571
+        ]
+      }
+    },
+    "w_03_07_vs_hc_crc": {
+      "releasedTop1ReIdRatePct": {
+        "mean": -1.3131,
+        "sd": 1.5064,
+        "ci95": [
+          -2.7083,
+          0.2841
+        ],
+        "perSeed": [
+          -2.7083,
+          0.2841,
+          -1.5151
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 1.7529,
+        "sd": 5.6832,
+        "ci95": [
+          -2.9167,
+          8.0808
+        ],
+        "perSeed": [
+          -2.9167,
+          0.0947,
+          8.0808
+        ]
+      },
+      "safeYieldPct": {
+        "mean": -2.022,
+        "sd": 1.7535,
+        "ci95": [
+          -3.125,
+          0.0
+        ],
+        "perSeed": [
+          -3.125,
+          -2.9411,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": -2.1864,
+        "sd": 1.8942,
+        "ci95": [
+          -3.3333,
+          0.0
+        ],
+        "perSeed": [
+          -3.3333,
+          -3.2258,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": -0.0,
+        "sd": 3.7797,
+        "ci95": [
+          -2.8572,
+          4.2857
+        ],
+        "perSeed": [
+          -2.8572,
+          -1.4286,
+          4.2857
+        ]
+      }
+    },
+    "w_03_07_vs_eltt_single": {
+      "releasedTop1ReIdRatePct": {
+        "mean": -0.3386,
+        "sd": 1.0194,
+        "ci95": [
+          -1.5151,
+          0.2841
+        ],
+        "perSeed": [
+          0.2151,
+          0.2841,
+          -1.5151
+        ]
+      },
+      "releasedAmbiguityViolationRatePct": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "perSeed": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "e2eDetectorLeakRatePct": {
+        "mean": 2.761,
+        "sd": 4.6071,
+        "ci95": [
+          0.0947,
+          8.0808
+        ],
+        "perSeed": [
+          0.1075,
+          0.0947,
+          8.0808
+        ]
+      },
+      "safeYieldPct": {
+        "mean": -2.022,
+        "sd": 1.7535,
+        "ci95": [
+          -3.125,
+          0.0
+        ],
+        "perSeed": [
+          -3.125,
+          -2.9411,
+          0.0
+        ]
+      },
+      "jointSafeYieldPct": {
+        "mean": -2.1864,
+        "sd": 1.8942,
+        "ci95": [
+          -3.3333,
+          0.0
+        ],
+        "perSeed": [
+          -3.3333,
+          -3.2258,
+          0.0
+        ]
+      },
+      "releaseRatePct": {
+        "mean": 0.4762,
+        "sd": 3.2992,
+        "ci95": [
+          -1.4286,
+          4.2857
+        ],
+        "perSeed": [
+          -1.4286,
+          -1.4286,
+          4.2857
+        ]
+      }
+    }
+  },
+  "honestAssessment": {
+    "balancedWeightDeltaTop1ReIdPctVsHcCrc": -1.3208,
+    "balancedWeightDeltaDetectorLeakPctVsHcCrc": 0.839,
+    "balancedWeightDeltaSafeYieldPctVsHcCrc": 0.0,
+    "summary": "Across 3 document-cluster splits, AC-CRC w=(0.5, 0.5) shifts held-out released top-1 re-identification rate by -1.32 pp and E2E detector leak rate by +0.84 pp vs single-channel HC-CRC, with a safe-yield delta of +0.00 pp. Dependent-channel Monte Carlo (10000 trials across 5 copula correlations) confirms E[E_joint] <= 1 and anytime exceedance <= delta=0.05. Operational caveat: computing C_adv(x) requires auxiliary K-candidate dossier scoring via a local LLM attacker, making AC-CRC best suited to offline batch release audits or high-risk escalations rather than sub-millisecond inline WASM streaming."
+  }
+}
