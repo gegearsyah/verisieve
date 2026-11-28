@@ -128,6 +128,18 @@ is available, is arXiv:2305.05968.
 - kNN distance as the OOD detector in embedding space: arXiv:2204.13600
 - Learning-to-defer / routing to a fallback expert: arXiv:2007.07361
 
+  Correction 2026-11-28 (W7 full-text pass): three of these ids are wrong.
+  2202.13439 is an unrelated math paper; the correct covariate-shift record
+  is the arXiv:1904.06019 entry already listed alongside it (Tibshirani et
+  al., "Conformal Prediction Under Covariate Shift"). 2204.13600 is an
+  unrelated physics paper; the correct kNN-OOD record is Sun et al.,
+  "Out-of-Distribution Detection with Deep Nearest Neighbors", ICML 2022,
+  arXiv:2204.06507. 2007.07361 is an unrelated cost-sensitive ensembling
+  paper; the deferral record is Mozannar and Sontag, "Consistent Estimators
+  for Learning to Defer to an Expert", arXiv:2006.01862 (venue check before
+  print: the arXiv comment says ICML 2020, some indexes say NeurIPS 2020).
+  Full verified records: 2026-11-28-w7-fulltext-verification-record.md.
+
 ## 8. Reproduction
 
 Both matrices are also recorded as committed artifact numbers in
