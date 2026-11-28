@@ -56,7 +56,7 @@ const PERMISSIVE_TEACHER_LICENCES = new Set([
 ]);
 const OPENAI_HOST = /(^|\.)openai\.com$/i;
 // API teachers are a separate verification class: a model-access licence, never weights.
-const API_TEACHER_LICENCE = 'mistral-api-tos';
+export const API_TEACHER_LICENCE = 'mistral-api-tos';
 const DEFAULT_API_TEACHER = path.join(ROOT, 'scripts/weft-mistral-teacher.mjs');
 const DEFAULT_TEACHER_CHUNK = 10;
 
@@ -234,7 +234,7 @@ function sleepSync(ms) {
   if (ms > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
-function completeWithRetry(teacher, prompt, delays = TEACHER_RETRY_DELAYS_MS) {
+export function completeWithRetry(teacher, prompt, delays = TEACHER_RETRY_DELAYS_MS) {
   for (let n = 0; ; n++) {
     try {
       return teacher.complete(prompt);
@@ -763,7 +763,7 @@ function normalizeDocs(input) {
   return { docs, byId, links };
 }
 
-function roleTokenMap(docs) {
+export function roleTokenMap(docs) {
   const seen = new Map();
   const counters = new Map();
   for (const ident of docs.flatMap((d) => d.identities)) {
@@ -776,7 +776,7 @@ function roleTokenMap(docs) {
   return seen;
 }
 
-function maskText(text, docs, tokens) {
+export function maskText(text, docs, tokens) {
   let out = text;
   const surfaces = docs
     .flatMap((d) => d.identities)
