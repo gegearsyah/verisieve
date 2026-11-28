@@ -150,7 +150,36 @@ function lengthObserved(docs) {
 }
 
 function runProfile(profile) {
+  const corpusPath = path.join(ROOT, 'results', `weft-fullscale-live-corpus-v5-${profile.id}.tmp.json`);
+  if (fs.existsSync(corpusPath)) {
+    console.error(`profile: ${profile.id} skipped, final corpus already exists: ${path.relative(ROOT, corpusPath)}`);
+    return null;
+  }
   const startedAt = new Date();
+  // Per-profile chunk checkpoint: every accepted chunk appends one line, so a
+  // crash (including a single unrecoverable teacher failure after the 5 backoff
+  // retries) loses at most one chunk. On restart the stored chunks are served
+  // verbatim via resumeChunk, so the resumed corpus stays byte-identical to an
+  // uninterrupted run (chunk seeds are pure functions of baseSeed, themeIndex,
+  // and chunk; the loop positions and id namespacing are unchanged).
+  const checkpointPath = path.join(ROOT, 'results', `weft-v5-checkpoint-${profile.id}.tmp.jsonl`);
+  const checkpoint = new Map();
+  if (fs.existsSync(checkpointPath)) {
+    // A mid-write crash can leave a truncated trailing line; appendFileSync on
+    // Windows is not atomic, so ignore unparseable lines and keep the rest.
+    for (const line of fs.readFileSync(checkpointPath, 'utf8').split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const rec = JSON.parse(line);
+        if (rec && Number.isInteger(rec.themeIndex) && Number.isInteger(rec.chunk) && rec.parsed) {
+          checkpoint.set(`${rec.themeIndex}:${rec.chunk}`, rec.parsed);
+        }
+      } catch {
+        // Malformed (truncated) checkpoint line: skip it.
+      }
+    }
+  }
+  let resumedChunks = 0;
   // One teacher per profile so the usage counters stay per profile.
   const teacher = resolveLocalTeacher(process.env);
   console.error(`profile: ${profile.id}, teacher: ${teacher.kind} ${teacher.model}, themes: ${THEMES.length}, pairsTarget: ${PAIRS_TARGET}, seed: ${SEED}`);
@@ -162,10 +191,17 @@ function runProfile(profile) {
     orgProfile: profile,
     lengthBands: LENGTH_BANDS,
     longBandChunkSize: LONG_BAND_CHUNK,
+    chunkRecord: (themeIndex, chunk, parsed) => {
+      fs.appendFileSync(checkpointPath, JSON.stringify({ themeIndex, chunk, parsed }) + '\n');
+    },
+    resumeChunk: (themeIndex, chunk) => {
+      const stored = checkpoint.get(`${themeIndex}:${chunk}`);
+      if (stored) resumedChunks += 1;
+      return stored;
+    },
   });
   const finishedAt = new Date();
 
-  const corpusPath = path.join(ROOT, 'results', `weft-fullscale-live-corpus-v5-${profile.id}.tmp.json`);
   fs.writeFileSync(corpusPath, JSON.stringify(corpus) + '\n');
 
   const bandHit = lengthObserved(corpus.docs);
@@ -180,6 +216,7 @@ function runProfile(profile) {
     promptTokens: teacher.usage.promptTokens,
     completionTokens: teacher.usage.completionTokens,
     totalTokens: teacher.usage.totalTokens,
+    resumedChunks,
     corpus: { docs: corpus.docs.length, links: corpus.links.length },
     themes: THEMES,
     styleHints: STYLE_HINTS,
@@ -190,6 +227,7 @@ function runProfile(profile) {
   };
   const usagePath = path.join(ROOT, 'results', `weft-api-usage-v5-${profile.id}.tmp.json`);
   fs.writeFileSync(usagePath, JSON.stringify(usage, null, 2) + '\n');
+  fs.rmSync(checkpointPath, { force: true });
   console.error(`corpus: ${corpus.docs.length} docs / ${corpus.links.length} links -> ${path.relative(ROOT, corpusPath)}`);
   console.error(`length: min ${bandHit.min}, p50 ${bandHit.p50}, p90 ${bandHit.p90}, max ${bandHit.max}, over300 ${bandHit.over300}`);
   return {
@@ -202,6 +240,7 @@ function runProfile(profile) {
       promptTokens: teacher.usage.promptTokens,
       completionTokens: teacher.usage.completionTokens,
       totalTokens: teacher.usage.totalTokens,
+      resumedChunks,
     },
     lengthObserved: bandHit,
     files: {
@@ -217,9 +256,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const total = { teacherCalls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   const summaries = ORG_PROFILES.map((profile) => {
   const summary = runProfile(profile);
+  if (!summary) return null;
   for (const key of Object.keys(total)) total[key] += summary.usage[key];
   return summary;
-});
+}).filter(Boolean);
 
 /**
  * Combined usage summary: the v4 usage shape plus a per-profile breakdown, so

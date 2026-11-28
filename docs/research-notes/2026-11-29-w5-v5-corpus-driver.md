@@ -111,3 +111,29 @@ positive.
 
 The pre-spend audit gate (Opus tier) runs on this note plus the driver and
 compiler diff, before any API spend.
+
+## 6. Mid-run crash hardening (2026-11-28 follow-up)
+
+The live v5 attempt on 2026-11-28 died about 20 minutes in: one transient
+upstream network failure in a single Mistral teacher call surfaced as a
+`WeftTeacherUnavailableError` (reason `runtime-failed`) with no retry and no
+checkpoint, and the whole process died, losing around 65 teacher calls. Two
+fixes, both additive and byte-stable when the teacher never fails:
+
+- Retry with backoff in the compiler: a typed `WeftTeacherUnavailableError`
+  from a teacher completion call is retried up to 5 more times after 30s,
+  60s, 120s, 300s, and 600s (6 total attempts; each retry logs one stderr
+  line). Only typed runtime errors retry; the existing 2-attempt parse retry
+  for truncated or invalid JSON keeps its exact seed-shift behavior.
+  Overridable per call via `retryDelaysMs` (tests pass `[0, 0, 0]`); no env
+  plumbing.
+- Chunk checkpoint and resume: the driver appends one JSON line per accepted
+  chunk to `results/weft-v5-checkpoint-<profileId>.tmp.jsonl` (malformed
+  trailing lines from a mid-write crash are ignored), and passes
+  `resumeChunk` so a restarted run injects stored chunks verbatim at the same
+  loop positions instead of re-calling the teacher. If a profile's final
+  corpus file already exists the whole profile is skipped. After a profile
+  completes, its checkpoint is deleted. The usage files record
+  `resumedChunks`. A resumed corpus is byte-identical to an uninterrupted
+  run, because chunk seeds are pure functions of the base seed, theme index,
+  and chunk index.

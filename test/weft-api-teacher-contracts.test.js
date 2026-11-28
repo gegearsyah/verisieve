@@ -497,3 +497,105 @@ test('W-API 7: banned-word sweep over the adapter, the contract test, and the au
     }
   }
 });
+
+function flakyStubTeacher(calls, failTimes, attempts) {
+  const base = stubTeacher(calls);
+  return {
+    ...base,
+    complete(prompt) {
+      attempts.push(prompt);
+      if (attempts.length <= failTimes) {
+        throw new WeftTeacherUnavailableError(`simulated adapter outage ${attempts.length}`, 'runtime-failed');
+      }
+      return base.complete(prompt);
+    },
+  };
+}
+
+test('W-API 9: typed teacher runtime failures retry with backoff; others fail at once', () => {
+  const logged = [];
+  const realError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  try {
+    // One transient outage then recovery: each chunk completes.
+    const success = [];
+    const attempts = [];
+    const corpus = generateTeacherEstates(flakyStubTeacher(success, 1, attempts), {
+      themes: ['alpha', 'beta'],
+      pairsTarget: 160,
+      chunkSize: 7,
+      seed: 5,
+      retryDelaysMs: [0, 0, 0],
+    });
+    assert.equal(corpus.docs.length, 20, 'the corpus still completes');
+    assert.equal(attempts.length, 5, 'four chunk calls plus one retried outage');
+    assert.ok(logged.some((line) => /weft-teacher retry 1\/4 after 0ms: simulated adapter outage 1/.test(line)),
+      'each retry logs one stderr line');
+
+    // An outage that outlasts the backoff propagates after 1 + delays.length attempts
+    // per completion call (one single-chunk call here).
+    const doomedAttempts = [];
+    assert.throws(
+      () => generateTeacherEstates(flakyStubTeacher([], 99, doomedAttempts), {
+        themes: ['alpha'],
+        pairsTarget: 160,
+        chunkSize: 20,
+        seed: 5,
+        retryDelaysMs: [0, 0, 0],
+      }),
+      (err) => err instanceof WeftTeacherUnavailableError && err.reason === 'runtime-failed'
+    );
+    assert.equal(doomedAttempts.length, 8,
+      'two parse attempts (seed-shifted), each exhausting 1 + delays.length completion calls');
+
+    // A non-typed error is never retried: it propagates on the initial attempt.
+    const plainTeacher = stubTeacher([]);
+    let plainCalls = 0;
+    plainTeacher.complete = () => {
+      plainCalls += 1;
+      throw new Error('boom');
+    };
+    assert.throws(
+      () => generateTeacherEstates(plainTeacher, { themes: ['alpha'], pairsTarget: 160 }),
+      { message: 'boom' }
+    );
+    assert.equal(plainCalls, 2, 'a non-typed error gets only the unchanged parse attempts, no backoff retries');
+  } finally {
+    console.error = realError;
+  }
+});
+
+test('W-API 10: chunk checkpoint resume reproduces the uninterrupted corpus', () => {
+  const options = { themes: ['alpha', 'beta'], pairsTarget: 160, chunkSize: 7, seed: 5 };
+  const reference = generateTeacherEstates(stubTeacher([]), options);
+
+  const recorded = [];
+  generateTeacherEstates(stubTeacher([]), {
+    ...options,
+    chunkRecord: (themeIndex, chunk, parsed) => recorded.push({ themeIndex, chunk, parsed }),
+  });
+  assert.equal(recorded.length, 4, 'one checkpoint record per chunk');
+  const checkpoint = new Map(recorded.map((r) => [`${r.themeIndex}:${r.chunk}`, r.parsed]));
+
+  // Mixed resume: theme 0 chunks served from the checkpoint, theme 1 via the teacher.
+  const partialCalls = [];
+  const partial = generateTeacherEstates(stubTeacher(partialCalls), {
+    ...options,
+    resumeChunk: (themeIndex, chunk) => (themeIndex === 0 ? checkpoint.get(`${themeIndex}:${chunk}`) : undefined),
+  });
+  assert.equal(partialCalls.length, 2, 'checkpointed chunks make no teacher call');
+  assert.equal(JSON.stringify(partial), JSON.stringify(reference),
+    'a resumed run is JSON-identical to an uninterrupted run');
+
+  // Full resume replays every chunk with zero teacher calls and no re-recording.
+  const replayCalls = [];
+  const replayed = generateTeacherEstates(stubTeacher(replayCalls), {
+    ...options,
+    resumeChunk: (themeIndex, chunk) => checkpoint.get(`${themeIndex}:${chunk}`),
+    chunkRecord: () => {
+      throw new Error('a resumed chunk must never be re-recorded');
+    },
+  });
+  assert.equal(replayCalls.length, 0, 'a full resume never calls the teacher');
+  assert.equal(JSON.stringify(replayed), JSON.stringify(reference));
+});

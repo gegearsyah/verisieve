@@ -216,6 +216,30 @@ export class WeftTeacherUnavailableError extends Error {
   }
 }
 
+// Synchronous backoff for transient adapter/network failures during a live run:
+// one upstream blip must not kill hours of spend. Delays sit BEFORE each retry;
+// total attempts = 1 + delays.length. Only typed WeftTeacherUnavailableError
+// retries, so parse failures keep their own bounded 2-attempt seed-shift retry.
+export const TEACHER_RETRY_DELAYS_MS = [30000, 60000, 120000, 300000, 600000];
+
+function sleepSync(ms) {
+  if (ms > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function completeWithRetry(teacher, prompt, delays = TEACHER_RETRY_DELAYS_MS) {
+  for (let n = 0; ; n++) {
+    try {
+      return teacher.complete(prompt);
+    } catch (err) {
+      if (!(err instanceof WeftTeacherUnavailableError)) throw err;
+      if (n >= delays.length) throw err;
+      const ms = delays[n] ?? 0;
+      console.error(`weft-teacher retry ${n + 1}/${delays.length + 1} after ${ms}ms: ${err.message}`);
+      sleepSync(ms);
+    }
+  }
+}
+
 function sha256Hex(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
@@ -504,6 +528,9 @@ export function generateTeacherEstates(teacher, options = {}) {
   const longBandChunk = Number.isInteger(options.longBandChunkSize) && options.longBandChunkSize > 0
     ? options.longBandChunkSize
     : 3;
+  const retryDelays = Array.isArray(options.retryDelaysMs) ? options.retryDelaysMs : TEACHER_RETRY_DELAYS_MS;
+  const chunkRecord = typeof options.chunkRecord === 'function' ? options.chunkRecord : null;
+  const resumeChunk = typeof options.resumeChunk === 'function' ? options.resumeChunk : null;
   const docs = [];
   const links = [];
   themes.forEach((theme, themeIndex) => {
@@ -550,33 +577,51 @@ export function generateTeacherEstates(teacher, options = {}) {
         'Never print identity key strings such as emp- or vendor- prefixes inside document text.',
         `This is chunk ${chunk + 1}; ids must be unique within the chunk.`,
       ].join(' ');
-      // One bounded retry per chunk: a single truncated response must not kill a
-      // long live run; the seed shifts so the retry is a fresh sample.
+      // Checkpoint resume: a resumed run must produce a corpus byte-identical to
+      // an uninterrupted run, because chunk seeds are pure functions of
+      // (baseSeed, themeIndex, chunk) and checkpointed chunks are injected
+      // verbatim at the same loop positions. A served chunk skips both the
+      // teacher call and the chunkRecord call (the checkpoint already has it).
       let parsed = null;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        let raw;
-        try {
-          raw = teacher.complete(attempt === 0 ? prompt : prompt.replace(`Seed: ${seed}.`, `Seed: ${seed + 1}.`));
-        } catch (err) {
-          if (attempt === 1) throw err;
-          continue;
+      if (resumeChunk) {
+        const stored = resumeChunk(themeIndex, chunk);
+        if (stored && Array.isArray(stored.docs) && stored.docs.length > 0) {
+          parsed = stored;
         }
-        const start = raw.indexOf('{');
-        const end = raw.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-          if (attempt === 1) throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
-          continue;
-        }
-        try {
-          parsed = JSON.parse(raw.slice(start, end + 1));
-        } catch {
+      }
+      if (!parsed) {
+        // One bounded retry per chunk: a single truncated response must not kill a
+        // long live run; the seed shifts so the retry is a fresh sample.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          let raw;
+          try {
+            raw = completeWithRetry(
+              teacher,
+              attempt === 0 ? prompt : prompt.replace(`Seed: ${seed}.`, `Seed: ${seed + 1}.`),
+              retryDelays
+            );
+          } catch (err) {
+            if (attempt === 1) throw err;
+            continue;
+          }
+          const start = raw.indexOf('{');
+          const end = raw.lastIndexOf('}');
+          if (start < 0 || end <= start) {
+            if (attempt === 1) throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
+            continue;
+          }
+          try {
+            parsed = JSON.parse(raw.slice(start, end + 1));
+          } catch {
+            parsed = null;
+          }
+          if (parsed && Array.isArray(parsed.docs) && parsed.docs.length > 0) break;
           parsed = null;
+          if (attempt === 1) {
+            throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
+          }
         }
-        if (parsed && Array.isArray(parsed.docs) && parsed.docs.length > 0) break;
-        parsed = null;
-        if (attempt === 1) {
-          throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
-        }
+        if (chunkRecord) chunkRecord(themeIndex, chunk, parsed);
       }
       // Namespace ids per chunk so repeated model ids across calls cannot collide.
       const idMap = new Map();
