@@ -108,7 +108,7 @@ function stubTeacher(calls, { idPattern = (i) => `d${i % 2}` } = {}) {
     auditEntry: { status: 'green' },
     complete(prompt) {
       calls.push(prompt);
-      const want = Number(/Produce\s+(\d+)\s+short documents/.exec(prompt)[1]);
+      const want = Number(/Produce\s+(\d+)\s+documents/.exec(prompt)[1]);
       const theme = JSON.parse(/theme\s+("[^"]+")/.exec(prompt)[1]);
       const formats = ['email', 'transcript', 'slides', 'table', 'ticket', 'pdf-scan'];
       return JSON.stringify({
@@ -256,8 +256,8 @@ test('W-API 4: chunked generation loops in bounded chunks with deterministic see
   });
   // perTheme = max(5, ceil(160 / 8 / 2)) = 10, so each theme is 7 + 3 documents.
   assert.equal(calls.length, 4, 'two chunks per theme');
-  assert.equal(calls.filter((prompt) => /Produce 7 short documents/.test(prompt)).length, 2);
-  assert.equal(calls.filter((prompt) => /Produce 3 short documents/.test(prompt)).length, 2);
+  assert.equal(calls.filter((prompt) => /Produce 7 documents/.test(prompt)).length, 2);
+  assert.equal(calls.filter((prompt) => /Produce 3 documents/.test(prompt)).length, 2);
   const expectedSeeds = ['alpha', 'beta'].flatMap((_, themeIndex) => [0, 1].map((chunk) => (5 * 1000003 + themeIndex * 10007 + chunk) >>> 0));
   assert.deepEqual(calls.map((prompt) => Number(/^Seed:\s*(\d+)\./m.exec(prompt)[1])), expectedSeeds);
 

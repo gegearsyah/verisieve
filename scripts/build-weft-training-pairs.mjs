@@ -454,16 +454,27 @@ export function generateTeacherEstates(teacher, options = {}) {
     for (let chunk = 0; collected < perTheme; chunk++) {
       const want = Math.min(chunkSize, perTheme - collected);
       const seed = (baseSeed * 1000003 + themeIndex * 10007 + chunk) >>> 0;
+      // Per-chunk voice and length hints (2026-11-28 audit: seeds alone reshuffle
+      // content, not style; without explicit hints every chunk lands in the same
+      // teacher voice and the style axis never moves).
+      const styleHints = Array.isArray(options.styleHints) && options.styleHints.length ? options.styleHints : null;
+      const lengthHint = typeof options.lengthHint === 'string' && options.lengthHint.trim() ? options.lengthHint.trim() : null;
+      const voice = styleHints ? styleHints[seed % styleHints.length] : null;
       const prompt = [
         `Seed: ${seed}.`,
         'Return only a JSON object.',
-        `Produce ${want} short documents about the theme ${JSON.stringify(theme)}.`,
+        `Produce ${want} documents about the theme ${JSON.stringify(theme)}.`,
         'Mix formats: email, transcript, slides, table, ticket, pdf-scan. Mix departments.',
+        ...(voice ? [`Write every document in this chunk with this voice: ${JSON.stringify(String(voice))}.`] : []),
+        ...(lengthHint ? [`Vary document lengths: ${JSON.stringify(lengthHint)}.`] : []),
         'Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],',
         '"links":[{"a","b","type"}]} where type is one of thread, attachment, meeting-minutes, ticket-pr, hyperlink.',
         'Reuse some identity keys within the chunk so linked documents share identities.',
         `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(SHARED_IDENTITY_ROSTER)}.`,
         'Each document uses 1 or 2 roster identities at most and at least 3 identity keys unique to this chunk, so same-theme documents can be fully identity-disjoint.',
+        'The chunk-unique identities must use invented names distinct from the roster surfaces; never reuse a roster surface for a chunk-unique identity.',
+        'Set each doc theme field to exactly the theme string given, never a document title.',
+        'Never print identity key strings such as emp- or vendor- prefixes inside document text.',
         `This is chunk ${chunk + 1}; ids must be unique within the chunk.`,
       ].join(' ');
       // One bounded retry per chunk: a single truncated response must not kill a
@@ -673,6 +684,10 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const includeDisjointNegatives = options.includeDisjointNegatives === true;
   const excludeWithinChunk = options.excludeWithinChunk === true;
   const corpusProvided = options.corpusProvided === true;
+  // Opt-in (2026-11-28 audit): masked-role tokens and text augmentation appear
+  // only in masked positives unless diluted; undiluted, [PERSON_n]-style markers
+  // and OCR/ASR noise are a deterministic positive label cue.
+  const diluteMaskedMarkers = options.diluteMaskedMarkers === true;
 
   const rejected = {};
   const emitted = new Set();
@@ -686,9 +701,16 @@ export function compileWeftTrainingPairs(input, options = {}) {
   const docKey = (type, doc) => `${type}\u0000${doc.id}`;
   const docUnderCap = (type, doc) => (perDocPairs.get(docKey(type, doc)) || 0) < capPerDoc;
   const docBump = (type, doc) => perDocPairs.set(docKey(type, doc), (perDocPairs.get(docKey(type, doc)) || 0) + 1);
-  // Chunk identity lives in the doc id (theme-cN-doc-M); ids without the
-  // marker are each their own chunk, so the fixture corpus is unaffected.
-  const chunkOf = (doc) => doc.id.split('-doc-')[0];
+  // Chunk identity is the leftmost `-c<digits>-` marker that generateTeacherEstates
+  // prefixes onto every live doc id; fixture and hand-written ids without the
+  // marker are each their own chunk. (A plain -doc- split silently broke when a
+  // teacher emitted ids without that substring, which voided the
+  // within-chunk exclusion flag.)
+  const CHUNK_MARKER = /-c\d+-/;
+  const chunkOf = (doc) => {
+    const m = CHUNK_MARKER.exec(doc.id);
+    return m ? doc.id.slice(0, m.index + m[0].length - 1) : doc.id;
+  };
 
   const reject = (doc, status) => {
     const bucket = (rejected[doc.source] ||= { count: 0, status });
@@ -723,7 +745,13 @@ export function compileWeftTrainingPairs(input, options = {}) {
     }
     emitted.add(dedupe);
 
-    const tokens = pairType === 'identity-masked-positive' ? roleTokenMap([a, b]) : null;
+    // Deterministic per-pair dilution: a fixed hash-slice of identity-matched
+    // negatives gets the same masking and augmentation as masked positives, so
+    // the markers stop being a label cue while the negative lesson keeps its cue.
+    const maskNegSelected = diluteMaskedMarkers
+      && pairType === 'identity-matched-theme-different-negative'
+      && (Number.parseInt(sha256Hex(`weft-mask-dilution\u0000${docIds.join('\u0000')}`).slice(0, 8), 16) % 100) < 5;
+    const tokens = pairType === 'identity-masked-positive' || maskNegSelected ? roleTokenMap([a, b]) : null;
     const textA = tokens ? maskText(a.text, [a, b], tokens) : a.text;
     let textB = tokens ? maskText(b.text, [a, b], tokens) : b.text;
     let augmentation = null;
@@ -877,8 +905,17 @@ export function compileWeftTrainingPairs(input, options = {}) {
     generator,
     // Recipe flags are recorded only when a non-default recipe is used, so the
     // committed default-recipe receipts keep their exact committed shape.
-    ...(includeDisjointNegatives || excludeWithinChunk || corpusProvided
-      ? { recipeOptions: { includeDisjointNegatives, excludeWithinChunk, corpusProvided } }
+    ...(includeDisjointNegatives || excludeWithinChunk || corpusProvided || diluteMaskedMarkers
+      ? {
+          recipeOptions: {
+            includeDisjointNegatives,
+            excludeWithinChunk,
+            corpusProvided,
+            // Recorded only when on, so the committed v2-recipe receipts keep
+            // their exact committed shape on a recompile.
+            ...(diluteMaskedMarkers ? { diluteMaskedMarkers } : {}),
+          },
+        }
       : {}),
     targetPairs,
     pairCount: kept.length,
@@ -1062,6 +1099,7 @@ export function runWeftTrainingPairArtifacts(options = {}) {
     corpusProvided: Boolean(options.corpus),
     includeDisjointNegatives: options.includeDisjointNegatives === true,
     excludeWithinChunk: options.excludeWithinChunk === true,
+    diluteMaskedMarkers: options.diluteMaskedMarkers === true,
     targetPairs: options.targetPairs,
     evalSize: options.evalSize,
     augment: options.augment,
@@ -1102,6 +1140,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     writeAudit: args.corpus ? false : undefined,
     includeDisjointNegatives: args['include-disjoint-negatives'] === true,
     excludeWithinChunk: args['exclude-within-chunk'] === true,
+    diluteMaskedMarkers: args['dilute-masked-markers'] === true,
     targetPairs: args['target-pairs'] ? Number.parseInt(String(args['target-pairs']), 10) : undefined,
     evalSize: args['eval-size'] ? Number.parseInt(String(args['eval-size']), 10) : undefined,
   });
