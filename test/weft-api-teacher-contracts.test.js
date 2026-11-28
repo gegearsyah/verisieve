@@ -12,6 +12,7 @@ import {
   TEACH_ATTEMPTS,
   WeftTeacherUnavailableError,
   generateTeacherEstates,
+  parseLooseJson,
   resolveLocalTeacher,
 } from '../scripts/build-weft-training-pairs.mjs';
 
@@ -633,4 +634,21 @@ test('W-API 11: two valid-but-empty samples do not kill a chunk; the third sampl
   assert.deepEqual(seeds[1], seeds[0] + 1, 'a retry shifts the seed by its attempt index');
   assert.deepEqual(seeds[2], seeds[0] + 2, 'the next retry shifts the seed by two');
   assert.equal(corpus.docs.length, 20, 'the rescued chunk completes the corpus');
+});
+
+// W-API 12: the teacher sometimes emits literal (unescaped) newlines inside
+// JSON string literals; parseLooseJson rescues those samples and is an
+// identity function on valid JSON (the 2026-11-28 strata smoke failed four
+// samples in a row on exactly this defect).
+test('W-API 12: parseLooseJson escapes raw control characters inside strings and never alters valid JSON', () => {
+  const loose = '{"docs": [{"text": "line one\nline two\ttabbed\rline three"}], "links": []}';
+  assert.throws(() => JSON.parse(loose), SyntaxError, 'the fixture is genuinely invalid JSON');
+  const parsed = parseLooseJson(loose);
+  assert.equal(parsed.docs[0].text, 'line one\nline two\ttabbed\rline three');
+  assert.equal(
+    JSON.stringify(parseLooseJson('{"a": [1, 2], "b": {"c": "x\\n"}}')),
+    JSON.stringify(JSON.parse('{"a": [1, 2], "b": {"c": "x\\n"}}')),
+    'valid JSON round-trips byte-identically'
+  );
+  assert.throws(() => parseLooseJson('{"a":'), 'structural corruption still fails');
 });

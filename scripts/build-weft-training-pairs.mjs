@@ -60,6 +60,53 @@ export const API_TEACHER_LICENCE = 'mistral-api-tos';
 const DEFAULT_API_TEACHER = path.join(ROOT, 'scripts/weft-mistral-teacher.mjs');
 const DEFAULT_TEACHER_CHUNK = 10;
 
+// Mistral sometimes emits literal (unescaped) newlines inside JSON string
+// literals, which JSON.parse rejects; the 2026-11-28 strata smoke failed 4
+// samples in a row on exactly this. Escape control characters that appear
+// inside string literals, leaving legal between-token whitespace untouched.
+// On valid JSON this is an identity function, so accepted outputs never change.
+export function parseLooseJson(text) {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (const ch of text) {
+    if (inString) {
+      if (escaped) {
+        out += ch;
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        out += ch;
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+        out += ch;
+        continue;
+      }
+      if (ch === '\n') {
+        out += '\\n';
+        continue;
+      }
+      if (ch === '\r') {
+        out += '\\r';
+        continue;
+      }
+      if (ch === '\t') {
+        out += '\\t';
+        continue;
+      }
+      out += ch;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    out += ch;
+  }
+  return JSON.parse(out);
+}
+
 // ---------------------------------------------------------------------------
 // Licence audit. Facts are the verified rows of the 2026-11-27 research note;
 // anything the note could not verify is recorded as unverified, never guessed.
@@ -623,7 +670,7 @@ export function generateTeacherEstates(teacher, options = {}) {
             continue;
           }
           try {
-            parsed = JSON.parse(raw.slice(start, end + 1));
+            parsed = parseLooseJson(raw.slice(start, end + 1));
           } catch {
             parsed = null;
           }

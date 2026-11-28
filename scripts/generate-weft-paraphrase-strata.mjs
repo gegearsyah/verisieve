@@ -28,6 +28,7 @@
  * ever read, printed, or logged here.
  */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ORG_PROFILES, SEED } from './generate-weft-live-corpus-v5.mjs';
@@ -37,6 +38,7 @@ import {
   WeftTeacherUnavailableError,
   completeWithRetry,
   maskText,
+  parseLooseJson,
   resolveLocalTeacher,
   roleTokenMap,
 } from './build-weft-training-pairs.mjs';
@@ -141,12 +143,20 @@ function parseTeacherDocs(teacher, prompt, seed, minDocs) {
     }
     let parsed = null;
     try {
-      parsed = JSON.parse(raw.slice(start, end + 1));
+      parsed = parseLooseJson(raw.slice(start, end + 1));
     } catch {
       parsed = null;
     }
     if (parsed && Array.isArray(parsed.docs) && parsed.docs.length >= minDocs) return parsed;
     if (attempt === TEACH_ATTEMPTS - 1) {
+      // The raw samples are the only way to diagnose a systematic response-shape
+      // failure; they go to TEMP, never the repo.
+      try {
+        const stamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+        fs.writeFileSync(path.join(os.tmpdir(), `weft-strata-reject-${stamp}.txt`), `${prompt}\n\n=== RAW (${raw.length} chars):\n${raw}\n`, { flag: 'wx' });
+      } catch {
+        // A failed dump never masks the real error.
+      }
       throw new WeftTeacherUnavailableError('teacher JSON is missing the requested documents array', 'runtime-failed');
     }
   }
