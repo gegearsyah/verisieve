@@ -137,3 +137,16 @@ fixes, both additive and byte-stable when the teacher never fails:
   `resumedChunks`. A resumed corpus is byte-identical to an uninterrupted
   run, because chunk seeds are pure functions of the base seed, theme index,
   and chunk index.
+
+Re-audit verdict (2026-11-28, commit `43206dd`): PASS-WITH-NOTES, relaunch
+approved. The notes, for the ledger: (1) a kill between a profile's corpus
+write and its usage write leaves that profile's token spend unrecoverable
+(a rerun skips the profile, so its usage file is never written) and any
+crash-resume undercounts the crashed attempt's tokens, so a corpus that
+exists without its usage file must be recorded in the ledger as spend of
+unknown size, never as zero; (2) `resumedChunks` counts any truthy
+`resumeChunk` return, including chunks the compiler rejects and re-teaches
+live, so it can overcount; (3) the 6 attempts are per completion call: a
+hard outage composes with the unchanged 2-attempt seed-shift loop into up
+to 12 adapter calls and roughly 37 minutes of synchronous sleep per chunk
+before the checkpoint saves the run.
