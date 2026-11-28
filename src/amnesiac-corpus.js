@@ -159,6 +159,13 @@ function sha256Hex(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+// Typed fail-closed errors for eraseEntity targets (weft-theme-linker pattern: Error with a code).
+const eraseTargetError = (code, message) => {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+};
+
 /**
  * Certified (1−δ) binomial lower bound for k successes in n trials: solves
  * P(X >= k | n, p) = δ by fixed-sequence Learn-Then-Test inversion over the repo's
@@ -769,9 +776,192 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
 }
 
 /**
+ * Source-anchor erasure (spec: gegearsyah/versieve#66): regenerate the corpus minus every
+ * sample from one source. The diff must be pure deletion of exactly that source's sample
+ * lines, and the diff receipt states the target's full footprint: removed samples and the
+ * exact JSONL bytes deleted, which entities were removed versus merely shrunk, and the
+ * theme-channel invalidation when a theme channel is present. Entity erasure semantics are
+ * untouched; composed corpora fail closed instead of guessing at retraction semantics.
+ */
+function eraseSource(state, sourceName) {
+  if (sourceName === '') {
+    throw eraseTargetError('AMNESIAC_ERASE_TARGET_MALFORMED', "eraseEntity: a 'source:' target must name a source");
+  }
+  if (state.receipt.compositionPolicy === COMPOSITION_POLICY) {
+    throw eraseTargetError(
+      'AMNESIAC_ERASE_SOURCE_COMPOSED_UNSUPPORTED',
+      'eraseEntity: source erasure is defined for per-block corpora only; composed corpora keep their proven entity-path erasure instead of unproven retraction semantics'
+    );
+  }
+  const removed = state.samples.filter((s) => s.source === sourceName);
+  if (removed.length === 0) {
+    throw eraseTargetError(
+      'AMNESIAC_ERASE_TARGET_UNKNOWN',
+      `eraseEntity: unknown source anchor source:${sourceName}; failing loudly rather than emitting a subtly-wrong corpus`
+    );
+  }
+  const removedIds = new Set(removed.map((s) => s.id));
+  const remaining = state.samples.filter((s) => !removedIds.has(s.id));
+  const jsonl = serialize(remaining);
+
+  // Mechanical pure-deletion check: the surviving lines must be exactly the original lines
+  // minus the removed samples' lines, in order (sample ids are unique, so a removed line can
+  // never collide with a surviving one).
+  const removedLines = new Set(removed.map((s) => JSON.stringify(sampleLine(s))));
+  const survivingLines = String(state.jsonl).split('\n').filter(Boolean).filter((l) => !removedLines.has(l));
+  const afterLines = jsonl.split('\n').filter(Boolean);
+  if (afterLines.length !== survivingLines.length || afterLines.some((l, i) => l !== survivingLines[i])) {
+    throw eraseTargetError(
+      'AMNESIAC_ERASE_DIFF_MISMATCH',
+      `eraseEntity: byte-diff for source:${sourceName} is not pure deletion of its sample lines; failing loudly instead of emitting a subtly-wrong corpus`
+    );
+  }
+
+  // Entity index re-derivation: entities that lost samples keep their remaining sampleIds and
+  // exactly-decremented occurrence counts (one occurrence per block); entities whose every
+  // sample came from the erased source are dropped from the index and listed in the receipt.
+  const removedEntityHits = new Map();
+  for (const s of removed) {
+    for (const eid of s.entities) removedEntityHits.set(eid, (removedEntityHits.get(eid) || 0) + 1);
+  }
+  const regeneratedEntityIndex = [];
+  const removedEntityIds = [];
+  const changedEntityIds = [];
+  for (const e of state.entityIndex) {
+    if (e.sampleIds.every((id) => !removedIds.has(id))) {
+      regeneratedEntityIndex.push(e);
+      continue;
+    }
+    const occurrences = e.occurrences - (removedEntityHits.get(e.entityId) || 0);
+    if (occurrences < 0) {
+      throw eraseTargetError(
+        'AMNESIAC_ERASE_DIFF_MISMATCH',
+        `eraseEntity: entity ${e.entityId} records more occurrences than samples removed for source:${sourceName}; rebuild the corpus instead of emitting a subtly-wrong one`
+      );
+    }
+    const sampleIds = e.sampleIds.filter((id) => !removedIds.has(id));
+    changedEntityIds.push(e.entityId);
+    if (sampleIds.length === 0) {
+      removedEntityIds.push(e.entityId);
+      continue;
+    }
+    regeneratedEntityIndex.push({ ...e, sampleIds: [...sampleIds].sort(), occurrences });
+  }
+
+  // Same theme re-proof as entity erasure: all chunks anchored in removed samples are
+  // invalidated, pairs through them are dropped (conservative), and the agglomeration is
+  // re-derived over the survivors with the same policy version and model sha.
+  let themeStateAfter = null;
+  let themeDiffExtra = {};
+  if (state.theme) {
+    const themePolicy = { policyVersion: state.theme.policyVersion, joinThreshold: state.theme.policy.joinThreshold, simFloor: state.theme.policy.simFloor, anchorK: 0, modelSha256: state.theme.modelSha256 };
+    const invalidatedBlockIds = new Set(removed.map((s) => s.blockId).filter(Boolean));
+    const invalidatedChunkIds = new Set(
+      state.theme.chunks.filter((c) => c.blockId !== null && invalidatedBlockIds.has(c.blockId)).map((c) => c.id)
+    );
+    const survivingPairs = state.theme.pairs.filter((p) => !invalidatedChunkIds.has(p.a) && !invalidatedChunkIds.has(p.b));
+    const themeNodesBefore = agglomerateThemeNodes(state.theme.pairs, themePolicy);
+    const themeAfter = agglomerateThemeNodes(survivingPairs, themePolicy);
+    themeDiffExtra = {
+      themeReDerived: true,
+      themeNodeCountBefore: themeNodesBefore.nodes.length,
+      themeNodeCountAfter: themeAfter.nodes.length,
+      themeInvalidatedPairCount: state.theme.pairs.length - survivingPairs.length,
+      changedThemeNodeIds: [
+        ...new Set([
+          ...themeNodesBefore.nodes.filter((n) => !themeAfter.nodes.some((m) => m.id === n.id)).map((n) => n.id),
+          ...themeAfter.nodes.filter((n) => !themeNodesBefore.nodes.some((m) => m.id === n.id)).map((n) => n.id),
+        ]),
+      ].sort(),
+    };
+    themeStateAfter = {
+      policyVersion: state.theme.policyVersion,
+      modelSha256: state.theme.modelSha256,
+      policy: state.theme.policy,
+      nodes: themeAfter.nodes,
+      pairs: survivingPairs,
+      chunks: state.theme.chunks,
+    };
+  }
+
+  const { receiptExtra, resultExtra } = optionalTelemetry(remaining, regeneratedEntityIndex, null, null, state);
+  const receipt = {
+    ...state.receipt,
+    corpusSha256: sha256Hex(jsonl),
+    sampleCount: remaining.length,
+    entityCount: regeneratedEntityIndex.length,
+    ...receiptExtra,
+  };
+  const removedSampleLineBytes = removed.reduce((n, s) => n + JSON.stringify(sampleLine(s)).length + 1, 0);
+  const diffReceipt = {
+    erasedTarget: `source:${sourceName}`,
+    erasedTargetKind: 'source',
+    erasedSource: sourceName,
+    engine: AMNESIAC_ENGINE_VERSION,
+    engineVersionSha256: AMNESIAC_ENGINE_VERSION_SHA256,
+    changedSampleIds: [],
+    removedSampleIds: [...removedIds].sort(),
+    removedSampleCount: removed.length,
+    removedSampleLineBytes,
+    removedEntityIds: removedEntityIds.sort(),
+    changedEntityIds: changedEntityIds.sort(),
+    unchangedSampleCount: remaining.length,
+    removedSpanCount: 0,
+    removedSpanBytes: 0,
+    // The per-block corpus model records no cross-source reference field between samples, so
+    // the receipt cannot assert that no surviving document references the erased source; the
+    // theme channel is the one cross-block link the model carries and its invalidation is
+    // receipted via the themeReDerived fields in this receipt. A real reference field waits for #59.
+    crossReference: {
+      detectedInSurvivingSamples: [],
+      note: 'the per-block corpus model records no cross-source reference channel between samples, so the receipt cannot assert that no surviving document references the erased source; the theme channel is the one cross-block link the model carries and its invalidation is receipted via the themeReDerived fields in this receipt',
+    },
+    corpusSha256Before: state.receipt.corpusSha256,
+    corpusSha256After: receipt.corpusSha256,
+    ...themeDiffExtra,
+    ...(state.receipt.merkleRoot !== undefined
+      ? {
+          merkleRootBefore: state.receipt.merkleRoot,
+          merkleRootAfter: receipt.merkleRoot,
+        }
+      : {}),
+    diffVerified: true,
+  };
+  diffReceipt.diffReceiptSha256 = sha256Hex(JSON.stringify(diffReceipt));
+  // Readable mode carries no certificate ceremony; erasure is plain mechanical regeneration.
+  if (state.receipt.identity === 'readable') {
+    return {
+      jsonl,
+      samples: remaining,
+      entityIndex: regeneratedEntityIndex,
+      ...resultExtra,
+      ...(themeStateAfter ? { theme: themeStateAfter } : {}),
+      receipt,
+      diffReceipt,
+    };
+  }
+  const certificates = computeCertificates(remaining);
+  return {
+    jsonl,
+    samples: remaining,
+    entityIndex: regeneratedEntityIndex,
+    certificates,
+    trainingRecipe: AMNESIAC_TRAINING_RECIPE,
+    ...resultExtra,
+    ...(themeStateAfter ? { theme: themeStateAfter } : {}),
+    receipt,
+    diffReceipt,
+  };
+}
+
+/**
  * Provable erasure (spec: gegearsyah/versieve#25): regenerate the corpus minus one entity.
  * Only the samples referencing the entity change; the byte-diff is exactly the erased
  * entity's token spans plus its index entry — anything else fails loudly.
+ * Spec gegearsyah/versieve#66 extends the target grammar: `source:NAME` erases a whole
+ * source anchor with a pure-deletion, full-footprint diff receipt; `unit:` knowledge-unit
+ * targets fail closed (typed AMNESIAC_ERASE_TARGET_UNRESOLVED) because no current corpus
+ * model can resolve one; that representation lands with issue gegearsyah/versieve#59.
  */
 export function eraseEntity(state, entityId) {
   if (!state || !Array.isArray(state.samples) || !Array.isArray(state.entityIndex) || !state.receipt) {
@@ -794,9 +984,25 @@ export function eraseEntity(state, entityId) {
       throw new Error('eraseEntity: corpus carries a malformed theme channel; rebuild the corpus instead of silently regenerating bytes');
     }
   }
+  // Target grammar (#66): `source:NAME` routes to source-anchor erasure, `unit:` must fail
+  // closed (no knowledge-unit index exists until the #59 corpus representation lands), and
+  // everything else keeps the legacy entity path unchanged for existing callers.
+  if (typeof entityId !== 'string' || entityId.trim() === '') {
+    throw eraseTargetError(
+      'AMNESIAC_ERASE_TARGET_MALFORMED',
+      `eraseEntity: erase target must be a non-empty entity id, a 'source:'-prefixed source anchor, or a 'unit:'-prefixed knowledge-unit id, got ${JSON.stringify(entityId ?? null)}`
+    );
+  }
+  if (entityId.startsWith('source:')) return eraseSource(state, entityId.slice('source:'.length));
+  if (entityId.startsWith('unit:')) {
+    throw eraseTargetError(
+      'AMNESIAC_ERASE_TARGET_UNRESOLVED',
+      `eraseEntity: knowledge-unit target ${entityId} cannot be resolved because this corpus model carries no knowledge-unit index; the corpus representation that would resolve unit ids lands with issue gegearsyah/versieve#59, so failing closed instead of emitting a subtly-wrong corpus`
+    );
+  }
   const entry = state.entityIndex.find((e) => e.entityId === String(entityId));
   if (!entry) {
-    throw new Error(`eraseEntity: unknown entityId ${String(entityId)} — failing loudly rather than emitting a subtly-wrong corpus`);
+    throw eraseTargetError('AMNESIAC_ERASE_TARGET_UNKNOWN', `eraseEntity: unknown entityId ${String(entityId)}; failing loudly rather than emitting a subtly-wrong corpus`);
   }
 
   const token = entry.token;
