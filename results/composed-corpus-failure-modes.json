@@ -23,7 +23,7 @@
     "compositionPolicy": "composed-v1",
     "hubCapBlocks": 8,
     "engineVersion": "versieve-amnesiac-corpus-v1",
-    "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+    "engineVersionSha256": "6c45460d49c34a81872f63427683d20f209563829ab8b5a1f3a5ddb22ddcb80d",
     "honestCorpusSha256": {
       "perBlock": "8cced8f3a05252c897d7b1da0b6d1c1a5c738652e05e2f07176b3f8d7b91c1bd",
       "composed": "9290b008972643c60bc4e85b77b8fd1e8518e818f0cd21464bf9854d7acf033a"
