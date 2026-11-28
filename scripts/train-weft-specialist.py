@@ -657,6 +657,13 @@ def run_training(args) -> dict:
         import numpy  # noqa: F401
         import torch
         import transformers
+    except ModuleNotFoundError as exc:
+        # A missing dependency is the same absent runtime as a missing GPU, so the
+        # fail-closed typed message stays stable across environments (issue #58).
+        raise TrainingRuntimeUnavailable(
+            "CUDA runtime absent: required dependency "
+            f"{exc.name} is not installed; the default path fails closed. Use --device cpu "
+            "only for an explicit small-scale run.") from exc
     except Exception as exc:  # noqa: BLE001
         raise TrainingRuntimeUnavailable(f"torch/transformers unavailable: {type(exc).__name__}: {exc}") from exc
 

@@ -775,6 +775,13 @@ def run(args) -> dict:
     try:
         import numpy  # noqa: F401
         import torch
+    except ModuleNotFoundError as exc:
+        # A missing dependency is the same absent runtime as a missing GPU, so the
+        # fail-closed typed message stays stable across environments (issue #58).
+        raise AblationRuntimeUnavailable(
+            "CUDA runtime absent: required dependency "
+            f"{exc.name} is not installed; use --device cpu only for an explicit "
+            "recorded fixture-scale run.") from exc
     except Exception as exc:  # noqa: BLE001
         raise AblationRuntimeUnavailable(
             f"torch unavailable: {type(exc).__name__}: {exc}") from exc
@@ -792,6 +799,11 @@ def run(args) -> dict:
 
     try:
         import transformers
+    except ModuleNotFoundError as exc:
+        raise AblationRuntimeUnavailable(
+            "CUDA runtime absent: required dependency "
+            f"{exc.name} is not installed; use --device cpu only for an explicit "
+            "recorded fixture-scale run.") from exc
     except Exception as exc:  # noqa: BLE001
         raise AblationRuntimeUnavailable(
             f"transformers unavailable: {type(exc).__name__}: {exc}") from exc
