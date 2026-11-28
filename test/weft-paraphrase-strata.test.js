@@ -15,6 +15,7 @@ import {
   NEGATIVES_CAP,
   STRATA_LICENCE,
   WeftStrataConfigError,
+  deriveEventClusters,
   findParaphraseCandidates,
   lexicalOverlap,
   pairSeed,
@@ -491,4 +492,29 @@ test('W-STRATA 8: a sample whose docs lack text fails closed', () => {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// W-STRATA 9: the compile-time event anchors survive self-links, links to
+// unknown ids, duplicate links, and chains, and never depend on link order.
+test('W-STRATA 9: event clusters are order-independent and skip malformed links', () => {
+  const doc = (id) => ({ id, theme: 'alpha', department: id.slice(0, 2), text: `doc ${id}`, identities: [] });
+  const corpus = {
+    docs: [doc('e3'), doc('e1'), doc('e2'), doc('e9')],
+    links: [
+      { a: 'e9', b: 'e9' },       // self-link: no merge
+      { a: 'eX', b: 'e1' },       // unknown id: skipped
+      { a: 'e3', b: 'e2' },
+      { a: 'e3', b: 'e2' },       // duplicate: idempotent
+      { a: 'e2', b: 'e1' },       // chain: all three join the e1 cluster
+    ],
+  };
+  const events = deriveEventClusters(corpus);
+  assert.equal(events.get('e3'), 'e1', 'transitive chains merge into the smallest doc id');
+  assert.equal(events.get('e2'), 'e1');
+  assert.equal(events.get('e1'), 'e1');
+  assert.equal(events.get('e9'), 'e9', 'a doc with no usable links anchors its own event');
+  // Order independence: the same links reversed give the same mapping.
+  const reversed = { docs: corpus.docs, links: [...corpus.links].reverse() };
+  const reversedEvents = deriveEventClusters(reversed);
+  assert.deepEqual([...reversedEvents.entries()].sort(), [...events.entries()].sort());
 });

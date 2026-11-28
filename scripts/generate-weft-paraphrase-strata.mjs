@@ -342,6 +342,7 @@ export function runStrata(profileId, options = {}) {
   const sampledPrompts = { positive: null, negative: null };
   const pairs = [];
   const droppedIdentityCollisions = { count: 0 };
+  const droppedNoEligibleDepartment = { count: 0 };
   const droppedPlaceholderEcho = { count: 0 };
   const positivesOverlap = { sourceToParaphrase: [], anchorToParaphrase: [], perPair: [] };
   const anchorToSource = { values: [], perPair: [] };
@@ -356,7 +357,9 @@ export function runStrata(profileId, options = {}) {
       (d) => d !== cand.source.department && d !== cand.anchor.department
     );
     if (!eligibleDepartments.length) {
-      droppedIdentityCollisions.count += 1;
+      // Audit note 2026-11-28: this fires before any teacher call, so it costs
+      // nothing; it is a candidate-shape drop, not an identity collision.
+      droppedNoEligibleDepartment.count += 1;
       continue;
     }
     const paraphraseDepartment = eligibleDepartments[seed % eligibleDepartments.length];
@@ -460,6 +463,7 @@ export function runStrata(profileId, options = {}) {
       sourceDisjointPositive: positivesOverlap.sourceToParaphrase.length,
       sourceDisjointNegative: negativesOverlap.aToB.length,
       droppedIdentityCollisions: droppedIdentityCollisions.count,
+      droppedNoEligibleDepartment: droppedNoEligibleDepartment.count,
       droppedPlaceholderEcho: droppedPlaceholderEcho.count,
     },
     positivesAnchorToSource: {
