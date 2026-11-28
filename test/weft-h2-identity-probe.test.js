@@ -38,11 +38,27 @@ function tempLedger(name) {
   return path.join(os.tmpdir(), `weft-h2-${name}-${process.pid}.json`);
 }
 
+let runtimeAvailable;
+function probeRuntimeAvailable() {
+  if (runtimeAvailable === undefined) {
+    const probe = spawnSync(PYTHON, ['-c', 'import numpy, torch, sklearn'],
+      { encoding: 'utf8', timeout: 60000 });
+    runtimeAvailable = probe.status === 0;
+  }
+  return runtimeAvailable;
+}
+
 function readLedger(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-test('H2 1: self-test run is deterministic, content-addressed, and a no-op on rerun', () => {
+test('H2 1: self-test run is deterministic, content-addressed, and a no-op on rerun', (t) => {
+  if (!probeRuntimeAvailable()) {
+    t.skip('the probe runtime (numpy, torch, scikit-learn) is unavailable on this '
+      + 'interpreter, so the probe records unavailability instead of a number and this '
+      + 'runtime-dependent assertion cannot run');
+    return;
+  }
   const ledger = tempLedger('selftest');
   if (fs.existsSync(ledger)) fs.unlinkSync(ledger);
   const first = runScript(['--self-test', '--ledger', ledger]);
@@ -75,7 +91,11 @@ print(hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).
   fs.unlinkSync(ledger);
 });
 
-test('H2 2: the ledger records the chance baseline, both fixed probe families, and honesty flags', () => {
+test('H2 2: the ledger records the chance baseline, both fixed probe families, and honesty flags', (t) => {
+  if (!probeRuntimeAvailable()) {
+    t.skip('the probe runtime (numpy, torch, scikit-learn) is unavailable on this interpreter');
+    return;
+  }
   const ledger = tempLedger('selftest-fields');
   if (fs.existsSync(ledger)) fs.unlinkSync(ledger);
   const run = runScript(['--self-test', '--ledger', ledger]);
@@ -183,6 +203,11 @@ test('H2 6: on a checkout with the shipped artifacts, the real probe is determin
     t.skip('the shipped quantized artifacts are absent on this checkout '
       + '(gitignored by standing rule); the recorded ledger from the artifact box is the '
       + 'source of truth');
+    return;
+  }
+  if (!probeRuntimeAvailable()) {
+    t.skip('the probe runtime (numpy, torch, scikit-learn, onnxruntime) is unavailable '
+      + 'on this interpreter');
     return;
   }
   const ledger = tempLedger('real');

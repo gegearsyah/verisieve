@@ -688,12 +688,37 @@ def self_test(seed: int, epochs: int, ledger_path: Path) -> dict:
             "entries": len(written["entries"]), "noOp": False, "selfTest": True}
 
 
+def verify_artifacts_present(models_dir: Path) -> None:
+    """Cheap fail-closed pass before any heavy import: every shipped artifact
+    exists and its sha256 matches the release manifest pin."""
+    pins = manifest_pins()
+    for spec in ARTIFACTS:
+        basename = Path(spec["path"]).name
+        artifact_path = models_dir / basename
+        if not artifact_path.exists():
+            # the default models dir carries the quantized subdirectory
+            artifact_path = models_dir / "weft-specialist-quantized" / basename
+        if not artifact_path.exists():
+            raise ArtifactMissing(
+                f"the shipped artifact {spec['id']} is absent under {models_dir}; a run "
+                "records no number for an absent condition")
+        digest = sha256_file(artifact_path)
+        expected = pins.get(spec["path"])
+        if expected and expected != digest:
+            raise ArtifactDigestMismatch(
+                f"{artifact_path.name} sha256 {digest} does not match the release "
+                f"manifest pin {expected}")
+
+
 def real_run(args) -> dict:
     ledger_path = Path(args.ledger)
     check_ledger(ledger_path)
     rows, corpus_meta = load_corpus(Path(args.corpus_jsonl) if args.corpus_jsonl else None)
     train_idx, eval_idx, split_meta = split_documents(rows, args.seed, EVAL_FRACTION)
     texts = [r["text"] for r in rows]
+
+    models_dir = Path(args.models_dir)
+    verify_artifacts_present(models_dir)
 
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
