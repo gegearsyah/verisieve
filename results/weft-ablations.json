@@ -238,7 +238,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -978,7 +978,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -1701,7 +1701,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -2409,7 +2409,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -3123,7 +3123,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -3759,7 +3759,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -4520,7 +4520,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -5282,7 +5282,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -6023,7 +6023,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
@@ -6764,7 +6764,7 @@
       "evaluation": {
         "harness": {
           "path": "scripts/run-weft-baseline-shootout.py",
-          "scriptDigest": "3880e838a7bea9ca2a1e3fb39d4d224f65c701c3853537ccce63f4f4b9dcbd02",
+          "scriptDigest": "2ddd95d73b93bc12d06adf09eb1cab742f6c3bd2084ac883335e247c14782ddc",
           "estateVersion": "weft-synthetic-v1",
           "estateSeed": 20261127,
           "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",

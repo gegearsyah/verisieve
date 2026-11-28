@@ -2,6 +2,9 @@
 # output; Windows autocrlf must not smudge these trees (issue #48)
 fixtures/** text eol=lf
 results/** text eol=lf
+# run artifacts record sha-256 digests of these scripts; a CRLF checkout must
+# not change their bytes or the recorded digests (issue #58)
+scripts/*.py text eol=lf
 # binary fixtures and artifacts never pass the text filter
 *.wav binary
 *.pdf binary
