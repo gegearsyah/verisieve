@@ -37,7 +37,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ORG_PROFILES, SEED } from './generate-weft-live-corpus-v5.mjs';
+import { ORG_PROFILES, ORG_PROFILES_HELDOUT, SEED } from './generate-weft-live-corpus-v5.mjs';
 import {
   API_TEACHER_LICENCE,
   TEACH_ATTEMPTS,
@@ -297,10 +297,10 @@ const mean = (values) => (values.length ? values.reduce((acc, n) => acc + n, 0) 
  * outDir }. Returns { receipt, pairs, pairsPath, receiptPath }.
  */
 export function runStrata(profileId, options = {}) {
-  const profile = ORG_PROFILES.find((p) => p.id === profileId);
+  const profile = [...ORG_PROFILES, ...ORG_PROFILES_HELDOUT].find((p) => p.id === profileId);
   if (!profile) {
     throw new WeftStrataConfigError(
-      `unknown org profile ${JSON.stringify(profileId)}; expected one of ${JSON.stringify(ORG_PROFILES.map((p) => p.id))}`,
+      `unknown org profile ${JSON.stringify(profileId)}; expected one of ${JSON.stringify([...ORG_PROFILES, ...ORG_PROFILES_HELDOUT].map((p) => p.id))}`,
       'profile-unknown'
     );
   }

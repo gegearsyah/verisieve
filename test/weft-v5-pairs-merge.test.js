@@ -132,10 +132,15 @@ test('W-MERGE 3: held-out pairs never enter training and cross-set collisions fa
     assert.ok(!train.some((r) => r.id.startsWith('h1-')));
     assert.ok(heldoutRows.some((r) => r.pairType === 'source-disjoint-same-theme-positive'));
     assert.equal(receipt.counts.heldout, heldoutRows.length);
-    // Collision: the same pair id in two profiles is a typed failure.
+    // A duplicate pair id across profiles is legitimate (coverage and strata
+    // doc ids are not profile-namespaced): the later profile gets a
+    // deterministic namespaced id, counted in the receipt, never dropped.
     const evil = profileFixture(dir, 'p2');
     fs.writeFileSync(path.join(evil.compilerDir, 'train.jsonl'), JSON.stringify(compilerRow('p1-t1', 'identity-masked-positive', 'positive')) + '\n');
-    assert.throws(() => mergeWeftV5Pairs({ profiles: [profile, evil] }), WeftMergeConfigError);
+    const dup = mergeWeftV5Pairs({ profiles: [profile, evil], outDir: path.join(dir, 'm-dup') });
+    assert.ok(dup.receipt.reIdedCrossProfile >= 1);
+    assert.ok(dup.receipt.counts.train >= 2); // both profiles' rows kept
+    assert.equal(new Set(dup.train.map((r) => r.id)).size, dup.train.length);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

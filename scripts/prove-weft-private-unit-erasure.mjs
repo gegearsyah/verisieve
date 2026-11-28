@@ -11,7 +11,7 @@
  *
  *   - sha256 and byte size of the original and the regenerated file,
  *   - the removed doc ids, the removed links, the removed unit record,
- *   - the byte offset of the first difference,
+ *   - the byte offset of the earliest difference,
  *   - and the unchanged-bytes assertion: every retained doc, link, and unit
  *     record serializes byte-identically in the regenerated artifact, so the
  *     only change is the unit's own footprint.
@@ -109,7 +109,7 @@ export function regenerateCorpusMinusUnit(corpus, unitId) {
  * assembly can make; the file-level firstDiffOffset and digests give the
  * byte-level color.
  */
-export function buildErasureReceipt(corpusPath, unitId, outPath) {
+export function buildErasureReceipt(corpusPath, unitId) {
   const originalBytes = fs.readFileSync(corpusPath);
   const originalText = originalBytes.toString('utf8');
   let corpus;
@@ -136,7 +136,7 @@ export function buildErasureReceipt(corpusPath, unitId, outPath) {
     && unchangedLinks.length === regenerated.links.length
     && unchangedUnits.length === regenerated.knowledgeUnits.length;
 
-  // First differing byte between the two files.
+  // Earliest differing byte between the two files.
   let firstDiffOffset = -1;
   const n = Math.min(originalText.length, regeneratedText.length);
   for (let i = 0; i < n; i++) {
@@ -144,7 +144,6 @@ export function buildErasureReceipt(corpusPath, unitId, outPath) {
   }
   if (firstDiffOffset < 0 && originalText.length !== regeneratedText.length) firstDiffOffset = n;
 
-  if (outPath) fs.writeFileSync(outPath, regeneratedText);
   const receipt = {
     kind: 'weft-private-unit-erasure-receipt',
     corpus: path.relative(ROOT, corpusPath).split(path.sep).join('/'),
@@ -195,7 +194,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     }
     const resolved = path.resolve(corpusPath);
     const minusName = resolved.replace(/\.json$/, `-minus-${unitId}.tmp.json`);
-    const { receipt, regeneratedText } = buildErasureReceipt(resolved, unitId, minusName);
+    // Nothing is written until the unchanged-bytes assertion passes inside
+    // buildErasureReceipt, so a failed proof leaves the tree untouched.
+    const { receipt, regeneratedText } = buildErasureReceipt(resolved, unitId);
+    fs.writeFileSync(minusName, regeneratedText);
     const receiptPath = cliValue('--receipt') || minusName.replace(/\.tmp\.json$/, '-receipt.json');
     fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
     console.error(`erasure proof: removed ${receipt.removed.docCount} docs / ${receipt.removed.linkCount} links for unit ${unitId}`);

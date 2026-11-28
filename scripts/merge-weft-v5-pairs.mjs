@@ -80,15 +80,24 @@ const readJsonl = (file) => {
  * strata driver recorded.
  */
 export function strataPairToCompilerFormat(pair, corpusDocById) {
-  if (!pair || typeof pair.a !== 'string' || !pair.b || typeof pair.b.text !== 'string') {
-    throw new WeftMergeConfigError('a strata pair must carry a string `a` doc id and a `b` doc with text', 'strata-shape');
+  if (!pair || !pair.b || typeof pair.b.text !== 'string') {
+    throw new WeftMergeConfigError('a strata pair must carry a `b` doc with text', 'strata-shape');
   }
-  const anchor = corpusDocById.get(pair.a);
-  if (!anchor) {
-    throw new WeftMergeConfigError(`strata pair references anchor doc ${JSON.stringify(pair.a)} which is absent from the coverage corpus`, 'anchor-missing');
+  // Strata shape: positives carry `a` as an anchor doc id (resolved from the
+  // coverage corpus); negatives carry `a` as a full teacher-written doc.
+  let anchor;
+  if (typeof pair.a === 'string') {
+    anchor = corpusDocById.get(pair.a);
+    if (!anchor) {
+      throw new WeftMergeConfigError(`strata pair references anchor doc ${JSON.stringify(pair.a)} which is absent from the coverage corpus`, 'anchor-missing');
+    }
+  } else if (pair.a && typeof pair.a.text === 'string') {
+    anchor = pair.a;
+  } else {
+    throw new WeftMergeConfigError('a strata pair `a` must be a doc id string or a doc object with text', 'strata-shape');
   }
   const pairType = String(pair.label);
-  const docIds = [pair.a, pair.b.id].sort();
+  const docIds = [anchor.id, pair.b.id].sort();
   const overlap = sharedIdentityKeys(anchor, pair.b);
   return {
     id: sha256Hex(`weft-pair\u0000${pairType}\u0000${docIds.join('\u0000')}`),
@@ -145,25 +154,33 @@ export function mergeWeftV5Pairs(inputs) {
     evalSliceRule: 'sha256(pair id) % 100 < 25 sends a specialty pair (strata or extension class) to eval; compiler pairs keep their own split',
     perProfile: {},
     dedupedWithinSet: 0,
+    reIdedCrossProfile: 0,
     identityOverlapBalance: {},
   };
   const addRows = (rows, profileId, bucket, isSpecialty, sourceSet) => {
     let keptTrain = 0;
     let keptEval = 0;
-    for (const row of rows) {
+    for (let row of rows) {
       if (!row || typeof row.textA !== 'string' || typeof row.textB !== 'string' || !row.pairType || !row.label) {
         throw new WeftMergeConfigError(`a ${bucket} row in profile ${profileId} is not in the compiler pair format`, 'row-shape');
       }
       const prior = seen.get(row.id);
       if (prior) {
-        if (prior.profileId !== profileId) {
-          throw new WeftMergeConfigError(
-            `pair id ${row.id} appears in both profile ${prior.profileId} and profile ${profileId}; doc ids are profile-namespaced so this is a wiring error, not a dedupe`,
-            'id-collision'
-          );
+        if (prior.profileId === profileId) {
+          receipt.dedupedWithinSet += 1;
+          continue;
         }
-        receipt.dedupedWithinSet += 1;
-        continue;
+        // Coverage and strata doc ids are not profile-namespaced (the three
+        // corpora share theme-slug id patterns, and strata negatives use
+        // phn-<i>-1 ids), so the same pair id can appear in two profiles with
+        // different text. The later profile gets a deterministic
+        // profile-namespaced id instead of being dropped or failing.
+        row = { ...row, id: sha256Hex(`weft-v5-profile\u0000${profileId}\u0000${row.id}`) };
+        receipt.reIdedCrossProfile += 1;
+        if (seen.has(row.id)) {
+          receipt.dedupedWithinSet += 1;
+          continue;
+        }
       }
       const toEval = isSpecialty && Number.parseInt(sha256Hex(row.id).slice(0, 8), 16) % 100 < EVAL_SLICE_PCT;
       // Specialty rows take the hash slice; coverage rows keep the split their

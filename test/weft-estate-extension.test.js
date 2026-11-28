@@ -343,7 +343,7 @@ test('W-EXT 8: the regenerate-minus-unit byte-diff receipt proves the footprint 
   try {
     const corpusPath = path.join(dir, 'overlay.json');
     fs.writeFileSync(corpusPath, JSON.stringify(fixtureOverlay()) + '\n');
-    const { receipt, regeneratedText } = buildErasureReceipt(corpusPath, 'private-unit-x-1', path.join(dir, 'minus.json'));
+    const { receipt, regeneratedText } = buildErasureReceipt(corpusPath, 'private-unit-x-1');
     assert.deepEqual(receipt.removed.docs, ['pu-x-1-1', 'pu-x-1-2']);
     assert.equal(receipt.removed.linkCount, 1);
     assert.equal(receipt.retained.docs, 2);
@@ -357,7 +357,7 @@ test('W-EXT 8: the regenerate-minus-unit byte-diff receipt proves the footprint 
     const regenerated = JSON.parse(regeneratedText);
     assert.equal(regenerated.docs[0].knowledgeUnitId, 'private-unit-x-2');
     // Determinism: the second run produces the identical receipt digests.
-    const again = buildErasureReceipt(corpusPath, 'private-unit-x-1', null);
+    const again = buildErasureReceipt(corpusPath, 'private-unit-x-1');
     assert.equal(again.receipt.sha256.after, receipt.sha256.after);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -387,7 +387,7 @@ test('W-EXT 9: the erasure proof fails closed on unknown units and inconsistent 
       try {
         const corpusPath = path.join(dir, 'overlay.json');
         fs.writeFileSync(corpusPath, JSON.stringify(dangling) + '\n');
-        buildErasureReceipt(corpusPath, 'private-unit-x-1', null);
+        buildErasureReceipt(corpusPath, 'private-unit-x-1');
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
       }
