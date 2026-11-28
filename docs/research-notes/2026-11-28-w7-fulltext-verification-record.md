@@ -16,7 +16,7 @@ an id that was not read in full text or verified against a primary page.
 
 ## 1. The verified row set
 
-### Adversarial removal limits — VERIFIED
+### Adversarial removal limits (VERIFIED)
 Elazar and Goldberg, "Adversarial Removal of Demographic Attributes from
 Text Data", EMNLP 2018, D18-1002, arXiv:1808.06640. The in-training
 adversary reaches chance (49.0% at 50 epochs) while a post-hoc attacker
@@ -31,7 +31,7 @@ Card differentiation: Weft claims no removal; identity-blindness is
 worded only as a measured post-hoc probe result over the frozen base and
 the heads, with the probe family fixed and reported.
 
-### Privacy-defensive training gives no guarantee — VERIFIED (attribution corrected)
+### Privacy-defensive training gives no guarantee (VERIFIED; attribution corrected)
 Coavoux, Narayan, and Cohen, "Privacy-preserving Neural Representations
 of Text", EMNLP 2018, D18-1001, arXiv:1808.09408. The paper does not
 propose removal-then-recovery; its defenses (adversarial generation,
@@ -46,7 +46,7 @@ Elazar and Goldberg above; this row is cited only for "defensive training
 objectives improve the attackability-utility trade-off without a
 guarantee".
 
-### Iterative nullspace projection (the canonical baseline) — VERIFIED
+### Iterative nullspace projection (the canonical baseline) (VERIFIED)
 Ravfogel, Elazar, Gonen, Twiton, and Goldberg, "Null It Out: Guarding
 Protected Attributes by Iterative Nullspace Projection", ACL 2020,
 2020.acl-main.647, arXiv:2004.07667. Mechanism confirmed (iterative
@@ -59,7 +59,7 @@ same setup an RBF-SVM reaches near chance, so "nonlinear recovery" is
 probe-family-specific, and the H2 probe design fixes and reports its
 probe family (Elazar and Goldberg's externally-trained-attacker advice).
 
-### The erasure follow-up line — VERIFIED (records corrected)
+### The erasure follow-up line (VERIFIED; records corrected)
 Ravfogel, Twiston, Goldberg, and Cotterell, "Linear Adversarial Concept
 Erasure" (RLACE), ICML 2022, arXiv:2201.12091 (the repo's 2112.10139 was
 an unrelated financial paper). Ravfogel, Vargas, Goldberg, and Cotterell,
@@ -72,7 +72,7 @@ Biderman, "LEACE: Perfect linear concept erasure in closed form", 2023,
 arXiv:2306.03819 (closed-form affine erasure; an oblique, not orthogonal,
 projection).
 
-### Diffusion concept editing — VERIFIED (claim narrowed)
+### Diffusion concept editing (VERIFIED; claim narrowed)
 The diffusion line is fine-tuning and closed-form concept editing, not
 nullspace projection of encoders: Gandikota et al., "Erasing Concepts
 from Diffusion Models", arXiv:2303.07345 (ECCV 2024); Gandikota, Orgad,
@@ -81,7 +81,7 @@ Models", arXiv:2308.14761 (WACV 2024); SPEED, arXiv:2503.07392 (ICLR).
 The repo's original 2406.07137 id was a physics paper; corrected in the
 2026-11-27 note.
 
-### HIN adversarial linking with generated negatives — VERIFIED
+### HIN adversarial linking with generated negatives (VERIFIED)
 Wang, Wang, Wen, Li, Jia, Zhang, and Wang, "Author Name Disambiguation on
 Heterogeneous Information Network with Adversarial Representation
 Learning", AAAI 2020, arXiv:2002.09803. Mechanism read in full text: a
@@ -95,7 +95,7 @@ disambiguation accuracy; Versieve's salting/gatekeeper negatives serve
 privacy; Weft's identity-matched theme-different pairs serve theme
 discrimination. Three separate rows.
 
-### Aspect conditioning — VERIFIED (venue status disclosed)
+### Aspect conditioning (VERIFIED; venue status disclosed)
 Hossain, Hazra, Bhuiyan, and Karmaker, "The Critical Role of Aspects in
 Measuring Document Similarity" (AspectSim), arXiv:2601.03435, a
 non-peer-reviewed preprint (card marks venue status): 16 small open LLMs,
@@ -111,7 +111,7 @@ Card differentiation: AspectCSE's supervision passes through curated KG
 entity properties; Weft's supervision is identity-orthogonal
 document-graph structure with no entity-property requirement.
 
-### Conformal abstention — VERIFIED (affiliation not printed)
+### Conformal abstention (VERIFIED; affiliation not printed)
 Abbasi-Yadkori, Kuzborskij, Stutz, György, Fisch, Doucet, Beloshapka,
 Weng, Yang, Szepesvári, Cemgil, and Tomasev, "Mitigating LLM Hallucinations
 via Conformal Abstention", arXiv:2405.01563 (2024): conformal calibration
@@ -125,7 +125,7 @@ generations of one LLM; Weft reuses the repo's LTT machinery on
 application-level pair scoring over anchor sets, claiming application
 level only.
 
-### CDCR family (benchmark substrate) — VERIFIED
+### CDCR family (benchmark substrate) (VERIFIED)
 Barhom, Shwartz, Eirew, Bugert, Reimers, and Dagan, "Revisiting Joint
 Modeling of Cross-document Entity and Event Coreference Resolution",
 ACL 2019, P19-1409 (joint entity and event CDCR on ECB+). Eirew, Cattan,
@@ -142,7 +142,7 @@ resolution across documents and domains", EACL 2021, 2021.eacl-main.21
 ("Both Cattan et al. (2020) and Barhom et al. (2019) models are trained
 and evaluated using the ECB+ corpus").
 
-### Routing and coverage anchors — VERIFIED (ids corrected)
+### Routing and coverage anchors (VERIFIED; ids corrected)
 Tibshirani, Foygel Barber, Candès, and Ramdas, "Conformal Prediction
 Under Covariate Shift", arXiv:1904.06019 (weighted conformal; the repo's
 2202.13439 was an unrelated math paper). Sun, Ming, Zhu, and Li,

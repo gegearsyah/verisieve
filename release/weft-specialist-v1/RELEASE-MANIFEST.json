@@ -1,0 +1,89 @@
+{
+  "kind": "weft-release-manifest",
+  "schemaVersion": 1,
+  "model": {
+    "name": "weft-specialist-v1",
+    "card": "release/weft-specialist-v1/MODEL_CARD.md",
+    "calibrationPlot": "release/weft-specialist-v1/CALIBRATION.svg",
+    "architecture": "all-MiniLM-L6-v2 frozen base plus int8 link, theme, and evidence heads; the exported artifact carries the tokenized pair graph, the int8 per-row word-embedding table, MatMulNBits int4 FFN and attention-output matmuls (int4 artifact), and the metadata props with the tokenizer JSON, the OOD bank, and the sha-256 manifest pins",
+    "weightsInRepo": false,
+    "weightsInRepoNote": "Trained weights stay on disk under a gitignored path by standing rule; the digests and sizes below pin the artifacts, and the reproduction recipe regenerates them."
+  },
+  "artifacts": [
+    {
+      "id": "weft-int4",
+      "level": "int4-matmulnbits",
+      "path": "models/weft-specialist-quantized/weft-int4.onnx",
+      "sha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372",
+      "bytes": 20458033,
+      "withinCapBytes": 31457280,
+      "withinCap": true,
+      "sourceLedger": "results/weft-export-latency.json",
+      "qualityOnHoldout": { "f1": 0.9572, "pairCount": 2000, "evalSet": "results/weft-training-pairs-fullscale-live-v4/eval.jsonl" },
+      "cleanRuntime": { "f1": 0.9655, "samplePairs": 200, "pairScoringMsPerPair": 17.203433499962557, "platform": "Windows-11-10.0.26300-SP0" }
+    },
+    {
+      "id": "weft-int8-reference",
+      "level": "int8-dynamic",
+      "path": "models/weft-specialist-quantized/weft-int8-reference.onnx",
+      "sha256": "c8ebc947d4e10154053d77a4360d5e28fb725450b9d6a10dc1a6fa53ff36e5af",
+      "bytes": 23642917,
+      "withinCapBytes": 31457280,
+      "withinCap": true,
+      "sourceLedger": "results/weft-export-latency.json",
+      "qualityOnHoldout": { "f1": 0.9652, "pairCount": 2000, "evalSet": "results/weft-training-pairs-fullscale-live-v4/eval.jsonl" },
+      "cleanRuntime": { "f1": 0.9825, "samplePairs": 200, "pairScoringMsPerPair": 11.9130830001086, "platform": "Windows-11-10.0.26300-SP0" }
+    }
+  ],
+  "reproduction": {
+    "recipe": [
+      "scripts/build-weft-training-pairs.mjs",
+      "scripts/generate-weft-live-corpus-v4.mjs",
+      "scripts/train-weft-specialist.py",
+      "python scripts/export-weft-quantized.py --mode plan"
+    ],
+    "kaggleNotebookPattern": "w5-quantized-export version 7, GPU run on 2x Tesla T4, seed 20261127; Kaggle's onnxruntime cannot import MatMulNBitsQuantizer until the standalone onnx-ir package is installed: onnx-ir==1.1.0 is the pinned requirement that unblocks the 4-bit export (found on the verification box by chance in versions 5 and 6, installed explicitly in version 7).",
+    "conformalSplitNote": "The calibration sweep walks the calibration half in descending-score order (a fixed-sequence Learn-Then-Test); entries before this fix were never appended to the repo ledger.",
+    "failClosedTest": "node --test test/weft-export-failclosed.test.js",
+    "claimAudit": { "script": "scripts/run-weft-claim-audit.mjs", "ledger": "results/weft-claim-audit.json", "note": "Append-only, content-addressed by runId; re-running with an unchanged card is a no-op." }
+  },
+  "benchmarkPointer": {
+    "ledger": "results/weft-baselines.json",
+    "reproduction": "python scripts/run-weft-baseline-shootout.py",
+    "content": "Per-bucket W1 shootout results for every baseline (bm25, model2vec static threshold, MiniLM L6 cosine, BERTopic-style, local LLM judge) on the synthetic-theme estate, with harness digests recorded in the ledger.",
+    "identityDisjointBucketF1": {
+      "bm25": 1.0,
+      "model2vec_static_threshold": 0.9973,
+      "minilm_l6_cosine": 0.9968,
+      "bertopic_style": 1.0,
+      "local_llm_judge": 0.6
+    }
+  },
+  "licenceGate": {
+    "rule": "Only sources with status green in results/weft-licence-audit.json may enter the public training recipe; no green, no release.",
+    "auditLedger": "results/weft-licence-audit.json",
+    "auditBasis": "docs/research-notes/2026-11-28-w7-fulltext-verification-record.md (section 3) plus docs/research-notes/2026-11-27-weft-novelty-recheck-and-licence-audit.md",
+    "multiNews": "Dropped by decision, not pending: the LILY Lab agreement limits use to non-commercial research and educational purposes only and grants no IP licence; the HF licence field is other.",
+    "ucdcr": "Cited only, never redistributed; compilation tagged CC BY-SA 4.0 and states no per-corpus licence for its 12 constituents; ECB+ is CC BY-NC-SA (espRA, registration-gated).",
+    "releasedCorpus": "Project-generated synthetic estates with permissively-licensed open-weight teacher outputs only.",
+    "wikipediaDerivedPairs": "Excluded from the public set by the binding default; surfaces at the founder checkpoint if the founder chooses share-alike dataset licensing."
+  },
+  "releaseGate": {
+    "gate": "story-36-size-matched-static-baseline-identity-disjoint",
+    "status": "blocked-pending-founder-ruling",
+    "measured": {
+      "staticEmbeddingBaselineF1": 0.9973,
+      "specialistLinkHeadF1": 0.3617,
+      "specialistPooledCosineF1": 0.9989,
+      "bucket": "identity_disjoint",
+      "source": "results/weft-baselines.json + docs/research-notes/2026-11-28-w5-specialist-handoff.md"
+    }
+  },
+  "dependencies": {
+    "onnxruntimeNode": {
+      "range": "~1.31.1",
+      "testedVersionNote": "onnxruntime-node 1.31.1 is the tested version; the optionalDependency range in package.json is tightened from ^1.31.1 to ~1.31.1 so minor floats cannot change the metadata read silently.",
+      "couplingNote": "onnxruntime-node 1.31.1 exposes no model-metadata API, so the W6 metadata read scans the ONNX protobuf field 14 directly; a runtime upgrade that adds a metadata API changes that code path, which is why the range does not float."
+    }
+  }
+}

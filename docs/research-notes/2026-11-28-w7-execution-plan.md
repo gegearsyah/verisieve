@@ -126,7 +126,7 @@ the model card, not to the structure decided here.
   `release/weft-specialist-v1/RELEASE-MANIFEST.json`,
   `release/weft-specialist-v1/CALIBRATION.svg`,
   `scripts/run-weft-claim-audit.mjs`, `results/weft-claim-audit.json`
-  (first entries), `test/weft-claim-audit.test.js`,
+  (the initial entries), `test/weft-claim-audit.test.js`,
   `docs/research-notes/2026-11-28-w7-release-verdict.md` (at the end).
 - Modified: `package.json` (onnxruntime-node ~1.31.1),
   `results/weft-licence-audit.json` (statuses from the P0
