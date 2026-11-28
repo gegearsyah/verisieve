@@ -25,11 +25,15 @@ import { perceiveMulti, computeEgoGraphTelemetry } from './perceive.js';
 export { computeEgoGraphTelemetry };
 import { scanEnterprisePiiAndSecrets } from './secret-scanner.js';
 import { binomCdf } from './gatekeeper.js';
+import { agglomerateThemeNodes, THEME_POLICY_VERSION } from './weft-theme-linker.js';
+export { THEME_POLICY_VERSION };
 
 export const AMNESIAC_ENGINE_VERSION = 'versieve-amnesiac-corpus-v1';
+// The theme policy version (W6) enters the engine hash: one bump for every corpus, so an
+// erasure drift check can never mix theme policy versions.
 export const AMNESIAC_ENGINE_VERSION_SHA256 = crypto
   .createHash('sha256')
-  .update(AMNESIAC_ENGINE_VERSION)
+  .update(AMNESIAC_ENGINE_VERSION + '+' + THEME_POLICY_VERSION)
   .digest('hex');
 
 // Deterministic seeded LoRA retrain recipe shipped with every export — the retrain half of the Art. 17 claim.
@@ -117,6 +121,7 @@ function composeReadableSamples(samples, perBlockIndex) {
       sourceRange: b.sourceRange,
       content: b.content,
       spans: b.spans || {},
+      blockId: b.blockId ?? null,
     }));
     const { content, spans } = renderComposedBlocks(blockRecs);
     const entities = [];
@@ -612,7 +617,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
         (blockSpans[ent.entityId] ||= []).push([ent.start, ent.end]);
       }
       for (const eid of Object.keys(blockSpans)) blockSpans[eid].sort((a, b) => a[0] - b[0]);
-      samples.push({ id, source, sourceRange, role, system: READABLE_SYSTEM_PROMPT, spans: blockSpans, content, entities });
+      samples.push({ id, source, sourceRange, role, system: READABLE_SYSTEM_PROMPT, spans: blockSpans, content, entities, blockId: blk.blockId ?? null });
     } else {
       const gate = blk.gateAction || 'KEEP_SAFE_REDACTED';
       const { detectedCount, detectedClasses } = countDetected(blk.entities || []);
@@ -630,6 +635,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
         detectedClasses,
         missedCount,
         missedClasses,
+        blockId: blk.blockId ?? null,
       });
     }
   }
@@ -678,6 +684,34 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     })
     .sort((a, b) => (a.entityId < b.entityId ? -1 : 1));
 
+  // W6 theme channel (2026-11-28 plan decisions 5 + 6): when the caller ran the seam with
+  // theme linking, the corpus carries the scored chunk pairs plus each chunk's block
+  // provenance, so eraseEntity can re-prove the agglomeration over the post-erasure
+  // corpus with the same model sha and policy version. Pure bookkeeping: it never enters
+  // the JSONL or the receipt.
+  let themeState = null;
+  if (perceived.themeLinks && perceived.themeChannel) {
+    if (perceived.themeChannel.policyVersion !== THEME_POLICY_VERSION) {
+      throw new Error(
+        `buildAmnesiacCorpus: theme channel policy ${perceived.themeChannel.policyVersion} does not match the engine's ${THEME_POLICY_VERSION}; refuse to bookkeep a mixed policy corpus`
+      );
+    }
+    const chunks = new Map();
+    for (const link of perceived.themeLinks) {
+      for (const [id, span] of [[link.a, link.aSpan], [link.b, link.bSpan]]) {
+        if (!chunks.has(id)) chunks.set(id, { id, source: span ? span.source : null, blockId: span ? span.blockId ?? null : null });
+      }
+    }
+    themeState = {
+      policyVersion: perceived.themeChannel.policyVersion,
+      modelSha256: perceived.themeChannel.modelSha256,
+      policy: { joinThreshold: perceived.themeChannel.joinThreshold, simFloor: perceived.themeChannel.simFloor },
+      nodes: perceived.themeNodes,
+      pairs: perceived.themeLinks.map((l) => ({ a: l.a, b: l.b, linkProb: l.linkProb, themeSim: l.themeSim })),
+      chunks: [...chunks.values()].sort((a, b) => (a.id < b.id ? -1 : 1)),
+    };
+  }
+
   // Stage K1: composed corpus (readable identity) — the join is the training unit. One composed
   // sample per resolved entity rendering its cross-document evidence blocks with per-sample
   // multi-source provenance, under the canonicalized versioned composition policies.
@@ -701,6 +735,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
       samples: composedSamples,
       entityIndex: composedIndex,
       ...resultExtra,
+      ...(themeState ? { theme: themeState } : {}),
       receipt: composedReceipt,
     };
   }
@@ -719,7 +754,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
   };
   // Readable mode has no certificate ceremony and no placeholder-masking recipe: the general
   // mode emits none of the vault's protection machinery, only the corpus and its receipt.
-  if (readable) return { jsonl, samples, entityIndex, ...resultExtra, receipt };
+  if (readable) return { jsonl, samples, entityIndex, ...resultExtra, ...(themeState ? { theme: themeState } : {}), receipt };
   const certificates = computeCertificates(samples);
   return {
     jsonl,
@@ -728,6 +763,7 @@ export async function buildAmnesiacCorpus(inputs, view = null, options = {}) {
     certificates,
     trainingRecipe: AMNESIAC_TRAINING_RECIPE,
     ...resultExtra,
+    ...(themeState ? { theme: themeState } : {}),
     receipt,
   };
 }
@@ -746,6 +782,18 @@ export function eraseEntity(state, entityId) {
       `engine version drift: corpus determinism receipt invalidated (built by ${String(state.receipt.engineVersionSha256).slice(0, 12)}…, running ${AMNESIAC_ENGINE_VERSION_SHA256.slice(0, 12)}…) — rebuild the corpus instead of silently regenerating bytes`
     );
   }
+  // W6: a theme-carrying corpus must never be erased against a different theme policy
+  // version (the engine hash already pins the current one; this rejects a hand-edited theme).
+  if (state.theme) {
+    if (state.theme.policyVersion !== THEME_POLICY_VERSION) {
+      throw new Error(
+        `theme policy version drift: corpus theme channel was built under ${String(state.theme.policyVersion)}, running ${THEME_POLICY_VERSION}; rebuild the corpus instead of silently regenerating bytes`
+      );
+    }
+    if (!state.theme.modelSha256 || !Array.isArray(state.theme.pairs) || !Array.isArray(state.theme.chunks)) {
+      throw new Error('eraseEntity: corpus carries a malformed theme channel; rebuild the corpus instead of silently regenerating bytes');
+    }
+  }
   const entry = state.entityIndex.find((e) => e.entityId === String(entityId));
   if (!entry) {
     throw new Error(`eraseEntity: unknown entityId ${String(entityId)} — failing loudly rather than emitting a subtly-wrong corpus`);
@@ -757,6 +805,22 @@ export function eraseEntity(state, entityId) {
   const readable = state.receipt.identity === 'readable';
   // Composed readable corpus: re-prove erasure on the composed corpus, do not inherit it.
   const composed = readable && state.receipt.compositionPolicy === COMPOSITION_POLICY;
+  // W6 theme re-proof bookkeeping: every source block a changed sample contributes, so the
+  // theme pairs whose member chunks lost bytes under this erasure are dropped (conservative)
+  // and the agglomeration is re-derived over the survivors with the same policy and model sha.
+  const blocksChangedBySample = new Map();
+  if (state.theme) {
+    for (const s of state.samples) {
+      const ids = [];
+      if (s.blockId) ids.push(s.blockId);
+      for (const b of s.blocks || []) if (b.blockId) ids.push(b.blockId);
+      if (ids.length) blocksChangedBySample.set(s.id, ids);
+    }
+  }
+  const themePolicy = state.theme
+    ? { policyVersion: state.theme.policyVersion, joinThreshold: state.theme.policy.joinThreshold, simFloor: state.theme.policy.simFloor, anchorK: 0, modelSha256: state.theme.modelSha256 }
+    : null;
+  const themeNodesBefore = state.theme ? agglomerateThemeNodes(state.theme.pairs, themePolicy) : null;
   const changed = [];
   const regeneratedSamples = [];
   let retractedCount = 0;
@@ -866,6 +930,45 @@ export function eraseEntity(state, entityId) {
     throw new Error(`eraseEntity: changed samples ${changedIds} do not match the erased entity's index ${entry.sampleIds.join('|')} — failing loudly instead of emitting a subtly-wrong corpus`);
   }
 
+  // W6 theme re-proof (plan decision 6): re-run the same pure agglomeration over the
+  // post-erasure corpus (same model sha, same policy version). Pairs whose member chunks
+  // lost bytes under this erasure are dropped (invalidated, never re-scored here), and the
+  // receipt reports before/after node counts plus the changed theme node ids.
+  let themeAfter = null;
+  let themeDiffExtra = {};
+  let themeStateAfter = null;
+  if (state.theme) {
+    const invalidatedBlockIds = new Set();
+    for (const c of changed) {
+      for (const blockId of blocksChangedBySample.get(c.id) || []) invalidatedBlockIds.add(blockId);
+    }
+    const invalidatedChunkIds = new Set(
+      state.theme.chunks.filter((c) => c.blockId !== null && invalidatedBlockIds.has(c.blockId)).map((c) => c.id)
+    );
+    const survivingPairs = state.theme.pairs.filter((p) => !invalidatedChunkIds.has(p.a) && !invalidatedChunkIds.has(p.b));
+    themeAfter = agglomerateThemeNodes(survivingPairs, themePolicy);
+    themeDiffExtra = {
+      themeReDerived: true,
+      themeNodeCountBefore: themeNodesBefore.nodes.length,
+      themeNodeCountAfter: themeAfter.nodes.length,
+      themeInvalidatedPairCount: state.theme.pairs.length - survivingPairs.length,
+      changedThemeNodeIds: [
+        ...new Set([
+          ...themeNodesBefore.nodes.filter((n) => !themeAfter.nodes.some((m) => m.id === n.id)).map((n) => n.id),
+          ...themeAfter.nodes.filter((n) => !themeNodesBefore.nodes.some((m) => m.id === n.id)).map((n) => n.id),
+        ]),
+      ].sort(),
+    };
+    themeStateAfter = {
+      policyVersion: state.theme.policyVersion,
+      modelSha256: state.theme.modelSha256,
+      policy: state.theme.policy,
+      nodes: themeAfter.nodes,
+      pairs: survivingPairs,
+      chunks: state.theme.chunks,
+    };
+  }
+
   const regeneratedEntityIndex = composed
     ? state.entityIndex
         .filter((e) => e.entityId !== entityId)
@@ -920,6 +1023,7 @@ export function eraseEntity(state, entityId) {
       .sort((a, b) => (a.id < b.id ? -1 : 1)),
     corpusSha256Before: state.receipt.corpusSha256,
     corpusSha256After: receipt.corpusSha256,
+    ...themeDiffExtra,
     ...(state.receipt.merkleRoot !== undefined
       ? {
           merkleRootBefore: state.receipt.merkleRoot,
@@ -936,6 +1040,7 @@ export function eraseEntity(state, entityId) {
       samples: regeneratedSamples,
       entityIndex: regeneratedEntityIndex,
       ...resultExtra,
+      ...(themeStateAfter ? { theme: themeStateAfter } : {}),
       receipt,
       diffReceipt,
     };
@@ -948,6 +1053,7 @@ export function eraseEntity(state, entityId) {
     certificates,
     trainingRecipe: AMNESIAC_TRAINING_RECIPE,
     ...resultExtra,
+    ...(themeStateAfter ? { theme: themeStateAfter } : {}),
     receipt,
     diffReceipt,
   };
