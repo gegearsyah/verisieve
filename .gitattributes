@@ -1,0 +1,12 @@
+# byte-strict regeneration tests compare checked-out bytes against fresh LF
+# output; Windows autocrlf must not smudge these trees (issue #48)
+fixtures/** text eol=lf
+results/** text eol=lf
+# binary fixtures and artifacts never pass the text filter
+*.wav binary
+*.pdf binary
+*.png binary
+*.docx binary
+*.pptx binary
+*.duckdb binary
+*.bin binary
