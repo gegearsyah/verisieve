@@ -33,27 +33,27 @@
   "timingMs": {
     "W1": {
       "baselineMs": 0,
-      "versieveMs": 10.7
+      "versieveMs": 8.8
     },
     "W2": {
       "baselineMs": 0,
-      "versieveMs": 1336
+      "versieveMs": 1802.3
     },
     "W3": {
       "baselineMs": 0,
-      "versieveMs": 70
+      "versieveMs": 107.9
     },
     "W4": {
       "baselineMs": 0,
-      "versieveMs": 795.5
+      "versieveMs": 795.6
     },
     "W5": {
       "baselineMs": 0,
-      "versieveMs": 13.7
+      "versieveMs": 24.7
     },
     "W6": {
       "baselineMs": 0,
-      "versieveMs": 636.7
+      "versieveMs": 1019.2
     }
   },
   "antiCircularity": {

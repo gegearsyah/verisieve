@@ -15,6 +15,13 @@ Caveat: all verified claims rest on abstracts and occasionally ar5iv full text; 
 | Adversarial identity-linking on HINs with generated hard negatives | Wang et al. AAAI 2020 ([2002.09803](https://arxiv.org/abs/2002.09803)) | 3-0 |
 | Aspect-conditioned similarity | AspectSim ([2601.03435](https://arxiv.org/abs/2601.03435)); AspectCSE, RANLP 2023 ([2307.07851](https://arxiv.org/abs/2307.07851), [anthology](https://aclanthology.org/2023.ranlp-1.113/)) | 3-0 |
 | Conformally calibrated abstention thresholds | Conformal Abstention, DeepMind 2024 ([2405.01563](https://arxiv.org/abs/2405.01563), follow-up [2408.08786](https://arxiv.org/abs/2408.08786)) | 3-0 |
+
+  Correction 2026-11-28 (W7 full-text pass): the primary record is verified
+  (Abbasi-Yadkori et al., "Mitigating LLM Hallucinations via Conformal
+  Abstention", arXiv:2405.01563), but the follow-up id 2408.08786 is wrong
+  (it resolves to a quantum-memory paper) and the "DeepMind" affiliation is
+  not printed in the citable arXiv artifact; the model card cites the
+  primary only, with no affiliation claim.
 | Cross-document coreference/linking | Barhom et al. ACL 2019 ([P19-1409](https://aclanthology.org/P19-1409/)); WEC NAACL 2021 ([2104.05022](https://arxiv.org/abs/2104.05022)); uCDCR LREC 2026 ([2603.00621](https://arxiv.org/abs/2603.00621)) | 3-0 |
 
 **The surviving novelty is exactly the 4-part conjunction staked in the original note §5**, and this re-check found no source that anticipates the conjunction itself. The original note's line "a search ... has not been exhaustively done" is now substantially discharged for these mechanism families. Two refuted claims (bi-encoder entity linking in historical texts, [2406.15576](https://arxiv.org/abs/2406.15576), 1-2 votes each) were excluded.
@@ -26,6 +33,25 @@ Elazar & Goldberg: despite the in-training adversary reaching chance-level accur
 - Claim "identity-**blind**", never "identity-removed".
 - **H2 leak-probe metric must be defined against post-hoc classifiers (including nonlinear), not just the in-training adversary.**
 - INLP is the canonical linear-erasure baseline to position against; its own full text concedes nonlinear recovery (85.0% MLP on gender). Follow-ups (RLACE 2022, LEACE 2023, Kernel-INLP 2023) are defined by comparison to it, and nullspace erasure has reached text-to-image diffusion ([2406.07137](https://arxiv.org/abs/2406.07137)); the spec's citation-and-differentiation table must cite that line too.
+
+  Correction 2026-11-28 (W7 full-text sweep): the arXiv id 2406.07137 is wrong;
+  it resolves to a condensed-matter physics paper (Canestrari et al., icosahedral
+  shell packing), not diffusion erasure. The diffusion concept-erasure line the
+  sentence points at is real but is fine-tuning and closed-form concept editing,
+  not nullspace projection of encoders: Gandikota et al., "Erasing Concepts
+  from Diffusion Models", arXiv:2303.07345 (ECCV 2024); Gandikota et al.,
+  "Unified Concept Editing in Diffusion Models", arXiv:2308.14761 (WACV 2024);
+  SPEED, arXiv:2503.07392 (ICLR). None applies erasure to multimodal encoders
+  for linking. The same pass corrected this line's other records: RLACE is
+  arXiv:2201.12091 (ICML 2022), and "Kernel-INLP 2023" is a misnomer with no
+  matching paper; the kernel line is Ravfogel et al., "Adversarial Concept
+  Erasure in Kernel Space", EMNLP 2022, arXiv:2201.12191, which builds on the
+  RLACE maximin game, not on INLP. The W7 sweep also found
+  mandatory differentiation neighbours this note missed (CLEAR, multimodal
+  nullspace de-redundancy for recommendation; ISP, linear identity-subspace
+  removal from image encoders; LANCER and the document-deconfounding line,
+  erasure serving text retrieval/similarity; SPD and JVSB, bias-subspace
+  erasure on CLIP), recorded in the W7 execution plan and release verdict.
 - Open design decision for the spec: gradient-reversal probe during training, INLP-style post-hoc projection on the exported encoder, or both; they carry different leak guarantees and different H2 falsifier designs.
 
 ### 2.2 Wang et al. (AAAI 2020) must be cited and distinguished
@@ -53,6 +79,10 @@ uCDCR (LREC 2026) unifies English CDCR corpora with standardized metrics; WEC de
 ## 4. Open questions carried into the spec
 
 1. Has any work applied LEACE-style nullspace erasure to multimodal encoders for linking tasks (would erode the cross-modal leg)? Full-text sweep of the 2406.07137 citation line required before any paper claim.
+   Closed 2026-11-28 by the W7 sweep (see the correction in section 2.1 and the
+   W7 release verdict): no such work found; the conjunction is unoccupied as of
+   the sweep date, with the neighbour set the model card must differentiate
+   (CLEAR, ISP, LANCER, the deconfounding line, SPD, JVSB) now on record.
 2. Gradient-reversal probe vs INLP post-hoc projection vs both (different H2 designs).
 3. Does Weft share T11/T12's benchmark harness and GPU window, or run in a separate queue? (Recommendation: separate queue, sequenced after T11/T12 land; see §5.)
 4. Wikipedia share-alike interaction with the intended dataset licence: pick dataset licence per-source audit or drop Wikipedia-derived pairs from the released set.

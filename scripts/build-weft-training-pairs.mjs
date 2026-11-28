@@ -469,11 +469,11 @@ const DEFAULT_LIVE_THEMES = [
   'product launch readiness',
 ];
 
-// Shared identity roster pinned into every chunk prompt. Each chunk is
+// Shared entity roster pinned into every chunk prompt. Each chunk is
 // single-theme, so without a shared roster the teacher cannot reuse identity
 // keys across themes and identity-matched theme-different negatives never
 // compile. Invented names, deterministic, constant.
-const SHARED_IDENTITY_ROSTER = [
+const SHARED_ENTITY_ROSTER = [
   { key: 'emp-alex-carter', surface: 'Alex Carter', class: 'person' },
   { key: 'emp-priya-nair', surface: 'Priya Nair', class: 'person' },
   { key: 'emp-tomas-rivera', surface: 'Tomas Rivera', class: 'person' },

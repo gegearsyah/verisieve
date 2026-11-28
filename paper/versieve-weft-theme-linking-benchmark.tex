@@ -1,0 +1,264 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\setlength{\emergencystretch}{2em}
+
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+\usepackage[accepted]{mlsys2025}
+
+\makeatletter
+\renewcommand{\mlsys@appearing}{Copyright 2026 by the author.}
+\renewcommand{\Notice@String}{\mlsys@appearing}
+\makeatother
+
+% Reserved placeholder slot for pending measurements: renders visibly,
+% never a number, never filled silently.
+\newcommand{\todo}[1]{\textbf{[placeholder: #1]}}
+
+\hypersetup{
+  pdftitle={Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path},
+  pdfauthor={Gege Ardiyansyah},
+  pdfsubject={Systems for Machine Learning}
+}
+
+\mlsystitlerunning{Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path}
+
+\begin{document}
+
+\twocolumn[
+\mlsystitle{Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path}
+
+\begin{mlsysauthorlist}
+\textbf{Gege Ardiyansyah}
+\end{mlsysauthorlist}
+
+\mlsystitlerunning{Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path}
+\mlsyskeywords{theme linking, conformal abstention, Learn-Then-Test, quantized export, model card, claim audit}
+
+\vskip 0.3in
+
+\begin{abstract}
+Theme linking asks whether two documents from different sources that state the same talking point are one piece of knowledge: deciding which pairs inside a corpus should carry the link label is a corpus-construction step beyond the extraction, assembly, and fine-tuning stages measured in the companion studies. We present the \textbf{Weft specialist}, a small pairwise scorer built on a frozen all-MiniLM-L6-v2 base with int8 link, theme, and evidence heads, shipped as a single-file int4 ONNX artifact ($20{,}458{,}033$\,B) whose tokenizer, quantized graph, kNN out-of-distribution (OOD) bank, and sha-256 manifest pins all travel inside the file, and as an int8 dynamic reference ($23{,}642{,}917$\,B). The measured product case is recorded as a design ruling in the release manifest: on the \texttt{identity\_disjoint} bucket of the synthetic-theme estate, whose positive pairs are same-theme pairs sharing no participant across departments, the specialist's pooled-cosine theme-linking score reaches pairwise F1 $0.9989$ against $0.9973$ for a size-matched static embedding baseline. The lexical BM25 control scores $1.0$ on the same bucket, an honest finding this paper leads its limits section with: the bucket measures lexical overlap as well as theme adjacency. Around the score, a Learn-Then-Test (LTT) calibrated abstain rule certifies a threshold of $0.5000$ at $\alpha=0.05$, with a false-merge rate at most $\alpha$ with probability at least $0.95$ over the calibration draw, at $16.1\%$ coverage; the independent test half measures $11$ false merges in $161$ answered pairs ($0.0683$), a wide-noise point estimate around the bound. Identity is treated as a measured property, not a claim: an externally trained ReLU MLP recovers the primary identity key above chance from the pooled output of every condition including the fp32 control (control $0.4167$, int4 $0.4500$, int8 $0.3500$, chance $0.100$), while an RBF-SVM on the same representations stays at or below chance, a probe-family-specific reading the paper reports plainly. Every number in the paper traces to a committed ledger through a typed, content-addressed claim audit over $40$ traced claims.
+\end{abstract}
+]
+
+\section{Introduction}
+\label{sec:intro}
+
+The companion studies in this series asked what training data should lose \citep{ardiyansyah2026extraction}, how training data should look \citep{ardiyansyah2026graphcorpus}, and what trained weights should carry \citep{ardiyansyah2026localtraining}. This paper asks the next construction question: which pieces of knowledge inside a corpus should be linked when their sources differ. The unit is the knowledge itself, stated as a design ruling, not the document type and not the person: a meeting transcript, a compliance manual, and a thread that state the same talking point are one theme, and knowledge that states the same thing should be linked and support each other's claims no matter which source it lives in. Companies are the motivating domain of that ruling, not its boundary: their knowledge is the most granular and the most distributed, and it gets lost in talking points scattered across meetings, documents, and threads. The ruling also sets a threshold: not all text is knowledge, so a greeting is not a knowledge unit and linking applies to substance, not small talk. Measuring what that filter should be belongs to the corpus lane (issue \#59 of the project tracker), not to this paper.
+
+The instrument is the Weft specialist: a pairwise theme-linking scorer over documents from mixed sources (Section~\ref{sec:specialist}), evaluated on a synthetic-theme estate with buckets labeled by shared-identity structure, including the \texttt{identity\_disjoint} bucket of same-theme pairs sharing no participant across departments (Section~\ref{sec:benchmark}), wrapped in a calibrated abstain-or-route path (Section~\ref{sec:calibration}), and audited claim by claim against committed ledgers (Section~\ref{sec:audit}).
+
+\paragraph{Five traced claims.}
+The paper carries five claims, each traceable to a committed ledger or record:
+
+\begin{enumerate}
+    \item \textbf{Theme linking is the product case, by ruling.} On the \texttt{identity\_disjoint} bucket, whose positives are same-theme pairs sharing no participant across departments, the ruled pooled-cosine scoring path scores F1 $0.9989$ against $0.9973$ for the size-matched static baseline (Section~\ref{sec:benchmark}).
+    \item \textbf{The abstention certificate.} The certified LTT rule answers a threshold of $0.5000$ at both $\alpha=0.05$ and $\alpha=0.10$, $16.1\%$ coverage, with the bound holding over the calibration draw (Section~\ref{sec:calibration}).
+    \item \textbf{Identity is a measured probe property.} The identity-blind framing carries a dated measured probe outcome on the shipped artifacts, reported plainly including the above-chance MLP recovery (Section~\ref{sec:identity}).
+    \item \textbf{The limits lead with the uncomfortable number.} BM25 scores $1.0$ on the gate bucket because same-theme documents share vocabulary; the bucket measures lexical overlap as well as theme adjacency (Section~\ref{sec:limits}).
+    \item \textbf{Reproducibility as an audited practice.} Every number travels with typed errors, a content-addressed runId, and an append-only ledger that makes re-running a no-op check (Section~\ref{sec:audit}).
+\end{enumerate}
+
+\paragraph{Scope of novelty.}
+Individually, nullspace projection, conformal calibration, kNN OOD banks, and quantized ONNX export are prior art, cited and differentiated row by row in Section~\ref{sec:related}. The novelty wording is exactly the audited one: the Weft combination (source-orthogonal (person-independent) pairwise theme linking over document-graph structure, an abstain-or-route calibrated path around a specialist head, and the fail-closed release packaging for it) is not found in prior art as of this audit. No single component is claimed as new. The audit's recorded limits apply: OpenAlex indexing of 2026 preprints is incomplete, so the reading is only as strong as the citation graph.
+
+\section{Related Work}
+\label{sec:related}
+
+Every id below was read in full text (ar5iv, arXiv HTML or PDF, or the ACL Anthology PDF) or verified against a primary page in the committed verification record; the table is reproduced row by row from the model card's citation-and-differentiation table, and each row states what Weft does differently (Table~\ref{tab:prior-art}).
+
+\begin{table*}[t]
+\caption{Citation and differentiation table, reproduced from the model card and the committed full-text verification record. One row per source; each row states what Weft does differently.}
+\label{tab:prior-art}
+\vskip 0.08in
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{p{5.1in}p{3.6in}}
+\toprule
+\textbf{Source} & \textbf{Differentiation} \\
+\midrule
+Elazar and Goldberg, ``Adversarial Removal of Demographic Attributes from Text Data'', EMNLP 2018 \citep{elazar2018adversarial} & The in-training adversary reaches $49.0\%$ at $50$ epochs while a post-hoc attacker reaches $56.0\%$ on that encoder; Weft does not claim removal: identity-blindness is worded only as a measured post-hoc probe result over the frozen base and the heads, with the probe family fixed and reported \\
+Coavoux, Narayan, and Cohen, ``Privacy-preserving Neural Representations of Text'', EMNLP 2018 \citep{coavoux2018privacy} & Defensive training objectives improve the attackability-utility trade-off without a guarantee (``a single attacker does not provide sufficient evidence''); Weft claims no guarantee from any training objective \\
+Ravfogel et al., ``Null It Out'' (INLP), ACL 2020 \citep{ravfogel2020null} & The canonical iterative linear nullspace-projection baseline; its own text concedes probe-family-specific nonlinear recovery ($85.0\%$ MLP), which is why Weft fixes and reports its probe family instead of claiming erasure \\
+RLACE \citep{ravfogel2022rlace}, kernel-space erasure \citep{ravfogel2022kernel}, LEACE \citep{belrose2023leace} & The linear-erasure follow-up line (adversarial, kernel-space, closed-form affine); Weft implements none of them and claims no erasure \\
+Gandikota et al., ECCV 2024 \citep{gandikota2024erasing}; WACV 2024 \citep{gandikota2024unified}; SPEED, ICLR \citep{speed2025} & The diffusion line is fine-tuning and closed-form concept editing of image generators, not nullspace projection of encoders, and it does not touch linking; cited to carry the earlier wrong-id note to correction \\
+Wang et al., AAAI 2020 \citep{wang2020authorname} & Generated negatives serve disambiguation accuracy; Versieve's salting and gatekeeper negatives serve privacy; Weft's pairs sharing a participant but no talking point serve theme discrimination: three separate purposes, kept distinct \\
+AspectSim \citep{hossain2026aspectsim} and AspectCSE \citep{schopf2023aspectcse} & AspectCSE's supervision passes through curated KG entity properties; Weft's supervision is source-orthogonal (person-independent) document-graph structure with no entity-property requirement \\
+Conformal abstention for LLM hallucinations \citep{abbasiyadkori2024conformal} & Their thresholds are calibrated over sampled generations of one LLM; Weft reuses the repository's existing Learn-Then-Test machinery on application-level pair scoring over anchor sets, claiming the application level only; no affiliation is printed because none appears in the citable artifact \\
+Barhom et al., ACL 2019 \citep{barhom2019revisiting}; WEC \citep{eirew2021wec}; uCDCR \citep{zhukova2026ucdcr}; CD2CR \citep{ravenscroft2021cd2cr} & The CDCR family is the benchmark substrate, not a competitor: none is cross-modal or identity-adversarial, and CD2CR records that pre-late-2020 CDCR systems were single-corpus \\
+Tibshirani et al. \citep{tibshirani2019conformal}; Sun et al. \citep{sun2022knnood}; Mozannar and Sontag \citep{mozannar2020defer} & The routing-and-coverage anchors: why the conformal calibration is in-domain only, the kNN OOD tripwire mechanism, and the learning-to-defer framing for the routing hooks \\
+CLEAR (2026, OpenAlex W7133344427) \citep{clear2026} & The closest mechanical neighbour: nullspace projection of a shared visual and textual subspace, but the erasure target is cross-modal redundancy for recommendation fusion, not an identity concept, and the task is not cross-document linking \\
+ISP (2026, OpenAlex W7151731895) \citep{isp2026} & One-shot linear removal of an identity subspace from image encoders driving face verification toward chance: single-modality visual encoders, no text, no linking \\
+LANCER (EMNLP 2024, OpenAlex W4404782582) \citep{lancer2024} and the document-deconfounding line (OpenAlex W4416035283; follow-up W7235661832) \citep{deconfounding2025} & Erasure serving text retrieval and document similarity: unimodal, retrieval-shaped, and not source-orthogonal (person-independent) pair scoring \\
+SPD (OpenAlex W7106715728) \citep{spd2025} and JVSB (OpenAlex W4413145477) \citep{jvsb2025} & Bias-subspace erasure on CLIP evaluated on classification and text-to-image retrieval: multimodal encoders, no linking task \\
+Task-conditional leakage (OpenAlex W7237077535) \citep{taskconditional2026} & Proves a conflict between marginal and task-conditional linear guardedness; cited for the H2 probe framing (conditional leakage after erasure) \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table*}
+
+\section{The Weft Specialist}
+\label{sec:specialist}
+
+The Weft specialist is a small pairwise scorer for source-orthogonal (person-independent) cross-document theme linking.
+
+\paragraph{Architecture.}
+The base is all-MiniLM-L6-v2 (6 layers, 384 dimensions), frozen throughout training (learning rate $0.0$ on the base). On top sit int8 link, theme, and evidence heads trained on the v4 fullscale live pair corpus ($48{,}000$ train and $2{,}000$ eval pairs, $6$ voices): synthetic multi-format estates generated by this repository.
+
+\paragraph{Shipped artifacts.}
+The shipped int4 artifact is one ONNX file containing the tokenized pair graph, the int8 per-row word-embedding table ($30{,}522$ rows, a Gather plus Cast plus scale Mul dequantization), the int4 MatMulNBits FFN and attention-output matmuls, the int8 heads, and the metadata props carrying the tokenizer JSON, the int8 k-means OOD bank ($k{=}1024$), the OOD threshold, and the manifest of sha-256 pins (W4-v4 model weights, tokenizer, and v4 train and eval jsonl). Tokenization happens outside the graph; everything else loads from the single file. The int8 dynamic reference is the same exported pair graph from the fp32 state quantized int8 dynamic, without the metadata manifest. The reproduction recipe regenerates both end to end (Table~\ref{tab:artifacts}).
+
+\paragraph{Digests.}
+Trained weights are not shipped in the repository: the sha-256 digests pin the artifacts, and any load path that fails a digest check fails closed with a typed error; there is no fallback similarity score anywhere in the path.
+
+\begin{table}[t]
+\caption{Shipped artifacts (traces: \texttt{results/weft-export-latency.json}, \texttt{RELEASE-MANIFEST.json}). Holdout is the $2{,}000$-pair v4 live set; runtime is the onnxruntime re-score on the $200$-pair sample on the verification box, so latency travels with the measurement, not with the artifact.}
+\label{tab:artifacts}
+\vskip 0.08in
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lp{0.55in}p{0.55in}}
+\toprule
+ & \textbf{int4 artifact} & \textbf{int8 reference} \\
+\midrule
+Bytes & $20{,}458{,}033$ & $23{,}642{,}917$ \\
+Holdout F1 & $0.9572$ & $0.9652$ \\
+Precision & $0.9765$ & $0.9932$ \\
+Recall & $0.9387$ & $0.9387$ \\
+Runtime F1 & $0.9655$ & $0.9825$ \\
+ms per pair & $17.2$ & $11.9$ \\
+sha-256 prefix & \texttt{4690c5d4} & \texttt{c8ebc947} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\paragraph{Judge reference.}
+In the W1 shootout, the Qwen2.5-0.5B-Instruct judge (\texttt{Qwen/Qwen2.5-0.5B-Instruct}) scores pairwise F1 $0.6667$ at $691.6$ to $877.3$\,ms per pair on the same estate (a sampled, in-sample disclosure of $8$ evaluated pairs). The judge is the H5 quality reference the release target was written against, not a competitor arm.
+
+\section{The Benchmark and the Ruled Gate}
+\label{sec:benchmark}
+
+\paragraph{The synthetic-theme estate.}
+The W1 benchmark substrate is a synthetic theme estate: $240$ documents, $24$ themes, $8$ departments, $5$ modalities, seeded ASR/OCR-style character substitution on roughly $35\%$ of documents, seed $20261127$, sha-256 \texttt{f56da113$\ldots$d54c9}; $28{,}680$ pairs in total, scored per bucket. Buckets include \texttt{cross\_department}, \texttt{cross\_modality}, \texttt{identity\_overlap}, and \texttt{identity\_disjoint}. The \texttt{identity\_disjoint} bucket's positive pairs are same-theme pairs sharing no participant across departments: the bucket asks whether the pool of pairs that share a theme but no participant still gets linked. Baseline thresholds are selected by a per-baseline maximum-F1 sweep on the evaluation pairs, in-sample, disclosed in each baseline.
+
+\paragraph{The ruled gate.}
+The release acceptance criterion (the size-matched static baseline must be beaten by the ruled scoring path) was recorded as blocked pending the founder's scoring-path ruling, because the numbers did not decide it by themselves: on the \texttt{identity\_disjoint} bucket the static embedding baseline (model2vec, POTION-32M scale) scores F1 $0.9973$, the MiniLM cosine baseline $0.9968$, the BERTopic-style clustering baseline $1.0$, the local LLM judge $0.6$, BM25 $1.0$, the specialist's link-head path $0.3617$, and the pooled cosine path $0.9989$. The founder ruled on 2026-11-28: Weft's purpose was never identity-based linking; the product point is theme linking, so the ruled scoring path is the specialist's pooled-cosine theme-linking score, which beats the size-matched static baseline ($0.9989$ versus $0.9973$). The gate is recorded \texttt{ruled-passed} in the manifest's \texttt{releaseGate} block with the ruling text and the prior blocked status preserved.
+
+\paragraph{The link head is rescoped, not hidden.}
+The link head scores $0.3617$ on this bucket, retained as the honest measurement of the head's own behavior, unchanged by the ruling. The link head is rescoped to the abstention and calibration layer over the theme-linking score.
+
+\paragraph{A measurement caveat the gate carries.}
+One caveat travels with the ruling: BM25 scores $1.0$ on this bucket because same-theme documents in the synthetic estate share vocabulary, so the bucket measures lexical overlap as well as theme adjacency. A paraphrase-hard benchmark stratum is filed as the follow-up that measures learned theme linking specifically.
+% TODO(issue #59, paraphrase-hard bucket): pending the v5 corpus lane. No number
+% exists yet; nothing is invented for it here. Fill the placeholder below only
+% when the paraphrase-hard bucket lands in a committed results ledger.
+Paraphrase-hard stratum result: \todo{paraphrase-hard bucket, issue \#59, pending the v5 corpus lane}.
+% TODO(optional head-retrain arm): an optional arm that retrains the heads over the
+% pooled-cosine ruled path is defined but not measured. Fill from a committed
+% ledger entry only; leave the placeholder until then.
+Optional head-retrain arm result: \todo{optional head-retrain arm, not yet measured}.
+\section{Calibration and Abstention}
+\label{sec:calibration}
+
+\paragraph{The certificate.}
+The link score drives a calibrated abstain rule: score at or above the certified threshold answers, otherwise the pair routes to review. The threshold is certified by Learn-Then-Test over a fixed sequence (the calibration half walked in descending-score order) \citep{angelopoulos2021ltt}. The certificate: the false-merge rate stays at most $\alpha$ with probability at least $0.95$ over the calibration draw. The shipped int4 artifact certifies a threshold of $0.5000$ at both $\alpha=0.05$ and $\alpha=0.10$.
+
+\paragraph{Coverage is thin, on record.}
+The certified rule answers $16.1\%$ of the $2{,}000$-pair eval (the eval holds $310$ positives; the certified threshold answers essentially the positives plus a thin margin of negatives). The reason is the score geometry: the head's scores are sharply bimodal at the $0.5$ boundary, so certified coverage cannot grow without admitting a dense block of negatives and breaking the bound; both alphas stop at the same threshold for exactly that reason. The rule itself is prior art (Learn-Then-Test over a threshold sequence); no new calibration method is claimed.
+
+\paragraph{Test-half point estimate.}
+The independent test half measures $11$ false merges in $161$ answered pairs ($0.0683$): a wide-noise point estimate around the bound, not a measured $5\%$. The abstain rule certifies and fails closed; the rest of the traffic routes to review.
+
+\paragraph{The OOD tripwire.}
+The kNN OOD bank ($k{=}1024$, int8 centroids plus scales, $397{,}324$\,B) passes $0.95$ of the eval by construction (the threshold is the $0.05$ quantile of the v4 eval tripwire scores) and flags $0.0669$ of documents. It is a corpus-level shift detector only: Section~\ref{sec:limits} measures what it does not see.
+
+\section{Identity as a Measured Property}
+\label{sec:identity}
+
+\paragraph{Masking evidence.}
+Under the v4 masked eval ($40$ identity-masked positives of $2{,}000$), masking identity-bearing tokens before scoring does not hurt at the usable levels: masked F1 $0.9635$ against $0.9572$ unmasked on the int4 artifact. That reading is measured on the v4 masked eval only.
+
+\paragraph{The H2 probe.}
+Masked-eval evidence does not establish that identity is unrecoverable from the representation. Following the externally-trained-attacker advice in the primary literature \citep{elazar2018adversarial}, the H2 probe trains an attacker post hoc on the frozen pooling output and evaluates on held-out documents: $240$ estate documents, $16$ identity keys, a stratified $180$/$60$ split, seed $20261127$, against the majority-class chance baseline of $0.100$. Probe families are fixed and reported: a 1-hidden-layer ReLU MLP ($64$ hidden units, primary) and an RBF-SVM ($C{=}10$, gamma scale, secondary). The probe reads each shipped graph's internal pooled tensor through read-only graph surgery on a temp copy, with the initializer bytes digested before and after to prove the shipped weights did not change (Table~\ref{tab:h2}).
+
+\begin{table}[t]
+\caption{H2 post-hoc identity probe on the shipped artifacts: top-1 accuracy predicting the document's primary identity key from the pooled output, chance $0.100$ (trace: \texttt{results/weft-h2-identity-probe.json}, runId \texttt{61d4becf$\ldots$0706}).}
+\label{tab:h2}
+\vskip 0.08in
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Condition} & \textbf{MLP} & \textbf{RBF-SVM} \\
+\midrule
+Frozen fp32 MiniLM control & $0.4167$ & $0.1000$ \\
+Shipped int4 artifact & $0.4500$ & $0.1167$ \\
+Shipped int8 artifact & $0.3500$ & $0.0500$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vskip -0.14in
+\end{table}
+
+\paragraph{The verdict, reported plainly.}
+Above-chance MLP recovery on every condition, including the fp32 control: the control reads $0.4167$, the shipped int4 artifact $0.4500$, the shipped int8 artifact $0.3500$, all well above the $0.100$ chance baseline. Quantization does not erase the signal. The RBF-SVM sits at or below chance in all three conditions ($0.1000$, $0.1167$, $0.0500$, the last recorded with the below-chance flag as measured, not hidden), while the same representations give the MLP a large margin: this replicates in miniature the probe-family-specific reading from the INLP record, where nonlinear recovery depends on the probe family and a near-chance linear-kernel probe does not certify identity-blindness \citep{ravfogel2020null}. The word identity-blind stays scoped to a measured probe result over the frozen base and the heads with the probe family fixed and reported; there is no removal claim and no guarantee. The probe's own limits travel with the reading: one corpus of $240$ documents, a $60$-document eval set where one or two documents move several points, an estate whose documents carry author names as identity surfaces, and no voice axis to stratify by.
+
+\section{Limits}
+\label{sec:limits}
+
+\paragraph{The BM25 finding leads.}
+BM25 scores $1.0$ on the \texttt{identity\_disjoint} bucket because same-theme documents in the synthetic estate share vocabulary: the bucket that certifies the gate measures lexical overlap as well as theme adjacency. The BERTopic-style baseline and the pooled-cosine path sit in the same regime. The ruled gate therefore certifies the product case on a bucket where a lexical control saturates; a paraphrase-hard stratum is the follow-up that separates learned theme linking from vocabulary agreement.
+
+\paragraph{The $240$-word envelope.}
+The training corpus tops out at $240$ words per document; nothing here reaches past the envelope and no long-document competence claim is made.
+
+\paragraph{The OOD tripwire is style-blind.}
+On the unseen-voice live eval (the v2 corpus behind the transfer cell), the tripwire flags only $6.7\%$ of documents: the frozen base encoder reads the unseen voice as in-coverage English prose, so the flag rate carries no signal about the style-voice gap. The out-of-coverage route for unseen style cannot rely on the tripwire alone; low-margin routing hooks are the seam, in the learning-to-defer framing \citep{mozannar2020defer}.
+
+\paragraph{Transfer is partial; single-voice training collapses.}
+The $6$-voice v4 head transfers to the unseen voice at F1 $0.6695$ (precision $0.5737$): covered-style competence is not style-robust competence. A single-voice-trained specialist collapses to F1 $0.4798$ under style variance. The head is only as wide as its training styles.
+
+\paragraph{Theme thresholds are uncalibrated on heterogeneous corpora.}
+On a synthetic company estate, the agglomeration emits $1$ theme node ($30$ members) from $383$ scored pairs ($287$ joins, $96$ abstains, $97$ identity-disjoint joins, $69$ disagreements with scores attached for human review). That is the construction-valid answer for a topically homogeneous corpus, not a quality claim; threshold recalibration needs a corpus with more than one theme to mean anything.
+
+\paragraph{Certificate scope.}
+The conformal certificate is in-domain: exchangeable calibration and deployment draws, covariate-shift caveats acknowledged \citep{tibshirani2019conformal}; the OOD route is the tripwire plus review routing, not a certified rule \citep{sun2022knnood}.
+
+\paragraph{Identity is not removed.}
+There is no removal claim anywhere in this paper: the identity-blind framing is a measured post-hoc probe result with the probe family fixed, and the H2 numbers above say recovery stays above chance in the MLP family.
+
+\section{The Claim Audit as Reproducibility Practice}
+\label{sec:audit}
+
+Every number in this paper traces to a committed ledger (\texttt{results/weft-*.json}, \texttt{results/company-brain-slice.json}) or to a committed research note, and the trace is itself a runnable artifact.
+
+\paragraph{Typed, fail-closed execution.}
+The measurement scripts and the load path use typed errors: a missing digest, absent metadata, or a wrong runtime fails closed instead of degrading to a silent fallback. There is no fallback similarity score in the shipped path.
+
+\paragraph{Content-addressed runId and idempotent re-runs.}
+Every ledger entry carries a runId derived from its content. Re-running the claim audit, the H2 probe, or the export receipt with unchanged inputs reproduces the runId and appends nothing: the re-run is a no-op check, and any change to the inputs produces a different runId rather than an edit to a committed entry. Ledgers are append-only; the W5 calibration bug note is the worked example (an earlier entry with wrong conformal thresholds was never committed, and the fix landed as a new entry).
+
+\paragraph{Forty traced claims.}
+The claim audit (\texttt{results/weft-claim-audit.json}) traces $40$ claims: each carries an id, a statement, a trace source, and a pass or fail verdict against the model card and the committed record as of the run. The audit run records $40$ passes, $3$ files swept for banned wording with zero hits, and a timestamp. The model card's claim trace block carries the same claims in machine-readable form. The audit is a design ruling about how the numbers travel: a claim without a ledger trace does not get written into papers.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Weft measures what it is: a pairwise theme-linking scorer whose product case is a recorded ruling (pooled cosine $0.9989$ against the size-matched static baseline's $0.9973$ on the bucket that matters), whose abstention certificate answers $16.1\%$ of pairs and routes the rest, whose identity-blind framing is a measured probe result with above-chance MLP recovery reported plainly, and whose limits lead with the number a marketing version would leave out (BM25 at $1.0$ on the gate bucket). The paraphrase-hard stratum is the open measurement on the learning side; the claim audit is the practice that keeps what exists honest.
+
+\bibliographystyle{mlsys2025}
+\bibliography{versieve-weft-theme-linking-benchmark}
+
+\end{document}

@@ -1,0 +1,577 @@
+{
+  "kind": "weft-export-latency",
+  "schemaVersion": 1,
+  "appendOnly": true,
+  "entries": [
+    {
+      "runId": "3c1a802f11f27a0c46d1372ee429965096f53737fbab0b8c68669fd164df6858",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T03:39:41.920080+00:00",
+      "seeds": {
+        "run": 20261127,
+        "conformalSplit": 20261127,
+        "kmeans": 20261127,
+        "fakeQuant": 20261127
+      },
+      "bitWidth": 2,
+      "quality": {
+        "threshold": 0.502920389175415,
+        "precision": 0.7029702970297029,
+        "recall": 0.45806451612903226,
+        "f1": 0.5546875,
+        "pairCount": 2000,
+        "masked": {
+          "threshold": 0.06969742476940155,
+          "precision": 0.39122596153846156,
+          "recall": 0.9234042553191489,
+          "f1": 0.5495989869143099,
+          "pairCount": 2000
+        }
+      },
+      "qat": {
+        "epochs": 3,
+        "headLr": 0.001,
+        "fakeQuantImplementation": "in-script-perchannel-symmetric",
+        "headsQuant": "int8"
+      },
+      "conformal": [
+        {
+          "alpha": 0.05,
+          "certified": true,
+          "threshold": 0.49964767694473267,
+          "coverage": 0.124,
+          "falseMergeRate": 0.3387096774193548
+        },
+        {
+          "alpha": 0.1,
+          "certified": true,
+          "threshold": 0.49145954847335815,
+          "coverage": 0.172,
+          "falseMergeRate": 0.48255813953488375
+        }
+      ],
+      "ood": {
+        "k": 1024,
+        "bankBytes": 397324,
+        "threshold": 0.13098958134651184,
+        "evalPassRate": 0.9500001299052212,
+        "oodFlagRate": 0.06698909565510273
+      },
+      "embedding": null,
+      "artifact": {
+        "path": null,
+        "bytes": null,
+        "sha256": null,
+        "quantized": true,
+        "level": null,
+        "qualityOnly": true,
+        "sizeCapBytes": 31457280,
+        "withinCap": null,
+        "note": "no runtime executes this bit width; quality-only row"
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.0045016129032023,
+        "pairScoringMsPerPair": 2.0078175974999795,
+        "peakRssMb": 2066.24609375,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "no runtime executes this bit width; quality-only row",
+        "fake-quant implementation in-script-perchannel-symmetric; the base is frozen (learningRateBase 0.0), so quantization is a one-shot weight transform",
+        "head retrain wall seconds 1164.4; epochs run 3",
+        "trainJsonlSha256 7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "evalJsonlSha256 101797ef0f1b3ba935c5ef5b4034deadae6239b7c5b2362e42fafb6e454d56d4",
+        "heads stay int8 in every runtime artifact; the ONNX graph encodes both docs per pair"
+      ]
+    },
+    {
+      "runId": "0cf102b8350314936095c63dfc9bc03002fdc50642832a04e8091d2287c7e796",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T03:59:42.334791+00:00",
+      "seeds": {
+        "run": 20261127,
+        "conformalSplit": 20261127,
+        "kmeans": 20261127,
+        "fakeQuant": 20261127
+      },
+      "bitWidth": 3,
+      "quality": {
+        "threshold": 0.5015650987625122,
+        "precision": 0.9301587301587302,
+        "recall": 0.9451612903225807,
+        "f1": 0.9376000000000001,
+        "pairCount": 2000,
+        "masked": {
+          "threshold": 0.5014587640762329,
+          "precision": 0.9675036927621861,
+          "recall": 0.9290780141843972,
+          "f1": 0.9479015918958031,
+          "pairCount": 2000
+        }
+      },
+      "qat": {
+        "epochs": 3,
+        "headLr": 0.001,
+        "fakeQuantImplementation": "in-script-perchannel-symmetric",
+        "headsQuant": "int8"
+      },
+      "conformal": [
+        {
+          "alpha": 0.05,
+          "certified": true,
+          "threshold": 0.5000001192092896,
+          "coverage": 0.187,
+          "falseMergeRate": 0.20320855614973263
+        },
+        {
+          "alpha": 0.1,
+          "certified": true,
+          "threshold": 0.5000000596046448,
+          "coverage": 0.19,
+          "falseMergeRate": 0.21578947368421053
+        }
+      ],
+      "ood": {
+        "k": 1024,
+        "bankBytes": 397324,
+        "threshold": 0.13098958134651184,
+        "evalPassRate": 0.9500001299052212,
+        "oodFlagRate": 0.06698909565510273
+      },
+      "embedding": null,
+      "artifact": {
+        "path": null,
+        "bytes": null,
+        "sha256": null,
+        "quantized": true,
+        "level": null,
+        "qualityOnly": true,
+        "sizeCapBytes": 31457280,
+        "withinCap": null,
+        "note": "no runtime executes this bit width; quality-only row"
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.0407014539408135,
+        "pairScoringMsPerPair": 2.0856240060002165,
+        "peakRssMb": 2133.99609375,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "no runtime executes this bit width; quality-only row",
+        "fake-quant implementation in-script-perchannel-symmetric; the base is frozen (learningRateBase 0.0), so quantization is a one-shot weight transform",
+        "head retrain wall seconds 1184.4; epochs run 3",
+        "trainJsonlSha256 7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "evalJsonlSha256 101797ef0f1b3ba935c5ef5b4034deadae6239b7c5b2362e42fafb6e454d56d4",
+        "heads stay int8 in every runtime artifact; the ONNX graph encodes both docs per pair"
+      ]
+    },
+    {
+      "runId": "fea4cb34f641e22d5da86cb482a091a0633cbc6565a813abad849cd9e6c736ad",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T04:19:52.377253+00:00",
+      "seeds": {
+        "run": 20261127,
+        "conformalSplit": 20261127,
+        "kmeans": 20261127,
+        "fakeQuant": 20261127
+      },
+      "bitWidth": 4,
+      "quality": {
+        "threshold": 0.5000181794166565,
+        "precision": 0.9765100671140939,
+        "recall": 0.9387096774193548,
+        "f1": 0.9572368421052632,
+        "pairCount": 2000,
+        "masked": {
+          "threshold": 0.5000408887863159,
+          "precision": 0.9924812030075187,
+          "recall": 0.9361702127659575,
+          "f1": 0.9635036496350365,
+          "pairCount": 2000
+        }
+      },
+      "qat": {
+        "epochs": 3,
+        "headLr": 0.001,
+        "fakeQuantImplementation": "in-script-perchannel-symmetric",
+        "headsQuant": "int8"
+      },
+      "conformal": [
+        {
+          "alpha": 0.05,
+          "certified": true,
+          "threshold": 0.5000000596046448,
+          "coverage": 0.161,
+          "falseMergeRate": 0.06832298136645963
+        },
+        {
+          "alpha": 0.1,
+          "certified": true,
+          "threshold": 0.5000000596046448,
+          "coverage": 0.161,
+          "falseMergeRate": 0.06832298136645963
+        }
+      ],
+      "ood": {
+        "k": 1024,
+        "bankBytes": 397324,
+        "threshold": 0.13098958134651184,
+        "evalPassRate": 0.9500001299052212,
+        "oodFlagRate": 0.06698909565510273
+      },
+      "embedding": null,
+      "artifact": {
+        "path": null,
+        "bytes": null,
+        "sha256": null,
+        "quantized": true,
+        "level": null,
+        "qualityOnly": true,
+        "sizeCapBytes": 31457280,
+        "withinCap": null,
+        "note": "onnxruntime MatMulNBits unavailable: MatMulNBits unavailable in this onnxruntime: ModuleNotFoundError: No module named 'onnx_ir'"
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.124140183904222,
+        "pairScoringMsPerPair": 2.124215821000007,
+        "peakRssMb": 2134.72265625,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "no runtime executes this bit width; quality-only row",
+        "the 4-bit export needs MatMulNBits; recorded as quality only",
+        "fake-quant implementation in-script-perchannel-symmetric; the base is frozen (learningRateBase 0.0), so quantization is a one-shot weight transform",
+        "head retrain wall seconds 1189.3; epochs run 3",
+        "trainJsonlSha256 7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "evalJsonlSha256 101797ef0f1b3ba935c5ef5b4034deadae6239b7c5b2362e42fafb6e454d56d4",
+        "heads stay int8 in every runtime artifact; the ONNX graph encodes both docs per pair"
+      ]
+    },
+    {
+      "runId": "eb1f9f092851a90006ad0a675b7ea39fc0718f9e86d8e57ae7a41976c673a94b",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T04:20:10.620160+00:00",
+      "seeds": {
+        "run": 20261127
+      },
+      "bitWidth": 8,
+      "quality": {
+        "threshold": 0.6878118515014648,
+        "precision": 0.9931740614334471,
+        "recall": 0.9387096774193548,
+        "f1": 0.9651741293532339,
+        "pairCount": 2000,
+        "masked": null
+      },
+      "qat": null,
+      "conformal": null,
+      "ood": {
+        "k": null,
+        "bankBytes": null,
+        "threshold": null,
+        "evalPassRate": null,
+        "oodFlagRate": null
+      },
+      "artifact": {
+        "path": "/kaggle/working/models/weft-specialist-quantized/weft-int8-reference.onnx",
+        "bytes": 23642917,
+        "sha256": "c8ebc947d4e10154053d77a4360d5e28fb725450b9d6a10dc1a6fa53ff36e5af",
+        "quantized": true,
+        "level": "int8-dynamic",
+        "qualityOnly": false,
+        "opCounts": {
+          "matmulNBits": 0,
+          "matmulInteger": 78,
+          "matmul": 24,
+          "gather": 42,
+          "dequantizeLinear": 6
+        },
+        "sizeCapBytes": 31457280,
+        "withinCap": true
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.0600037991353164,
+        "pairScoringMsPerPair": 2.1360819174999506,
+        "peakRssMb": 2658.828125,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "int8-dynamic reference upper bound exported from the fp32 W4-v4 state; no QAT rows apply to this entry",
+        "no quantization metadata travels in this artifact; the 4-bit artifact carries the metadata"
+      ]
+    },
+    {
+      "runId": "132d758f880306046603897868e5fba94bce67e51d1a7e92b27fc011b0981744",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T04:27:36.466498+00:00",
+      "seeds": {
+        "run": 20261127
+      },
+      "bitWidth": 8,
+      "quality": {
+        "threshold": 0.999929666519165,
+        "precision": 1.0,
+        "recall": 0.9655172413793104,
+        "f1": 0.9824561403508771,
+        "pairCount": 200
+      },
+      "qat": null,
+      "conformal": null,
+      "ood": null,
+      "artifact": {
+        "path": "models/weft-specialist-quantized/weft-int8-reference.onnx",
+        "bytes": 23642917,
+        "sha256": "c8ebc947d4e10154053d77a4360d5e28fb725450b9d6a10dc1a6fa53ff36e5af",
+        "quantized": true,
+        "level": "int8-dynamic",
+        "qualityOnly": false,
+        "sizeCapBytes": 31457280,
+        "withinCap": true
+      },
+      "latency": {
+        "measurementRuntime": "onnxruntime",
+        "device": "cpu",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "encodeMsPerDoc": 5.9565415000543,
+        "pairScoringMsPerPair": 11.9130830001086,
+        "peakRssMb": 0.20145511627197266,
+        "peakRssSource": "tracemalloc.peak",
+        "samplePairs": 200
+      },
+      "notes": [
+        "clean-runtime measure mode on this box; the artifact sha256 matches the recorded ledger entry",
+        "no metadata manifest in this artifact; measured against the recorded ledger digest only",
+        "encodeMsPerDoc is half the pair-graph forward (the graph encodes both docs)",
+        "quality is the in-sample max-F1 sweep on the measured eval sample"
+      ]
+    },
+    {
+      "runId": "f24dd76810dd079a84c64e5bb97017da22bb5bf597aa6a9425ae343fbea44eb3",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T05:42:05.908982+00:00",
+      "seeds": {
+        "run": 20261127,
+        "conformalSplit": 20261127,
+        "kmeans": 20261127,
+        "fakeQuant": 20261127
+      },
+      "bitWidth": 4,
+      "quality": {
+        "threshold": 0.5000181794166565,
+        "precision": 0.9765100671140939,
+        "recall": 0.9387096774193548,
+        "f1": 0.9572368421052632,
+        "pairCount": 2000,
+        "masked": {
+          "threshold": 0.5000408887863159,
+          "precision": 0.9924812030075187,
+          "recall": 0.9361702127659575,
+          "f1": 0.9635036496350365,
+          "pairCount": 2000
+        }
+      },
+      "qat": {
+        "epochs": 3,
+        "headLr": 0.001,
+        "fakeQuantImplementation": "in-script-perchannel-symmetric",
+        "headsQuant": "int8"
+      },
+      "conformal": [
+        {
+          "alpha": 0.05,
+          "certified": true,
+          "threshold": 0.5000000596046448,
+          "coverage": 0.161,
+          "falseMergeRate": 0.06832298136645963
+        },
+        {
+          "alpha": 0.1,
+          "certified": true,
+          "threshold": 0.5000000596046448,
+          "coverage": 0.161,
+          "falseMergeRate": 0.06832298136645963
+        }
+      ],
+      "ood": {
+        "k": 1024,
+        "bankBytes": 397324,
+        "threshold": 0.13098958134651184,
+        "evalPassRate": 0.9500001299052212,
+        "oodFlagRate": 0.06698909565510273
+      },
+      "embedding": {
+        "implementation": "int8 per-row scale; each gathered row dequantizes through a Cast plus a scale Mul",
+        "beforeF1": 0.9655172413793104,
+        "afterF1": 0.9655172413793104,
+        "deltaF1": 0.0,
+        "pairCount": 200,
+        "initializer": "base.embeddings.word_embeddings.weight",
+        "rows": 30522,
+        "cols": 384,
+        "scalesPerRow": 30522,
+        "int8Bytes": 11720448,
+        "scalesBytes": 122088
+      },
+      "artifact": {
+        "path": "/kaggle/working/models/weft-specialist-quantized/weft-int4.onnx",
+        "bytes": 20458033,
+        "sha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372",
+        "quantized": true,
+        "level": "int4-matmulnbits",
+        "qualityOnly": false,
+        "opCounts": {
+          "matmulNBits": 78,
+          "matmulInteger": 0,
+          "matmul": 24,
+          "gather": 44,
+          "dequantizeLinear": 0
+        },
+        "sizeCapBytes": 31457280,
+        "withinCap": true
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.1684907841702896,
+        "pairScoringMsPerPair": 2.3389260140000943,
+        "peakRssMb": 2063.234375,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "4-bit artifact (MatMulNBits); the tokenizer JSON, the int8 OOD bank, the OOD threshold, and the manifest travel in the onnx metadata; tokenization happens outside the graph",
+        "token-embedding int8 per-row: in-sample f1 0.9655 with the fp32 table (int4 matmuls), 0.9655 after the embedding int8 step, delta +0.0000 measured on the same 200 pairs",
+        "fake-quant implementation in-script-perchannel-symmetric; the base is frozen (learningRateBase 0.0), so quantization is a one-shot weight transform",
+        "head retrain wall seconds 1185.3; epochs run 3",
+        "trainJsonlSha256 7a2e8dafc3c5556fd0fe68b24d72fcc4f1555990dbaaaeb8b2266b9e8be35f0f",
+        "evalJsonlSha256 101797ef0f1b3ba935c5ef5b4034deadae6239b7c5b2362e42fafb6e454d56d4",
+        "heads stay int8 in every runtime artifact; the ONNX graph encodes both docs per pair"
+      ]
+    },
+    {
+      "runId": "2824f41dd11151cd9904b0ad0a79f413db5dd269327bd2ecf826b09ecbe819e4",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T05:42:24.390191+00:00",
+      "seeds": {
+        "run": 20261127
+      },
+      "bitWidth": 8,
+      "quality": {
+        "threshold": 0.6878118515014648,
+        "precision": 0.9931740614334471,
+        "recall": 0.9387096774193548,
+        "f1": 0.9651741293532339,
+        "pairCount": 2000,
+        "masked": null
+      },
+      "qat": null,
+      "conformal": null,
+      "ood": {
+        "k": null,
+        "bankBytes": null,
+        "threshold": null,
+        "evalPassRate": null,
+        "oodFlagRate": null
+      },
+      "artifact": {
+        "path": "/kaggle/working/models/weft-specialist-quantized/weft-int8-reference.onnx",
+        "bytes": 23642917,
+        "sha256": "c8ebc947d4e10154053d77a4360d5e28fb725450b9d6a10dc1a6fa53ff36e5af",
+        "quantized": true,
+        "level": "int8-dynamic",
+        "qualityOnly": false,
+        "opCounts": {
+          "matmulNBits": 0,
+          "matmulInteger": 78,
+          "matmul": 24,
+          "gather": 42,
+          "dequantizeLinear": 6
+        },
+        "sizeCapBytes": 31457280,
+        "withinCap": true
+      },
+      "latency": {
+        "device": "cuda",
+        "encodeMsPerDoc": 1.1524593012969484,
+        "pairScoringMsPerPair": 2.385519027999976,
+        "peakRssMb": 2655.44140625,
+        "peakRssSource": "resource.ru_maxrss",
+        "method": "batched amortized; encodeMsPerDoc is one doc encode, pairScoringMsPerPair is the full pair forward (both encodes plus the link head), matching the exported pair graph",
+        "computeDisclosure": "GPU run on 2 x Tesla T4"
+      },
+      "notes": [
+        "int8-dynamic reference upper bound exported from the fp32 W4-v4 state; no QAT rows apply to this entry",
+        "no quantization metadata travels in this artifact; the 4-bit artifact carries the metadata"
+      ]
+    },
+    {
+      "runId": "0e7e832e42447915ae78a2c9053947e9aa20492a38d0dda004fcd101b84caa88",
+      "ticket": "W5",
+      "status": "ran",
+      "createdAt": "2026-11-28T05:43:26.831317+00:00",
+      "seeds": {
+        "run": 20261127
+      },
+      "bitWidth": 4,
+      "quality": {
+        "threshold": 0.6470704078674316,
+        "precision": 0.9655172413793104,
+        "recall": 0.9655172413793104,
+        "f1": 0.9655172413793104,
+        "pairCount": 200
+      },
+      "qat": null,
+      "conformal": null,
+      "ood": null,
+      "artifact": {
+        "path": "models/weft-specialist-quantized/weft-int4.onnx",
+        "bytes": 20458033,
+        "sha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372",
+        "quantized": true,
+        "level": "int4-matmulnbits",
+        "qualityOnly": false,
+        "sizeCapBytes": 31457280,
+        "withinCap": true
+      },
+      "latency": {
+        "measurementRuntime": "onnxruntime",
+        "device": "cpu",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "encodeMsPerDoc": 8.601716749981279,
+        "pairScoringMsPerPair": 17.203433499962557,
+        "peakRssMb": 0.20248031616210938,
+        "peakRssSource": "tracemalloc.peak",
+        "samplePairs": 200
+      },
+      "notes": [
+        "clean-runtime measure mode on this box; the artifact sha256 matches the recorded ledger entry",
+        "metadata manifest: ticket W5, bitWidth 4, level int4-matmulnbits",
+        "manifest sha256 pins: {\"evalJsonl\": \"101797ef0f1b...\", \"modelPt\": \"2084d148c4a1...\", \"oodBank\": \"d4196086151e...\", \"tokenizer\": \"2fc687b11de0...\", \"trainJsonl\": \"7a2e8dafc3c5...\"}",
+        "tokenizer metadata decodes to a tokenizer JSON",
+        "ood bank metadata decodes (int8 centroids plus float scales)",
+        "ood threshold in metadata: 0.13098958134651184",
+        "encodeMsPerDoc is half the pair-graph forward (the graph encodes both docs)",
+        "quality is the in-sample max-F1 sweep on the measured eval sample"
+      ]
+    }
+  ]
+}

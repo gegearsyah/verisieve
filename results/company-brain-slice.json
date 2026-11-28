@@ -463,6 +463,254 @@
       "crossModalityEntityCount": 48
     }
   },
+  "theme": {
+    "themeNodeCount": 1,
+    "themeLinkCount": 383,
+    "joinCount": 287,
+    "abstainCount": 96,
+    "identityDisjointJoinCount": 97,
+    "disagreementCount": 69,
+    "policyVersion": "weft-theme-agglomeration-v1",
+    "modelSha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372",
+    "themeNodes": [
+      {
+        "id": "theme:36ac2d1ac9e2a386",
+        "members": [
+          "chunk_1",
+          "chunk_10",
+          "chunk_11",
+          "chunk_12",
+          "chunk_13",
+          "chunk_14",
+          "chunk_15",
+          "chunk_16",
+          "chunk_17",
+          "chunk_18",
+          "chunk_19",
+          "chunk_2",
+          "chunk_20",
+          "chunk_21",
+          "chunk_22",
+          "chunk_23",
+          "chunk_24",
+          "chunk_25",
+          "chunk_26",
+          "chunk_27",
+          "chunk_28",
+          "chunk_29",
+          "chunk_3",
+          "chunk_30",
+          "chunk_4",
+          "chunk_5",
+          "chunk_6",
+          "chunk_7",
+          "chunk_8",
+          "chunk_9"
+        ],
+        "anchors": [
+          "chunk_1",
+          "chunk_10",
+          "chunk_11"
+        ],
+        "evidenceSpans": [
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 0,
+            "end": 809
+          },
+          {
+            "source": "shared/review-q3.eml",
+            "blockId": "b9",
+            "start": 0,
+            "end": 188
+          },
+          {
+            "source": "shared/review-q3.eml",
+            "blockId": "b10",
+            "start": 0,
+            "end": 227
+          },
+          {
+            "source": "meetings/weekly-sync-transcript.txt",
+            "blockId": "b11",
+            "start": 0,
+            "end": 1099
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b15",
+            "start": 0,
+            "end": 167
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b16",
+            "start": 0,
+            "end": 156
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b17",
+            "start": 0,
+            "end": 99
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b18",
+            "start": 0,
+            "end": 92
+          },
+          {
+            "source": "meetings/weekly-sync.wav",
+            "blockId": "b20",
+            "start": 0,
+            "end": 696
+          },
+          {
+            "source": "business/board-proposal.pptx",
+            "blockId": "b21",
+            "start": 0,
+            "end": 49
+          },
+          {
+            "source": "business/board-proposal.pptx",
+            "blockId": "b22",
+            "start": 0,
+            "end": 113
+          },
+          {
+            "source": "it/runbook.txt",
+            "blockId": "b2",
+            "start": 0,
+            "end": 519
+          },
+          {
+            "source": "business/contract-edits.csv",
+            "blockId": "b5",
+            "start": 0,
+            "end": 979
+          },
+          {
+            "source": "shared/kickoff-announcement.eml",
+            "blockId": "b8",
+            "start": 0,
+            "end": 264
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b14",
+            "start": 0,
+            "end": 156
+          },
+          {
+            "source": "business/board-proposal.pptx",
+            "blockId": "b23",
+            "start": 0,
+            "end": 122
+          },
+          {
+            "source": "business/contract-edits.csv",
+            "blockId": "b5",
+            "start": 814,
+            "end": 1394
+          },
+          {
+            "source": "business/pricing-notes.txt",
+            "blockId": "b6",
+            "start": 0,
+            "end": 344
+          },
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 725,
+            "end": 1489
+          },
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 1405,
+            "end": 2169
+          },
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 2085,
+            "end": 2849
+          },
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 2765,
+            "end": 3732
+          },
+          {
+            "source": "it/escalation-notes.txt",
+            "blockId": "b3",
+            "start": 0,
+            "end": 371
+          },
+          {
+            "source": "shared/kickoff-announcement.eml",
+            "blockId": "b7",
+            "start": 0,
+            "end": 158
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b12",
+            "start": 0,
+            "end": 103
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b13",
+            "start": 0,
+            "end": 95
+          },
+          {
+            "source": "meetings/weekly-sync.vtt",
+            "blockId": "b19",
+            "start": 0,
+            "end": 77
+          },
+          {
+            "source": "business/board-proposal.pptx",
+            "blockId": "b24",
+            "start": 0,
+            "end": 117
+          },
+          {
+            "source": "it/service-inventory.sql",
+            "blockId": "b1",
+            "start": 3599,
+            "end": 3967
+          },
+          {
+            "source": "business/accounts.csv",
+            "blockId": "b4",
+            "start": 0,
+            "end": 647
+          }
+        ],
+        "scoreDistribution": {
+          "linkProb": {
+            "min": 0.5233662724494934,
+            "median": 0.9999973773956299,
+            "max": 1
+          },
+          "themeSim": {
+            "min": 0.6646745204925537,
+            "median": 0.8594709634780884,
+            "max": 0.9689396023750305
+          }
+        },
+        "policyVersion": "weft-theme-agglomeration-v1",
+        "modelSha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372"
+      }
+    ]
+  },
   "p3": {
     "audioCapture": {
       "failClosed": true,
@@ -518,7 +766,7 @@
       "entityCount": 76,
       "receipt": {
         "engine": "versieve-amnesiac-corpus-v1",
-        "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+        "engineVersionSha256": "6c45460d49c34a81872f63427683d20f209563829ab8b5a1f3a5ddb22ddcb80d",
         "corpusSha256": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
         "sampleCount": 24,
         "entityCount": 76,
@@ -1738,6 +1986,13 @@
             "departments": [
               "it"
             ]
+          },
+          {
+            "id": "theme:36ac2d1ac9e2a386",
+            "type": "theme",
+            "label": "chunk_1",
+            "memberCount": 30,
+            "policyVersion": "weft-theme-agglomeration-v1"
           }
         ],
         "edges": [
@@ -2988,20 +3243,95 @@
             "target": "dept:shared",
             "type": "SHARED_ENTITIES",
             "weight": 6
+          },
+          {
+            "source": "file:business/accounts.csv",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:business/board-proposal.pptx",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:business/contract-edits.csv",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:business/pricing-notes.txt",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:it/escalation-notes.txt",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:it/runbook.txt",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:it/service-inventory.sql",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:meetings/weekly-sync-transcript.txt",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:meetings/weekly-sync.vtt",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:meetings/weekly-sync.wav",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:shared/kickoff-announcement.eml",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
+          },
+          {
+            "source": "file:shared/review-q3.eml",
+            "target": "theme:36ac2d1ac9e2a386",
+            "type": "THEME_MEMBER",
+            "weight": 30
           }
         ]
       },
-      "nodeCount": 92,
-      "edgeCount": 208,
+      "nodeCount": 93,
+      "edgeCount": 220,
       "entityNodeCount": 76,
       "sharedEntityEdgeCount": 6,
-      "graphSha256": "a2bc1461b590bca29a60c4066682eb30b250fd9b92fb712c15346be0a7c41c39",
+      "graphSha256": "6316c0bb6d75c45a114b0505c23acf9cc712d689d376c7d40dcb7de9288c75f6",
       "renderer": {
         "target": "Rtio sandbox (../Rtio/frontend) — the browser renders perception, the connection graph and the export only; no corpus lifecycle, no training in the browser",
         "page": "app/company-graph",
         "component": "components/company-brain/ConnectionGraphViewer.tsx",
         "layout": "static department-column SVG (no new npm dependencies)",
-        "deployCopy": null
+        "deployCopy": {
+          "copied": true,
+          "path": "Rtio/frontend/public/company-brain-connection-graph.json"
+        }
       }
     }
   },
@@ -3023,7 +3353,7 @@
     "propagatedSpansCount": 7
   },
   "wallclock": {
-    "perceptionWallclockMs": 111.23069999999996,
-    "totalWallclockMs": 224.07149999999996
+    "perceptionWallclockMs": 526.6225,
+    "totalWallclockMs": 959.5935000000001
   }
 }

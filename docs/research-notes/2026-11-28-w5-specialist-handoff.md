@@ -108,6 +108,15 @@ Ranked architecture, adopted as the working design:
 - INLP null-space projection (the adopted identity suppression, #44):
   arXiv:2004.07667 (Elazar & Goldberg caveat on probe reliability)
 
+  Correction 2026-11-28 (W7 full-text pass): 2204.13600, 2007.07361, and
+  2202.13439 are wrong ids (a physics paper, an unrelated cost-sensitive
+  ensembling paper, and an unrelated math paper). The verified records are
+  Sun et al., ICML 2022, arXiv:2204.06507 (kNN OOD); Mozannar and Sontag,
+  arXiv:2006.01862 (learning to defer); and Tibshirani et al.,
+  arXiv:1904.06019 (conformal under covariate shift, already listed above).
+  Full verified records with quotes: 
+  2026-11-28-w7-fulltext-verification-record.md.
+
 ## 8. Standing rules (carry into W5 work)
 
 - Worker tier: cheapest capable model per task; code, PR mechanics, and

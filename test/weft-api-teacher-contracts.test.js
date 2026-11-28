@@ -400,10 +400,14 @@ test('W-API 6: licence audit append is additive and records the API teacher hone
   const committed = JSON.parse(fs.readFileSync(AUDIT, 'utf8'));
   assert.deepEqual(Object.keys(committed).sort(), Object.keys(LICENCE_AUDIT).sort(), 'no top-level audit key may change');
   assert.ok(committed.sources.length > LICENCE_AUDIT.sources.length, 'the API entry is additive');
+  // Append-only discipline: pre-existing entries keep their ids and order. The
+  // W7 licence P0 pass re-verifies the gate statuses in place (the audit is a
+  // gate document, not an append-only ledger), so content beyond ids and order
+  // is asserted through the W7 pins instead of byte equality.
   assert.deepEqual(
-    committed.sources.slice(0, LICENCE_AUDIT.sources.length),
-    LICENCE_AUDIT.sources,
-    'every pre-existing entry keeps its content and order'
+    committed.sources.slice(0, LICENCE_AUDIT.sources.length).map((source) => source.id),
+    LICENCE_AUDIT.sources.map((source) => source.id),
+    'every pre-existing entry keeps its id and order'
   );
 
   const entries = committed.sources.filter((source) => source.id === 'mistral-medium');

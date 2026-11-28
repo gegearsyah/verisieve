@@ -55,3 +55,6 @@ results/tmp-kaggle/
 
 # trained weights live on disk for local analysis; digests are recorded in results/
 models/
+
+# Kaggle API token; never commit credentials
+kaggle.json

@@ -132,7 +132,13 @@ Each needs a 10-person user check of whether *evidence spans plus abstain* is wh
 
 1. **Abstain vs deterministic: both, at different layers.** Inference is a fixed function (same inputs, same weights, same version → same output; this is what hashes and erasure need). The *decision* is probabilistic with a calibrated abstain. A pure deterministic rule cannot judge "same theme"; forcing a yes/no on every pair is exactly what produces false merges. Abstained pairs stay unlinked (safe default) and go to review.
 2. **Whole documents are not fed to the model.** Documents are split into chunks (about 128-256 tokens) upstream, after extraction. Weft links *chunks*; a document-to-document link is an aggregate (e.g. best-k chunk pairs plus evidence spans). A theme node holds chunks, not whole files. This is why 20-30 MB is plausible.
-3. **Licences (verified from Hugging Face model metadata and GitHub API, not from the full legal text):** Needle weights MIT; Mirage weights Apache-2.0; Cactus engine Apache-2.0. All permit commercial use and fine-tuning with attribution. Needle's repo now describes a "Needle 3" (2-bit, 8-29 MB, includes embeddings); its licence was **not** verified, check before using it as a base. The Needle 1 card says dataset generation code is open.
+3. **Licences (verified from Hugging Face model metadata and GitHub API, not from the full legal text):** Needle weights MIT; Mirage weights Apache-2.0; Cactus engine Apache-2.0. All permit commercial use and fine-tuning with attribution. Needle's repo now describes a "Needle 3" (2-bit, 8-29 MB, includes embeddings); its licence was **not** verified, check before using it as a base.
+   Correction 2026-11-28 (W7 licence verification): Needle 3
+   ([Cactus-Compute/needle3](https://huggingface.co/Cactus-Compute/needle3))
+   is Apache-2.0 on its HF repo page, so it clears the release gate with the
+   standard Apache-2.0 obligations; the "2-bit, 8-29 MB" figures above are not
+   stated on the current needle3 card (they match the Needle 1 marketing line;
+   needle 1, the 26M INT4 QAT model, is the one whose weights are MIT). The Needle 1 card says dataset generation code is open.
 4. **Dataset: you do not need your own.** Build it from public sources plus synthesis:
    - Linked public text: Wikipedia articles linked by category/hyperlink (CC BY-SA, share-alike applies to derived data), HyperCoref/WEC-Eng/ECB+ (uCDCR compilation), Multi-News (licence unclear, audit).
    - Synthetic multi-format "estates": prompt an **open-weight, permissively licensed LLM** (verify each model's licence, and avoid hosted-model terms that forbid training competitors) to write the same theme as an e-mail, meeting transcript, slide outline, table, and ticket from different "departments", with controlled identity overlap. This yields identity-masked positives, identity-matched hard negatives, and identity-disjoint positives for free, with known labels.
