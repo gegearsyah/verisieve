@@ -34,5 +34,8 @@
     "mcp": "node src/mcp-server.js",
     "train:model": "node scripts/run-open-model-training.mjs",
     "ui": "node scripts/ui-server.mjs"
+  },
+  "optionalDependencies": {
+    "onnxruntime-node": "^1.31.1"
   }
 }
