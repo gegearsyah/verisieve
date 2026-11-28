@@ -156,6 +156,23 @@ masking identity-bearing tokens before scoring does not hurt at the usable
 levels (4-bit masked F1 0.9635 against 0.9572 unmasked). That reading is
 measured on the v4 masked eval only, with the 240-word caveat carried.
 
+Dated update, 2026-11-28 (the post-hoc probe, now measured; issue #60, PR
+#62): an externally trained 1-hidden-layer ReLU MLP recovers the primary
+identity key above chance from every condition's pooled output on the
+committed W1 synthetic estate (240 documents, 16 identity keys, stratified
+180 train / 60 eval, seed 20261127, chance baseline 0.100): fp32 MiniLM
+control 0.4167, shipped int4 0.4500, shipped int8 0.3500. An RBF-SVM on the
+same representations stays at or below chance (0.1000, 0.1167, and 0.0500,
+the last recorded with belowChance set), replicating the probe-family
+specific reading from the INLP record (section 6): nonlinear recovery
+depends on the probe family, which is why this card fixes and reports its
+probe family. The verdict, reported plainly: identity is recoverable above
+chance in the MLP probe family, quantization does not erase the signal, and
+identity-blind remains exactly what this section always claimed: a scoped
+measured-probe framing with no removal claim and no guarantee. Traces:
+results/weft-h2-identity-probe.json and
+docs/research-notes/2026-11-28-h2-identity-probe.md.
+
 ## 6. Citation and differentiation table
 
 One row per source, from the committed full-text verification record
