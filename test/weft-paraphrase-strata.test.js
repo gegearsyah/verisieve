@@ -366,7 +366,12 @@ test('W-STRATA 5: fail-closed on a missing corpus; importing the module makes no
     assert.equal(candidates[0].anchor.id, ANCHOR.id);
     assert.equal(pairSeed(SOURCE.id), pairSeed(SOURCE.id), 'the pair seed is a pure function of the doc id');
     assert.equal(typeof positivePrompt({ seed: 1, paraphraseDepartment: 'nursing', cultureLabels: '[]', theme: 'alpha', sourceText: 'x' }), 'string');
-    assert.equal(typeof negativePrompt({ seed: 1, theme: 'alpha', cultureLabels: '[]' }), 'string');
+    // The negative prompt must name the doc fields and pin the profile's
+    // departments: the 2026-11-28 smoke got empty-text docs because the schema
+    // line named no fields and let the teacher invent its own structure.
+    const negPrompt = negativePrompt({ seed: 1, theme: 'alpha', cultureLabels: '[]', departments: ['ops', 'nursing'] });
+    assert.match(negPrompt, /"id","format","department","theme","text","identities"/, 'the negative prompt names the full doc schema');
+    assert.match(negPrompt, /\["ops","nursing"\]/, 'the negative prompt pins the profile departments');
     assert.equal(
       remapIdentityCollisions({ text: 'ok', identities: [] }, [], PROFILE_CULTURE_NAMES, 0).text,
       'ok',
@@ -455,6 +460,27 @@ test('W-STRATA 7: key collisions and placeholder echoes drop and are counted', (
     assert.equal(placeholderEcho.receipt.counts.paraphraseHardPositive, 0, 'a placeholder echo is not emitted');
     assert.equal(placeholderEcho.receipt.counts.droppedPlaceholderEcho, 1, 'the echo is counted');
     assert.equal(placeholderEcho.receipt.counts.droppedIdentityCollisions, 0, 'the echo is not confused with an identity clash');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// W-STRATA 8: docs without text are failed samples, not silently accepted
+// pairs; the 2026-11-28 smoke shipped twenty negatives with empty text
+// because the negative prompt named no doc fields and validation only
+// checked the docs array length.
+test('W-STRATA 8: a sample whose docs lack text fails closed', () => {
+  const dir = tempDir();
+  try {
+    const corpusPath = writeTempCorpus(dir);
+    const teacher = stubTeacher([], {
+      negatives: { textA: '', textB: 'gateway rollout stalls while the capacity dispute escalates' },
+    });
+    assert.throws(
+      () => runStrata(PROFILE, { limit: 1, teacher, corpusPath, outDir: path.join(dir, 'strata-empty') }),
+      WeftTeacherUnavailableError,
+      'a docs array with empty text never becomes a pair'
+    );
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

@@ -75,8 +75,8 @@ export function positivePrompt({ seed, paraphraseDepartment, cultureLabels, them
 }
 
 // Caveat: near-topic negatives rely on the teacher's own claim that the talking points differ.
-export function negativePrompt({ seed, theme, cultureLabels }) {
-  return `Seed: ${seed}. Return only a JSON object. Produce TWO documents about the theme ${JSON.stringify(theme)}. The two documents must be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments and share zero identity keys; invent all names, fitting these naming cultures: ${cultureLabels}. Length: 100 to 300 words each. Schema: {"docs":[...two docs...],"links":[]} with unique ids "n-1" and "n-2".`;
+export function negativePrompt({ seed, theme, cultureLabels, departments }) {
+  return `Seed: ${seed}. Return only a JSON object. Produce TWO documents about the theme ${JSON.stringify(theme)}. The two documents must be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments among these: ${JSON.stringify(Array.isArray(departments) ? departments : [])} and share zero identity keys; invent all names, fitting these naming cultures: ${cultureLabels}. Length: 100 to 300 words each. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where both documents' theme is exactly ${JSON.stringify(theme)} and the ids are "n-1" and "n-2".`;
 }
 
 /**
@@ -147,7 +147,13 @@ function parseTeacherDocs(teacher, prompt, seed, minDocs) {
     } catch {
       parsed = null;
     }
-    if (parsed && Array.isArray(parsed.docs) && parsed.docs.length >= minDocs) return parsed;
+    // A doc without non-empty text is a failed sample even when the docs array
+    // is present: the 2026-11-28 smoke's negatives carried empty text because
+    // the prompt's schema line never named the fields, and validation let it
+    // through. Text presence is therefore part of the acceptance here.
+    const hasText = parsed && Array.isArray(parsed.docs) && parsed.docs.length >= minDocs
+      && parsed.docs.every((d) => d && typeof d.text === 'string' && d.text.trim().length > 0);
+    if (hasText) return parsed;
     if (attempt === TEACH_ATTEMPTS - 1) {
       // The raw samples are the only way to diagnose a systematic response-shape
       // failure; they go to TEMP, never the repo.
@@ -375,7 +381,7 @@ export function runStrata(profileId, options = {}) {
   for (let i = 0; i < negativeCount && themes.length; i++) {
     const seed = (SEED * 1000003 + i * 9176) >>> 0;
     const theme = themes[i % themes.length];
-    const prompt = negativePrompt({ seed, theme, cultureLabels });
+    const prompt = negativePrompt({ seed, theme, cultureLabels, departments });
     if (sampledPrompts.negative === null) sampledPrompts.negative = prompt;
     const parsed = parseTeacherDocs(teacher, prompt, seed, 2);
     let docA = normalizedDoc(parsed.docs[0], `phn-${i}-1`, theme);
