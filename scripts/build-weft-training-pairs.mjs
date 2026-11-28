@@ -412,11 +412,61 @@ const SHARED_IDENTITY_ROSTER = [
 ];
 
 /**
+ * Build the per-profile shared identity roster for an org profile: people are
+ * drawn round-robin from the profile's name cultures (so each organization gets
+ * its own invented cast and vendor pool, not the generic estate's), vendors
+ * come from the profile's vendor pool. Keys are deterministic slugs of the
+ * surfaces, deduplicated so two pools never collide inside one roster.
+ */
+function profileRoster(profile) {
+  const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const cultures = (Array.isArray(profile.nameCultures) ? profile.nameCultures : [])
+    .map((c) => (c && Array.isArray(c.names) ? c.names : null))
+    .filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  const add = (key, surface, cls) => {
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      out.push({ key, surface, class: cls });
+    }
+  };
+  const idx = cultures.map(() => 0);
+  let progressed = true;
+  while (out.length < 12 && progressed) {
+    progressed = false;
+    for (let i = 0; i < cultures.length && out.length < 12; i++) {
+      if (idx[i] < cultures[i].length) {
+        const surface = cultures[i][idx[i]++];
+        add(`emp-${slug(surface)}`, surface, 'person');
+        progressed = true;
+      }
+    }
+  }
+  for (const name of (Array.isArray(profile.vendorPool) ? profile.vendorPool : []).slice(0, 5)) {
+    add(`vendor-${slug(name)}`, name, 'organization');
+  }
+  // A profile too thin to scaffold identity-matched negatives falls back to the
+  // generic roster rather than silently weakening the negative lesson.
+  return out.length >= 4 ? out : SHARED_IDENTITY_ROSTER;
+}
+
+/**
  * Generate synthetic multi-format estates with a teacher.
  * The teacher must expose `complete(prompt)` and carry either a permissive open-weight
  * licence or an audited API-teacher entry. Each theme is generated in chunks of at most
  * `chunkSize` documents (env WEFT_TEACHER_CHUNK, default 10) until the per-theme target
  * is met, with a deterministic seed per chunk. Returns { docs, links }.
+ *
+ * Optional `orgProfile` ({ id, context, departments, formats, vendorPool, nameCultures })
+ * re-skins the prompt for one company shape: its context line, its departments and
+ * format mix, and a roster built from its own vendor pool and name cultures. Absent
+ * (default null), the prompt is byte-identical to the pre-profile prompts.
+ *
+ * Optional `lengthBands` ([{ label, min, max }]) replaces the free-form length hint with
+ * a per-call length band picked deterministically by the chunk seed; long-band calls
+ * request fewer documents (options.longBandChunkSize, default 3) so a single teacher
+ * call has room to write to length.
  */
 export function generateTeacherEstates(teacher, options = {}) {
   if (!teacher || typeof teacher.complete !== 'function') {
@@ -446,13 +496,20 @@ export function generateTeacherEstates(teacher, options = {}) {
   const parsedChunk = Number.parseInt(rawChunk, 10);
   const chunkSize = Number.isInteger(parsedChunk) && parsedChunk > 0 ? parsedChunk : DEFAULT_TEACHER_CHUNK;
   const baseSeed = Number.isInteger(options.seed) ? options.seed : 0;
+  const profile = options.orgProfile && typeof options.orgProfile === 'object' ? options.orgProfile : null;
+  const roster = profile ? profileRoster(profile) : SHARED_IDENTITY_ROSTER;
+  const lengthBands = (Array.isArray(options.lengthBands) ? options.lengthBands : [])
+    .filter((b) => b && Number.isFinite(b.min) && Number.isFinite(b.max) && b.max >= b.min);
+  const useBands = lengthBands.length > 0;
+  const longBandChunk = Number.isInteger(options.longBandChunkSize) && options.longBandChunkSize > 0
+    ? options.longBandChunkSize
+    : 3;
   const docs = [];
   const links = [];
   themes.forEach((theme, themeIndex) => {
     const themePrefix = String(theme).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theme';
     let collected = 0;
     for (let chunk = 0; collected < perTheme; chunk++) {
-      const want = Math.min(chunkSize, perTheme - collected);
       const seed = (baseSeed * 1000003 + themeIndex * 10007 + chunk) >>> 0;
       // Per-chunk voice and length hints (2026-11-28 audit: seeds alone reshuffle
       // content, not style; without explicit hints every chunk lands in the same
@@ -460,19 +517,35 @@ export function generateTeacherEstates(teacher, options = {}) {
       const styleHints = Array.isArray(options.styleHints) && options.styleHints.length ? options.styleHints : null;
       const lengthHint = typeof options.lengthHint === 'string' && options.lengthHint.trim() ? options.lengthHint.trim() : null;
       const voice = styleHints ? styleHints[seed % styleHints.length] : null;
+      const band = useBands ? lengthBands[seed % lengthBands.length] : null;
+      // Long-band calls shrink the per-call document count so the teacher has
+      // room to write to length instead of truncating to fit the chunk.
+      const want = Math.min(chunkSize, perTheme - collected, band && band.min >= 300 ? longBandChunk : chunkSize);
+      const formatLine = profile
+        ? `Mix formats: ${JSON.stringify(Array.isArray(profile.formats) ? profile.formats : ['email', 'transcript', 'slides', 'table', 'ticket', 'pdf-scan'])}. Use only these departments: ${JSON.stringify(Array.isArray(profile.departments) ? profile.departments : ['operations'])}.`
+        : 'Mix formats: email, transcript, slides, table, ticket, pdf-scan. Mix departments.';
+      const cultureLabels = profile && Array.isArray(profile.nameCultures)
+        ? profile.nameCultures.map((c) => (c && c.label) || null).filter(Boolean)
+        : [];
       const prompt = [
         `Seed: ${seed}.`,
         'Return only a JSON object.',
         `Produce ${want} documents about the theme ${JSON.stringify(theme)}.`,
-        'Mix formats: email, transcript, slides, table, ticket, pdf-scan. Mix departments.',
+        formatLine,
+        ...(profile && profile.context
+          ? [`Company context: every document belongs to ${JSON.stringify(String(profile.context))}.`] : []),
         ...(voice ? [`Write every document in this chunk with this voice: ${JSON.stringify(String(voice))}.`] : []),
-        ...(lengthHint ? [`Vary document lengths: ${JSON.stringify(lengthHint)}.`] : []),
+        ...(band
+          ? [`Length band for this call: every document must be ${band.min} to ${band.max} words. Treat the minimum as a requirement, not a preference: keep writing until a document reaches at least ${band.min} words; a shorter document is a failed sample.`]
+          : [...(lengthHint ? [`Vary document lengths: ${JSON.stringify(lengthHint)}.`] : [])]),
         'Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],',
         '"links":[{"a","b","type"}]} where type is one of thread, attachment, meeting-minutes, ticket-pr, hyperlink.',
         'Reuse some identity keys within the chunk so linked documents share identities.',
-        `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(SHARED_IDENTITY_ROSTER)}.`,
+        `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(roster)}.`,
         'Each document uses 1 or 2 roster identities at most and at least 3 identity keys unique to this chunk, so same-theme documents can be fully identity-disjoint.',
         'The chunk-unique identities must use invented names distinct from the roster surfaces; never reuse a roster surface for a chunk-unique identity.',
+        ...(cultureLabels.length
+          ? [`Chunk-unique invented names should fit the same naming cultures as the roster: ${JSON.stringify(cultureLabels)}.`] : []),
         'Set each doc theme field to exactly the theme string given, never a document title.',
         'Never print identity key strings such as emp- or vendor- prefixes inside document text.',
         `This is chunk ${chunk + 1}; ids must be unique within the chunk.`,
@@ -688,6 +761,17 @@ export function compileWeftTrainingPairs(input, options = {}) {
   // only in masked positives unless diluted; undiluted, [PERSON_n]-style markers
   // and OCR/ASR noise are a deterministic positive label cue.
   const diluteMaskedMarkers = options.diluteMaskedMarkers === true;
+  // Opt-in (W5/v5): restore a small masked-positive bucket from within-chunk
+  // structural links, which the working chunk-marker exclusion empties by
+  // construction. A deterministic 5 percent hash slice of the links the
+  // exclusion would drop is re-emitted as identity-masked positives with full
+  // role-token masking. Off by default so the v4 receipts stay byte-stable;
+  // the same-voice caveat of within-chunk pairs is part of the deal and goes
+  // to the audit gate with the corpus.
+  const includeMaskedStructural = options.includeMaskedStructural === true;
+  // Recipe label for the org-profile corpus axis; the prompt-level profile
+  // itself lives in generateTeacherEstates. Recorded only when present.
+  const orgProfile = typeof options.orgProfile === 'string' && options.orgProfile.trim() ? options.orgProfile.trim() : null;
 
   const rejected = {};
   const emitted = new Set();
@@ -731,10 +815,14 @@ export function compileWeftTrainingPairs(input, options = {}) {
 
   function emit(pairType, a, b, extra) {
     if (!admitted(a) || !admitted(b)) return;
-    // Within-chunk pairs share a teacher call's style, which is a label shortcut
-    // in the live recipe (every within-chunk pair was a positive); excluded on demand.
-    if (excludeWithinChunk && chunkOf(a) === chunkOf(b)) return;
     const docIds = [a.id, b.id].sort();
+    // Within-chunk pairs share a teacher call's style, which is a label shortcut
+    // in the live recipe (every within-chunk pair was a positive); excluded on
+    // demand, except the opt-in 5 percent masked-structural rescue slice.
+    const maskedStructuralRescue = includeMaskedStructural
+      && pairType === 'identity-masked-positive'
+      && (Number.parseInt(sha256Hex(`weft-masked-structural\u0000${docIds.join('\u0000')}`).slice(0, 8), 16) % 100) < 5;
+    if (excludeWithinChunk && chunkOf(a) === chunkOf(b) && !maskedStructuralRescue) return;
     const dedupe = docIds.join('|');
     if (emitted.has(dedupe)) return;
     const shared = sharedIdentityKeys(a, b);
@@ -905,7 +993,7 @@ export function compileWeftTrainingPairs(input, options = {}) {
     generator,
     // Recipe flags are recorded only when a non-default recipe is used, so the
     // committed default-recipe receipts keep their exact committed shape.
-    ...(includeDisjointNegatives || excludeWithinChunk || corpusProvided || diluteMaskedMarkers
+    ...(includeDisjointNegatives || excludeWithinChunk || corpusProvided || diluteMaskedMarkers || includeMaskedStructural || orgProfile
       ? {
           recipeOptions: {
             includeDisjointNegatives,
@@ -914,6 +1002,8 @@ export function compileWeftTrainingPairs(input, options = {}) {
             // Recorded only when on, so the committed v2-recipe receipts keep
             // their exact committed shape on a recompile.
             ...(diluteMaskedMarkers ? { diluteMaskedMarkers } : {}),
+            ...(includeMaskedStructural ? { includeMaskedStructural } : {}),
+            ...(orgProfile ? { orgProfile } : {}),
           },
         }
       : {}),
@@ -1088,6 +1178,7 @@ export function runWeftTrainingPairArtifacts(options = {}) {
       corpus = generateTeacherEstates(teacher, {
         themes: options.themes,
         pairsTarget: options.targetPairs ?? 50000,
+        orgProfile: options.orgProfile && typeof options.orgProfile === 'object' ? options.orgProfile : null,
       });
     }
   } else {
@@ -1100,6 +1191,10 @@ export function runWeftTrainingPairArtifacts(options = {}) {
     includeDisjointNegatives: options.includeDisjointNegatives === true,
     excludeWithinChunk: options.excludeWithinChunk === true,
     diluteMaskedMarkers: options.diluteMaskedMarkers === true,
+    includeMaskedStructural: options.includeMaskedStructural === true,
+    orgProfile: options.orgProfile instanceof Object && options.orgProfile !== null && !Array.isArray(options.orgProfile)
+      ? String(options.orgProfile.id || '')
+      : (typeof options.orgProfile === 'string' ? options.orgProfile : null),
     targetPairs: options.targetPairs,
     evalSize: options.evalSize,
     augment: options.augment,
@@ -1141,6 +1236,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     includeDisjointNegatives: args['include-disjoint-negatives'] === true,
     excludeWithinChunk: args['exclude-within-chunk'] === true,
     diluteMaskedMarkers: args['dilute-masked-markers'] === true,
+    includeMaskedStructural: args['include-masked-structural'] === true,
+    orgProfile: typeof args['org-profile'] === 'string' ? args['org-profile'] : undefined,
     targetPairs: args['target-pairs'] ? Number.parseInt(String(args['target-pairs']), 10) : undefined,
     evalSize: args['eval-size'] ? Number.parseInt(String(args['eval-size']), 10) : undefined,
   });

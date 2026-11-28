@@ -425,6 +425,70 @@ test('W-API 6: licence audit append is additive and records the API teacher hone
   assert.equal(new Set(ids).size, ids.length, 'audit ids stay unique');
 });
 
+test('W-API 8: org profiles re-skin the prompt; the default prompt stays unchanged', () => {
+  const profile = {
+    id: 'hospital-network',
+    context: 'a regional hospital network running two acute hospitals and an outpatient clinic',
+    departments: ['clinical', 'nursing', 'procurement', 'compliance'],
+    formats: ['email', 'transcript', 'ticket', 'pdf-scan'],
+    vendorPool: ['Medivar Supply Group', 'Corvale Diagnostics'],
+    nameCultures: [
+      { label: 'Nordic', names: ['Astrid Lindqvist', 'Eero Halvorsen'] },
+      { label: 'Filipino', names: ['Marisol Reyes', 'Dante Villanueva'] },
+    ],
+  };
+  const profileCalls = [];
+  generateTeacherEstates(stubTeacher(profileCalls), {
+    themes: ['alpha'],
+    pairsTarget: 50,
+    chunkSize: 10,
+    seed: 9,
+    orgProfile: profile,
+  });
+  const prompt = profileCalls[0];
+  assert.ok(prompt.includes('Company context'), 'the profile industries context line is pinned into the prompt');
+  for (const name of profile.departments) assert.ok(prompt.includes(name), `profile department ${name} reaches the prompt`);
+  for (const vendor of profile.vendorPool) assert.ok(prompt.includes(vendor), 'the profile vendor pool replaces the generic estate roster');
+  assert.ok(!prompt.includes('Northwind Supply Co'), 'the generic estate vendor must not survive into a profiled prompt');
+  assert.ok(prompt.includes('Medivar Supply Group'), 'profile roster surfaces reach the prompt as identity keys');
+  assert.ok(prompt.includes('Astrid Lindqvist'), 'profile roster people are drawn from the name cultures');
+  assert.ok(prompt.includes('naming cultures'), 'the invented-cast culture hint reaches the prompt');
+  assert.ok(!prompt.includes('Mix departments.'), 'the generic department mix line is replaced');
+
+  const defaultCalls = [];
+  generateTeacherEstates(stubTeacher(defaultCalls), {
+    themes: ['alpha'],
+    pairsTarget: 50,
+    chunkSize: 10,
+    seed: 9,
+  });
+  const defaultPrompt = defaultCalls[0];
+  assert.ok(!defaultPrompt.includes('Company context'), 'no context line without a profile');
+  assert.ok(defaultPrompt.includes('Mix departments.'), 'the default department line is untouched');
+  assert.ok(defaultPrompt.includes('Northwind Supply Co'), 'the default roster is untouched');
+
+  // Length bands: a per-call band line replaces the free-form hint, with a long
+  // band asking for fewer documents so a call has room to write to length.
+  const bandCalls = [];
+  generateTeacherEstates(stubTeacher(bandCalls), {
+    themes: ['alpha', 'beta'],
+    pairsTarget: 120,
+    chunkSize: 10,
+    seed: 9,
+    lengthBands: [
+      { label: 'short', min: 30, max: 80 },
+      { label: 'medium', min: 100, max: 250 },
+      { label: 'long', min: 300, max: 600 },
+    ],
+  });
+  const bandLines = bandCalls.map((p) => (/(short|medium|long) band for this call|Length band for this call/.exec(p) || [])[0]);
+  assert.ok(bandLines.every((line) => line), 'every banded call carries its own length band');
+  const longCalls = bandCalls.filter((p) => p.includes('Length band for this call: every document must be 300 to 600 words'));
+  assert.ok(longCalls.length >= 1 && longCalls.every((p) => /Produce 3 documents/.test(p)),
+    'long-band calls shrink the per-call document count');
+  assert.ok(!bandCalls.some((p) => p.includes('Vary document lengths')), 'the free-form hint line is replaced by the band');
+});
+
 test('W-API 7: banned-word sweep over the adapter, the contract test, and the audit', () => {
   for (const file of [ADAPTER, fileURLToPath(import.meta.url), AUDIT, COMPILER]) {
     const text = fs.readFileSync(file, 'utf8').toLowerCase();

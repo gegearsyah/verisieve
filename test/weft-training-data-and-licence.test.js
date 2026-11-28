@@ -368,3 +368,62 @@ test('W2 6: opt-in recipe flags — disjoint negatives emitted, within-chunk pai
     corpusProvided: false,
   });
 });
+
+test('W2 7: opt-in masked-structural bucket is fail-closed and records orgProfile sparsely', () => {
+  // One theme, one chunk, 24 documents chained by structural links, all sharing
+  // one identity so every link pair is maskable. With the working chunk-marker
+  // exclusion on, these are exactly the pairs the exclusion drops.
+  const corpus = {
+    docs: Array.from({ length: 24 }, (_, i) => ({
+      id: `alpha-c1-d${String(i).padStart(2, '0')}`,
+      source: 'synthetic-estate',
+      format: 'text',
+      department: 'ops',
+      theme: 'alpha',
+      text: `Document ${i} about alpha mentions Rowan Petty.`,
+      identities: [{ key: 'emp-rowan-petty', surface: 'Rowan Petty', class: 'person' }],
+    })),
+    links: Array.from({ length: 23 }, (_, i) => ({
+      a: `alpha-c1-d${String(i).padStart(2, '0')}`,
+      b: `alpha-c1-d${String(i + 1).padStart(2, '0')}`,
+      type: 'thread',
+    })),
+  };
+
+  const excluded = compileWeftTrainingPairs(corpus, { excludeWithinChunk: true });
+  assert.equal(excluded.pairs.filter((p) => p.pairType === 'identity-masked-positive').length, 0,
+    'default-off: the exclusion drops every within-chunk structural link, zero masked positives');
+  assert.ok(!excluded.receipt.recipeOptions?.includeMaskedStructural, 'the flag is recorded only when it is on');
+
+  const rescued = compileWeftTrainingPairs(corpus, { excludeWithinChunk: true, includeMaskedStructural: true });
+  const masked = rescued.pairs.filter((p) => p.pairType === 'identity-masked-positive');
+  assert.ok(masked.length >= 1 && masked.length < 23, 'the 5 percent rescue slice re-emits some, not all, of the dropped links');
+  for (const p of masked) {
+    assert.ok(!p.textA.includes('Rowan Petty') && !p.textB.includes('Rowan Petty'), `rescued pair ${p.id} masks the identity`);
+    assert.match(p.textA, /\[[A-Z]+_\d+\]/, 'rescued pairs carry role tokens');
+    assert.ok(p.provenance.maskedIdentityCount >= 1);
+  }
+  // Every doc lives in the one chunk, so the only survivors are the rescued links.
+  assert.equal(rescued.pairs.length, masked.length, 'only the rescue slice survives inside the chunk');
+  assert.deepEqual(rescued.receipt.recipeOptions, {
+    includeDisjointNegatives: false,
+    excludeWithinChunk: true,
+    corpusProvided: false,
+    includeMaskedStructural: true,
+  });
+
+  // Default recipe (exclusion off) is untouched by the new flag plumbing.
+  const plain = compileWeftTrainingPairs(corpus);
+  assert.ok(!plain.receipt.recipeOptions, 'the default recipe records no recipeOptions block');
+  assert.ok(plain.pairs.filter((p) => p.pairType === 'identity-masked-positive').length >= 20,
+    'without the exclusion the structural links mask as before');
+
+  const profiled = compileWeftTrainingPairs(corpus, { orgProfile: 'regional-logistics' });
+  assert.ok(!profiled.receipt.recipeOptions.includeMaskedStructural, 'orgProfile is recorded on its own');
+  assert.deepEqual(profiled.receipt.recipeOptions, {
+    includeDisjointNegatives: false,
+    excludeWithinChunk: false,
+    corpusProvided: false,
+    orgProfile: 'regional-logistics',
+  });
+});
