@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   LICENCE_AUDIT,
+  TEACH_ATTEMPTS,
   WeftTeacherUnavailableError,
   generateTeacherEstates,
   resolveLocalTeacher,
@@ -542,6 +543,7 @@ test('W-API 9: typed teacher runtime failures retry with backoff; others fail at
         chunkSize: 20,
         seed: 5,
         retryDelaysMs: [0, 0, 0],
+        teachAttempts: 2,
       }),
       (err) => err instanceof WeftTeacherUnavailableError && err.reason === 'runtime-failed'
     );
@@ -556,7 +558,7 @@ test('W-API 9: typed teacher runtime failures retry with backoff; others fail at
       throw new Error('boom');
     };
     assert.throws(
-      () => generateTeacherEstates(plainTeacher, { themes: ['alpha'], pairsTarget: 160 }),
+      () => generateTeacherEstates(plainTeacher, { themes: ['alpha'], pairsTarget: 160, teachAttempts: 2 }),
       { message: 'boom' }
     );
     assert.equal(plainCalls, 2, 'a non-typed error gets only the unchanged parse attempts, no backoff retries');
@@ -598,4 +600,37 @@ test('W-API 10: chunk checkpoint resume reproduces the uninterrupted corpus', ()
   });
   assert.equal(replayCalls.length, 0, 'a full resume never calls the teacher');
   assert.equal(JSON.stringify(replayed), JSON.stringify(reference));
+});
+
+test('W-API 11: two valid-but-empty samples do not kill a chunk; the third sample rescues it', () => {
+  // A teacher that answers with valid JSON but an empty docs array twice,
+  // then produces the real chunk: the seed-shifted resamples must rescue the
+  // chunk instead of throwing WeftTeacherUnavailableError.
+  const emptyCalls = [];
+  const base = stubTeacher([]);
+  let emptySeen = 0;
+  const emptyDocsTeacher = {
+    ...base,
+    complete(prompt) {
+      emptyCalls.push(prompt);
+      emptySeen += 1;
+      if (emptySeen <= 2) {
+        return JSON.stringify({ docs: [], links: [] });
+      }
+      return base.complete(prompt);
+    },
+  };
+  const corpus = generateTeacherEstates(emptyDocsTeacher, {
+    themes: ['alpha'],
+    pairsTarget: 160,
+    chunkSize: 20,
+    seed: 5,
+    retryDelaysMs: [0, 0, 0],
+  });
+  assert.equal(TEACH_ATTEMPTS, 4, 'the default teach attempt count is exported as 4');
+  assert.equal(emptyCalls.length, 3, 'exactly three teacher calls: two empty samples then a good one');
+  const seeds = emptyCalls.map((p) => Number(/^Seed:\s*(\d+)\./m.exec(p)[1]));
+  assert.deepEqual(seeds[1], seeds[0] + 1, 'a retry shifts the seed by its attempt index');
+  assert.deepEqual(seeds[2], seeds[0] + 2, 'the next retry shifts the seed by two');
+  assert.equal(corpus.docs.length, 20, 'the rescued chunk completes the corpus');
 });

@@ -219,8 +219,16 @@ export class WeftTeacherUnavailableError extends Error {
 // Synchronous backoff for transient adapter/network failures during a live run:
 // one upstream blip must not kill hours of spend. Delays sit BEFORE each retry;
 // total attempts = 1 + delays.length. Only typed WeftTeacherUnavailableError
-// retries, so parse failures keep their own bounded 2-attempt seed-shift retry.
+// retries, so parse failures keep their own bounded seed-shift retry
+// (TEACH_ATTEMPTS samples per chunk).
 export const TEACHER_RETRY_DELAYS_MS = [30000, 60000, 120000, 300000, 600000];
+
+// Samples per chunk before a chunk kills the run: each retry shifts the seed by
+// the attempt index, so every attempt is a fresh sample. At an observed worst
+// case of ~1 empty-docs response per 20 long-band calls, two consecutive
+// failures per chunk happen once per ~800 chunks at 2 attempts but roughly once
+// per ~160,000 chunks at 4.
+export const TEACH_ATTEMPTS = 4;
 
 function sleepSync(ms) {
   if (ms > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
@@ -529,6 +537,9 @@ export function generateTeacherEstates(teacher, options = {}) {
     ? options.longBandChunkSize
     : 3;
   const retryDelays = Array.isArray(options.retryDelaysMs) ? options.retryDelaysMs : TEACHER_RETRY_DELAYS_MS;
+  const teachAttempts = Number.isInteger(options.teachAttempts) && options.teachAttempts > 0
+    ? options.teachAttempts
+    : TEACH_ATTEMPTS;
   const chunkRecord = typeof options.chunkRecord === 'function' ? options.chunkRecord : null;
   const resumeChunk = typeof options.resumeChunk === 'function' ? options.resumeChunk : null;
   const docs = [];
@@ -590,24 +601,25 @@ export function generateTeacherEstates(teacher, options = {}) {
         }
       }
       if (!parsed) {
-        // One bounded retry per chunk: a single truncated response must not kill a
-        // long live run; the seed shifts so the retry is a fresh sample.
-        for (let attempt = 0; attempt < 2; attempt++) {
+        // Bounded retries per chunk: one bad response must not kill a
+        // long live run; the seed shifts by the attempt index so every
+        // attempt is a fresh sample.
+        for (let attempt = 0; attempt < teachAttempts; attempt++) {
           let raw;
           try {
             raw = completeWithRetry(
               teacher,
-              attempt === 0 ? prompt : prompt.replace(`Seed: ${seed}.`, `Seed: ${seed + 1}.`),
+              attempt === 0 ? prompt : prompt.replace(`Seed: ${seed}.`, `Seed: ${seed + attempt}.`),
               retryDelays
             );
           } catch (err) {
-            if (attempt === 1) throw err;
+            if (attempt === teachAttempts - 1) throw err;
             continue;
           }
           const start = raw.indexOf('{');
           const end = raw.lastIndexOf('}');
           if (start < 0 || end <= start) {
-            if (attempt === 1) throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
+            if (attempt === teachAttempts - 1) throw new WeftTeacherUnavailableError('teacher returned no JSON object', 'runtime-failed');
             continue;
           }
           try {
@@ -617,7 +629,7 @@ export function generateTeacherEstates(teacher, options = {}) {
           }
           if (parsed && Array.isArray(parsed.docs) && parsed.docs.length > 0) break;
           parsed = null;
-          if (attempt === 1) {
+          if (attempt === teachAttempts - 1) {
             throw new WeftTeacherUnavailableError('teacher JSON is missing a non-empty docs array', 'runtime-failed');
           }
         }

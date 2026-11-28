@@ -150,3 +150,18 @@ live, so it can overcount; (3) the 6 attempts are per completion call: a
 hard outage composes with the unchanged 2-attempt seed-shift loop into up
 to 12 adapter calls and roughly 37 minutes of synchronous sleep per chunk
 before the checkpoint saves the run.
+
+The empty-docs failure then recurred on the same 2026-11-28 resumed run:
+it died at 15:27 and again at 16:18 on the same
+`WeftTeacherUnavailableError` (message `teacher JSON is missing a
+non-empty docs array`, reason `runtime-failed`). The per-chunk teach
+attempts therefore rose from 2 to 4: the count is exported as
+`TEACH_ATTEMPTS` (4) and overridable per call via `teachAttempts` (same
+threading as `retryDelaysMs`; no env plumbing), each retry shifts the seed
+by its attempt index so every attempt is a fresh sample, and the error
+messages and shapes are unchanged. With an observed worst case of about
+one empty response per 20 long-band calls, the quadratic drop takes a
+two-failure run-death from roughly one in 800 chunks to roughly one in
+160,000 chunks. The committed receipt-digest tests pass unchanged, so the
+byte-stability rule holds: with a teacher that succeeds on its
+initial sample, output is byte-identical to the 2-attempt driver.
