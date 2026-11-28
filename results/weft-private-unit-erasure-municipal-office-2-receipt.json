@@ -1,0 +1,48 @@
+{
+  "kind": "weft-private-unit-erasure-receipt",
+  "corpus": "results/weft-private-unit-corpus-v5-municipal-office.tmp.json",
+  "unitId": "private-unit-municipal-office-2",
+  "sha256": {
+    "before": "e6b28526c8fc3871d91e92fa95971c231cbf9d076f1ff4c17ea5275cd8a52d35",
+    "after": "bb05589ea045cf7b7b92948d7a659073ea1432f4cda5d47e3879293c1c85c3a7"
+  },
+  "bytes": {
+    "before": 8679,
+    "after": 4215
+  },
+  "removed": {
+    "docs": [
+      "pu-municipal-office-2-1",
+      "pu-municipal-office-2-2",
+      "pu-municipal-office-2-3",
+      "pu-municipal-office-2-4",
+      "pu-municipal-office-2-5"
+    ],
+    "docCount": 5,
+    "links": [
+      "pu-municipal-office-2-1|pu-municipal-office-2-2|thread",
+      "pu-municipal-office-2-1|pu-municipal-office-2-3|thread",
+      "pu-municipal-office-2-1|pu-municipal-office-2-4|thread",
+      "pu-municipal-office-2-1|pu-municipal-office-2-5|thread",
+      "pu-municipal-office-2-2|pu-municipal-office-2-3|thread",
+      "pu-municipal-office-2-2|pu-municipal-office-2-4|thread",
+      "pu-municipal-office-2-3|pu-municipal-office-2-4|thread"
+    ],
+    "linkCount": 7,
+    "unitRecordId": "private-unit-municipal-office-2"
+  },
+  "retained": {
+    "docs": 5,
+    "links": 5,
+    "knowledgeUnits": 1
+  },
+  "firstDiffOffset": 3500,
+  "unchangedBytesAssertion": {
+    "claim": "every retained doc, link, and unit record serializes byte-identically in the regenerated artifact; the only change is the removed unit footprint",
+    "verified": true,
+    "unchangedDocs": 5,
+    "unchangedLinks": 5,
+    "unchangedUnits": 1
+  },
+  "scopeNote": "proves erasability of the unit inside the Weft corpus artifact (overlay corpus); the full amnesiac corpus-regeneration mechanism consumes the same footprint downstream and is not claimed here"
+}

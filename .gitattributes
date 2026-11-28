@@ -13,3 +13,5 @@ scripts/*.py text eol=lf
 *.pptx binary
 *.duckdb binary
 *.bin binary
+# gzip artifacts are binary; the text filter would corrupt them (issue #59 v5 lane)
+*.gz binary

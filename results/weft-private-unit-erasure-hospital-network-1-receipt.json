@@ -1,0 +1,46 @@
+{
+  "kind": "weft-private-unit-erasure-receipt",
+  "corpus": "results/weft-private-unit-corpus-v5-hospital-network.tmp.json",
+  "unitId": "private-unit-hospital-network-1",
+  "sha256": {
+    "before": "659bd177cc5eb1c0918a9500b2cfc415a91e243a52563b0c5fb980b12e45d06b",
+    "after": "62b2c2c9ea14a7f2819d683585d25fe9fb74280d21bf0c42be2b3ce4b499f328"
+  },
+  "bytes": {
+    "before": 9048,
+    "after": 4671
+  },
+  "removed": {
+    "docs": [
+      "pu-hospital-network-1-1",
+      "pu-hospital-network-1-2",
+      "pu-hospital-network-1-3",
+      "pu-hospital-network-1-4",
+      "pu-hospital-network-1-5"
+    ],
+    "docCount": 5,
+    "links": [
+      "pu-hospital-network-1-1|pu-hospital-network-1-2|thread",
+      "pu-hospital-network-1-1|pu-hospital-network-1-3|thread",
+      "pu-hospital-network-1-1|pu-hospital-network-1-4|thread",
+      "pu-hospital-network-1-1|pu-hospital-network-1-5|thread",
+      "pu-hospital-network-1-2|pu-hospital-network-1-3|thread"
+    ],
+    "linkCount": 5,
+    "unitRecordId": "private-unit-hospital-network-1"
+  },
+  "retained": {
+    "docs": 5,
+    "links": 5,
+    "knowledgeUnits": 1
+  },
+  "firstDiffOffset": 115,
+  "unchangedBytesAssertion": {
+    "claim": "every retained doc, link, and unit record serializes byte-identically in the regenerated artifact; the only change is the removed unit footprint",
+    "verified": true,
+    "unchangedDocs": 5,
+    "unchangedLinks": 5,
+    "unchangedUnits": 1
+  },
+  "scopeNote": "proves erasability of the unit inside the Weft corpus artifact (overlay corpus); the full amnesiac corpus-regeneration mechanism consumes the same footprint downstream and is not claimed here"
+}

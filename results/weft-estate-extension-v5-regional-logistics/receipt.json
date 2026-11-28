@@ -1,0 +1,86 @@
+{
+  "kind": "weft-estate-extension-receipt",
+  "profile": "regional-logistics",
+  "seed": 20261130,
+  "sourceCorpus": "results/weft-fullscale-live-corpus-v5-regional-logistics.tmp.json",
+  "axis": "source-kind axis on docs; theme = knowledge; identity = the person erasure axis only (issue #59 rulings)",
+  "counts": {
+    "sourceDisjointCompliancePositive": 16,
+    "complianceNearRequirementNegative": 45,
+    "nonKnowledgeNegative": 60,
+    "nonKnowledgeVsKnowledgeNegative": 60,
+    "privateUnitPositive": 20,
+    "privateUnitCrossNegative": 25,
+    "droppedPeoplePresent": 0,
+    "droppedKnowledgeDensity": 82,
+    "droppedChatterDensity": 0,
+    "droppedChatterLength": 0,
+    "droppedUnitShape": 0
+  },
+  "knowledgeDensityFilter": {
+    "rule": "a document is a knowledge unit iff it has at least 12 distinct content words (tokens of length >= 4, lowercased) AND at least one digit; a lexical-density heuristic, not a semantics test",
+    "coverageCorpusEffect": {
+      "docs": 6250,
+      "pass": 5880,
+      "passRate": 0.9408,
+      "wordsP50": 66,
+      "wordsMax": 418
+    },
+    "complianceDocsEffect": {
+      "docs": 122,
+      "pass": 122,
+      "passRate": 1,
+      "wordsP50": 101,
+      "wordsMax": 130
+    },
+    "chatterDocsEffect": {
+      "docs": 180,
+      "pass": 0,
+      "passRate": 0,
+      "wordsP50": 15,
+      "wordsMax": 23
+    },
+    "privateUnitDocsEffect": {
+      "docs": 10,
+      "pass": 10,
+      "passRate": 1,
+      "wordsP50": 42,
+      "wordsMax": 91
+    }
+  },
+  "peopleFreeRule": "people-free is verified mechanically: a compliance doc with a non-empty identities array is dropped and counted in droppedPeoplePresent",
+  "nonKnowledgeRule": "non-knowledge purity is the filter inverted: a chatter doc that passes the knowledge threshold is dropped and counted in droppedChatterDensity",
+  "negativesCaveat": "compliance near-requirement difference and private-unit cross-unit difference are teacher-claimed, not mechanically verified; private-unit positives share the unit content and are never benchmarked as theme-linking skill",
+  "lengthCueCaveat": "the non-knowledge class carries a visible length cue (chatter is short); per-class eval and the word-count receipts keep it measurable",
+  "sourceKindDistribution": {
+    "compliance-doc": 122,
+    "thread": 182,
+    "memo": 2,
+    "meeting": 4,
+    "document": 2
+  },
+  "usage": {
+    "calls": 212,
+    "promptTokens": 52990,
+    "completionTokens": 71350,
+    "totalTokens": 124340,
+    "wallclockMs": 1298725
+  },
+  "prompts": {
+    "compliancePositive": "Seed: 2413435338. Return only a JSON object. Produce TWO documents that state the SAME control requirement about the theme \"supplier risk review\": one excerpted from the App Privacy Rules (an APP-rules-like consumer privacy code) and one excerpted from the Meridian AI Risk Framework (a NIST AI RMF-like risk profile). The two documents carry the same knowledge (the same requirement, the same rule substance, the same obligation) but each in its own framework's wording and structure. Rules: ZERO people anywhere: no person names, no person references, no invented names of any kind, and the identities array must be empty for both documents. Set sourceKind to \"compliance-doc\" and department to \"compliance\" on both documents. Length: 120 to 300 words each. Schema: {\"docs\":[{\"id\",\"format\",\"sourceKind\",\"department\",\"theme\",\"text\",\"identities\":[]}],\"links\":[]} where both documents' theme is exactly \"supplier risk review\" and the ids are \"c-1\" and \"c-2\".",
+    "complianceNegative": "Seed: 2413535341. Return only a JSON object. Produce TWO documents about the theme \"api gateway migration\": one excerpted from the Meridian AI Risk Framework (a NIST AI RMF-like risk profile) and one excerpted from the App Privacy Rules (an APP-rules-like consumer privacy code), stating two ADJACENT but genuinely DIFFERENT control requirements (for example two different rules that touch the same systems, or two clauses that address the same risk differently), and they must deliberately share as much vocabulary as possible (same jargon, same artifact names, same clause style) so that word overlap alone cannot tell them apart; only the actual requirement differs. Rules: ZERO people anywhere: no person names, no invented names, and the identities array must be empty for both documents. Set sourceKind to \"compliance-doc\" and department to \"compliance\" on both documents. Length: 120 to 300 words each. Schema: {\"docs\":[{\"id\",\"format\",\"sourceKind\",\"department\",\"theme\",\"text\",\"identities\":[]}],\"links\":[]} where both documents' theme is exactly \"api gateway migration\" and the ids are \"c-1\" and \"c-2\".",
+    "chatter": "Seed: 1232735155. Return only a JSON object. Produce TWO short workplace documents with ZERO knowledge content about the theme \"q3 earnings call preparation\": pure greetings, scheduling, and logistics small talk (for example \"how are you\", \"coffee machine is broken again\", \"can you send me that file\", \"thanks, see you at the standup\"). No facts, no decisions, no procedures, no requirements, no measurements: nothing anyone could learn from. The two documents may come from the same thread and may share the same invented people. Length: 15 to 40 words each. Schema: {\"docs\":[{\"id\",\"format\",\"sourceKind\",\"department\",\"theme\",\"text\",\"identities\":[{\"key\",\"surface\",\"class\"}]}],\"links\":[]} where both documents' theme is exactly \"q3 earnings call preparation\" and the ids are \"k-1\" and \"k-2\".",
+    "chatterVsKnowledge": "Seed: 1232835159. Return only a JSON object. Produce TWO short workplace documents with ZERO knowledge content about the theme \"warehouse safety inspection\": pure greetings, scheduling, and logistics small talk (for example \"how are you\", \"coffee machine is broken again\", \"can you send me that file\", \"thanks, see you at the standup\"). No facts, no decisions, no procedures, no requirements, no measurements: nothing anyone could learn from. The two documents may come from the same thread and may share the same invented people. Length: 15 to 40 words each. Schema: {\"docs\":[{\"id\",\"format\",\"sourceKind\",\"department\",\"theme\",\"text\",\"identities\":[{\"key\",\"surface\",\"class\"}]}],\"links\":[]} where both documents' theme is exactly \"warehouse safety inspection\" and the ids are \"k-1\" and \"k-2\".",
+    "privateUnit": "Seed: 1830448159. Return only a JSON object. Design ONE confidential knowledge unit for \"a regional freight and warehousing operator running three depots, a small owned fleet, and port drayage contracts\": a recipe-like proprietary process the company treats as a trade secret (for example a routing formula, a sterilization protocol variant, a permit fast-track rule), tied to the theme \"annual budget planning\". Then produce exactly 5 documents that carry this process across sources, in this order: (1) the master document stating the process in full (format \"memo\", sourceKind \"memo\"); (2) and (3) two different meeting transcripts where the process is discussed or applied (format \"transcript\", sourceKind \"meeting\"); (4) a derivative note applying the process to one concrete case (format \"email\", sourceKind \"thread\"); (5) a scanned document excerpt restating the rule that governs the process (format \"pdf-scan\", sourceKind \"document\"). Rules: the process substance must appear in every document; people are attributes of the meetings, so identities are invented names fitting these naming cultures: [\"Flemish-Dutch\",\"Polish\",\"Ghanaian\"]; every document has knowledgeUnitId exactly \"private-unit-regional-logistics-1\" and confidential true; set knowledgeUnitId and confidential as top-level fields on each document. Also emit links of type \"thread\" connecting the documents that carry the unit. Length: 100 to 250 words per document. Schema: {\"docs\":[{\"id\",\"format\",\"sourceKind\",\"department\",\"theme\",\"text\",\"identities\":[{\"key\",\"surface\",\"class\"}],\"knowledgeUnitId\",\"confidential\"}],\"links\":[{\"a\",\"b\",\"type\"}]} where every document's theme is exactly \"annual budget planning\", every document's knowledgeUnitId is \"private-unit-regional-logistics-1\", and the ids are \"u-1\" through \"u-5\"."
+  },
+  "licence": "mistral-api-tos",
+  "lexicalOverlap": {
+    "formula": "jaccard over distinct content words (tokens of length >= 4, lowercased) shared by both sides",
+    "compliancePositive": 0.13497904362804306,
+    "complianceNegative": 0.33287889443487945,
+    "chatter": 0.01286814084608202,
+    "chatterVsKnowledge": 0.00125245006220139,
+    "privateUnitPositive": 0.1384428800934227,
+    "privateUnitCross": 0.07984608073674795
+  }
+}

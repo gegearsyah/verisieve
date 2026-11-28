@@ -1,0 +1,146 @@
+{
+  "kind": "weft-v5-pairs-merge-receipt",
+  "evalSlicePct": 25,
+  "evalSliceRule": "sha256(pair id) % 100 < 25 sends a specialty pair (strata or extension class) to eval; compiler pairs keep their own split",
+  "perProfile": {
+    "regional-logistics": {
+      "coverage-train": {
+        "train": 48000,
+        "eval": 0
+      },
+      "coverage-eval": {
+        "train": 2000,
+        "eval": 0
+      },
+      "strata": {
+        "train": 465,
+        "eval": 135
+      },
+      "extension": {
+        "train": 175,
+        "eval": 51
+      }
+    },
+    "hospital-network": {
+      "coverage-train": {
+        "train": 48000,
+        "eval": 0
+      },
+      "coverage-eval": {
+        "train": 2000,
+        "eval": 0
+      },
+      "strata": {
+        "train": 437,
+        "eval": 162
+      },
+      "extension": {
+        "train": 165,
+        "eval": 64
+      }
+    },
+    "municipal-office": {
+      "coverage-train": {
+        "train": 48000,
+        "eval": 0
+      },
+      "coverage-eval": {
+        "train": 2000,
+        "eval": 0
+      },
+      "strata": {
+        "train": 469,
+        "eval": 129
+      },
+      "extension": {
+        "train": 172,
+        "eval": 52
+      }
+    },
+    "university-campus": {
+      "heldout-coverage-eval": {
+        "train": 0,
+        "eval": 2000
+      },
+      "heldout-strata": {
+        "train": 0,
+        "eval": 200
+      }
+    }
+  },
+  "dedupedWithinSet": 0,
+  "reIdedCrossProfile": 15397,
+  "identityOverlapBalance": {
+    "identity-matched-theme-different-negative": {
+      "positiveMean": null,
+      "negativeMean": 1.0390365448504983
+    },
+    "identity-disjoint-theme-different-negative": {
+      "positiveMean": null,
+      "negativeMean": 0
+    },
+    "identity-disjoint-same-theme-positive": {
+      "positiveMean": 0,
+      "negativeMean": null
+    },
+    "identity-masked-positive": {
+      "positiveMean": 1.5197740112994351,
+      "negativeMean": null
+    },
+    "source-disjoint-same-theme-positive": {
+      "positiveMean": 0,
+      "negativeMean": null
+    },
+    "source-disjoint-near-topic-negative": {
+      "positiveMean": null,
+      "negativeMean": 0
+    },
+    "source-disjoint-compliance-positive": {
+      "positiveMean": 0,
+      "negativeMean": null
+    },
+    "compliance-near-requirement-negative": {
+      "positiveMean": null,
+      "negativeMean": 0
+    },
+    "non-knowledge-negative": {
+      "positiveMean": null,
+      "negativeMean": 1.211111111111111
+    },
+    "non-knowledge-vs-knowledge-negative": {
+      "positiveMean": null,
+      "negativeMean": 0
+    },
+    "private-unit-positive": {
+      "positiveMean": 0.1,
+      "negativeMean": null
+    },
+    "private-unit-cross-negative": {
+      "positiveMean": null,
+      "negativeMean": 0.05333333333333334
+    }
+  },
+  "byPairType": {
+    "identity-matched-theme-different-negative": 60200,
+    "identity-disjoint-theme-different-negative": 60202,
+    "identity-disjoint-same-theme-positive": 29421,
+    "identity-masked-positive": 177,
+    "source-disjoint-same-theme-positive": 1198,
+    "source-disjoint-near-topic-negative": 599,
+    "source-disjoint-compliance-positive": 51,
+    "compliance-near-requirement-negative": 133,
+    "non-knowledge-negative": 180,
+    "non-knowledge-vs-knowledge-negative": 180,
+    "private-unit-positive": 60,
+    "private-unit-cross-negative": 75
+  },
+  "trainLabelCounts": {
+    "positive": 29593,
+    "negative": 116290
+  },
+  "counts": {
+    "train": 145883,
+    "eval": 6593,
+    "heldout": 2200
+  }
+}

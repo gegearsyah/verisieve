@@ -1,0 +1,46 @@
+{
+  "kind": "weft-private-unit-erasure-receipt",
+  "corpus": "results/weft-private-unit-corpus-v5-regional-logistics.tmp.json",
+  "unitId": "private-unit-regional-logistics-1",
+  "sha256": {
+    "before": "eee416f4e0d335b5895ee6b65d06957cf1d27179ffc326d7ea7671fb53f5403c",
+    "after": "e0f4357a9038de82bfe38de6bc7e62c53f00a3dae74db75a0a7cfb61efa627b2"
+  },
+  "bytes": {
+    "before": 8553,
+    "after": 3813
+  },
+  "removed": {
+    "docs": [
+      "pu-regional-logistics-1-1",
+      "pu-regional-logistics-1-2",
+      "pu-regional-logistics-1-3",
+      "pu-regional-logistics-1-4",
+      "pu-regional-logistics-1-5"
+    ],
+    "docCount": 5,
+    "links": [
+      "pu-regional-logistics-1-1|pu-regional-logistics-1-2|thread",
+      "pu-regional-logistics-1-1|pu-regional-logistics-1-3|thread",
+      "pu-regional-logistics-1-2|pu-regional-logistics-1-4|thread",
+      "pu-regional-logistics-1-3|pu-regional-logistics-1-4|thread",
+      "pu-regional-logistics-1-1|pu-regional-logistics-1-5|thread"
+    ],
+    "linkCount": 5,
+    "unitRecordId": "private-unit-regional-logistics-1"
+  },
+  "retained": {
+    "docs": 5,
+    "links": 5,
+    "knowledgeUnits": 1
+  },
+  "firstDiffOffset": 119,
+  "unchangedBytesAssertion": {
+    "claim": "every retained doc, link, and unit record serializes byte-identically in the regenerated artifact; the only change is the removed unit footprint",
+    "verified": true,
+    "unchangedDocs": 5,
+    "unchangedLinks": 5,
+    "unchangedUnits": 1
+  },
+  "scopeNote": "proves erasability of the unit inside the Weft corpus artifact (overlay corpus); the full amnesiac corpus-regeneration mechanism consumes the same footprint downstream and is not claimed here"
+}
