@@ -134,6 +134,30 @@ export const ORG_PROFILES = [
   },
 ];
 
+// Held-out org profile (gate 2, the held-out-shape tier): never enters
+// training; one small corpus, compiled to eval-only pairs, so "raw F1 on an
+// unseen org profile" is measurable at all. Same themes, voices, and bands.
+export const ORG_PROFILES_HELDOUT = [
+  {
+    id: 'university-campus',
+    context: 'a mid-sized public university running a main campus, a medical school annex, and a satellite liberal-arts campus',
+    departments: ['registrar', 'facilities', 'IT', 'research-office', 'procurement', 'student-services'],
+    formats: ['email', 'transcript', 'pdf-scan', 'ticket', 'table', 'slides'],
+    vendorPool: [
+      'Halden Lab Equipment Co',
+      'Sutro Campus Dining Group',
+      'Bramwell Audio-Visual Leasing',
+      'Trellis Research Computing',
+      'Oakhurst Textbook Wholesale',
+    ],
+    nameCultures: [
+      { label: 'Midwestern US', names: ['Gordon Altvater', 'Bev Koepper', 'Dale Rambow', 'Marlys Thraen', 'Curt Vanderheide'] },
+      { label: 'Indian', names: ['Ananya Krishnan', 'Rohan Deshpande', 'Meera Iyengar', 'Vikram Salian'] },
+      { label: 'Brazilian', names: ['Caio Ferraz', 'Larissa Camargo', 'Tatiana Nogueira'] },
+    ],
+  },
+];
+
 const wordsOf = (text) => String(text).split(/\s+/).filter(Boolean).length;
 const percentile = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
 
@@ -149,7 +173,7 @@ function lengthObserved(docs) {
   };
 }
 
-function runProfile(profile) {
+function runProfile(profile, pairsTarget = PAIRS_TARGET) {
   const corpusPath = path.join(ROOT, 'results', `weft-fullscale-live-corpus-v5-${profile.id}.tmp.json`);
   if (fs.existsSync(corpusPath)) {
     console.error(`profile: ${profile.id} skipped, final corpus already exists: ${path.relative(ROOT, corpusPath)}`);
@@ -182,10 +206,10 @@ function runProfile(profile) {
   let resumedChunks = 0;
   // One teacher per profile so the usage counters stay per profile.
   const teacher = resolveLocalTeacher(process.env);
-  console.error(`profile: ${profile.id}, teacher: ${teacher.kind} ${teacher.model}, themes: ${THEMES.length}, pairsTarget: ${PAIRS_TARGET}, seed: ${SEED}`);
+  console.error(`profile: ${profile.id}, teacher: ${teacher.kind} ${teacher.model}, themes: ${THEMES.length}, pairsTarget: ${pairsTarget}, seed: ${SEED}`);
   const corpus = generateTeacherEstates(teacher, {
     themes: THEMES,
-    pairsTarget: PAIRS_TARGET,
+    pairsTarget,
     seed: SEED,
     styleHints: STYLE_HINTS,
     orgProfile: profile,
@@ -219,6 +243,7 @@ function runProfile(profile) {
     resumedChunks,
     corpus: { docs: corpus.docs.length, links: corpus.links.length },
     themes: THEMES,
+    pairsTarget,
     styleHints: STYLE_HINTS,
     lengthBands: LENGTH_BANDS,
     longBandChunk: LONG_BAND_CHUNK,
@@ -253,9 +278,31 @@ function runProfile(profile) {
 // The spending path runs only when executed as a script; importing the module
 // (for a stub smoke test, or the audit) makes no teacher call.
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  const cliValue = (flag) => {
+    const index = process.argv.indexOf(flag);
+    return index >= 0 && index + 1 < process.argv.length ? process.argv[index + 1] : null;
+  };
+  // --profile selects one profile (training or held-out) so a held-out
+  // eval corpus can be generated without touching the training profiles;
+  // --pairs-target scales it. Defaults keep the original run shape.
+  const allProfiles = [...ORG_PROFILES, ...ORG_PROFILES_HELDOUT];
+  const profileFlag = cliValue('--profile');
+  const profilesToRun = profileFlag
+    ? allProfiles.filter((p) => p.id === profileFlag)
+    : ORG_PROFILES;
+  if (profileFlag && !profilesToRun.length) {
+    console.error(`unknown --profile ${profileFlag}; expected one of ${JSON.stringify(allProfiles.map((p) => p.id))}`);
+    process.exit(2);
+  }
+  const pairsTargetRaw = cliValue('--pairs-target');
+  const pairsTarget = pairsTargetRaw === null ? PAIRS_TARGET : Number.parseInt(pairsTargetRaw, 10);
+  if (!Number.isInteger(pairsTarget) || pairsTarget <= 0) {
+    console.error('--pairs-target must be a positive integer');
+    process.exit(2);
+  }
   const total = { teacherCalls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0 };
-  const summaries = ORG_PROFILES.map((profile) => {
-  const summary = runProfile(profile);
+  const summaries = profilesToRun.map((profile) => {
+  const summary = runProfile(profile, pairsTarget);
   if (!summary) return null;
   for (const key of Object.keys(total)) total[key] += summary.usage[key];
   return summary;
