@@ -57,7 +57,7 @@ Qualified yes. The thesis targets a real, documented gap, and the nearest publis
 
 - Paper 1 (local-training-benchmark): redaction/PT-LM/retrieval results; positive format result at 540 questions (document-grounded QA 30.56% vs composed 19.45%, +11.11pp, p=0.0005).
 - Paper 2 (graph-grounded-enterprise-corpus): identity-graph composition measured, honest null at starved budget (composed 11.7% vs per-block 10.0%, McNemar p=1.00); graph pays as retrieval index (53.3%) and router (68.3% end-to-end, 81.7% oracle). Composition costs measured: 14.32x false-merge amplification, near-duplicate fraction 1.0.
-- Paper 3 occupies: (a) the unoccupied identity+theme grounding axis (paper 2's graph is identity-only; theme/knowledge linking is where in-context pretraining, EmbGen, GraphGen report gains), (b) the SOTA-curation comparison neither companion cites, (c) AFCS-style fact-conditioned synthesis grounded by Versieve provenance and selected by WEFT.
+- Paper 3 occupies: (a) the unoccupied source+theme grounding axis (paper 2's graph is identity-only; theme/knowledge linking is where in-context pretraining, EmbGen, GraphGen report gains), (b) the SOTA-curation comparison neither companion cites, (c) AFCS-style fact-conditioned synthesis grounded by Versieve provenance and selected by WEFT.
 
 ## Paper plan (founder decision, 2026-11-28)
 
@@ -65,7 +65,7 @@ The WEFT work becomes its own component paper (paper 5: identity-blind theme lin
 
 ### Paper 5: Weft as its own paper, in a different framing
 
-Paper 5 exists because Weft answers a different question than paper 3 does. Paper 3 asks a corpus question (does graph-grounded, provenance-verified curation beat model-based filtering at matched model, recipe, and token budget). Paper 5 asks a model question (can a small quantized specialist link identity-matched, theme-different documents with a certified abstention bound, and what does identity-blindness measurement actually show on such a head). The curation paper cites paper 5 and consumes gate-passed Weft as one arm; the two papers never merge.
+Paper 5 exists because Weft answers a different question than paper 3 does. Paper 3 asks a corpus question (does graph-grounded, provenance-verified curation beat model-based filtering at matched model, recipe, and token budget). Paper 5 asks a model question (can a small quantized specialist link documents from different sources that state the same talking point, with a certified abstention bound, and what does person-independence measurement actually show on such a head). The curation paper cites paper 5 and consumes gate-passed Weft as one arm; the two papers never merge.
 
 Title direction follows the house ruling: the title hits the training-data question (what identity-blind linking buys for corpus and training-data construction), privacy words never lead, and identity-blindness appears as a measured post-hoc probe result with the probe family fixed and reported, never as a headline property.
 

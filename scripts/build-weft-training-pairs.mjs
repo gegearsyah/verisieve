@@ -390,11 +390,11 @@ const DEFAULT_LIVE_THEMES = [
   'product launch readiness',
 ];
 
-// Shared identity roster pinned into every chunk prompt. Each chunk is
+// Shared entity roster pinned into every chunk prompt. Each chunk is
 // single-theme, so without a shared roster the teacher cannot reuse identity
 // keys across themes and identity-matched theme-different negatives never
 // compile. Invented names, deterministic, constant.
-const SHARED_IDENTITY_ROSTER = [
+const SHARED_ENTITY_ROSTER = [
   { key: 'emp-alex-carter', surface: 'Alex Carter', class: 'person' },
   { key: 'emp-priya-nair', surface: 'Priya Nair', class: 'person' },
   { key: 'emp-tomas-rivera', surface: 'Tomas Rivera', class: 'person' },
@@ -470,7 +470,7 @@ export function generateTeacherEstates(teacher, options = {}) {
         'Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],',
         '"links":[{"a","b","type"}]} where type is one of thread, attachment, meeting-minutes, ticket-pr, hyperlink.',
         'Reuse some identity keys within the chunk so linked documents share identities.',
-        `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(SHARED_IDENTITY_ROSTER)}.`,
+        `Shared company roster (the same people appear in other themes' chunks): ${JSON.stringify(SHARED_ENTITY_ROSTER)}.`,
         'Each document uses 1 or 2 roster identities at most and at least 3 identity keys unique to this chunk, so same-theme documents can be fully identity-disjoint.',
         'The chunk-unique identities must use invented names distinct from the roster surfaces; never reuse a roster surface for a chunk-unique identity.',
         'Set each doc theme field to exactly the theme string given, never a document title.',

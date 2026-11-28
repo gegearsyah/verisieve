@@ -32,7 +32,7 @@ EVAL_JSONL = ROOT / "results" / "weft-training-pairs-fullscale-live-v2" / "eval.
 MODEL_DIR = ROOT / "models" / "weft-specialist"
 BASE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 SEED = 20261127
-POSITIVE_TYPES = {"identity-disjoint-same-theme-positive", "identity-masked-positive"}
+POSITIVE_PAIR_TYPES = {"identity-disjoint-same-theme-positive", "identity-masked-positive"}
 
 
 def load_module(name, path):
