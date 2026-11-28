@@ -7,6 +7,10 @@ import https from 'node:https';
 import net from 'node:net';
 import tls from 'node:tls';
 import dns from 'node:dns';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { perceiveMulti } from '../src/perceive.js';
 
 import {
   buildAmnesiacCorpus,
@@ -16,6 +20,7 @@ import {
 } from '../src/amnesiac-corpus.js';
 
 // Spec: gegearsyah/versieve#25 — external-behavior-only tests at the new seam (bytes in → bytes out).
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INPUTS = [
   {
     name: 'contracts/msa.txt',
@@ -643,4 +648,34 @@ test('Amnesiac 16: source erasure composes with entity erasure; readable per-blo
   assert.equal(erased.diffReceipt.erasedTarget, 'source:ops/handbook.txt');
   assert.equal(erased.diffReceipt.diffVerified, true);
   assert.equal(readable.jsonl.split('\n').filter(Boolean).length, erased.diffReceipt.unchangedSampleCount + erased.diffReceipt.removedSampleCount);
+});
+
+test('Amnesiac 17: source erasure re-proves the theme channel and receipts the invalidated pairs honestly', async (t) => {
+  // The theme channel needs the committed int4 artifact; skip loudly when absent, like the theme suite.
+  const artifact = path.join(ROOT, 'models/weft-specialist-quantized/weft-int4.onnx');
+  if (!fs.existsSync(artifact)) return t.skip(`W5/W6 real-artifact path not runnable on this box: artifact absent at ${artifact}`);
+  try {
+    await import('onnxruntime-node');
+  } catch (err) {
+    return t.skip(`W5/W6 real-artifact path not runnable on this box: onnxruntime-node absent (${err.message})`);
+  }
+
+  const perceived = await perceiveMulti(INPUTS, { themeLinking: true });
+  const corpus = await buildAmnesiacCorpus(perceived);
+  assert.ok(corpus.theme, 'the themed corpus must carry the theme channel');
+
+  // expected footprint computed independently from the booked chunks and pairs
+  const erasedChunkIds = new Set(corpus.theme.chunks.filter((c) => c.source === 'notes/audit.txt').map((c) => c.id));
+  const expectedInvalidated = corpus.theme.pairs.filter((p) => erasedChunkIds.has(p.a) || erasedChunkIds.has(p.b)).length;
+  assert.ok(expectedInvalidated > 0, 'the fixture must link at least one pair through the erased source');
+
+  const after = eraseEntity(corpus, 'source:notes/audit.txt');
+  assert.equal(after.diffReceipt.themeReDerived, true, 'source erasure must re-prove the theme agglomeration');
+  assert.equal(after.diffReceipt.themeInvalidatedPairCount, expectedInvalidated, 'the receipt must state exactly the pairs the erased source anchored');
+  assert.equal(after.theme.pairs.length, corpus.theme.pairs.length - expectedInvalidated);
+  for (const p of after.theme.pairs) {
+    assert.ok(!erasedChunkIds.has(p.a) && !erasedChunkIds.has(p.b), 'surviving pairs must not touch the invalidated chunks');
+  }
+  assert.ok(Array.isArray(after.diffReceipt.changedThemeNodeIds), 'the receipt lists the changed theme nodes');
+  assert.ok(after.diffReceipt.crossReference.note.includes('cannot assert'), 'the receipt must state the cross-reference honesty limit instead of asserting zero references');
 });
