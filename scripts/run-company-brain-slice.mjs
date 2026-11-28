@@ -162,7 +162,10 @@ async function withZeroEgressTraps(inner, declaredFileReads) {
   }
 }
 
-export async function runCompanyBrainSlice() {
+export async function runCompanyBrainSlice(options = {}) {
+  // W6 theme seam: opt-in via runCompanyBrainSlice({ theme: true }); on the CLI via
+  // --theme or VERSIEVE_THEME=1. Unset, every emitted byte stays exactly what it was.
+  const themeOn = options.theme === true;
   const totalStart = performance.now();
 
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
@@ -181,7 +184,11 @@ export async function runCompanyBrainSlice() {
   return withZeroEgressTraps(async () => {
     // ---------- P2: perception + cross-department linking ----------
     const perceiveStart = performance.now();
-    const perception = await perceiveMulti(inputs, { workspaceSalt: WORKSPACE_SALT, wordTimestamps });
+    const perception = await perceiveMulti(inputs, {
+      workspaceSalt: WORKSPACE_SALT,
+      wordTimestamps,
+      ...(themeOn ? { themeLinking: true } : {}),
+    });
     const perceptionWallclockMs = performance.now() - perceiveStart;
 
     // engine-observed entity usage across files/departments (masked tokens only)
@@ -419,7 +426,10 @@ export async function runCompanyBrainSlice() {
     };
 
     // ---------- P4: Amnesiac Corpus JSONL export + browser connection graph ----------
-    const corpus = await buildAmnesiacCorpus(inputs, null, { wordTimestamps });
+    const corpus = await buildAmnesiacCorpus(inputs, null, {
+      wordTimestamps,
+      ...(themeOn ? { themeLinking: true } : {}),
+    });
 
     // connection graph JSON (masked tokens only; engine-observable structure)
     const cgNodes = [];
@@ -464,6 +474,38 @@ export async function runCompanyBrainSlice() {
       const [d1, d2] = key.split('|');
       addCgEdge(`dept:${d1}`, `dept:${d2}`, 'SHARED_ENTITIES', count);
     }
+    // W6 theme pass: when theme linking ran, the connection graph gains one theme node
+    // per agglomeration node (label from the anchor, memberCount) plus THEME_MEMBER edges
+    // from each member chunk's file node, and the artifact gains the theme channel block.
+    // Default (theme unset): neither appears, so today's output is byte-identical.
+    let themeBlock = null;
+    if (themeOn && perception.themeNodes) {
+      const chunkById = new Map(perception.chunks.map((c) => [c.id, c]));
+      for (const node of perception.themeNodes) {
+        addCgNode({
+          id: node.id,
+          type: 'theme',
+          label: node.anchors[0] || node.members[0],
+          memberCount: node.members.length,
+          policyVersion: node.policyVersion,
+        });
+        const memberSources = [...new Set(node.members.map((m) => chunkById.get(m)).filter(Boolean).map((c) => (c.span ? c.span.source : c.source) || null))].filter(Boolean).sort();
+        for (const src of memberSources) addCgEdge(`file:${src}`, node.id, 'THEME_MEMBER', node.members.length);
+      }
+      const channel = perception.themeChannel;
+      themeBlock = {
+        themeNodeCount: perception.themeNodes.length,
+        themeLinkCount: perception.themeLinks.length,
+        joinCount: channel.joinCount,
+        abstainCount: channel.abstainCount,
+        identityDisjointJoinCount: channel.identityDisjointJoinCount,
+        disagreementCount: channel.disagreement.length,
+        policyVersion: channel.policyVersion,
+        modelSha256: channel.modelSha256,
+        themeNodes: perception.themeNodes,
+      };
+    }
+
     const connectionGraph = {
       kind: 'company-brain-connection-graph',
       stage: 10,
@@ -485,6 +527,7 @@ export async function runCompanyBrainSlice() {
       zero_egress_note:
         'The entire run (perception, linking, corpus export, graph build) executes with http/https/net/tls/dns/fetch trapped to throw. egressBytes is measured as zero and externalCalls as the empty array; any attempted call aborts the run.',
       p2,
+      ...(themeBlock ? { theme: themeBlock } : {}),
       p3: {
         audioCapture: {
           failClosed: true,
@@ -548,7 +591,8 @@ export async function runCompanyBrainSlice() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  const artifact = await runCompanyBrainSlice();
+  const themeOn = process.argv.includes('--theme') || process.env.VERSIEVE_THEME === '1';
+  const artifact = await runCompanyBrainSlice({ theme: themeOn });
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'results/company-brain-slice-corpus.jsonl'), artifact.p4.export.jsonl);
   fs.writeFileSync(path.join(ROOT, 'results/company-brain-slice-connection-graph.json'), JSON.stringify(artifact.p4.connectionGraph.raw, null, 2));
@@ -577,5 +621,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       graphEdges: artifact.p4.connectionGraph.edgeCount,
       deployCopy: deployCopy.copied,
     },
+    ...(artifact.theme ? { theme: { themeNodeCount: artifact.theme.themeNodeCount, joinCount: artifact.theme.joinCount, abstainCount: artifact.theme.abstainCount, identityDisjointJoinCount: artifact.theme.identityDisjointJoinCount, disagreementCount: artifact.theme.disagreementCount, policyVersion: artifact.theme.policyVersion } } : {}),
   }, null, 2));
 }

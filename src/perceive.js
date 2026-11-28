@@ -55,10 +55,29 @@ import {
   GATE_RECOVERABILITY,
   createCalibrationObservation,
 } from './gatekeeper.js';
+import {
+  loadWeftThemeScorer,
+  shortlistPairs,
+  agglomerateThemeNodes,
+  DEFAULT_THEME_POLICY,
+} from './weft-theme-linker.js';
 
 function sha256Hex(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
+
+// W6 theme seam option error (fail closed, no fallback similarity, no silent skip).
+function themeOptionsError(message) {
+  const err = new Error(
+    `WEFT_THEME_OPTIONS_INVALID: options.themeLinking must be true or a config object${message ? ` (${message})` : ''}`
+  );
+  err.code = 'WEFT_THEME_OPTIONS_INVALID';
+  return err;
+}
+
+// The theme pass scores and agglomerates under the pinned default policy; a caller's
+// policy object may only override the numeric knobs.
+
 
 // ---------------------------------------------------------------------------
 // Pluggable Stage 3B Local Detector Adapter Contract & IoU Helpers
@@ -2359,6 +2378,17 @@ export async function perceiveMulti(inputs = [], options = {}) {
   const workspaceSalt = options.workspaceSalt || 'versieve-perceive-v1';
   const vault = options.vault || new SaltedPseudonymVault(workspaceSalt);
 
+  // W6 theme seam (2026-11-28 plan decision 1): opt-in via options.themeLinking (true or a
+  // config object). Unset: zero behavior change. Fail closed early on a malformed option
+  // shape; the weights/runtime absence fails closed later, inside the theme pass itself.
+  const themeOptions = options.themeLinking;
+  const themeEnabled =
+    themeOptions === true ||
+    (themeOptions !== null && typeof themeOptions === 'object' && !Array.isArray(themeOptions));
+  if (themeOptions !== undefined && themeOptions !== true && !themeEnabled) {
+    throw themeOptionsError();
+  }
+
   // Fail closed up-front on any invalid, egress-violating, or missing-runtime detector adapter
   // and on any malformed human-correction payload.
   const adapters = await resolveAndValidateAdapters(options);
@@ -3131,6 +3161,10 @@ export async function perceiveMulti(inputs = [], options = {}) {
         text: w.text,
         tokenEstimate: w.tokenCount,
         entityIds: Array.from(new Set((blk.entities || []).map((e) => e.entityId))),
+        // Theme-seam provenance (only emitted when the theme pass is enabled, so the
+        // default output shape is unchanged): the chunk's block and its byte window
+        // within that block's text.
+        ...(themeEnabled ? { blockId: blk.blockId ?? null, span: { source: src, blockId: blk.blockId ?? null, start: w.startByte, end: w.endByte } } : {}),
       });
     }
   }
@@ -3326,6 +3360,75 @@ export async function perceiveMulti(inputs = [], options = {}) {
     receiptSha256: sha256Hex(JSON.stringify(receiptPayload)),
   };
 
+  // W6 theme pass (plan decision 1 + 7): shortlist, score with the local Weft pair-graph
+  // artifact, agglomerate, and report the two channels separately. Fail closed: weights,
+  // runtime, or pinned-metadata absence throws typed errors and never substitutes a
+  // fallback similarity.
+  let themeNodes = null;
+  let themeLinks = null;
+  let themeChannel = null;
+  if (themeEnabled) {
+    const cfg = themeOptions === true ? {} : themeOptions;
+    const policy = { ...DEFAULT_THEME_POLICY, ...(cfg.policy || {}) };
+    if (typeof policy.policyVersion !== 'string' || policy.policyVersion.length === 0) {
+      throw themeOptionsError('policy.policyVersion must be a non-empty string');
+    }
+    const scorer = await loadWeftThemeScorer(cfg);
+    const candidates = shortlistPairs(chunks, policy.shortlistN);
+    const scores = await scorer.scorePairs(candidates);
+    themeLinks = candidates.map((candidate, i) => {
+      const decision =
+        scores[i].linkProb >= policy.joinThreshold && scores[i].themeSim >= policy.simFloor ? 'join' : 'abstain';
+      return {
+        a: candidate.a,
+        b: candidate.b,
+        linkProb: scores[i].linkProb,
+        themeSim: scores[i].themeSim,
+        decision,
+        ...(candidate.aSpan ? { aSpan: candidate.aSpan } : {}),
+        ...(candidate.bSpan ? { bSpan: candidate.bSpan } : {}),
+      };
+    });
+    const agglomeration = agglomerateThemeNodes(themeLinks, { ...policy, modelSha256: scorer.modelSha256 });
+    themeNodes = agglomeration.nodes;
+    const entityIdsByChunk = new Map(chunks.map((c) => [c.id, c.entityIds || []]));
+    let joinCount = 0;
+    let abstainCount = 0;
+    let identityDisjointJoinCount = 0;
+    const disagreement = [];
+    for (const link of themeLinks) {
+      const identitiesA = entityIdsByChunk.get(link.a) || [];
+      const identitiesB = entityIdsByChunk.get(link.b) || [];
+      const identityLinked = identitiesA.some((e) => identitiesB.includes(e));
+      if (link.decision === 'join') {
+        joinCount++;
+        if (!identityLinked) identityDisjointJoinCount++;
+      } else {
+        abstainCount++;
+        if (identityLinked) {
+          disagreement.push({
+            a: link.a,
+            b: link.b,
+            identityLinked: true,
+            linkProb: link.linkProb,
+            themeSim: link.themeSim,
+            decision: 'abstain',
+          });
+        }
+      }
+    }
+    themeChannel = {
+      policyVersion: policy.policyVersion,
+      modelSha256: scorer.modelSha256,
+      joinThreshold: policy.joinThreshold,
+      simFloor: policy.simFloor,
+      joinCount,
+      abstainCount,
+      identityDisjointJoinCount,
+      disagreement,
+    };
+  }
+
   return {
     perceptionStream,
     markdown,
@@ -3348,6 +3451,7 @@ export async function perceiveMulti(inputs = [], options = {}) {
       : {}),
     ...(numericIntegrityReport ? { numericIntegrity: numericIntegrityReport } : {}),
     ...(egoGraphTelemetry ? { egoGraphTelemetry } : {}),
+    ...(themeEnabled ? { themeNodes, themeLinks, themeChannel } : {}),
     graph: graphIndex,
     receipt,
   };

@@ -413,6 +413,6 @@ The local Model Context Protocol server (\texttt{src/mcp-server.js}) exposes $18
     \item \textbf{Enterprise containers, secrets, audio, and forensics ($4$ tools, \texttt{versieve\_media.wasm}):} \texttt{ingest\_enterprise\_bundle}, \texttt{scan\_enterprise\_secrets}, \texttt{redact\_audio\_call}, and \texttt{audit\_forensic\_leaks}, evaluated in the companion multimodal study \citep{ardiyansyah2026multimodal}.
 \end{itemize}
 
-All five WebAssembly modules (\texttt{versieve\_dl.wasm} with $26$ \texttt{mle\_dl\_*} exports; $388{,}797$\,B combined; per-module sizes in Section~\ref{sec:intro}) pass automated SHA-256 provenance and zero-import verification (\texttt{npm run audit-wasm}: \texttt{allVerified = true}). The portable Node.js CI suite runs $226$ tests across $39$ test files ($215$ core tests plus $6$ MCP tests), alongside $4/4$ Python trainer unit tests in \texttt{test/versieve-train.test.py}.
+All five WebAssembly modules (\texttt{versieve\_dl.wasm} with $26$ \texttt{mle\_dl\_*} exports; $388{,}797$\,B combined; per-module sizes in Section~\ref{sec:intro}) pass automated SHA-256 provenance and zero-import verification (\texttt{npm run audit-wasm}: \texttt{allVerified = true}). The portable Node.js CI suite runs $236$ tests across $40$ test files ($221$ core tests plus $15$ auxiliary and MCP tests), alongside $4/4$ Python trainer unit tests in \texttt{test/versieve-train.test.py}.
 
 \end{document}

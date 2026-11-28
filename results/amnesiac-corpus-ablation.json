@@ -45,7 +45,7 @@
   "corpus": {
     "receipt": {
       "engine": "versieve-amnesiac-corpus-v1",
-      "engineVersionSha256": "807c00804633dad06c00c247819230a7cfc03403333e75e6828807bb06bb3bcd",
+      "engineVersionSha256": "6c45460d49c34a81872f63427683d20f209563829ab8b5a1f3a5ddb22ddcb80d",
       "corpusSha256": "ff6eadca74f0c598ca1daa232bf8a651a15923741f14e6b87a5c4a93dd2ba379",
       "sampleCount": 24,
       "entityCount": 76,
@@ -57,7 +57,7 @@
       "provider": "supplied_word_timestamps (no local ASR weights on this CPU box)",
       "wordCount": 127
     },
-    "buildWallclockMs": 329.0742
+    "buildWallclockMs": 77.0498
   },
   "certificates": {
     "statedConfidence": 0.95,
@@ -131,10 +131,10 @@
           "entityId": "ent:dob:aa638fbc79de5706",
           "removedSpanBytes": 24,
           "entityListDeltaBytes": 27,
-          "diffReceiptSha256": "e822bd8b703631e6a8d845af368e8e017130408e404c85ed148bd324f6f45b24"
+          "diffReceiptSha256": "eb5f08b77f959fccbcbdc95817f0c284d2065437d999ca262c06503071a6f956"
         }
       ],
-      "regenerationWallclockMs": 2.6184999999999263
+      "regenerationWallclockMs": 1.262299999999982
     },
     "0.05": {
       "fraction": 0.05,
@@ -166,28 +166,28 @@
           "entityId": "ent:phone:e68f3c09a248680f",
           "removedSpanBytes": 14,
           "entityListDeltaBytes": 29,
-          "diffReceiptSha256": "8bdf48ddc9f8231a4f2cc865e068a96ae0a83fe9398647325f66d6a62549265f"
+          "diffReceiptSha256": "bd8cfbe00b506f5923594d4eba5026bc342e5a4933cbbdf6474da012661ad0ad"
         },
         {
           "entityId": "ent:email:25127f97c2b327bc",
           "removedSpanBytes": 28,
           "entityListDeltaBytes": 58,
-          "diffReceiptSha256": "5a9da6ce1de5c85242601dc149769548ad2af7ce7251018e5652aa685b2502a2"
+          "diffReceiptSha256": "89dc0a2e30d98d83dc5f52efc1b8dc4ae94d4913e12feac291d4868885cec7ae"
         },
         {
           "entityId": "ent:person:f1a41baa0c5189c4",
           "removedSpanBytes": 15,
           "entityListDeltaBytes": 30,
-          "diffReceiptSha256": "bba597f6de76f9a44a4316aae5bb2a39b5ec080dda7814d298b02b8de440d575"
+          "diffReceiptSha256": "27f166077adb257477b1267b139dd6a0f193a4102469e1e89d7cafd14d260ccc"
         },
         {
           "entityId": "ent:phone:4c1563f0470b85cb",
           "removedSpanBytes": 14,
           "entityListDeltaBytes": 29,
-          "diffReceiptSha256": "f4e15043113bceaf8a2b4502720fc5997788dd99785426ad1d73528be7e71536"
+          "diffReceiptSha256": "ab7de337cf4e863ecfe71cb6a2846270e1da2d78f429036caf34b752974a9381"
         }
       ],
-      "regenerationWallclockMs": 10.485000000000014
+      "regenerationWallclockMs": 4.4395000000000095
     },
     "0.2": {
       "fraction": 0.2,
@@ -230,94 +230,94 @@
           "entityId": "ent:dob:daaf7cad936d91a2",
           "removedSpanBytes": 12,
           "entityListDeltaBytes": 27,
-          "diffReceiptSha256": "b9a72cd41a0538a104613b808fd5e987745fac956a2c9c25aae1739b51c54e1a"
+          "diffReceiptSha256": "884d365660682e0e72b4911f35a29885f7f1719e428cd0d0d76517aec4c0c061"
         },
         {
           "entityId": "ent:person:261e25cd76d10eaf",
           "removedSpanBytes": 45,
           "entityListDeltaBytes": 90,
-          "diffReceiptSha256": "4e1d889aa176e7b43e2038ecdc68ab0d1e71e9ebcff225d13081eb7accd0d528"
+          "diffReceiptSha256": "60b1e8205d912619469146799b1ac33120200d44e0a6429f41373429228374a6"
         },
         {
           "entityId": "ent:dob:62a0e2ee1bdcb49c",
           "removedSpanBytes": 24,
           "entityListDeltaBytes": 27,
-          "diffReceiptSha256": "bebe7db57aa68a5944629f4b17106e831026a05810db80111829ed7a46a8f6a6"
+          "diffReceiptSha256": "070183297964338b21c8b005c9b552f6fa59a8a5f837bf0167423bace31b0b88"
         },
         {
           "entityId": "ent:person:ddfb3ab30e10ef15",
           "removedSpanBytes": 255,
           "entityListDeltaBytes": 299,
-          "diffReceiptSha256": "a4c91f1a41025c5508c7f585fb067e7625ca1100af88a611df20362d4a2b70ad"
+          "diffReceiptSha256": "bef033e316d269837bb39d375c8a5c4b48bb899a8dc918f05af526d4a8f43fdc"
         },
         {
           "entityId": "ent:dob:78d6cb391fd1cabf",
           "removedSpanBytes": 24,
           "entityListDeltaBytes": 27,
-          "diffReceiptSha256": "1654bccf3916d39e77ec58de0f83a6bb728f2be4eb47cd622fc003b09dea5ab4"
+          "diffReceiptSha256": "a067848ad335854ac689185cbed41bc6770afa903ed1c230f67fbb0d76e79fe7"
         },
         {
           "entityId": "ent:email:ff629f83c7d23451",
           "removedSpanBytes": 42,
           "entityListDeltaBytes": 87,
-          "diffReceiptSha256": "fe40090117265ea6b5f73841ba0d1db542794a84b52f833844a71ecd4606b003"
+          "diffReceiptSha256": "d76c6daf33c55f4498f8d4084e054cb50e6209b62c34e40b47add78d9294cb06"
         },
         {
           "entityId": "ent:person:048a7eb56adb0b8f",
           "removedSpanBytes": 285,
           "entityListDeltaBytes": 328,
-          "diffReceiptSha256": "8eb72ac0e6b460f4cb71837ffd2f5257db3ad42d9e9ffd5333bcdf512bbd6382"
+          "diffReceiptSha256": "065d67c1d26a76540764a1d2edcb43920fb70b247184587dd3c6679556098d79"
         },
         {
           "entityId": "ent:phone:027a0ec3acbb6bb0",
           "removedSpanBytes": 14,
           "entityListDeltaBytes": 29,
-          "diffReceiptSha256": "ecdf81b750fc7259d719ebd4187e2a3640b8c5c83ede35b3b93815c33b4423ce"
+          "diffReceiptSha256": "cbe0fb19ad87834f3da69bdeb5863fd95de4f4f5ea8d25eb383984be3941d044"
         },
         {
           "entityId": "ent:dob:9e924313344c6a25",
           "removedSpanBytes": 24,
           "entityListDeltaBytes": 54,
-          "diffReceiptSha256": "3db257ba55b7751dc5cab1fd0bcadd77fd0b9da857008a8ee54f0fe6d55c92ab"
+          "diffReceiptSha256": "3b7cd02c0f0d86a5a0edd27e05dd22e9812b1b9ffef677237aebae6b754e4f8e"
         },
         {
           "entityId": "ent:dob:48a76654662a1bd7",
           "removedSpanBytes": 12,
           "entityListDeltaBytes": 27,
-          "diffReceiptSha256": "e85a5e6cdba44524dbca8bfc089d1968b110d32558dba9d215e16c9a7bbeee2e"
+          "diffReceiptSha256": "db6f401058953e603e65aac50549482483209d67de5d3853a8f71ba955984b13"
         },
         {
           "entityId": "ent:phone:2506f99a98732030",
           "removedSpanBytes": 14,
           "entityListDeltaBytes": 29,
-          "diffReceiptSha256": "bdb6921ddab53445c714582cae33629175aaf4fea980c7ce13afe2f369fef27c"
+          "diffReceiptSha256": "37f52d99541ef40d49a4571a5883f3f86c7db422408e006f09e15ae5a57ddc50"
         },
         {
           "entityId": "ent:phone:e5cf143c26430ae0",
           "removedSpanBytes": 14,
           "entityListDeltaBytes": 29,
-          "diffReceiptSha256": "43ec95d37f0173a0916e1f159e187188847bd55f9eadb90349a3d0288bc4be4c"
+          "diffReceiptSha256": "0b1d02fcf41e5869b6b1a4998e0b249af466386004ed6cc1612cf16350444b09"
         },
         {
           "entityId": "ent:person:9fc3aba4748fc811",
           "removedSpanBytes": 90,
           "entityListDeltaBytes": 120,
-          "diffReceiptSha256": "f44ed99baec65e37ec1f63f6779ed6445a170aa3095c2ec43c9856e32d958315"
+          "diffReceiptSha256": "a25c44d7e76c015a5ca8c8654aa32a512938d7e6a726f36d80e9898ddcf0e8dd"
         },
         {
           "entityId": "ent:dob:d6aed68016b6dc45",
           "removedSpanBytes": 24,
           "entityListDeltaBytes": 54,
-          "diffReceiptSha256": "e0ab2769c86bb8d265d8ba671262a8cc50b5aebee7fa415235028f1fda3730c6"
+          "diffReceiptSha256": "d6dc168106ba01294e4d10f330b4c2fac1dbe4ddfb5937556be80e70a61c24b0"
         },
         {
           "entityId": "ent:person:7783aa74741924c3",
           "removedSpanBytes": 120,
           "entityListDeltaBytes": 180,
-          "diffReceiptSha256": "b97625230ed32928e9aeca290c9a7dd8068433e0194cf4de730d19e8f0af2628"
+          "diffReceiptSha256": "6f4e3063be23a8579774265383862c2334da84646d0662a5aa4e35fa6932dd7f"
         }
       ],
-      "regenerationWallclockMs": 35.65139999999997
+      "regenerationWallclockMs": 17.720199999999977
     }
   },
   "gpuDependent": {

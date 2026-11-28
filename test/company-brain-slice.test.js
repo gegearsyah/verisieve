@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { generateEstate } from '../scripts/gen-company-estate.mjs';
 import { runCompanyBrainSlice, SEED } from '../scripts/run-company-brain-slice.mjs';
+import { THEME_POLICY_VERSION } from '../src/weft-theme-linker.js';
 
 // Stage 10 Company-Brain slice: P2 cross-department linking receipt, P3 zero-egress
 // receipt, P4 training-ready JSONL export + browser connection graph JSON.
@@ -116,4 +118,68 @@ test('Determinism: re-run is identical modulo wall-clock keys', async () => {
   assert.equal(b.p4.export.jsonl, a.p4.export.jsonl, 'the exported JSONL must be byte-identical across runs');
   assert.deepEqual(JSON.parse(JSON.stringify(stripTimings(b.p4.connectionGraph.raw))), JSON.parse(JSON.stringify(stripTimings(a.p4.connectionGraph.raw))),
     'the connection graph JSON must be deterministic modulo wall-clock keys');
+});
+
+const sliceArtifactProbe = async () => {
+  const artifactPath = path.join(ROOT, 'models/weft-specialist-quantized/weft-int4.onnx');
+  if (!fs.existsSync(artifactPath)) return { ok: false, reason: `Weft pair-graph artifact absent at ${artifactPath}` };
+  try {
+    await import('onnxruntime-node');
+  } catch (err) {
+    return { ok: false, reason: `onnxruntime-node absent (${err.message})` };
+  }
+  return { ok: true, artifactSha256: crypto.createHash('sha256').update(fs.readFileSync(artifactPath)).digest('hex') };
+};
+
+test('Theme pass on the slice: themed graph nodes, member edges, channel counts, and the default shape stays theme-free', async (t) => {
+  const probe = await sliceArtifactProbe();
+  if (!probe.ok) return t.skip(`W6 real-artifact path not runnable on this box: ${probe.reason}`);
+  generateEstate();
+  const themed = await runCompanyBrainSlice({ theme: true });
+  const plain = await runCompanyBrainSlice();
+
+  assert.ok(themed.theme, 'the theme-on run reports the theme channel block');
+  assert.ok(!('theme' in plain), 'the default run must not gain a theme block');
+  assert.ok(!plain.p4.connectionGraph.raw.nodes.some((n) => n.type === 'theme'), 'the default connection graph carries no theme nodes');
+
+  const theme = themed.theme;
+  assert.equal(theme.themeNodeCount, theme.themeNodes.length, 'themeNodeCount matches the reported node array');
+  assert.equal(theme.joinCount + theme.abstainCount, theme.themeLinkCount, 'every scored link landed as a join or an abstain');
+  assert.equal(theme.policyVersion, THEME_POLICY_VERSION);
+  assert.equal(theme.modelSha256, probe.artifactSha256, 'the theme block pins the artifact sha actually loaded');
+  assert.ok(typeof theme.identityDisjointJoinCount === 'number' && typeof theme.disagreementCount === 'number');
+  assert.ok(theme.themeNodeCount >= 1, 'the estate run agglomerates at least one theme node');
+
+  const graph = JSON.parse(JSON.stringify(themed.p4.connectionGraph.raw));
+  const themeGraphNodes = graph.nodes.filter((n) => n.type === 'theme');
+  assert.equal(themeGraphNodes.length, theme.themeNodeCount, 'the graph carries one node per theme node');
+  const fileNodeIds = new Set(graph.nodes.filter((n) => n.type === 'file').map((n) => n.id));
+  const themeNodeById = new Map(theme.themeNodes.map((n) => [n.id, n]));
+  for (const node of themeGraphNodes) {
+    const carried = themeNodeById.get(node.id);
+    assert.ok(carried, 'every graph theme node maps back to the reported theme nodes');
+    assert.equal(node.label, carried.anchors[0] || carried.members[0], 'the graph label comes from the anchor');
+    assert.equal(node.memberCount, carried.members.length, 'memberCount matches the member set');
+    assert.ok(theme.themeNodes.some((n) => n.members.length >= 2), 'the estate theme nodes are honest about multi-member agglomerations');
+  }
+  const memberEdges = graph.edges.filter((e) => e.type === 'THEME_MEMBER');
+  assert.ok(memberEdges.length >= 1, 'member edges connect member files to theme nodes');
+  for (const edge of memberEdges) {
+    assert.ok(fileNodeIds.has(edge.source), `THEME_MEMBER edge source ${edge.source} must be an existing file node`);
+    assert.ok(themeGraphNodes.some((n) => n.id === edge.target), 'every THEME_MEMBER edge lands on a theme node');
+  }
+  assert.equal(themeGraphNodes.length, themed.p4.connectionGraph.raw.nodes.filter((n) => n.type === 'theme').length);
+});
+
+test('Theme determinism: the theme-on slice run is reproducible modulo wall-clock keys', async (t) => {
+  const probe = await sliceArtifactProbe();
+  if (!probe.ok) return t.skip(`W6 real-artifact path not runnable on this box: ${probe.reason}`);
+  generateEstate();
+  const a = await runCompanyBrainSlice({ theme: true });
+  const b = await runCompanyBrainSlice({ theme: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(stripTimings(b.theme))), JSON.parse(JSON.stringify(stripTimings(a.theme))),
+    'the theme block must be deterministic modulo wall-clock keys');
+  assert.deepEqual(JSON.parse(JSON.stringify(stripTimings(b.p4.connectionGraph.raw))), JSON.parse(JSON.stringify(stripTimings(a.p4.connectionGraph.raw))),
+    'the themed connection graph must be deterministic modulo wall-clock keys');
+  assert.equal(b.p4.export.jsonl, a.p4.export.jsonl, 'the theme-carrying corpus JSONL is byte-identical across runs');
 });
