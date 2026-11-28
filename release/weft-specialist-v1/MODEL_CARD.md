@@ -7,8 +7,8 @@ and an int8 dynamic reference, both cut from the same W4-v4 trained state.
 
 ## 1. What this is
 
-The Weft specialist is a small pairwise scorer for identity-orthogonal
-cross-document theme linking. Architecture:
+The Weft specialist is a small pairwise scorer for cross-document theme
+linking that requires no person signal. Architecture:
 
 - Base: all-MiniLM-L6-v2 (6 layers, 384 dims), frozen throughout training
   (learning rate 0.0 on the base).
@@ -198,6 +198,8 @@ states what Weft does differently.
 | SPD (2025, OpenAlex W7106715728) and JVSB (2025, OpenAlex W4413145477) | bias-subspace erasure on CLIP evaluated on classification and text-to-image retrieval: multimodal encoders, no linking task |
 | task-conditional leakage (2026, OpenAlex W7237077535) | proves a conflict between marginal and task-conditional linear guardedness; cited for the H2 probe framing (conditional leakage after erasure) |
 
+Dated correction, 2026-11-28 (the framing pass under the third ruling): the table above reproduces the audited W7 verification record verbatim, so its "identity-orthogonal" and "identity-matched theme-different" wording is the audited record's, not current terminology; it is never silently edited. The current wording is source-orthogonal (person-independent) pairwise theme linking, per the section 7 correction and docs/research-notes/2026-11-28-company-brain-premise-correction.md.
+
 ## 7. Novelty statement
 
 The surviving conjunction, in exactly the audited wording: the Weft
@@ -209,6 +211,16 @@ and differentiated row by row above, and every one is prior art on its own.
 The audit's recorded limits apply (the record, section 4): OpenAlex indexing
 of 2026 preprints is incomplete, INLP's reference list went unread, and the
 "unoccupied" reading is only as strong as the citation graph.
+
+Dated correction, 2026-11-28 (the framing pass under the third ruling):
+the pinned Weft phrase above, "identity-blind pairwise theme linking over
+document-graph structure", should read "source-orthogonal
+(person-independent) pairwise theme linking over document-graph structure":
+knowledge is the unit, source and theme are the axes, and identity is
+reserved for the person erasure axis only. The original pinned text stays
+in place exactly as audited; the corrected wording is what the papers print
+from this pass forward. Reference:
+docs/research-notes/2026-11-28-company-brain-premise-correction.md.
 
 ## 8. Licence
 
@@ -279,3 +291,5 @@ of 2026 preprints is incomplete, INLP's reference list went unread, and the
  { "id": "cite-task-conditional-leakage", "statement": "Task-conditional leakage (OpenAlex W7237077535): marginal and task-conditional guardedness conflict, cited for the H2 probe framing", "trace": { "kind": "citation", "source": "docs/research-notes/2026-11-28-w7-fulltext-verification-record.md#2", "digest": null } }
 ]
 -->
+
+Dated correction, 2026-11-28 (the framing pass under the third ruling): the claim trace above is a machine-readable artifact pinned to the audited W7 verification record, so its "identity-orthogonal" and "identity-matched theme-different" statements stay verbatim and are never silently edited; the corrected terminology is recorded in the section 7 correction and in docs/research-notes/2026-11-28-company-brain-premise-correction.md.
