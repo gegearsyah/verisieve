@@ -527,7 +527,7 @@ function profileRoster(profile) {
   }
   // A profile too thin to scaffold identity-matched negatives falls back to the
   // generic roster rather than silently weakening the negative lesson.
-  return out.length >= 4 ? out : SHARED_IDENTITY_ROSTER;
+  return out.length >= 4 ? out : SHARED_ENTITY_ROSTER;
 }
 
 /**
@@ -576,7 +576,7 @@ export function generateTeacherEstates(teacher, options = {}) {
   const chunkSize = Number.isInteger(parsedChunk) && parsedChunk > 0 ? parsedChunk : DEFAULT_TEACHER_CHUNK;
   const baseSeed = Number.isInteger(options.seed) ? options.seed : 0;
   const profile = options.orgProfile && typeof options.orgProfile === 'object' ? options.orgProfile : null;
-  const roster = profile ? profileRoster(profile) : SHARED_IDENTITY_ROSTER;
+  const roster = profile ? profileRoster(profile) : SHARED_ENTITY_ROSTER;
   const lengthBands = (Array.isArray(options.lengthBands) ? options.lengthBands : [])
     .filter((b) => b && Number.isFinite(b.min) && Number.isFinite(b.max) && b.max >= b.min);
   const useBands = lengthBands.length > 0;
