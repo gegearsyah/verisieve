@@ -22,7 +22,7 @@
    "releaseConstraint": "share-alike",
    "verifiedFrom": "Research note 2026-11-27 §3: CC BY-SA 4.0 text; CC official position covers AI training wherever copyright permission would be required.",
    "releaseConsequence": "Attribution and share-alike attach to derived released data. A Weft corpus derived from these dumps cannot be relicensed wholesale as Apache-2.0 or MIT.",
-   "notes": "Admitted with a share-alike obligation on the released dataset."
+   "notes": "Admitted with a share-alike obligation on the released dataset. W7 binding default (2026-11-28): Wikipedia-derived pairs are excluded from the public set; the founder checkpoint surfaces them only if the founder chooses share-alike dataset licensing (W7 execution plan, decision 5)."
   },
   {
    "id": "synthetic-estate",
@@ -48,7 +48,7 @@
    "usedInRecipe": false,
    "redistributable": false,
    "releaseConstraint": "excluded",
-   "verifiedFrom": "Research note 2026-11-27 §3: bespoke agreement limits use to non-commercial research and education, grants no IP licence; HF licence \"other\" resolved.",
+   "verifiedFrom": "Verified 2026-11-28 (W7 licence P0) against the HF dataset card's LILY Lab agreement, verbatim: \"non-commercial research and educational purposes only ... without extending any license or other intellectual property rights\"; the agreement grants no IP licence, and the HF licence field is \"other\". Research note 2026-11-27 §3 concurs.",
    "releaseConsequence": "Excluded from the public training recipe. May be used for internal non-commercial evaluation only, never redistribution.",
    "notes": "Dropped by decision, not pending."
   },
@@ -85,28 +85,28 @@
    "name": "uCDCR unified CDCR compilation",
    "kind": "corpus",
    "licence": "unverified",
-   "terms": "unverified",
+   "terms": "Compilation tagged CC BY-SA 4.0; no per-corpus licence stated for its 12 constituents; ECB+ is CC BY-NC-SA (espRA, registration-gated).",
    "status": "unverified",
    "usedInRecipe": false,
    "redistributable": false,
-   "releaseConstraint": "excluded",
-   "verifiedFrom": "Research note 2026-11-27 §3: uCDCR constituent licences remain unverified.",
-   "releaseConsequence": "Dropped from the public recipe until every constituent is audited.",
-   "notes": "Benchmark substrate only; no pair may derive from it."
+   "releaseConstraint": "cited-only",
+   "verifiedFrom": "Verified 2026-11-28 (W7 licence P0, full text): cited only, never redistributed. That clause on ECB+ rests on search snippets and a human re-checks espRA before any corpus decision touches ECB+.",
+   "releaseConsequence": "Cited only. No pair may derive from it and no redistribution is permitted until every constituent is audited.",
+   "notes": "Cited-only benchmark substrate, never redistributed."
   },
   {
    "id": "needle-3",
-   "name": "Needle 3 weights",
+   "name": "Needle 3 weights (Cactus-Compute/needle3)",
    "kind": "model",
-   "licence": "unverified",
-   "terms": "unverified",
-   "status": "unverified",
+   "licence": "apache-2.0",
+   "terms": "Apache License 2.0, declared on the Hugging Face repo",
+   "status": "green",
    "usedInRecipe": false,
-   "redistributable": false,
-   "releaseConstraint": "excluded",
-   "verifiedFrom": "Research note 2026-11-27 §3: Needle 3 licence still unverified (the earlier note verified Needle 1 weights only).",
-   "releaseConsequence": "Not usable as a base encoder until its terms are audited from primary sources.",
-   "notes": "Recorded as a pending gate item."
+   "redistributable": true,
+   "releaseConstraint": "none",
+   "verifiedFrom": "Verified 2026-11-28 (W7 licence P0) on the HF repo https://huggingface.co/Cactus-Compute/needle3: Apache-2.0. Correction, dated 2026-11-28: the 2026-11-26 note's unverified licence and its \"2-bit, 8-29 MB\" figures are corrected there with a dated marker. Research note 2026-11-27 §3 had it pending.",
+   "releaseConsequence": "Redistributable under Apache-2.0 once used. Not a teacher or corpus source in this recipe; recorded as a candidate on-device model.",
+   "notes": "Green but not used in the recipe: on-device model candidate, not a training source."
   },
   {
    "id": "teacher",
