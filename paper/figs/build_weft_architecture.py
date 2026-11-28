@@ -1,11 +1,9 @@
 """Weft theme-linking architecture GIF, same hand-drawn register as the paper set.
 
-Post-T12 frontier track: estate -> pair compiler -> licence audit gate ->
-teacher -> specialist encoder -> post-hoc identity probe battery -> conformal
-abstain -> theme nodes, with the W4 ablation ladder and the honest side cards
-(licence-dropped sources, fail-closed teacher, W5-W7 not shipped). Built from
-build_k7_architecture's primitives the way build_readme_architectures does.
-Seeded, reproducible.
+Paper 5 shipped: estate -> pair compiler -> licence audit gate -> teacher ->
+frozen specialist -> H2 identity probe -> certified LTT abstain -> theme nodes,
+with the shipped int4/int8 artifacts, the ruled identity_disjoint gate and the
+honest limits. Seeded, reproducible.
 """
 from pathlib import Path
 import shutil
@@ -61,19 +59,20 @@ def draw(seed, dash_off):
     r._seed(seed)
     k7.GIF_H = 590
     fig, ax = _canvas()
-    _txt(ax, 44, k7.GIF_H - 42, "Weft: theme linking, identity-blind",
+    _txt(ax, 44, k7.GIF_H - 42, "Weft: theme linking across sources",
          20.0, bold=True, ha="left")
-    _txt(ax, 44, k7.GIF_H - 74, "post-T12 frontier, not one of the four papers",
-         11.5, ha="left")
+    _txt(ax, 44, k7.GIF_H - 74,
+         "paper 5: the ruled gate, a certified abstain path, "
+         "identity as a measured property", 11.5, ha="left")
 
     row = [
-        (_icon_envelope, ["Estate"], ["documents"], FILL),
-        (_icon_plates, ["Pair", "compiler"], ["3 pair types"], FILL),
-        (_icon_shield, ["Licence", "audit gate"], ["allow-list"], YELLOW),
-        (_icon_gradcap, ["Teacher"], ["Mistral Medium", "live"], FILL),
-        (_icon_db, ["Specialist", "encoder"], ["23.2M params"], FILL),
-        (_icon_magnifier, ["Identity", "probes"], ["post-hoc only"], SIDE),
-        (_icon_lock, ["Conformal", "abstain"], ["LTT fails closed"], FILL),
+        (_icon_envelope, ["Estate"], ["240 docs ·", "24 themes"], FILL),
+        (_icon_plates, ["Pair", "compiler"], ["50k pairs ·", "6 voices"], FILL),
+        (_icon_shield, ["Licence", "audit gate"], ["green-only"], YELLOW),
+        (_icon_gradcap, ["Teacher"], ["live · fail-closed"], FILL),
+        (_icon_db, ["Specialist", "encoder"], ["frozen MiniLM"], FILL),
+        (_icon_magnifier, ["H2 probe", "battery"], ["measured only"], SIDE),
+        (_icon_lock, ["LTT", "abstain"], ["fails closed"], FILL),
         (_icon_graph, ["Theme nodes"], ["links + spans"], GREEN),
     ]
     boxes = [_node(ax, XS[i], Y_TOP, NODE_W, *row[i][:3], fc=row[i][3])
@@ -86,17 +85,21 @@ def draw(seed, dash_off):
     def card(x, y_top, title, body, w=138, **kw):
         _card(ax, x, y_top, title, body, rects, w=w, **kw)
 
-    card(XS[1] - 9, 262, ["3 pair types:"],
-         ["identity-masked pos;", "identity-matched,", "diff-theme neg;",
-          "identity-disjoint", "same-theme pos"])
-    card(XS[4] - 9, 262, ["all-MiniLM-L6-v2", "fine-tune"],
-         ["23.2M params,", "Apache-2.0, research", "artifact"])
-    card(XS[5] - 9, 262, ["post-hoc probes"],
-         ["identity-blind,", "not identity-removed"])
-    card(XS[6] - 9, 262, ["conformal LTT"],
-         ["abstain when risk", "bound not met"])
-    card(XS[7] - 8, 262, ["theme graph"],
-         ["nodes + links +", "evidence spans"], w=134)
+    card(XS[1] - 9, 262, ["pair types:"],
+         ["identity-masked pos;", "participant-shared,",
+          "diff-theme neg;", "identity-disjoint", "same-theme pos"])
+    card(XS[4] - 21, 262, ["shipped artifacts"],
+         ["int4 ONNX 20,458,033 B,", "F1 0.9572; int8 ref",
+          "23,642,917 B, F1 0.9652;", "sha-256 pinned, fails closed"], w=150)
+    card(XS[5] - 9, 262, ["identity is measured"],
+         ["MLP 0.45 vs 0.10 chance,", "RBF-SVM at or below;",
+          "no removal claim"])
+    card(XS[6] - 9, 262, ["certified abstain"],
+         ["threshold 0.5000, alpha 0.05;", "answers 16.1% of pairs,",
+          "rest routes to review"], w=160)
+    card(XS[7] + 13, 262, ["one theme link"],
+         ["same talking point,", "different sources,",
+          "one link + evidence spans"], w=134)
 
     # Side paths: licence-dropped and fail-closed teacher, straight drops
     # through the corridor between the detail cards.
@@ -104,42 +107,46 @@ def draw(seed, dash_off):
     card(297, 380, ["licence audit gate"], ["dropped sources", "emit zero pairs"],
          w=150)
     _vlink(ax, XS[3] + NODE_W / 2, boxes[3][2], 380, dash_off)
-    card(455, 380, ["teacher: fail-closed"],
-         ["49,070 live pairs", "47,070 train / 2,000 eval"], w=210)
+    card(455, 380, ["v4 corpus: fail-closed"],
+         ["48,000 train / 2,000 eval", "pairs, 6 voices"], w=210)
 
-    card(720, 380, ["W5-W7 NOT SHIPPED"],
-         ["no quantized artifact,", "no seam integration or release packaging"],
-         w=398, fc="#f6f7fa", dashes=DASHED, lw=1.6)
+    card(720, 380, ["the honest limits"],
+         ["BM25 scores 1.0 on the gate bucket: it measures",
+          "lexical overlap too; paraphrase-hard stratum pending",
+          "(issue #59); claim audit: 40 traced claims, 40 passes"],
+         w=398, fc="#f6f7fa", lw=1.6)
 
-    # W4 ablation ladder strip.
-    sx, sw, sh = X0, ROW_W - X0, 74
+    # Ruled-gate strip: header lines stacked over the six comparison chips.
+    sx, sw, sh = X0, ROW_W - X0, 100
     yy = k7.GIF_H - 480 - sh
     ax.add_patch(FancyBboxPatch((sx, yy), sw, sh,
                                 boxstyle="round,pad=0,rounding_size=8",
                                 facecolor=SIDE, edgecolor="none", zorder=2))
     _stroke(ax, k7._rrect_pts(sx, yy, sw, sh, 8), lw=1.8, close=True)
     rects.append((sx, 480, sw, sh))
-    _txt(ax, 64, k7.GIF_H - 506, "W4 ablation ladder", 10.6, bold=True, ha="left")
-    _txt(ax, 64, k7.GIF_H - 524, "specialist theme-F1 (fixture)", 8.7, ha="left")
-    _txt(ax, 64, k7.GIF_H - 542, "full-scale live 0.208, gate not met", 8.7,
-         ha="left", color=BAD)
+    _txt(ax, 64, k7.GIF_H - 492, "The ruled gate: identity_disjoint pairwise F1",
+         10.6, bold=True, ha="left")
+    _txt(ax, 64, k7.GIF_H - 510,
+         "founder ruling 2026-11-28: theme linking is the product case",
+         8.7, ha="left")
     chips = [
-        ("bare", "0.392, baseline", INK_G),
-        ("+adversary", "0.339, hurts", BAD),
-        ("+set-conditioning", "0.428, only positive", OK),
-        ("+triangle", "0.408", INK_G),
-        ("+modality", "0.400", INK_G),
+        ("static baseline", "0.9973", INK_G),
+        ("BERTopic-style", "1.0", INK_G),
+        ("LLM judge", "0.6667", INK_G),
+        ("BM25", "1.0, lexical", BAD),
+        ("link head", "0.3617, rescoped", INK_G),
+        ("pooled cosine", "0.9989, ruled", OK),
     ]
     for j, (label, value, vc) in enumerate(chips):
-        cx = 300 + j * 164
-        ax.add_patch(FancyBboxPatch((cx, k7.GIF_H - 490 - 54), 150, 54,
+        cx = 250 + j * 144
+        ax.add_patch(FancyBboxPatch((cx, k7.GIF_H - 520 - 54), 136, 54,
                                     boxstyle="round,pad=0,rounding_size=8",
                                     facecolor=BG, edgecolor="none", zorder=2.4))
-        _stroke(ax, k7._rrect_pts(cx, k7.GIF_H - 490 - 54, 150, 54, 8),
+        _stroke(ax, k7._rrect_pts(cx, k7.GIF_H - 520 - 54, 136, 54, 8),
                 lw=1.5, close=True)
-        rects.append((cx, 490, 150, 54))
-        _txt(ax, cx + 75, k7.GIF_H - 507, label, 9.2, bold=True)
-        _txt(ax, cx + 75, k7.GIF_H - 532, value, 8.8, color=vc)
+        rects.append((cx, 520, 136, 54))
+        _txt(ax, cx + 68, k7.GIF_H - 535, label, 9.2, bold=True)
+        _txt(ax, cx + 68, k7.GIF_H - 555, value, 8.8, color=vc)
     return fig, rects
 
 
