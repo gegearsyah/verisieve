@@ -29,6 +29,7 @@ const TRAINER = readFileSync(new URL('scripts/run-track-d-fair-lora.py', ROOT), 
 const M = tex('versieve-multimodal-sanitization-benchmark.tex');
 const L = tex('versieve-local-training-benchmark.tex');
 const E = tex('versieve-extraction-redaction-benchmark.tex');
+const W = tex('versieve-weft-theme-linking-benchmark.tex');
 
 let fails = 0;
 let checks = 0;
@@ -835,7 +836,8 @@ const BIB_E = tex('versieve-extraction-redaction-benchmark.bib');
 const BIB_M = tex('versieve-multimodal-sanitization-benchmark.bib');
 const BIB_L = tex('versieve-local-training-benchmark.bib');
 const BIB_CG = tex('versieve-graph-grounded-enterprise-corpus.bib');
-const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
+const BIB_W = tex('versieve-weft-theme-linking-benchmark.bib');
+const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG, BIB_W].join('\n');
 
 {
   // 1. Conformal gate table. Post novelty-framing rewrite the full table moved
@@ -940,8 +942,8 @@ const ALL_BIBS = [BIB_E, BIB_M, BIB_L, BIB_CG].join('\n');
 /* ---------------- Word bans, em-dash bans & rejected tools (README + all papers) ---------------- */
 const ALL_DOCS = [
   ['README', README],
-  ['M', M], ['L', L], ['E', E], ['CG', CG],
-  ['BIB_M', BIB_M], ['BIB_L', BIB_L], ['BIB_E', BIB_E], ['BIB_CG', BIB_CG],
+  ['M', M], ['L', L], ['E', E], ['CG', CG], ['W', W],
+  ['BIB_M', BIB_M], ['BIB_L', BIB_L], ['BIB_E', BIB_E], ['BIB_CG', BIB_CG], ['BIB_W', BIB_W],
 ];
 for (const [name, body] of ALL_DOCS) {
   for (const [label, re] of [
@@ -1424,6 +1426,168 @@ ok('u3:ib.wall', `mean training wall-clock rises from $${f2(U3pt.trainWallSec.me
 ok('u3:ib.sideRaw', `Raw canary exposure changes by $${f2(U3dIB.rawCanaryMeanBits.mean)}$ bits with the bootstrap CI $[${f2(U3dIB.rawCanaryMeanBits.bootstrapCi95[0])}, ${f2(U3dIB.rawCanaryMeanBits.bootstrapCi95[1])}]$ including zero`, L);
 ok('u3:ib.sideF1', `seen-document token F1 by $+${f2(U3dIB.seenDocTokenF1Pct.mean)}$\\,pp, and tag echo by $+${f2(U3dIB.tagEchoRatePct.mean)}$\\,pp versus \\texttt{Masking-only}`, L);
 ok('u3:ib.exploratory', "The checked-in artifact carries this arm's status as exploratory.", L);
+
+/* ---- Paper 5 (Weft theme linking): W1/W4/W5/W7 committed ledgers + release manifest ---- */
+const WEXP = j('weft-export-latency.json');
+const WBASE = j('weft-baselines.json');
+const WANAL = j('weft-specialist-analysis.json');
+const WH2 = j('weft-h2-identity-probe.json');
+const WAUD = j('weft-claim-audit.json');
+const WSLICE = j('company-brain-slice.json');
+const WREC4 = j('weft-training-pairs-fullscale-live-v4/receipt.json');
+const WMASKREC = j('weft-masked-eval-v4/receipt.json');
+const WMAN = JSON.parse(readFileSync(new URL('release/weft-specialist-v1/RELEASE-MANIFEST.json', ROOT), 'utf8'));
+{
+  // content-addressed runId prefixes pin the exact ledger entries the paper quotes
+  const wExp = pfx => WEXP.entries.find(e => e.runId.startsWith(pfx));
+  const q4 = wExp('f24dd768'); // int4: 2000-pair holdout quality, LTT calibration, OOD, embedding table
+  const r4 = wExp('0e7e832e'); // int4: clean-runtime re-score on the verification box (200 pairs)
+  const q8 = wExp('eb1f9f09'); // int8 reference: 2000-pair holdout quality
+  const r8 = wExp('132d758f'); // int8 reference: clean-runtime re-score (200 pairs)
+  const wbase = WBASE.entries.find(e => e.sources?.synthetic?.baselines?.model2vec_static_threshold?.status === 'ran');
+  const estat = wbase.estate, SB = wbase.sources.synthetic;
+  const w4v4 = WANAL.runs.find(r => r.ticket === 'W4-v4');
+  const h2 = WH2.entries[0];
+  const ca = WAUD.entries[0];
+  const th = WSLICE.theme;
+  const NOTE_W4V4 = readFileSync(new URL('docs/research-notes/2026-11-28-w4-v4-corpus-reaudit-and-launch.md', ROOT), 'utf8');
+  const NOTE_W5 = readFileSync(new URL('docs/research-notes/2026-11-28-w5-quantized-export-results.md', ROOT), 'utf8');
+
+  // tab:artifacts: every cell traces to the W5 export ledger; the manifest pins the same bytes/sha
+  ok('w5:int4.bytes', `$${comma(q4.artifact.bytes)}$`, W);
+  ok('w5:int8.bytes', `$${comma(q8.artifact.bytes)}$`, W);
+  ok('w5:int4.holdoutF1', `Holdout F1 & $${f4(q4.quality.f1)}$ & $${f4(q8.quality.f1)}$`, W);
+  ok('w5:int4.prec', `Precision & $${f4(q4.quality.precision)}$ & $${f4(q8.quality.precision)}$`, W);
+  ok('w5:int4.recall', `Recall & $${f4(q4.quality.recall)}$ & $${f4(q8.quality.recall)}$`, W);
+  ok('w5:int4.runtimeF1', `Runtime F1 & $${f4(r4.quality.f1)}$ & $${f4(r8.quality.f1)}$`, W);
+  ok('w5:int4.ms', `ms per pair & $${f1(r4.latency.pairScoringMsPerPair)}$ & $${f1(r8.latency.pairScoringMsPerPair)}$`, W);
+  ok('w5:int4.sha', `\\texttt{${q4.artifact.sha256.slice(0, 8)}}`, W);
+  ok('w5:int8.sha', `\\texttt{${q8.artifact.sha256.slice(0, 8)}}`, W);
+  checks++;
+  const manA4 = WMAN.artifacts.find(a => a.id === 'weft-int4'), manA8 = WMAN.artifacts.find(a => a.id === 'weft-int8-reference');
+  if (manA4.bytes !== q4.artifact.bytes || manA8.bytes !== q8.artifact.bytes
+    || manA4.sha256 !== q4.artifact.sha256 || manA8.sha256 !== q8.artifact.sha256) {
+    fails++; console.error('FAIL [w5:manifest.artifact] release manifest artifact pins diverge from the export ledger');
+  }
+  ok('w5:emb.rows', `$${comma(q4.embedding.rows)}$ rows`, W);
+  checks++;
+  if (r8.quality.pairCount !== 200 || r4.quality.pairCount !== 200) {
+    fails++; console.error('FAIL [w5:runtime.pairCount] clean-runtime rows are not the disclosed 200-pair sample');
+  }
+
+  // abstract + tab:artifacts runtime disclosure: ms/pair travels with the measurement box
+  checks++;
+  if (r4.latency.platform !== r8.latency.platform || !r4.latency.platform.includes('Windows')) {
+    fails++; console.error('FAIL [w5:runtime.platform] runtime rows no longer carry the shared verification box');
+  }
+
+  // Learn-Then-Test certificate (abstract + sec:calibration)
+  const c05 = q4.conformal.find(c => c.alpha === 0.05), c10 = q4.conformal.find(c => c.alpha === 0.1);
+  ok('w5:ltt.threshold', `threshold of $${f4(c05.threshold)}$`, W);
+  ok('w5:ltt.coverage', P(f1(100 * c05.coverage)), W);
+  checks++;
+  if (c05.threshold !== c10.threshold) { fails++; console.error('FAIL [w5:ltt.sameThreshold] the two alphas no longer stop at the same threshold'); }
+  // test-half point estimate: the ledger falseMergeRate decomposes into merges/answered pairs
+  const answered = Math.round(c05.coverage * q4.quality.pairCount / 2);
+  checks++;
+  if (answered !== 161) { fails++; console.error(`FAIL [w5:ltt.answered] derived test-half answered count ${answered} is not 161`); }
+  const merges = Math.round(c05.falseMergeRate * answered);
+  ok('w5:ltt.testHalf', `$${merges}$ false merges in $${f0(answered)}$ answered pairs ($${f4(c05.falseMergeRate)}$)`, W);
+
+  // OOD tripwire (abstract + sec:calibration)
+  ok('w5:ood.k', `$k{=}${q4.ood.k}$`, W);
+  ok('w5:ood.bankBytes', `$${comma(q4.ood.bankBytes)}$\\,B`, W);
+  ok('w5:ood.pass', `$${f2(q4.ood.evalPassRate)}$ of the eval`, W);
+  ok('w5:ood.flag', `flags $${String(q4.ood.oodFlagRate).slice(0, 6)}$ of documents`, W);
+
+  // estate + ruled gate (abstract + sec:benchmark), baselines entry with the model2vec arm on record
+  ok('w5:estate.core', `$${f0(SB.documents)}$ documents, $${f0(estat.themes)}$ themes, $${f0(estat.departments)}$ departments, $${f0(estat.modalities)}$ modalities`, W);
+  ok('w5:estate.pairs', `$${comma(SB.pairs)}$ pairs in total`, W);
+  ok('w5:estate.seed', String(estat.seed), W);
+  ok('w5:estate.sha', `\\texttt{${estat.estateSha256.slice(0, 8)}$\\ldots$${estat.estateSha256.slice(-5)}}`, W);
+  checks++;
+  if (!estat.noise.includes('~35%')) { fails++; console.error(`FAIL [w5:estate.noise] ledger noise note changed: ${estat.noise}`); }
+  ok('w5:estate.noise', 'roughly $35\\%$ of documents', W);
+  const idF1 = k => SB.baselines[k].buckets.identity_disjoint.f1;
+  ok('w5:gate.model2vec', `$${f4(idF1('model2vec_static_threshold'))}$`, W); // 0.9973 size-matched static baseline
+  ok('w5:gate.minilm', `$${f4(idF1('minilm_l6_cosine'))}$`, W); // 0.9968
+  ok('w5:gate.bertopic', `$${f1(idF1('bertopic_style'))}$`, W); // 1.0
+  ok('w5:gate.judge', `the local LLM judge $${f1(idF1('local_llm_judge'))}$`, W); // 0.6
+  ok('w5:gate.linkHead', `$${f4(w4v4.fixtureGate.linkHead.maxF1)}$ on this bucket`, W); // 0.3617
+  ok('w5:gate.pooled', `$${f4(w4v4.fixtureGate.pooledCosine.maxF1)}$ against $${f4(idF1('model2vec_static_threshold'))}$`, W); // 0.9989 vs 0.9973
+  checks++;
+  for (const [k, v] of Object.entries(WMAN.benchmarkPointer.identityDisjointBucketF1)) {
+    if (Number(f4(idF1(k))) !== v) { fails++; console.error(`FAIL [w5:manifest.gate.${k}] manifest gate value ${v} != ledger ${f4(idF1(k))}`); }
+  }
+  checks++;
+  if (WMAN.releaseGate.status !== 'ruled-passed'
+    || WMAN.releaseGate.measured.specialistPooledCosineF1 !== w4v4.fixtureGate.pooledCosine.maxF1
+    || w4v4.fixtureGate.pooledCosine.maxF1 <= idF1('model2vec_static_threshold')) {
+    fails++; console.error('FAIL [w5:gate.ruled] the ruled-passed gate no longer matches its committed measured block');
+  }
+
+  // judge reference paragraph (sec:specialist): sampled, in-sample disclosure
+  const judgeRuns = WBASE.entries.map(e => e.sources?.synthetic?.baselines?.local_llm_judge).filter(b => b?.status === 'ran');
+  const lat = judgeRuns.map(b => b.latencyMsPerPair);
+  ok('w5:judge.f1', `$${f4(judgeRuns[0].pairwise.f1)}$ at $${f1(Math.min(...lat))}$ to $${f1(Math.max(...lat))}$\\,ms per pair`, W);
+  ok('w5:judge.pairs', `$${judgeRuns[0].evaluatedPairs}$ evaluated pairs`, W);
+  checks++;
+  if (!judgeRuns.every(b => b.evaluatedPairs === 8 && b.pairwise.f1 === judgeRuns[0].pairwise.f1)) {
+    fails++; console.error('FAIL [w5:judge.sample] judge arms no longer agree on the 8-pair sampled disclosure');
+  }
+
+  // training corpus (sec:specialist architecture paragraph)
+  ok('w5:corpus.sizes', `$${comma(WREC4.trainCount)}$ train and $${comma(WREC4.evalCount)}$ eval pairs`, W);
+  checks++;
+  if (!NOTE_W4V4.includes('6 voices')) { fails++; console.error('FAIL [w5:corpus.voices] the W4-v4 corpus record no longer states the voice count'); }
+  ok('w5:corpus.voices', `$6$ voices`, W);
+
+  // masked eval (sec:identity): the 40 positive count is recomputed from the committed eval rows
+  const maskRows = readFileSync(new URL('results/weft-masked-eval-v4/eval.jsonl', ROOT), 'utf8').trim().split('\n').map(JSON.parse);
+  const maskPos = maskRows.filter(p => (p.pairType || p.type) === 'identity-masked-positive').length;
+  checks++;
+  if (maskPos !== 40 || WMASKREC.evalCount !== 2000 || maskRows.length !== 2000) {
+    fails++; console.error(`FAIL [w5:masked.count] expected 40 identity-masked positives in the 2,000-row masked eval, got ${maskPos}/${maskRows.length}`);
+  }
+  ok('w5:masked.count', `$${maskPos}$ identity-masked positives of $${comma(WMASKREC.evalCount)}$`, W);
+  ok('w5:masked.f1', `masked F1 $${f4(q4.quality.masked.f1)}$ against $${f4(q4.quality.f1)}$ unmasked`, W);
+
+  // H2 probe table + corpus statement (sec:identity)
+  const h2c = h2.conditions;
+  ok('w5:h2.row.control', `$${f4(h2c['control-frozen-base'].probes['mlp-relu-1x64'].top1Accuracy)}$ & $${f4(h2c['control-frozen-base'].probes['rbf-svm-c10-scale'].top1Accuracy)}$`, W);
+  ok('w5:h2.row.int4', `$${f4(h2c['artifact-int4-matmulnbits'].probes['mlp-relu-1x64'].top1Accuracy)}$ & $${f4(h2c['artifact-int4-matmulnbits'].probes['rbf-svm-c10-scale'].top1Accuracy)}$`, W);
+  ok('w5:h2.row.int8', `$${f4(h2c['artifact-int8-dynamic'].probes['mlp-relu-1x64'].top1Accuracy)}$ & $${f4(h2c['artifact-int8-dynamic'].probes['rbf-svm-c10-scale'].top1Accuracy)}$`, W);
+  ok('w5:h2.chance', `chance baseline of $${h2.chance.evalFrequency.toFixed(3)}$`, W);
+  ok('w5:h2.corpus', `$${f0(h2.corpus.rows)}$ estate documents, $${f0(h2.split.identityKeys)}$ identity keys, a stratified $${f0(h2.split.train)}$/$${f0(h2.split.eval)}$ split`, W);
+  ok('w5:h2.runId', `runId \\texttt{${h2.runId.slice(0, 8)}$\\ldots$${h2.runId.slice(-4)}}`, W);
+  checks++;
+  if (!Object.values(h2c).every(c => c.probes['mlp-relu-1x64'].top1Accuracy > h2.chance.evalFrequency)) {
+    fails++; console.error('FAIL [w5:h2.aboveChance] the reported every-condition above-chance MLP reading no longer holds');
+  }
+
+  // transfer + style collapse + the unseen-voice tripwire reading (sec:limits)
+  const tr = w4v4.styleRobustness.cells;
+  ok('w5:transfer.f1', `transfers to the unseen voice at F1 $${f4(tr.w4v4_on_v2eval.maxF1)}$ (precision $${f4(tr.w4v4_on_v2eval.precision)}$)`, W);
+  ok('w5:transfer.collapse', `collapses to F1 $${f4(tr.w4frz_on_v4eval.maxF1)}$ under style variance`, W);
+  checks++;
+  if (!NOTE_W5.includes('6.7 percent of documents')) { fails++; console.error('FAIL [w5:tripwire.note] the W5 record no longer states the unseen-voice tripwire rate'); }
+  ok('w5:tripwire.unseen', `flags only $${P(f1(6.7))}$ of documents`, W); // shortcut: no results JSON carries this yet, traced via NOTE_W5
+
+  // theme agglomeration on the homogeneous estate (sec:limits)
+  ok('w5:theme', `emits $${f0(th.themeNodeCount)}$ theme node ($${f0(th.themeNodes[0].members.length)}$ members) from $${comma(th.themeLinkCount)}$ scored pairs ($${f0(th.joinCount)}$ joins, $${f0(th.abstainCount)}$ abstains, $${f0(th.identityDisjointJoinCount)}$ identity-disjoint joins, $${f0(th.disagreementCount)}$ disagreements`, W);
+  checks++;
+  if (th.joinCount + th.abstainCount !== th.themeLinkCount) { fails++; console.error('FAIL [w5:theme.accounting] joins + abstains no longer account for the scored pairs'); }
+
+  // claim audit (abstract + sec:audit)
+  ok('w5:audit.claims', `$${ca.claims.length}$ traced claims`, W);
+  ok('w5:audit.sweep', `$${f0(ca.sweep.filesScanned)}$ files swept for banned wording with zero hits`, W);
+  checks++;
+  if (ca.claims.length !== 40 || ca.sweep.bannedHits.length !== 0) { fails++; console.error(`FAIL [w5:audit.count] expected 40 claims and 0 banned hits, got ${ca.claims.length}/${ca.sweep.bannedHits.length}`); }
+  // 240-word envelope traces through the audit's own claim statement
+  checks++;
+  if (!ca.claims.some(c => c.statement.includes('tops out at 240 words'))) { fails++; console.error('FAIL [w5:envelope.claim] the claim audit no longer carries the 240-word envelope statement'); }
+  ok('w5:envelope', `tops out at $240$ words per document`, W);
+}
 
 /* ---- U3 style guards ---- */
 checks++;

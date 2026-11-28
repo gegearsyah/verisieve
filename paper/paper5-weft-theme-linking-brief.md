@@ -6,6 +6,8 @@ Companion to `paper3-curation-research-brief.md` (which owns the corpus question
 
 Weft's purpose was never identity-based linking; the product point is theme linking: two people in the same company talking about the same talking point should be linked and support each other's claims. Identity-blindness is a privacy property of the shipped artifact, reported as a measured post-hoc probe result with the probe family fixed, never a headline claim. The story-36 gate is ruled passed on the pooled-cosine theme-linking path (0.9989 vs the size-matched static baseline 0.9973 on identity_disjoint; manifest `releaseGate`, status `ruled-passed`).
 
+Correction 2026-11-28 (third ruling): the two-people form of the ruling above is the pre-third-ruling wording and is superseded by the sources framing; knowledge is the unit, source and theme are the axes, and identity is reserved for the person erasure axis only. The quoted ruling text stays verbatim. Reference: docs/research-notes/2026-11-28-company-brain-premise-correction.md.
+
 ## Title direction (house rules: the title hits the training-data question; privacy words never lead)
 
 Decided 2026-11-28 after the founder's third ruling (knowledge is the unit; company is the motivating domain, not the boundary; "across authors" person-axis wording retires): the title is "Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path." Weft leads, knowledge leads, sources replace authors, and the enterprise framing moves to the intro as the motivating domain. Theme linking leads; the identity property is a measured subsection.

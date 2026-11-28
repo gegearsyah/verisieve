@@ -7,8 +7,8 @@ and an int8 dynamic reference, both cut from the same W4-v4 trained state.
 
 ## 1. What this is
 
-The Weft specialist is a small pairwise scorer for identity-orthogonal
-cross-document theme linking. Architecture:
+The Weft specialist is a small pairwise scorer for cross-document theme
+linking that requires no person signal. Architecture:
 
 - Base: all-MiniLM-L6-v2 (6 layers, 384 dims), frozen throughout training
   (learning rate 0.0 on the base).
@@ -209,6 +209,16 @@ and differentiated row by row above, and every one is prior art on its own.
 The audit's recorded limits apply (the record, section 4): OpenAlex indexing
 of 2026 preprints is incomplete, INLP's reference list went unread, and the
 "unoccupied" reading is only as strong as the citation graph.
+
+Dated correction, 2026-11-28 (the framing pass under the third ruling):
+the pinned Weft phrase above, "identity-blind pairwise theme linking over
+document-graph structure", should read "source-orthogonal
+(person-independent) pairwise theme linking over document-graph structure":
+knowledge is the unit, source and theme are the axes, and identity is
+reserved for the person erasure axis only. The original pinned text stays
+in place exactly as audited; the corrected wording is what the papers print
+from this pass forward. Reference:
+docs/research-notes/2026-11-28-company-brain-premise-correction.md.
 
 ## 8. Licence
 
