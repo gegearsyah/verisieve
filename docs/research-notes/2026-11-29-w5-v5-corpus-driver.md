@@ -103,5 +103,11 @@ node scripts/build-weft-training-pairs.mjs --mode live \
   --org-profile <profileId>
 ```
 
+`--include-masked-structural` must ALWAYS be paired with
+`--dilute-masked-markers`. The masked-structural bucket only emits positives,
+so without dilution every masked marker lands in positives (the 2026-11-28 v3
+audit failure). Audited empirically: unpaired, 2 of 2 masked pairs were
+positive.
+
 The pre-spend audit gate (Opus tier) runs on this note plus the driver and
 compiler diff, before any API spend.
