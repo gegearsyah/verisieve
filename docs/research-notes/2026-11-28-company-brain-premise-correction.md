@@ -53,8 +53,28 @@ cleanly to a property report on the person axis.
 ## Where the rulings live
 
 The theme-linking ruling, the meeting-as-identity refinement, and this
-correction are recorded on issue #59 as two comments and in the session
+correction are recorded on issue #59 as comments and in the session
 memory. The Weft paper (paper 5 draft, merged via PR #64) reframes its
 intro and title under this premise. The 2026-11-24 mechanism adoption
 note stands as history; this note corrects its framing, not its
 engineering.
+
+## Amendment, later the same day: knowledge, not company, is the unit
+
+The founder generalizes the premise one level up (2026-11-28, after this
+note was first written). The unit is knowledge, and data is only the
+pivot point: the product is about knowledge, not about company data.
+Companies are the motivating domain, not the boundary, and the founder's
+reason is a property of their data: company knowledge is the most
+granular and the most distributed, and it gets lost in talking points
+scattered across meetings, documents, and threads. A compliance PDF
+(APP rules, NIST AI RMF, ISO 42001, EU AI Act are the founder's
+example, from their own compliance-research library) is the same class
+of knowledge unit as a meeting: no people, no meeting, still knowledge
+to link by theme across sources.
+
+The amendment also sets a threshold: not all text is knowledge. A
+greeting ("how are you?") is not a knowledge unit. Corpus and pair
+construction carries a knowledge-density filter, so small talk does
+not become linkable pairs. Recorded on issue #59 for the v5 corpus
+lane; the filter rule itself is unwritten and belongs to that lane.
