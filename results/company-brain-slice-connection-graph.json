@@ -964,6 +964,13 @@
       "departments": [
         "it"
       ]
+    },
+    {
+      "id": "theme:36ac2d1ac9e2a386",
+      "type": "theme",
+      "label": "chunk_1",
+      "memberCount": 30,
+      "policyVersion": "weft-theme-agglomeration-v1"
     }
   ],
   "edges": [
@@ -2214,6 +2221,78 @@
       "target": "dept:shared",
       "type": "SHARED_ENTITIES",
       "weight": 6
+    },
+    {
+      "source": "file:business/accounts.csv",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:business/board-proposal.pptx",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:business/contract-edits.csv",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:business/pricing-notes.txt",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:it/escalation-notes.txt",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:it/runbook.txt",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:it/service-inventory.sql",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:meetings/weekly-sync-transcript.txt",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:meetings/weekly-sync.vtt",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:meetings/weekly-sync.wav",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:shared/kickoff-announcement.eml",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
+    },
+    {
+      "source": "file:shared/review-q3.eml",
+      "target": "theme:36ac2d1ac9e2a386",
+      "type": "THEME_MEMBER",
+      "weight": 30
     }
   ]
 }
