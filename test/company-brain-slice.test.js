@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,10 +13,15 @@ import { THEME_POLICY_VERSION } from '../src/weft-theme-linker.js';
 // Stage 10 Company-Brain slice: P2 cross-department linking receipt, P3 zero-egress
 // receipt, P4 training-ready JSONL export + browser connection graph JSON.
 // GT lives only in fixtures/company-estate-manifest.json; the engine path sees only estate files.
+// the suite never rewrites the committed results/ artifacts: they are owned by
+// scripts/run-company-brain-slice.mjs, so test writes land in a temp dir (#48;
+// the old committed-path writes clobbered the theme-on artifacts with no-theme
+// bytes on every CI run and broke check-paper-numbers afterwards)
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'results/company-brain-slice.json');
-const CORPUS_JSONL = path.join(ROOT, 'results/company-brain-slice-corpus.jsonl');
-const GRAPH_JSON = path.join(ROOT, 'results/company-brain-slice-connection-graph.json');
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'company-brain-slice-'));
+const OUT = path.join(TMP, 'company-brain-slice.json');
+const CORPUS_JSONL = path.join(TMP, 'company-brain-slice-corpus.jsonl');
+const GRAPH_JSON = path.join(TMP, 'company-brain-slice-connection-graph.json');
 
 // Wall-clock keys vary run to run by nature; every other number is deterministic.
 const stripTimings = (node) => {
