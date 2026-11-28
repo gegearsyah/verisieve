@@ -143,10 +143,11 @@ test('W-STRATA 1: the paraphrase prompt carries masked identity placeholders and
     assert.ok(!prompt.includes('Astrid Lindqvist'), 'the source identity surface never reaches the teacher');
     assert.ok(
       prompt.includes(
-        `written from the perspective of ${JSON.stringify(expectedParaphraseDepartment())} department (a different department than the source's)`
+        `the new source belongs to the ${JSON.stringify(expectedParaphraseDepartment())} department (a different department than the source's)`
       ),
       'the other-department instruction names a third department, not the anchor department'
     );
+    assert.ok(prompt.includes('comes from a DIFFERENT source'), 'the paraphrase is framed as a different source, not a rewrite in place');
     assert.ok(prompt.includes(`theme is exactly ${JSON.stringify(SOURCE.theme)}`), 'the theme is pinned verbatim');
     assert.ok(prompt.includes(`naming cultures to fit: ${JSON.stringify(['Nordic', 'Filipino', 'German'])}`), 'the profile cultures are named');
     assert.ok(!calls.some((p) => p.includes('Astrid Lindqvist')), 'no call carries the masked surface');
@@ -173,8 +174,8 @@ test('W-STRATA 2: an anchor-colliding paraphrase is remapped once, or dropped an
       outDir: path.join(dir, 'strata-run'),
     });
     assert.equal(remapped.receipt.counts.droppedIdentityCollisions, 0, 'the remap rescued the pair');
-    assert.equal(remapped.receipt.counts.paraphraseHardPositive, 1);
-    const pairB = remapped.pairs.find((p) => p.label === 'paraphrase-hard-positive').b;
+    assert.equal(remapped.receipt.counts.sourceDisjointPositive, 1);
+    const pairB = remapped.pairs.find((p) => p.label === 'source-disjoint-same-theme-positive').b;
     const renamed = pairB.identities[0].surface;
     assert.ok(PROFILE_CULTURE_NAMES.includes(renamed), 'the replacement name comes from the profile cultures');
     assert.notEqual(renamed.toLowerCase(), 'marisol reyes', 'the colliding surface is gone');
@@ -218,11 +219,11 @@ test('W-STRATA 2: an anchor-colliding paraphrase is remapped once, or dropped an
       corpusPath: packedPath,
       outDir: path.join(dir, 'strata-run-2'),
     });
-    assert.equal(dropped.receipt.counts.paraphraseHardPositive, 0, 'the stuck pair is not emitted');
+    assert.equal(dropped.receipt.counts.sourceDisjointPositive, 0, 'the stuck pair is not emitted');
     assert.equal(dropped.receipt.counts.droppedIdentityCollisions, 1, 'the drop is counted in the receipt');
     const remnants = fs.readFileSync(path.join(dir, 'strata-run-2', 'strata-pairs.jsonl'), 'utf8')
       .split('\n').filter(Boolean).map((line) => JSON.parse(line));
-    assert.ok(remnants.every((p) => p.label === 'paraphrase-hard-negative'), 'only the negative pass survives a full positive drop');
+    assert.ok(remnants.every((p) => p.label === 'source-disjoint-near-topic-negative'), 'only the negative pass survives a full positive drop');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -243,14 +244,15 @@ test('W-STRATA 3: per-class counts and provenance land in the pairs and the rece
     assert.equal(receipt.profile, PROFILE);
     assert.equal(receipt.seed, 20261130);
     assert.equal(receipt.licence, API_TEACHER_LICENCE);
-    assert.equal(receipt.counts.paraphraseHardPositive, 1, 'one linked pair in, one positive out');
-    assert.equal(receipt.counts.paraphraseHardNegative, Math.min(2, NEGATIVES_CAP), 'the negatives pass always runs');
+    assert.ok(receipt.axis.includes('source-disjoint'), 'the receipt records the source axis definition');
+    assert.equal(receipt.counts.sourceDisjointPositive, 1, 'one linked pair in, one positive out');
+    assert.equal(receipt.counts.sourceDisjointNegative, Math.min(2, NEGATIVES_CAP), 'the negatives pass always runs');
     assert.equal(receipt.counts.droppedIdentityCollisions, 0);
     assert.equal(receipt.counts.droppedPlaceholderEcho, 0);
     assert.equal(receipt.negativesCaveat, 'near-topic negatives: talking-point difference is teacher-claimed, not mechanically verified');
     assert.equal(receipt.positivesAnchorToSource.mean, 1 / 18, 'the pre-paraphrase anchor-to-source baseline is recorded');
     assert.deepEqual(receipt.positivesAnchorToSource.perPair, [{ sourceDocId: SOURCE.id, overlap: 1 / 18 }]);
-    const positive = pairs.find((p) => p.label === 'paraphrase-hard-positive');
+    const positive = pairs.find((p) => p.label === 'source-disjoint-same-theme-positive');
     assert.equal(positive.a, ANCHOR.id, 'the anchor side keeps the original coverage doc id');
     assert.equal(positive.b.id, `ph-${SOURCE.id}`, 'the paraphrase doc id is namespaced from the source');
     assert.equal(positive.sourceDocId, SOURCE.id);
@@ -258,10 +260,14 @@ test('W-STRATA 3: per-class counts and provenance land in the pairs and the rece
     assert.equal(positive.provenance, `paraphrase-of:${SOURCE.id}`);
     assert.equal(positive.theme, SOURCE.theme);
     assert.equal(positive.b.theme, SOURCE.theme);
-    const negative = pairs.find((p) => p.label === 'paraphrase-hard-negative');
+    assert.equal(positive.eventA, SOURCE.id, 'eventA is the compile-time event anchor of the coverage cluster (smallest doc id)');
+    assert.equal(positive.eventB, `ph-${SOURCE.id}`, 'eventB is the paraphrase doc own new source anchor');
+    const negative = pairs.find((p) => p.label === 'source-disjoint-near-topic-negative');
     assert.equal(negative.provenance, 'teacher-generated-near-topic');
     assert.equal(negative.corpusProfile, PROFILE);
     assert.ok(negative.a.id.startsWith('phn-') && negative.b.id.startsWith('phn-'), 'negative docs are namespaced');
+    assert.equal(negative.eventA, 'phn-0-1', 'each negative side anchors its own event');
+    assert.equal(negative.eventB, 'phn-0-2', 'each negative side anchors its own event');
     assert.ok(receipt.prompts.positive.includes('Rewrite it into ONE new document'), 'the verbatim positive prompt is recorded');
     assert.ok(receipt.prompts.negative.includes('Produce TWO documents'), 'the verbatim negative prompt is recorded');
     assert.equal(receipt.usage.calls, 3, 'one positive call plus two negative calls');
@@ -364,6 +370,7 @@ test('W-STRATA 5: fail-closed on a missing corpus; importing the module makes no
     assert.equal(candidates.length, 1);
     assert.equal(candidates[0].source.id, SOURCE.id);
     assert.equal(candidates[0].anchor.id, ANCHOR.id);
+    assert.equal(candidates[0].sourceEventId, SOURCE.id, 'the event anchor is the smallest doc id of the link cluster');
     assert.equal(pairSeed(SOURCE.id), pairSeed(SOURCE.id), 'the pair seed is a pure function of the doc id');
     assert.equal(typeof positivePrompt({ seed: 1, paraphraseDepartment: 'nursing', cultureLabels: '[]', theme: 'alpha', sourceText: 'x' }), 'string');
     // The negative prompt must name the doc fields and pin the profile's
@@ -443,7 +450,7 @@ test('W-STRATA 7: key collisions and placeholder echoes drop and are counted', (
       corpusPath,
       outDir: path.join(dir, 'key-collision'),
     });
-    assert.equal(keyCollision.receipt.counts.paraphraseHardPositive, 0, 'a shared identity key is not emitted');
+    assert.equal(keyCollision.receipt.counts.sourceDisjointPositive, 0, 'a shared identity key is not emitted');
     assert.equal(keyCollision.receipt.counts.droppedIdentityCollisions, 1, 'the key clash goes through the drop path');
 
     const placeholderEcho = runStrata(PROFILE, {
@@ -457,7 +464,7 @@ test('W-STRATA 7: key collisions and placeholder echoes drop and are counted', (
       corpusPath,
       outDir: path.join(dir, 'placeholder-echo'),
     });
-    assert.equal(placeholderEcho.receipt.counts.paraphraseHardPositive, 0, 'a placeholder echo is not emitted');
+    assert.equal(placeholderEcho.receipt.counts.sourceDisjointPositive, 0, 'a placeholder echo is not emitted');
     assert.equal(placeholderEcho.receipt.counts.droppedPlaceholderEcho, 1, 'the echo is counted');
     assert.equal(placeholderEcho.receipt.counts.droppedIdentityCollisions, 0, 'the echo is not confused with an identity clash');
   } finally {

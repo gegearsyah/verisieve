@@ -2,19 +2,25 @@
 /**
  * scripts/generate-weft-paraphrase-strata.mjs
  *
- * The paraphrase-hard theme-linking strata for the v5 corpus lane (issue #59):
+ * The paraphrase-hard source-disjoint strata for the v5 corpus lane (issue #59):
  * the released benchmark's identity_disjoint bucket falls to BM25 at F1 1.0
  * because same-theme documents share vocabulary, so this driver adds two
  * deliberately lexical-overlap-resistant classes on top of an existing
- * profile's coverage corpus:
+ * profile's coverage corpus. Both strata are defined on the SOURCE axis
+ * (issue #59 founder rulings, 2026-11-28): source = meeting/thread/ticket/
+ * document anchor, theme = knowledge, identity = the person erasure axis only.
  *
- *   1. paraphrase-hard positive: a same-theme cross-department identity-disjoint
+ *   1. source-disjoint-same-theme positive: a same-theme cross-department
  *      linked pair from the coverage corpus where the SOURCE document is
- *      rewritten by the teacher in entirely different wording (new names, new
- *      format, other department) and paired with the original ANCHOR document.
- *   2. paraphrase-hard negative: two teacher-written documents about adjacent
- *      but genuinely different talking points that deliberately share jargon so
- *      word overlap alone cannot separate them.
+ *      rewritten by the teacher as a DIFFERENT source (another meeting, thread,
+ *      or ticket carrying the same talking point in entirely different wording,
+ *      new names, new format, other department) and paired with the original
+ *      ANCHOR document. Event anchors are derived at compile time from the
+ *      coverage corpus's own link clusters: the event is the identity of the
+ *      knowledge unit, people are attributes.
+ *   2. source-disjoint near-topic negative: two teacher-written documents
+ *      about adjacent but genuinely different talking points that deliberately
+ *      share jargon so word overlap alone cannot separate them.
  *
  * The teacher only ever sees the source document with its identity surfaces
  * masked to bracketed role tokens, so no coverage-corpus identity can leak into
@@ -68,7 +74,7 @@ const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').
  */
 export function positivePrompt({ seed, paraphraseDepartment, cultureLabels, theme, sourceText }) {
   return [
-    `Seed: ${seed}. Return only a JSON object. Below is one source document. Rewrite it into ONE new document that carries the same talking point and the same factual substance but uses entirely different wording. Rules: never reuse a noun, verb, adjective, or phrase from the source except unavoidable function words; use different sentence structures and a different document format than the source; the source has bracketed identity placeholders, and every person or organization in your output must be a NEW invented name, never a bracketed placeholder and never any name guessable from the source; the new document is written from the perspective of ${JSON.stringify(paraphraseDepartment)} department (a different department than the source's); naming cultures to fit: ${cultureLabels}. Length: 120 to 350 words. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where theme is exactly ${JSON.stringify(theme)} and the single doc id is "p-1".`,
+    `Seed: ${seed}. Return only a JSON object. Below is one source document (a meeting, thread, ticket, or memo). Rewrite it into ONE new document that comes from a DIFFERENT source: a different meeting, thread, or ticket in the same company that happens to cover the same talking point and the same factual substance, but in entirely different wording. Rules: never reuse a noun, verb, adjective, or phrase from the source except unavoidable function words; use different sentence structures and a different document format than the source; the source has bracketed identity placeholders, and every person or organization in your output must be a NEW invented name, never a bracketed placeholder and never any name guessable from the source; the new source belongs to the ${JSON.stringify(paraphraseDepartment)} department (a different department than the source's); naming cultures to fit: ${cultureLabels}. Length: 120 to 350 words. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where theme is exactly ${JSON.stringify(theme)} and the single doc id is "p-1".`,
     'SOURCE DOCUMENT:',
     String(sourceText),
   ].join('\n\n');
@@ -76,20 +82,50 @@ export function positivePrompt({ seed, paraphraseDepartment, cultureLabels, them
 
 // Caveat: near-topic negatives rely on the teacher's own claim that the talking points differ.
 export function negativePrompt({ seed, theme, cultureLabels, departments }) {
-  return `Seed: ${seed}. Return only a JSON object. Produce TWO documents about the theme ${JSON.stringify(theme)}. The two documents must be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments among these: ${JSON.stringify(Array.isArray(departments) ? departments : [])} and share zero identity keys; invent all names, fitting these naming cultures: ${cultureLabels}. Length: 100 to 300 words each. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where both documents' theme is exactly ${JSON.stringify(theme)} and the ids are "n-1" and "n-2".`;
+  return `Seed: ${seed}. Return only a JSON object. Produce TWO documents about the theme ${JSON.stringify(theme)}. The two documents must come from two DIFFERENT sources (for example two different meetings, threads, or tickets) and be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments among these: ${JSON.stringify(Array.isArray(departments) ? departments : [])} and share zero identity keys; invent all names, fitting these naming cultures: ${cultureLabels}. Length: 100 to 300 words each. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where both documents' theme is exactly ${JSON.stringify(theme)} and the ids are "n-1" and "n-2".`;
 }
 
 /**
- * Same-theme, cross-department, identity-disjoint linked pairs from a coverage
- * corpus. The lexically smaller doc id is the SOURCE (the paraphrase input) so
- * the role split is deterministic; each source doc yields one candidate, sorted
- * by source id so sampling is deterministic regardless of corpus link order.
+ * Compile-time event anchors (issue #59): docs are grouped into events by the
+ * coverage corpus's own structural links (transitive clusters), and each
+ * event's id is the lexically smallest doc id in its cluster. A doc with no
+ * links anchors its own event. The event is the identity of the knowledge unit;
+ * people are attributes of it.
+ */
+export function deriveEventClusters(corpus) {
+  const parent = new Map((corpus.docs || []).map((doc) => [doc.id, doc.id]));
+  const find = (id) => {
+    const root = parent.get(id);
+    return root === undefined || root === id ? id : find(root);
+  };
+  for (const link of corpus.links || []) {
+    if (!link || !parent.has(link.a) || !parent.has(link.b)) continue;
+    const ra = find(link.a);
+    const rb = find(link.b);
+    if (ra === rb) continue;
+    if (ra < rb) parent.set(rb, ra);
+    else parent.set(ra, rb);
+  }
+  const events = new Map();
+  for (const id of parent.keys()) events.set(id, find(id));
+  return events;
+}
+
+/**
+ * Same-theme, cross-department linked pairs from a coverage corpus whose two
+ * docs share no identity keys (the erasure-axis property, kept as validation
+ * rather than the stratum's definition). The lexically smaller doc id is the
+ * SOURCE (the paraphrase input) so the role split is deterministic; each source
+ * doc yields one candidate, sorted by source id so sampling is deterministic
+ * regardless of corpus link order. Every candidate carries the compile-time
+ * event anchor of its cluster on the SOURCE axis.
  */
 export function findParaphraseCandidates(corpus) {
   if (!corpus || !Array.isArray(corpus.docs) || !Array.isArray(corpus.links)) {
     throw new WeftStrataConfigError('the source corpus must be a { docs, links } JSON object', 'corpus-shape');
   }
   const byId = new Map(corpus.docs.map((doc) => [doc.id, doc]));
+  const eventOf = deriveEventClusters(corpus);
   const seen = new Set();
   const out = [];
   for (const link of corpus.links) {
@@ -104,7 +140,7 @@ export function findParaphraseCandidates(corpus) {
     const anchor = a.id < b.id ? b : a;
     if (seen.has(source.id)) continue;
     seen.add(source.id);
-    out.push({ source, anchor, theme: a.theme });
+    out.push({ source, anchor, theme: a.theme, sourceEventId: eventOf.get(source.id) });
   }
   out.sort((x, y) => (x.source.id < y.source.id ? -1 : 1));
   return out;
@@ -366,13 +402,17 @@ export function runStrata(profileId, options = {}) {
     anchorToSource.values.push(anchorToSourceOverlap);
     anchorToSource.perPair.push({ sourceDocId: cand.source.id, overlap: anchorToSourceOverlap });
     pairs.push({
-      label: 'paraphrase-hard-positive',
+      label: 'source-disjoint-same-theme-positive',
       a: cand.anchor.id,
       b: paraphrase,
       sourceDocId: cand.source.id,
       corpusProfile: profile.id,
       provenance: `paraphrase-of:${cand.source.id}`,
       theme: cand.theme,
+      // Event anchors on the source axis: the coverage cluster the talking
+      // point originally appeared in, and the paraphrase's own new source.
+      eventA: cand.sourceEventId,
+      eventB: paraphrase.id,
     });
   }
 
@@ -397,12 +437,15 @@ export function runStrata(profileId, options = {}) {
     negativesOverlap.aToB.push(overlap);
     negativesOverlap.perPair.push({ aId: docA.id, bId: docB.id, overlap });
     pairs.push({
-      label: 'paraphrase-hard-negative',
+      label: 'source-disjoint-near-topic-negative',
       a: docA,
       b: docB,
       corpusProfile: profile.id,
       provenance: 'teacher-generated-near-topic',
       theme,
+      // Both sides are new invented sources; each anchors its own event.
+      eventA: docA.id,
+      eventB: docB.id,
     });
   }
   const finishedAt = new Date();
@@ -412,9 +455,10 @@ export function runStrata(profileId, options = {}) {
     profile: profile.id,
     seed: SEED,
     sourceCorpus: path.relative(ROOT, corpusPath).split(path.sep).join('/'),
+    axis: 'source-disjoint same-theme (issue #59 founder rulings, 2026-11-28); identity disjointness is kept only as the erasure-axis property',
     counts: {
-      paraphraseHardPositive: positivesOverlap.sourceToParaphrase.length,
-      paraphraseHardNegative: negativesOverlap.aToB.length,
+      sourceDisjointPositive: positivesOverlap.sourceToParaphrase.length,
+      sourceDisjointNegative: negativesOverlap.aToB.length,
       droppedIdentityCollisions: droppedIdentityCollisions.count,
       droppedPlaceholderEcho: droppedPlaceholderEcho.count,
     },
@@ -474,7 +518,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   try {
     const summary = runStrata(cliValue('--profile'), { limit, outDir });
     console.error(
-      `strata: ${summary.receipt.counts.paraphraseHardPositive} positives, ${summary.receipt.counts.paraphraseHardNegative} negatives, ${summary.receipt.counts.droppedIdentityCollisions} dropped -> ${summary.files.pairs}`
+      `strata: ${summary.receipt.counts.sourceDisjointPositive} positives, ${summary.receipt.counts.sourceDisjointNegative} negatives, ${summary.receipt.counts.droppedIdentityCollisions} dropped -> ${summary.files.pairs}`
     );
     console.error(
       `overlap: source-to-paraphrase ${summary.receipt.lexicalOverlap.positivesSourceToParaphrase}, anchor-to-paraphrase ${summary.receipt.lexicalOverlap.positivesAnchorToParaphrase}, negatives ${summary.receipt.lexicalOverlap.negativesAToB}`
