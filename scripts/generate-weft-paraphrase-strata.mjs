@@ -64,14 +64,15 @@ const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').
  * Verbatim founder-drafted prompts. The source document is appended below the
  * positive prompt so the "Below is one source document." line stays true.
  */
-export function positivePrompt({ seed, anchorDepartment, cultureLabels, theme, sourceText }) {
+export function positivePrompt({ seed, paraphraseDepartment, cultureLabels, theme, sourceText }) {
   return [
-    `Seed: ${seed}. Return only a JSON object. Below is one source document. Rewrite it into ONE new document that carries the same talking point and the same factual substance but uses entirely different wording. Rules: never reuse a noun, verb, adjective, or phrase from the source except unavoidable function words; use different sentence structures and a different document format than the source; the source has bracketed identity placeholders, and every person or organization in your output must be a NEW invented name, never a bracketed placeholder and never any name guessable from the source; the new document is written from the perspective of ${anchorDepartment} department (a different department than the source's); naming cultures to fit: ${cultureLabels}. Length: 120 to 350 words. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where theme is exactly ${JSON.stringify(theme)} and the single doc id is "p-1".`,
+    `Seed: ${seed}. Return only a JSON object. Below is one source document. Rewrite it into ONE new document that carries the same talking point and the same factual substance but uses entirely different wording. Rules: never reuse a noun, verb, adjective, or phrase from the source except unavoidable function words; use different sentence structures and a different document format than the source; the source has bracketed identity placeholders, and every person or organization in your output must be a NEW invented name, never a bracketed placeholder and never any name guessable from the source; the new document is written from the perspective of ${JSON.stringify(paraphraseDepartment)} department (a different department than the source's); naming cultures to fit: ${cultureLabels}. Length: 120 to 350 words. Schema: {"docs":[{"id","format","department","theme","text","identities":[{"key","surface","class"}]}],"links":[]} where theme is exactly ${JSON.stringify(theme)} and the single doc id is "p-1".`,
     'SOURCE DOCUMENT:',
     String(sourceText),
   ].join('\n\n');
 }
 
+// Caveat: near-topic negatives rely on the teacher's own claim that the talking points differ.
 export function negativePrompt({ seed, theme, cultureLabels }) {
   return `Seed: ${seed}. Return only a JSON object. Produce TWO documents about the theme ${JSON.stringify(theme)}. The two documents must be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments and share zero identity keys; invent all names, fitting these naming cultures: ${cultureLabels}. Length: 100 to 300 words each. Schema: {"docs":[...two docs...],"links":[]} with unique ids "n-1" and "n-2".`;
 }
@@ -159,11 +160,25 @@ const surfacesOf = (doc) =>
       .filter((s) => s && !s.startsWith('['))
   );
 
+const keysOf = (doc) =>
+  new Set(
+    idents(doc)
+      .map((i) => String(i && i.key || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+// Surfaces can be remapped; keys have no remap and drop through the same path.
 const collides = (doc, againstDocs) => {
-  const mine = surfacesOf(doc);
-  const theirs = new Set(againstDocs.flatMap((d) => [...surfacesOf(d)]));
-  return [...mine].some((s) => theirs.has(s));
+  const mineSurfaces = surfacesOf(doc);
+  const mineKeys = keysOf(doc);
+  const theirSurfaces = new Set(againstDocs.flatMap((d) => [...surfacesOf(d)]));
+  const theirKeys = new Set(againstDocs.flatMap((d) => [...keysOf(d)]));
+  return [...mineSurfaces].some((s) => theirSurfaces.has(s)) || [...mineKeys].some((k) => theirKeys.has(k));
 };
+
+const PLACEHOLDER_ECHO = /\[[A-Z]+_\d+\]/;
+const echoesPlaceholder = (doc) =>
+  PLACEHOLDER_ECHO.test(String(doc && doc.text || '')) || idents(doc).some((i) => PLACEHOLDER_ECHO.test(String(i && i.surface || '')));
 
 /**
  * One deterministic remap pass: every paraphrase surface that collides with an
@@ -275,15 +290,28 @@ export function runStrata(profileId, options = {}) {
   const sampledPrompts = { positive: null, negative: null };
   const pairs = [];
   const droppedIdentityCollisions = { count: 0 };
+  const droppedPlaceholderEcho = { count: 0 };
   const positivesOverlap = { sourceToParaphrase: [], anchorToParaphrase: [], perPair: [] };
+  const anchorToSource = { values: [], perPair: [] };
   const negativesOverlap = { aToB: [], perPair: [] };
+  const departments = Array.isArray(profile.departments) ? profile.departments : [];
 
   for (const cand of candidates) {
     const seed = pairSeed(cand.source.id);
+    // A third department, derived from the pair seed so it is stable per pair
+    // and differs from both linked docs; no third department means drop.
+    const eligibleDepartments = departments.filter(
+      (d) => d !== cand.source.department && d !== cand.anchor.department
+    );
+    if (!eligibleDepartments.length) {
+      droppedIdentityCollisions.count += 1;
+      continue;
+    }
+    const paraphraseDepartment = eligibleDepartments[seed % eligibleDepartments.length];
     const maskedSource = maskText(cand.source.text, [cand.source], roleTokenMap([cand.source]));
     const prompt = positivePrompt({
       seed,
-      anchorDepartment: cand.anchor.department,
+      paraphraseDepartment,
       cultureLabels,
       theme: cand.theme,
       sourceText: maskedSource,
@@ -291,6 +319,10 @@ export function runStrata(profileId, options = {}) {
     if (sampledPrompts.positive === null) sampledPrompts.positive = prompt;
     const parsed = parseTeacherDocs(teacher, prompt, seed, 1);
     let paraphrase = normalizedDoc(parsed.docs[0], `ph-${cand.source.id}`, cand.theme);
+    if (echoesPlaceholder(paraphrase)) {
+      droppedPlaceholderEcho.count += 1;
+      continue;
+    }
     const against = [cand.anchor, cand.source];
     if (collides(paraphrase, against)) {
       paraphrase = remapIdentityCollisions(
@@ -313,6 +345,10 @@ export function runStrata(profileId, options = {}) {
       sourceToParaphrase,
       anchorToParaphrase,
     });
+    // Baseline: the pre-paraphrase anchor-to-source overlap the smoke gate compares against.
+    const anchorToSourceOverlap = lexicalOverlap(cand.anchor.text, cand.source.text);
+    anchorToSource.values.push(anchorToSourceOverlap);
+    anchorToSource.perPair.push({ sourceDocId: cand.source.id, overlap: anchorToSourceOverlap });
     pairs.push({
       label: 'paraphrase-hard-positive',
       a: cand.anchor.id,
@@ -364,7 +400,13 @@ export function runStrata(profileId, options = {}) {
       paraphraseHardPositive: positivesOverlap.sourceToParaphrase.length,
       paraphraseHardNegative: negativesOverlap.aToB.length,
       droppedIdentityCollisions: droppedIdentityCollisions.count,
+      droppedPlaceholderEcho: droppedPlaceholderEcho.count,
     },
+    positivesAnchorToSource: {
+      mean: mean(anchorToSource.values),
+      perPair: anchorToSource.perPair,
+    },
+    negativesCaveat: 'near-topic negatives: talking-point difference is teacher-claimed, not mechanically verified',
     usage: {
       calls: usage.calls || 0,
       promptTokens: usage.promptTokens || 0,

@@ -50,6 +50,12 @@ const ANCHOR = {
   identities: [{ key: 'emp-marisol', surface: 'Marisol Reyes', class: 'person' }],
 };
 
+function expectedParaphraseDepartment() {
+  const departments = ORG_PROFILES.find((p) => p.id === PROFILE).departments;
+  const eligible = departments.filter((d) => d !== SOURCE.department && d !== ANCHOR.department);
+  return eligible[pairSeed(SOURCE.id) % eligible.length];
+}
+
 function fixtureCorpus() {
   return { docs: [SOURCE, ANCHOR], links: [{ a: SOURCE.id, b: ANCHOR.id, type: 'thread' }] };
 }
@@ -136,8 +142,10 @@ test('W-STRATA 1: the paraphrase prompt carries masked identity placeholders and
     assert.ok(prompt.includes('[PERSON_1]'), 'the masked source reaches the prompt as a bracketed role token');
     assert.ok(!prompt.includes('Astrid Lindqvist'), 'the source identity surface never reaches the teacher');
     assert.ok(
-      prompt.includes(`written from the perspective of ${ANCHOR.department} department (a different department than the source's)`),
-      'the other-department instruction names the anchor department'
+      prompt.includes(
+        `written from the perspective of ${JSON.stringify(expectedParaphraseDepartment())} department (a different department than the source's)`
+      ),
+      'the other-department instruction names a third department, not the anchor department'
     );
     assert.ok(prompt.includes(`theme is exactly ${JSON.stringify(SOURCE.theme)}`), 'the theme is pinned verbatim');
     assert.ok(prompt.includes(`naming cultures to fit: ${JSON.stringify(['Nordic', 'Filipino', 'German'])}`), 'the profile cultures are named');
@@ -238,6 +246,10 @@ test('W-STRATA 3: per-class counts and provenance land in the pairs and the rece
     assert.equal(receipt.counts.paraphraseHardPositive, 1, 'one linked pair in, one positive out');
     assert.equal(receipt.counts.paraphraseHardNegative, Math.min(2, NEGATIVES_CAP), 'the negatives pass always runs');
     assert.equal(receipt.counts.droppedIdentityCollisions, 0);
+    assert.equal(receipt.counts.droppedPlaceholderEcho, 0);
+    assert.equal(receipt.negativesCaveat, 'near-topic negatives: talking-point difference is teacher-claimed, not mechanically verified');
+    assert.equal(receipt.positivesAnchorToSource.mean, 1 / 18, 'the pre-paraphrase anchor-to-source baseline is recorded');
+    assert.deepEqual(receipt.positivesAnchorToSource.perPair, [{ sourceDocId: SOURCE.id, overlap: 1 / 18 }]);
     const positive = pairs.find((p) => p.label === 'paraphrase-hard-positive');
     assert.equal(positive.a, ANCHOR.id, 'the anchor side keeps the original coverage doc id');
     assert.equal(positive.b.id, `ph-${SOURCE.id}`, 'the paraphrase doc id is namespaced from the source');
@@ -305,6 +317,8 @@ test('W-STRATA 4: the lexical-overlap numbers match hand-computed values', () =>
     assert.equal(receipt.lexicalOverlap.negativesPerPair.length, 1);
     assert.equal(receipt.lexicalOverlap.negativesPerPair[0].overlap, 1 / 6);
     assert.equal(receipt.lexicalOverlap.negativesPerPair[0].aId, 'phn-0-1');
+    assert.equal(receipt.positivesAnchorToSource.mean, 0, 'the baseline pair shares no content words');
+    assert.deepEqual(receipt.positivesAnchorToSource.perPair, [{ sourceDocId: SOURCE.id, overlap: 0 }]);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -351,7 +365,7 @@ test('W-STRATA 5: fail-closed on a missing corpus; importing the module makes no
     assert.equal(candidates[0].source.id, SOURCE.id);
     assert.equal(candidates[0].anchor.id, ANCHOR.id);
     assert.equal(pairSeed(SOURCE.id), pairSeed(SOURCE.id), 'the pair seed is a pure function of the doc id');
-    assert.equal(typeof positivePrompt({ seed: 1, anchorDepartment: 'clinical', cultureLabels: '[]', theme: 'alpha', sourceText: 'x' }), 'string');
+    assert.equal(typeof positivePrompt({ seed: 1, paraphraseDepartment: 'nursing', cultureLabels: '[]', theme: 'alpha', sourceText: 'x' }), 'string');
     assert.equal(typeof negativePrompt({ seed: 1, theme: 'alpha', cultureLabels: '[]' }), 'string');
     assert.equal(
       remapIdentityCollisions({ text: 'ok', identities: [] }, [], PROFILE_CULTURE_NAMES, 0).text,
@@ -406,5 +420,42 @@ test('W-STRATA 6: the green-only licence gate rejects a wrong licence and a non-
     assert.equal(resolved.kind, 'api');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('W-STRATA 7: key collisions and placeholder echoes drop and are counted', () => {
+  const dir = tempDir();
+  try {
+    const corpusPath = writeTempCorpus(dir);
+    const keyCollision = runStrata(PROFILE, {
+      limit: 1,
+      teacher: stubTeacher([], {
+        paraphrase: {
+          text: 'fresh wording about the same matter with new names',
+          identities: [{ key: 'emp-astrid', surface: 'Different Name', class: 'person' }],
+        },
+      }),
+      corpusPath,
+      outDir: path.join(dir, 'key-collision'),
+    });
+    assert.equal(keyCollision.receipt.counts.paraphraseHardPositive, 0, 'a shared identity key is not emitted');
+    assert.equal(keyCollision.receipt.counts.droppedIdentityCollisions, 1, 'the key clash goes through the drop path');
+
+    const placeholderEcho = runStrata(PROFILE, {
+      limit: 1,
+      teacher: stubTeacher([], {
+        paraphrase: {
+          text: 'a fresh summary that echoes [PERSON_1] again',
+          identities: [{ key: 'ph-free-2', surface: 'Sanna Kettunen', class: 'person' }],
+        },
+      }),
+      corpusPath,
+      outDir: path.join(dir, 'placeholder-echo'),
+    });
+    assert.equal(placeholderEcho.receipt.counts.paraphraseHardPositive, 0, 'a placeholder echo is not emitted');
+    assert.equal(placeholderEcho.receipt.counts.droppedPlaceholderEcho, 1, 'the echo is counted');
+    assert.equal(placeholderEcho.receipt.counts.droppedIdentityCollisions, 0, 'the echo is not confused with an identity clash');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
