@@ -81,12 +81,13 @@ def _rows(ax, x, rows, step=19):
         else:
             label, fc, ec = row
             py = GIF_H - (y + step - 2)
-            ax.add_patch(FancyBboxPatch((x + 16, py), CARD_W - 32, step - 3,
+            ph = step - 6  # 6 px gutter so the rough 2 px strokes never fuse pills
+            ax.add_patch(FancyBboxPatch((x + 16, py), CARD_W - 32, ph,
                                         boxstyle="round,pad=0,rounding_size=6",
                                         facecolor=fc, edgecolor="none", zorder=2.5))
-            k7._stroke(ax, k7._rrect_pts(x + 16, py, CARD_W - 32, step - 3, 6),
+            k7._stroke(ax, k7._rrect_pts(x + 16, py, CARD_W - 32, ph, 6),
                        lw=1.4, color=ec or INK_G, close=True)
-            _txt(ax, x + CARD_W / 2, py + (step - 3) / 2, label, 8.8, bold=True)
+            _txt(ax, x + CARD_W / 2, py + ph / 2 + 1, label, 8.8, bold=True)
         y += step
 
 
@@ -140,15 +141,15 @@ def draw(seed, dash_off, frame=0):
                       "one salted vault · one graph",
                       "0 B network egress"])
 
-    # 3. Ingest, then the four moats as pills inside one stage
+    # 3. Ingest, then the five moats as pills inside one stage
     _card(ax, XS[2], _icon_shield, "Ingest + moats")
     _rows(ax, XS[2], [
-        "PDF · Office · AV · text",
         ("P1 · redact · LTT", FILL, None),
         ("P2 · SR-MP · HC-CRC", YELLOW, None),
         ("P3 · IB-PT-LM · LoRA", GREEN, None),
         ("P4 · graph · erase", SIDE, None),
-    ])
+        ("P5 · Weft · theme", FILL, None),
+    ], step=19)
 
     # 4. Every output
     _card(ax, XS[3], _icon_plates, "Every output")
@@ -157,7 +158,7 @@ def draw(seed, dash_off, frame=0):
                       "Doc-QA · 6 SFT exporters",
                       "shadowAudit · Merkle receipt",
                       "certificates · timeline",
-                      "themeLinks (post-T12)"], step=16)
+                      "themeLinks · Weft (P5)"], step=16)
 
     # 5. Into the model, three lanes
     _card(ax, XS[4], _icon_gradcap, "Into the model")

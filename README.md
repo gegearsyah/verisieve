@@ -11,9 +11,9 @@
 - **Works out of the box (zero-import WASM + pure JS/Node, no external binaries or model weights):** Native PDF (`/ToUnicode` CMap, `/ObjStm`, `TJ` kerning), `.docx`, `.pptx`, `.xlsx`, `.eml`, `.msg`, `.vtt`/`.srt`, `.har`, `.ipynb`, `.ics`, Slack JSON, `.zip`/`.tar.gz`, Stage 3A checksum-verified PII & 30+ secret scanning, Unicode anti-evasion, `SR-MP` 512-slot salted sketch ring, 128-bit Bloom+Soundex PPRL, Dual-CSR graph PPR & `blast_radius`, local SQL, VeRA/BitNet DL kernel, WAV PCM16 redaction, JPEG/PNG/MP4 metadata scrubbing, and LTT/`HC-CRC`/`E-LTT` conformal gatekeeping.
 - **Requires local host tools or pre-cached weights (fails closed when missing):** Node.js audio/video demuxing and transcription (`ffmpeg`, `whisper.cpp` / `faster-whisper`); Stage 3B local ONNX neural PII (`gliner-pii-edge`, `63.5 MB` INT8); scanned-page OCR (`cactus.wasm` local OCR weights or browser `/ocr/*` Tesseract WASM); browser speech transcription (`whisper-tiny` `40.8 MB` `q8` cached in CacheStorage); and local GPU LoRA fine-tuning (Python/PyTorch).
 
-**The premise.** A company's knowledge is scattered across drives, mailboxes, wikis, ticket queues, call recordings, and slide decks. Versieve takes all of it, perceives every format locally, resolves the people and organizations across documents into one entity graph, and emits corpora, retrieval indexes, and cache contexts built on that identity. The goal is a model that understands the whole company because the data under it was understood and connected before training started.
+**The premise.** A company's knowledge is scattered across drives, mailboxes, wikis, ticket queues, call recordings, and slide decks. Versieve takes all of it, perceives every format locally, resolves the people and organizations across documents into one entity graph, and emits corpora, retrieval indexes, and cache contexts built on that identity. The goal is a model that understands the whole company because the data under it was understood and connected before training started. Knowledge is the unit, not the person: documents from different sources that state the same talking point link as one theme (paper 5), while identity stays reserved for the erasure axis.
 
-**End to end.** Twelve file types enter one `perceiveMulti()` call, each format runs its own parser, and the four moats all draw on the same resolved estate. The call returns the full output set, and those outputs plug into a model three ways: as LoRA training data (`sftJsonl`, `ptlmSftJsonl`), as Graph-PPR retrieval over the dual-CSR graph, and as CAG key-value cache prefill (`buildCagDossier`). `eraseEntity` regenerates the corpus and loops back with a byte-verified diff.
+**End to end.** Twelve file types enter one `perceiveMulti()` call, each format runs its own parser, and the five moats all draw on the same resolved estate. The call returns the full output set, and those outputs plug into a model three ways: as LoRA training data (`sftJsonl`, `ptlmSftJsonl`), as Graph-PPR retrieval over the dual-CSR graph, and as CAG key-value cache prefill (`buildCagDossier`). `eraseEntity` regenerates the corpus and loops back with a byte-verified diff.
 
 ![Versieve end to end: documents in, one model out](docs/end-to-end-pipeline.gif)
 
@@ -146,10 +146,11 @@ From a clone, use `node bin/versieve.mjs` with the same arguments. `audit-wasm` 
 
 ## 🆕 What Is New: Training Data That Knows What It Describes
 
-Document-to-training-data pipelines chunk by position and the chunk inherits meaning from where it sits. Versieve replaces that substrate with a resolved entity graph, and four properties follow that positional chunking does not have:
+Document-to-training-data pipelines chunk by position and the chunk inherits meaning from where it sits. Versieve replaces that substrate with a resolved entity graph, and five properties follow that positional chunking does not have:
 
 1. **One graph, every consumer.** The per-block, composed, and identity-pair training corpora, Graph-PPR retrieval (RAG), and CAG key-value cache prefill all traverse the same resolved entity graph: identity is resolved once, and every consumer inherits it. By contrast, `GraphGen` synthesizes new QA pairs from an extracted graph, `CuratorKIT` tracks append-only provenance chains without entity erasure, IBM `Docling` and `Unstructured` parse formats without an entity-indexed training graph, and in-context pretraining reorders documents by retrieval similarity; Versieve grounds the actual source bytes of multiple heterogeneous formats in one resolved identity graph with per-sample provenance.
-2. **Erasure as a byte-verified property of the data.** `eraseEntity` regenerates the corpus minus one entity, and the diff receipt fails loudly unless the byte-diff is exactly that entity's spans. Prior machine unlearning spans sharded retraining (`SISA`), approximate parameter updates (`TOFU`), and zk-SNARK / hash-chain cryptographic verifiable unlearning (Eisenhofer et al., 2022; Maheri et al., 2025), while ICML 2025 evidence shows parameter-level unlearning is reversible (Xu et al., 2025). Versieve targets lightweight deterministic corpus-side exact regeneration with byte-diff receipts, paired with a sealed adapter retrain recipe.
+2. **Erasure as a byte-verified property of the data.** `eraseEntity` regenerates the corpus minus one entity, and the diff receipt fails loudly unless the byte-diff is exactly that entity's spans. Prior machine unlearning spans sharded retraining (`SISA`), approximate parameter updates (`TOFU`), and zk-SNARK / hash-chain cryptographic verifiable unlearning (Eisenhofer et al., 2022; Maheri et al., 2025), while ICML 2025 evidence shows parameter-level unlearning is reversible (Xu et al., 2025). The 2026 line continues the same direction model-side: zkUnlearner and the zk-SNARK verification line (arXiv:2509.07290, arXiv:2506.20037), auditability as a fourth unlearning axis (arXiv:2611.05866), and ShadowBench's finding that leading algorithms achieve only superficial lexical erasure (arXiv:2611.15925), while agents recover unlearned facts at inference time through retrieval (arXiv:2608.21544). Every verified adjacent work operates on model parameters or prediction-shift signals; none does corpus-level byte-diff regeneration. Versieve targets lightweight deterministic corpus-side exact regeneration with byte-diff receipts, paired with a sealed adapter retrain recipe.
+5. **Knowledge links by theme, not by source or person.** The Weft specialist (paper 5) scores whether two documents from different sources state the same talking point, and an LTT-calibrated abstain rule answers only what calibration supports, routing the rest to review. By contrast, the cross-document coreference family (WEC, uCDCR, CD2CR) links mentions of the same event inside one corpus and carries no certified abstain path.
 3. **Binary-level zero egress for core kernels, receipted per run.** Five standalone `#![no_std]` Rust→WASM kernels (`388,797 B` combined) pass load-time `imports.length === 0` checks, trap-armed network surfaces, and a `0 B` egress receipt for every build; optional host binaries (`ffmpeg`, `whisper`) and offline-cached neural weights (`gliner-pii-edge`, OCR) are explicitly separated and fail closed when absent.
 4. **Per-sample conformal certificates with transparent policy mapping.** Learn-Then-Test, `HC-CRC`, and `E-LTT` gatekeeping bound release risk relative to the scanner-derived labels (detector-closed and stated as such), mapping verdicts cleanly onto standard policy actions:
 
@@ -182,7 +183,7 @@ A DIY local pipeline (separate PDF/Office parsers + Presidio/GLiNER + `detect-se
 
 Forensics land on the same numbers measured against the competitor tools (`results/competitor-benchmarks.json`): `27/27` Unmasker specimen categories covered, `7/7` MAT2 formats with `0` residual metadata bytes, and on the screenleak specimen suite `91.67%` text zero-leak (`11/12` PII-bearing specimens) and `87.50%` image zero-leak at `IoU >= 0.30` (`7/8` frames). The single missed image frame holds a non-textual face/avatar region, which the built-in blind OCR text channel does not detect without a plugged visual detector.
 
-Every number in the four papers in `paper/` is verified through the CI check chain (`node scripts/check-paper-numbers.mjs`, `0` failures); the round-1 panel review and revision response are in `docs/review/paper4-round1/`.
+Every number in papers 1 to 4 is verified through the CI check chain (`node scripts/check-paper-numbers.mjs`, `0` failures); every number in paper 5 traces through the typed claim audit (`results/weft-claim-audit.json`, `40` traced claims, `40` passes, content-addressed runIds). The round-1 panel review and revision response are in `docs/review/paper4-round1/`.
 
 ---
 
@@ -196,6 +197,7 @@ Each paper defends one mechanism. The comparison below is the one a buyer would 
 | **2 · Multimodal** | `SR-MP` cross-paragraph ring inside the zero-import media kernel, plus `HC-CRC` | Isolated per-paragraph GLiNER-Edge; naive paragraph-i.i.d. LTT | Person recall `85.39% → 88.41%` at `τ=0.50`; high-precision Person F1 `27.88% → 40.78%` at `τ=0.70`; audio attacker leakage `20.62% → 8.25%`; gate overshoot `10.10% → 8.19%` at `α=10%` | Presidio with the same ECHR regex still wins overall F1 (`79.26%` vs `45.91%`); on audio, plain Jaro-Winkler on the same anchors reaches `7.22%` leakage, so the ring's measured advantage is anchor privacy, not matching accuracy |
 | **3 · Training** | `PT-LM` for redacted fine-tuning, and Graph-PPR retrieval as the stronger default | Standard SFT on redacted text; or closed-book LoRA with no retrieval | Tag hallucination `40%–85% → 0%`; false refusal `20%–47.5% → 0%`; seen-doc F1 `+0.194` / `+0.087` / `+0.117`; Graph-PPR beats every closed-book LoRA arm on held-out QA (`p=0.0005` on F1), at lower latency | The PT-LM effect is attributed to the masking-plus-surrogate bundle (masking-only ablation not yet run); canaries use scanner-detectable formats; `Qwen2.5-1.5B` `PT-LM` seen F1 (`0.190`) remains below untrained base (`0.202`). At this scale the moat is retrieval, not training |
 | **4 · Corpus** | Entity-indexed corpus with byte-verified erasure and graph routing | Positional chunking: no shared identity, no byte provenance, no exact removal | Graph-PPR `53.3%` exact (`83.3%` cross-document); `eraseEntity` regenerates the corpus with a byte-diff of exactly one entity's spans; a wrong merge amplifies by `14.32x` | Trained formats do not separate: composed `11.7%` vs per-block `10.0%` (McNemar `p=1.00`). BM25 answers `60.0%`, numerically above Graph-PPR. The `81.7%` routing figure is an upper bound given a correctly resolved identity |
+| **5 · Theme linking** | `Weft` pairwise specialist: pooled-cosine theme-linking score over a frozen MiniLM base, wrapped in an LTT-certified abstain rule | The same talking point stated in different sources never links; or an ungated score silently merges different points | Ruled path pairwise F1 `0.9989` vs `0.9973` for the size-matched static baseline on `identity_disjoint`; LTT certifies threshold `0.5000` at `16.1%` coverage; shipped int4 single-file ONNX `20,458,033 B` at holdout F1 `0.9572` | BM25 scores `1.0` on the same bucket (it measures lexical overlap too), so the paraphrase-hard stratum (issue #59) is the open measurement; the link head scores `0.3617` and is rescoped to the abstention layer; identity recovery stays above chance in the MLP probe family, so no removal claim is made |
 
 ### `SR-MP`, concretely
 
@@ -214,7 +216,7 @@ Three boundaries belong next to those numbers. At `τ=0.50` the ring trades `0.9
 
 ## 🗺️ Architecture, One GIF per Paper
 
-Each animation follows the path its paper measures, including the branches. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, colour-coded labels mark decisions (`YES`/`NO`, `OPT-IN`, `train`/`ask`/`erase`), and boxes below the main row are the side paths (OCR fallback, abstention, a refused answer that retries retrieval, the next container in a stream, the readable-identity seam, an erasure regeneration). The cards under each stage name the module or function that actually runs there. All four share the same hand-drawn register and run as a seamless dash-march loop.
+Each animation follows the path its paper measures, including the branches. Boxes are mechanisms, numbered badges are order, dashed arrows are data flow, colour-coded labels mark decisions (`YES`/`NO`, `OPT-IN`, `train`/`ask`/`erase`), and boxes below the main row are the side paths (OCR fallback, abstention, a refused answer that retries retrieval, the next container in a stream, the readable-identity seam, an erasure regeneration). The cards under each stage name the module or function that actually runs there. All five share the same hand-drawn register and run as a seamless dash-march loop.
 
 **Paper 1: what data should lose.** Source files become deterministic extraction, regex and lexicon redaction, an LTT gate that fails closed, and a clean training handoff.
 
@@ -231,6 +233,10 @@ Each animation follows the path its paper measures, including the branches. Boxe
 **Paper 4: how data should look.** Estate documents become vaulted values and a resolved entity graph, with readable identity only as an explicit opt-in branch. The deterministic corpus then feeds four consumers in three lanes, `train`, `ask`, and `erase`, and `eraseEntity` loops back into the corpus as a byte-verified regeneration.
 
 ![Paper 4 corpus architecture](docs/versieve-architecture.gif)
+
+**Paper 5: what knowledge should link.** Documents from mixed sources enter the pair compiler behind a green-only licence gate, the frozen-base specialist scores pooled-cosine theme linking, the LTT abstain path certifies a `0.5000` threshold and routes the rest to review, surviving links become theme nodes, and the H2 probe reads identity as a measured property on the shipped artifacts.
+
+![Paper 5 Weft theme-linking architecture](docs/architecture-weft-theme-linking.gif)
 
 ---
 
@@ -316,9 +322,32 @@ Paper 4 measured all three on a 115-document noisy estate with 60 questions, one
 
 ---
 
+## 🧹 The Amnesiac Corpus: Erasure as a Byte-Verified Property
+
+The erasure seam is `src/amnesiac-corpus.js` (spec: issue #25). `buildAmnesiacCorpus(inputs, view?)` builds a deterministic entity-indexed SFT corpus from the same inputs `perceiveMulti` accepts: the corpus is a pure function of `(inputs, view, engine version)`, so two builds with identical inputs are byte-identical, and the receipt pins the engine version hash and the SHA-256 of the exact emitted bytes. Every sample records its source byte-ranges and resolved entity IDs; every entity index entry carries its token, class, and the sample IDs where it occurs.
+
+```javascript
+import { buildAmnesiacCorpus, eraseEntity } from 'versieve';
+
+const corpus = await buildAmnesiacCorpus('./company-drive');
+console.log(corpus.receipt.corpusSha256);   // pins the exact emitted bytes
+console.log(corpus.entityIndex);            // [{ entityId, class, token, sampleIds }, ...]
+
+// GDPR Art. 17 for one entity: regenerate the corpus minus that entity.
+const person = corpus.entityIndex.find((e) => e.class === 'EMAIL');
+const after = eraseEntity(corpus, person.entityId);
+if (!after.diffReceipt.diffVerified) throw new Error('erasure receipt failed');
+```
+
+`eraseEntity(state, entityId)` returns a regenerated corpus in which only the samples referencing that entity change, and the diff receipt fails loudly unless the byte-diff is exactly that entity's spans: unchanged samples stay byte-identical, the entity's token occurrences are gone, and the receipt records the corpus SHA-256 before and after plus the removed span byte count. Erasure is deterministic, never mutates the original state, and rejects engine or theme-policy version drift instead of silently regenerating bytes. The default view is `vaulted` (every value behind a salted placeholder, gatekeeper certificates, and the PT-LM masked training recipe attached); `view.identity: 'readable'` is the explicit opt-in general mode with no protection machinery, and `view.composition: 'composed'` renders one sample per resolved entity from its cross-document evidence blocks (readable-only for now). A `view.sources` filter projects the same corpus deterministically.
+
+**The honest scope, in one paragraph.** Erasure here is a property of the data, not of trained weights: the proof is the byte-diff receipt plus the sealed LoRA retrain recipe (`AMNESIAC_TRAINING_RECIPE`, seed 42, PT-LM placeholder masking) shipped with every export, never a claim that a fine-tuned adapter has forgotten. Person entities are the proven target today; source anchors and company-private knowledge units as first-class erasure targets are the filed next step (issue #66), and the paraphrase-hard corpus stratum that will measure them is issue #59.
+
+---
+
 ## 📚 Research Papers (Included in `paper/`)
 
-All four MLSys-formatted benchmark papers, along with their LaTeX sources, BibTeX references, vector figure builders (`paper/figs/`), and raw JSON benchmark outputs (`results/`), are checked into this repository:
+All five MLSys-formatted benchmark papers, along with their LaTeX sources, BibTeX references, vector figure builders (`paper/figs/`), and raw JSON benchmark outputs (`results/`), are checked into this repository:
 
 1. **[Paper 1: What Training Data Should Lose: Local Extraction, Redaction, and Fail-Closed Gatekeeping](paper/versieve-extraction-redaction-benchmark.pdf)** ([`.tex`](paper/versieve-extraction-redaction-benchmark.tex))  
    *Evaluates native PDF CMap/kerning extraction, 2D overlapping tiling on 199 ICDAR-2019 FUNSD forms (`30,595` word boxes), deterministic PII disambiguation across `ai4privacy-200k` and `PubMedQA`, finite-sample LTT conformal calibration, and 7-trial interleaved runtime substrates (`C99` vs. `Node+WASM` vs. `Python+NumPy` vs. `PyTorch+DuckDB`).*
@@ -328,6 +357,8 @@ All four MLSys-formatted benchmark papers, along with their LaTeX sources, BibTe
    *Evaluates three fine-tuned models on an 8 GB RTX 4070 Laptop GPU (`Qwen2.5-0.5B-Instruct`, `Qwen2.5-1.5B-Instruct`, `LFM3-1.7B-Base` trained as matched Raw vs. Versieve-Safe assistant-only `T2-Chat` LoRA pairs) plus three quantized Ollama comparators (`lfm3:latest`, `llama3.2:3b`, `qwen2.5:7b`): Carlini `20×`-canary weight exposure, adversarial context extraction, blinded local `qwen2.5:7b` and cross-family `llama3.2:3b` judge grading, and the finding that zero-training Graph-PPR retrieval beats every closed-book LoRA arm at this scale.*
 4. **[Paper 4: How Training Data Should Look: From Stitched Chunks to Records That Know What They Describe](paper/versieve-graph-grounded-enterprise-corpus.pdf)** ([`.tex`](paper/versieve-graph-grounded-enterprise-corpus.tex))  
    *Describes the entity-indexed training corpus built by the zero-egress pipeline (every detected value vaulted behind a salted placeholder and resolved onto a stable entity identifier, with per-sample provenance and conformal certificates), a ten-arm head-to-head across trained formats, question-time Graph-PPR retrieval, and CAG cache prefill on a synthetic noisy estate, and exact corpus regeneration minus one entity with byte-diff erasure receipts. The trained formats do not separate; the measured wins are retrieval, provenance, and erasure.*
+5. **[Paper 5: Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path](paper/versieve-weft-theme-linking-benchmark.pdf)** ([`.tex`](paper/versieve-weft-theme-linking-benchmark.tex))  
+   *Evaluates the Weft theme-linking specialist: a frozen all-MiniLM-L6-v2 base with int8 heads trained on the v4 pair corpus (`48,000` train / `2,000` eval pairs, `6` voices), shipped as a single-file int4 ONNX artifact (`20,458,033 B`, holdout F1 `0.9572`) with a sha-256-pinned manifest, scored on a synthetic-theme estate (`240` documents, `24` themes, `28,680` pairs) where the ruled pooled-cosine path reaches pairwise F1 `0.9989` against `0.9973` for the size-matched static baseline on the `identity_disjoint` bucket, a Learn-Then-Test abstain rule certifying threshold `0.5000` at `16.1%` coverage, a post-hoc identity probe battery reported plainly (MLP recovery above chance, no removal claim), and a typed, content-addressed claim audit tracing `40` claims to committed ledgers.*
 
 ---
 
@@ -398,6 +429,10 @@ A CPA attack (`protocol of arXiv:2609.21340`) re-identifies `14.0%` of `HC-CRC`-
 
 Uncapped 3-seed document-QA SFT reaches `30.56%` exact match (`+11.11 pp` over its composed-corpus arm, `p=0.0005`), still `-3.70 pp` short of the zero-training `BM25` control (`34.26%`, `p=0.175`, not significant at this sample size). The exploratory `IB-PT-LM` counterfactual surrogate drops suffix-inversion canary exposure from `5.27` to `1.15` bits (`0.0/12` rank-1) and an 8-way hidden-state identity probe from `37.50%` to `19.79%`, with tag echo and seen-doc F1 unchanged, at `~2.05x` training wall-clock and zero inference overhead.
 
+### 8. Paper 5: Weft Theme Linking with a Certified Abstain Path (`results/weft-*.json`)
+
+On the `identity_disjoint` bucket of the synthetic-theme estate (`240` documents, `24` themes, `28,680` pairs), the ruled pooled-cosine path reaches pairwise F1 `0.9989` against `0.9973` for the size-matched static baseline, while BM25 scores `1.0`: the bucket measures lexical overlap as well as theme adjacency, and the paraphrase-hard stratum (issue #59) is the open follow-up. The LTT abstain rule certifies threshold `0.5000` at `alpha=0.05` with `16.1%` coverage; the independent test half reads `11` false merges in `161` answered pairs. The H2 probe reports identity recovery above chance in the MLP family (`0.45` on the shipped int4 artifact against a `0.10` chance baseline), a measured property with a fixed probe family, never a removal claim. Every number traces through the claim audit (`results/weft-claim-audit.json`, `40` passes). Full tables in [Paper 5](paper/versieve-weft-theme-linking-benchmark.pdf).
+
 ---
 
 ## 📁 Repository Structure
@@ -433,7 +468,7 @@ versieve/
 │   └── mcp-server.js                 # 18-tool JSON-RPC Model Context Protocol server
 ├── scripts/                          # Reproducible benchmark runners (Paper 1, Paper 2, Paper 3, GC-CRC)
 ├── results/                          # Deterministic JSON benchmark artifacts & SHA-256 receipts
-├── paper/                            # Four MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
+├── paper/                            # Five MLSys-format LaTeX papers, .bib files, fig builders, and PDFs
 └── test/                             # 248 portable CI tests across 42 files + scale & multimodal regression suites
 ```
 
@@ -464,6 +499,7 @@ python paper/figs/build_track_d_results_fig.py
 # 6. Rebuild the README architecture animations
 python paper/figs/build_k7_architecture.py
 python paper/figs/build_readme_architectures.py
+python paper/figs/build_weft_architecture.py
 python paper/figs/build_end_to_end.py
 ```
 
