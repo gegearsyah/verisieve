@@ -49,10 +49,10 @@ The compiler runs per profile over the coverage corpora with the v5 flags (exclu
 | Stage | Calls | Tokens (estimate) | Notes |
 |---|---|---|---|
 | Smoke, 1 profile, small limit | about 12 | about 10K | prompts changed, so a paid smoke comes before any scaled pass |
-| Extension scaled, 3 profiles | about 546 | about 400K | 180 calls per profile at limit 60 per class, 740 tokens per call observed on the strata passes |
+| Extension scaled, 3 profiles | 636 | about 470K | 212 calls per profile at limit 60 per class (60 + 60 + 60 + 30 + 2, audit-corrected arithmetic), 740 tokens per call observed on the strata passes |
 | Held-out corpus | about 340 | about 360K | 1,200 docs at the observed 301 tokens per doc |
 | Held-out strata | 200 | about 150K | --limit 100 |
-| Total | about 1,100 | about 0.9M | roughly $7 to $9 at the observed mistral-medium rates |
+| Total | about 1,190 | about 0.99M | roughly $8 to $10 at the observed mistral-medium rates, roughly 2 percent under the 1M token ceiling this design set itself |
 
 Every stage is separately invokable; a failure at any stage stops only that stage. Worst case per call remains 4 teach attempts x 6 completion attempts = 24 calls, same bound as the strata driver.
 
@@ -71,3 +71,7 @@ Gate 2 (held-out shape) gets its measurement instrument (the university-campus p
 - The knowledge-density filter is a lexical heuristic, not semantics; its measured effect is recorded, whatever it turns out to be.
 - The erasure receipt proves the artifact-level property inside the Weft corpus; it makes no claim about the full amnesiac pipeline.
 - The non-knowledge class carries a visible length cue; per-class eval and word-count receipts keep it measurable rather than hidden.
+
+## 7. Audit outcome
+
+The Opus pre-spend audit (2026-11-29-w5-v5-estate-extension-prespend-audit.md) returned PASS-WITH-NOTES with zero required fixes; its actionable items (held-out strata lookup, the erasure-proof write order, the banned literal in two comments, the spend table arithmetic) landed in commit 0a4d988 before any spend. The scaled pass is approved to spend.
