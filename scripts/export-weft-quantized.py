@@ -310,6 +310,9 @@ def conformal_ltt(rows: list[dict], scores: list[float], alphas: list[float],
     cut = max(1, min(len(rows) - 1, int(round(len(rows) * calib_frac))))
     cal = [(rows[i], scores[i]) for i in order[:cut]]
     test = [(rows[i], scores[i]) for i in order[cut:]]
+    # the scan pairs each threshold with the false-merge count of the pairs
+    # scoring at or above it, so cal must be walked in descending-score order
+    cal.sort(key=lambda pair: -pair[1])
     n_cal = len(cal)
     out = []
     for alpha in alphas:
