@@ -1,0 +1,186 @@
+{
+  "kind": "weft-h2-identity-probe",
+  "schemaVersion": 1,
+  "appendOnly": true,
+  "entries": [
+    {
+      "kind": "weft-h2-identity-probe",
+      "ticket": "H2",
+      "schemaVersion": 1,
+      "createdAt": "2026-11-28T08:11:29.678439+00:00",
+      "seed": 20261127,
+      "task": {
+        "formulation": "given a document's pooled embedding, predict the document's primary identity key; multi-class top-1 accuracy",
+        "probeFamily": "mlp-relu-1x64|rbf-svm-c10-scale",
+        "probeExposure": "externally trained on the frozen representation, evaluated on held-out documents",
+        "note": "post-hoc nonlinear attacker, not the in-training adversary"
+      },
+      "corpus": {
+        "kind": "synthetic-theme-estate",
+        "version": "weft-synthetic-v1",
+        "seed": 20261127,
+        "estateSha256": "f56da1134b86b6b64c0c307e7a8354fa5981545a473f1e424ed4de06625d54c9",
+        "themes": 24,
+        "identityKeys": 16,
+        "source": "scripts/run-weft-baseline-shootout.py build_synthetic_estate",
+        "identitySource": "the estate's author person entity; the live v4 corpus is committed as pairs only and carries no per-document labels",
+        "rows": 240
+      },
+      "split": {
+        "total": 240,
+        "train": 180,
+        "eval": 60,
+        "identityKeys": 16,
+        "evalFraction": 0.25,
+        "heldOut": "by document, stratified by identity key",
+        "seed": 20261127
+      },
+      "chance": {
+        "majorityIdentity": "Avery Stone",
+        "evalFrequency": 0.1,
+        "evalIdentityCounts": {
+          "Avery Stone": 6,
+          "Blake Moreno": 6,
+          "Cameron Reyes": 6,
+          "Dakota Fisher": 6,
+          "Jordan Pike": 3,
+          "Kendall Frost": 3,
+          "Logan Mercer": 3,
+          "Marlow Vance": 3,
+          "Noor Haddad": 3,
+          "Oakley Brandt": 3,
+          "Tanner Lowe": 3,
+          "Uma Castell": 3,
+          "Vale Navarro": 3,
+          "Wren Okafor": 3,
+          "Xavi Duarte": 3,
+          "Yara Lin": 3
+        },
+        "note": "top-1 accuracy of always guessing the majority identity of the eval split; the probe must clear it to show recovery"
+      },
+      "probeFamilies": [
+        "mlp-relu-1x64",
+        "rbf-svm-c10-scale"
+      ],
+      "conditions": {
+        "artifact-int4-matmulnbits": {
+          "probes": {
+            "mlp-relu-1x64": {
+              "top1Accuracy": 0.45,
+              "correct": 27,
+              "evalRows": 60,
+              "hiddenUnits": 64,
+              "epochs": 400,
+              "seed": 20261127,
+              "finalTrainLoss": 0.022164199501276016,
+              "optimizer": "adamW-lr1e-3",
+              "library": "torch-2.10.0+cpu",
+              "accuracyVsChance": 0.35,
+              "belowChance": false
+            },
+            "rbf-svm-c10-scale": {
+              "top1Accuracy": 0.11666666666666667,
+              "correct": 7,
+              "evalRows": 60,
+              "library": "scikit-learn-1.8.0",
+              "accuracyVsChance": 0.0166666667,
+              "belowChance": false
+            }
+          },
+          "id": "weft-int4",
+          "level": "int4-matmulnbits",
+          "path": "models/weft-specialist-quantized/weft-int4.onnx",
+          "sha256": "4690c5d459974b147afefe90531de14ebc0a705865c134259a14eb0a0eda2372",
+          "pooledTensors": [
+            "/ReduceSum_output_0",
+            "/ReduceSum_1_output_0"
+          ],
+          "surgeryAddedOutputs": 2,
+          "initializerDigestUnchanged": true,
+          "runtime": "onnxruntime CPUExecutionProvider",
+          "note": "the internal pooled tensor read out on a temp copy; the shipped artifact on disk is never modified"
+        },
+        "artifact-int8-dynamic": {
+          "probes": {
+            "mlp-relu-1x64": {
+              "top1Accuracy": 0.35,
+              "correct": 21,
+              "evalRows": 60,
+              "hiddenUnits": 64,
+              "epochs": 400,
+              "seed": 20261127,
+              "finalTrainLoss": 0.025914117693901062,
+              "optimizer": "adamW-lr1e-3",
+              "library": "torch-2.10.0+cpu",
+              "accuracyVsChance": 0.25,
+              "belowChance": false
+            },
+            "rbf-svm-c10-scale": {
+              "top1Accuracy": 0.05,
+              "correct": 3,
+              "evalRows": 60,
+              "library": "scikit-learn-1.8.0",
+              "accuracyVsChance": -0.05,
+              "belowChance": true
+            }
+          },
+          "id": "weft-int8-reference",
+          "level": "int8-dynamic",
+          "path": "models/weft-specialist-quantized/weft-int8-reference.onnx",
+          "sha256": "c8ebc947d4e10154053d77a4360d5e28fb725450b9d6a10dc1a6fa53ff36e5af",
+          "pooledTensors": [
+            "/ReduceSum_output_0",
+            "/ReduceSum_1_output_0"
+          ],
+          "surgeryAddedOutputs": 2,
+          "initializerDigestUnchanged": true,
+          "runtime": "onnxruntime CPUExecutionProvider",
+          "note": "the internal pooled tensor read out on a temp copy; the shipped artifact on disk is never modified"
+        },
+        "control-frozen-base": {
+          "probes": {
+            "mlp-relu-1x64": {
+              "top1Accuracy": 0.4166666666666667,
+              "correct": 25,
+              "evalRows": 60,
+              "hiddenUnits": 64,
+              "epochs": 400,
+              "seed": 20261127,
+              "finalTrainLoss": 0.023870887234807014,
+              "optimizer": "adamW-lr1e-3",
+              "library": "torch-2.10.0+cpu",
+              "accuracyVsChance": 0.3166666667,
+              "belowChance": false
+            },
+            "rbf-svm-c10-scale": {
+              "top1Accuracy": 0.1,
+              "correct": 6,
+              "evalRows": 60,
+              "library": "scikit-learn-1.8.0",
+              "accuracyVsChance": 0.0,
+              "belowChance": false
+            }
+          },
+          "embedding": "all-MiniLM-L6-v2 masked-mean pooled (fp32)",
+          "role": "the frozen base encoder control",
+          "versions": {
+            "torch": "2.10.0+cpu",
+            "transformers": "4.57.6",
+            "numpy": "2.4.3"
+          }
+        }
+      },
+      "environment": {
+        "python": "3.12.4",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "numpy": "2.4.3",
+        "onnxruntime": "1.26.0",
+        "modelCardTouched": false,
+        "claimAuditTouched": false
+      },
+      "honestyRule": "recovery above chance is a finding reported plainly; the wording identity-blind means measured, not guaranteed absent",
+      "verdict": "reported in the research note",
+      "runId": "61d4becf1442d3ad9d2621e945031e86c629622554b95d104c9911a454010706"
+    }
+  ]
+}
