@@ -531,3 +531,116 @@ test('Amnesiac 12: composed erasure — target retraction, exact co-mention span
   const hubLine = JSON.parse(linesOf(hubA.jsonl)[0]);
   assert.ok(!JSON.stringify(hubLine).includes('truncatedBlocks'), 'truncatedBlocks must stay internal bookkeeping');
 });
+
+// ---------------------------------------------------------------------------
+// Knowledge-unit erasure targets (spec: gegearsyah/versieve#66): source anchors as
+// erasable targets with a full-footprint pure-deletion receipt; knowledge-unit ids
+// and unknown/malformed targets fail closed with typed errors. Design note:
+// docs/research-notes/2026-11-28-knowledge-unit-erasure-receipt-design.md
+// ---------------------------------------------------------------------------
+
+test('Amnesiac 13: source-anchor erasure, pure deletion of one source with a full-footprint receipt', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS);
+  const anchor = 'source:contracts/msa.txt';
+  const before = corpus.jsonl;
+  const removedIds = new Set(corpus.samples.filter((s) => s.source === 'contracts/msa.txt').map((s) => s.id));
+  assert.ok(removedIds.size >= 1, 'the anchor must resolve to at least one sample');
+
+  const after = eraseEntity(corpus, anchor);
+  assert.equal(after.diffReceipt.erasedTarget, anchor);
+  assert.equal(after.diffReceipt.erasedTargetKind, 'source');
+  assert.equal(after.diffReceipt.erasedSource, 'contracts/msa.txt');
+  assert.deepEqual(after.diffReceipt.removedSampleIds, [...removedIds].sort(), 'the receipt must state exactly the erased source samples');
+  assert.equal(after.diffReceipt.removedSampleCount, removedIds.size);
+  assert.equal(after.diffReceipt.changedSampleIds.length, 0, 'source erasure deletes samples, it regenerates none');
+  assert.equal(after.diffReceipt.removedSampleLineBytes, before.length - after.jsonl.length, 'removed JSONL bytes must equal the exact deleted line bytes');
+
+  // pure deletion: every surviving line is byte-identical and present in the original, counts add up
+  const beforeLines = linesOf(before);
+  const afterLines = linesOf(after.jsonl);
+  assert.equal(afterLines.length, beforeLines.length - removedIds.size);
+  assert.ok(afterLines.every((l) => beforeLines.includes(l)), 'the erasure must emit only byte-identical surviving lines');
+  assert.equal(after.diffReceipt.unchangedSampleCount, afterLines.length);
+
+  // receipt consistency: exactly the entities mentioned by removed samples are receipted as changed,
+  // removedEntityIds leave the index, and changed survivors keep only their remaining sampleIds
+  const expectedTouched = [...new Set(corpus.samples.filter((s) => removedIds.has(s.id)).flatMap((s) => s.entities))].sort();
+  const receiptedTouched = [...new Set([...after.diffReceipt.removedEntityIds, ...after.diffReceipt.changedEntityIds])].sort();
+  assert.deepEqual(receiptedTouched, expectedTouched, 'the receipt footprint must cover exactly the entities the erased source mentioned');
+  for (const id of after.diffReceipt.removedEntityIds) {
+    assert.ok(!after.entityIndex.some((e) => e.entityId === id), 'removed entities must leave the index');
+  }
+  for (const e of after.entityIndex) {
+    assert.ok(e.sampleIds.every((id) => !removedIds.has(id)), `surviving entity ${e.entityId} must not keep sampleIds from the erased source`);
+  }
+
+  // determinism, and the original state is preserved
+  const again = eraseEntity(corpus, anchor);
+  assert.equal(again.jsonl, after.jsonl, 'source erasure must be deterministic');
+  assert.equal(corpus.jsonl, before, 'source erasure must not mutate the original corpus state');
+});
+
+test('Amnesiac 14: source-anchor erasure removes entities anchored only in the erased source; receipts list them', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS);
+  const runbookIds = new Set(corpus.samples.filter((s) => s.source === 'ops/runbook.txt').map((s) => s.id));
+  const runbookOnly = corpus.entityIndex.find((e) => e.sampleIds.length > 0 && e.sampleIds.every((id) => runbookIds.has(id)));
+  assert.ok(runbookOnly, 'the runbook source must anchor at least one entity no other source mentions');
+
+  const after = eraseEntity(corpus, 'source:ops/runbook.txt');
+  assert.deepEqual(after.diffReceipt.removedEntityIds, [runbookOnly.entityId], 'entities anchored only in the erased source are receipted as removed');
+  assert.ok(!after.entityIndex.some((e) => e.entityId === runbookOnly.entityId), 'the removed entity is gone from the regenerated index');
+  assert.equal(after.receipt.entityCount, corpus.entityIndex.length - 1);
+  assert.equal(after.receipt.corpusSha256, sha256Hex(after.jsonl), 'the regenerated receipt must pin the exact emitted bytes');
+  assert.equal(after.diffReceipt.corpusSha256Before, sha256Hex(corpus.jsonl));
+  assert.equal(after.diffReceipt.diffVerified, true);
+});
+
+test('Amnesiac 15: erasure targets fail closed with typed errors for unknown, malformed, and unresolvable targets', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS);
+
+  assert.throws(
+    () => eraseEntity(corpus, 'source:nowhere.txt'),
+    (e) => e.code === 'AMNESIAC_ERASE_TARGET_UNKNOWN' && /unknown source anchor/.test(e.message),
+    'an unknown source anchor must fail closed with its typed error'
+  );
+  assert.throws(
+    () => eraseEntity(corpus, 'unit:recipe:sauce-v1'),
+    (e) => e.code === 'AMNESIAC_ERASE_TARGET_UNRESOLVED' && /#59/.test(e.message),
+    'a knowledge-unit id must fail closed naming the missing corpus representation'
+  );
+  assert.throws(() => eraseEntity(corpus, ''), (e) => e.code === 'AMNESIAC_ERASE_TARGET_MALFORMED');
+  assert.throws(() => eraseEntity(corpus, '   '), (e) => e.code === 'AMNESIAC_ERASE_TARGET_MALFORMED');
+  assert.throws(() => eraseEntity(corpus, 'source:'), (e) => e.code === 'AMNESIAC_ERASE_TARGET_MALFORMED');
+  assert.throws(() => eraseEntity(corpus, 42), (e) => e.code === 'AMNESIAC_ERASE_TARGET_MALFORMED');
+
+  // the existing entity-path error surface is unchanged
+  assert.throws(() => eraseEntity(corpus, 'ent:person:doesnotexist00'), /unknown entityId/);
+
+  // composed corpora fail closed on source erasure instead of guessing at retraction semantics
+  const composed = await buildAmnesiacCorpus(INPUTS, { identity: 'readable', composition: 'composed' });
+  assert.throws(
+    () => eraseEntity(composed, 'source:contracts/msa.txt'),
+    (e) => e.code === 'AMNESIAC_ERASE_SOURCE_COMPOSED_UNSUPPORTED'
+  );
+
+  // and a malformed target on a composed corpus stays malformed, never a composed-path erasure
+  assert.throws(() => eraseEntity(composed, ''), (e) => e.code === 'AMNESIAC_ERASE_TARGET_MALFORMED');
+});
+
+test('Amnesiac 16: source erasure composes with entity erasure; readable per-block source erasure keeps its mode', async () => {
+  const corpus = await buildAmnesiacCorpus(INPUTS);
+  const auditErased = eraseEntity(corpus, 'source:notes/audit.txt');
+  const person = auditErased.entityIndex.find((e) => e.class === 'PERSON');
+  assert.ok(person, 'the PERSON entity must survive the audit erasure (still anchored in the contracts source)');
+
+  const thenEntity = eraseEntity(auditErased, person.entityId);
+  assert.equal(thenEntity.diffReceipt.diffVerified, true, 'entity erasure must still verify against a source-erased corpus');
+  assert.ok(!thenEntity.entityIndex.some((e) => e.entityId === person.entityId), 'the second erasure removes the entity cleanly');
+
+  const readable = await buildAmnesiacCorpus(INPUTS, READABLE_VIEW);
+  const erased = eraseEntity(readable, 'source:ops/handbook.txt');
+  assert.equal(erased.receipt.identity, 'readable', 'readable source erasure must stay in the readable mode of its corpus');
+  assert.equal(erased.diffReceipt.erasedTarget, 'source:ops/handbook.txt');
+  assert.equal(erased.diffReceipt.diffVerified, true);
+  assert.equal(readable.jsonl.split('\n').filter(Boolean).length, erased.diffReceipt.unchangedSampleCount + erased.diffReceipt.removedSampleCount);
+});

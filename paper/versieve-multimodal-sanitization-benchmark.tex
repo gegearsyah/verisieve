@@ -446,7 +446,7 @@ Versieve-MM demonstrates a verifiable zero-import WebAssembly systems architectu
 \section{Zero-Import WASM Audit and Verification Surface}
 \label{app:audit}
 
-All five Versieve WebAssembly modules enforce \texttt{imports.length === 0} at load time (Table~\ref{tab:wasm-audit}), and the local MCP server exposes $18$ tools, verified by the local test suite (Node.js CI $248$ tests across $42$ files, Rust unit $6/6$, Python $4/4$, RTIO Next.js build + browser unit tests $9/9$).
+All five Versieve WebAssembly modules enforce \texttt{imports.length === 0} at load time (Table~\ref{tab:wasm-audit}), and the local MCP server exposes $18$ tools, verified by the local test suite (Node.js CI $252$ tests across $42$ files, Rust unit $6/6$, Python $4/4$, RTIO Next.js build + browser unit tests $9/9$).
 
 \begin{table}[h]
 \caption{Load-time zero-import audit across all five Versieve WebAssembly modules.}
