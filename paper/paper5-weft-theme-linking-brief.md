@@ -8,7 +8,7 @@ Weft's purpose was never identity-based linking; the product point is theme link
 
 ## Title direction (house rules: the title hits the training-data question; privacy words never lead)
 
-A small quantized specialist for linking same-topic documents across authors, and what that buys for enterprise corpus and training-data construction. Theme linking leads; the identity property is a measured subsection.
+Decided 2026-11-28 after the founder's third ruling (knowledge is the unit; company is the motivating domain, not the boundary; "across authors" person-axis wording retires): the title is "Weft: What Knowledge Should Link Across Sources, with a Certified Abstain Path." Weft leads, knowledge leads, sources replace authors, and the enterprise framing moves to the intro as the motivating domain. Theme linking leads; the identity property is a measured subsection.
 
 ## Claim set (each traced in `release/weft-specialist-v1/`; claim audit runId a329df3692e9, 40 of 40 verified)
 
