@@ -109,3 +109,44 @@ The 240-word envelope; unseen-style routing unmeasured with the
 tripwire style-blind; theme thresholds uncalibrated on heterogeneous
 corpora (the v5 corpus lane owns that); the Mozannar and Sontag venue
 discrepancy; the espRA human re-check before any ECB+ corpus use.
+
+## 9. Update, 2026-11-28: the founder ruling on the story-36 scoring path
+
+The founder ruled on checkpoint item 1, recorded here verbatim in substance:
+Weft's purpose was never identity-based linking; the product point is theme
+linking. If two people in the same company talk about the same talking
+point, their documents should be linked and support each other's claims.
+Identity-blindness is a privacy property of the shipped artifact, never the
+product's headline axis.
+
+Consequences, applied in this branch's follow-up commit:
+
+1. The ruled scoring path is the specialist's pooled-cosine theme-linking
+   score. The identity_disjoint bucket's positives (identity-disjoint,
+   same-theme, cross-department pairs) are exactly the ruled product case,
+   so the gate measures the right thing under this ruling and the
+   acceptance criterion is met: 0.9989 versus the size-matched static
+   baseline 0.9973. The manifest's `releaseGate` block records
+   `ruled-passed` with the ruling text and `priorStatus` preserved; the
+   card's gate section states the ruling; the 0.3617 link-head number is
+   retained unchanged as the honest measurement of the head's own
+   behavior.
+2. The link head is rescoped to the abstention and calibration layer over
+   the theme-linking score (the conformal machinery already serves this:
+   threshold 0.5000, coverage 16.1 percent, the certified 5.0 percent
+   bound at alpha 0.05). A head retrain is a separate, optional follow-up
+   filed for the v5 corpus lane, not a release dependency.
+3. A measurement caveat travels with the ruling: BM25 scores 1.0 on this
+   bucket because same-theme documents in the synthetic estate share
+   vocabulary, so the bucket measures lexical overlap as well as theme
+   adjacency. The follow-up that measures learned theme linking
+   specifically is a paraphrase-hard stratum (same talking point, different
+   wording, different people), filed as issue #59 for the v5 corpus lane so
+   one corpus generation serves the retrain, the benchmark stratum, and the
+   coverage broadening together.
+4. Checkpoint item 2 (Wikipedia share-alike) stays at the binding default:
+   the founder confirmed the green-only position ("if it is legal, that is
+   fine"), so Wikipedia-derived pairs stay excluded from the public set and
+   the share-alike question is closed for this release. Checkpoint item 3
+   (paper-level claims) stays as it was: nothing opens here, and the paper 3
+   brief's paper 5 section records the theme-first framing direction.

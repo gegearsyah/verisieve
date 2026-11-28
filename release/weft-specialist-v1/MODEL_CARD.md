@@ -78,17 +78,27 @@ platform per entry and the claim travels with the measurement, not with the
 artifact. On this Windows CPU box the int4 kernel is slower than the int8
 dynamic path.
 
-### Release gate (recorded honestly, blocked)
+### Release gate (ruled by the founder, passed)
 
 The story-36 acceptance criterion (the size-matched static baseline must be
-beaten by the ruled scoring path) is not met through the link head on the
-synthetic estate: in the identity_disjoint bucket of the W1 shootout the
-static embedding baseline (model2vec POTION-32M) scores F1 0.9973 while the
-specialist's ruled link-head path scores 0.3617; the pooled cosine path
-scores 0.9989 and passes, which is exactly the open founder ruling. The
-manifest's `releaseGate` block records this status as
-`blocked-pending-founder-ruling`; the release packaging ships regardless
-because the acceptance decision is the founder's, not hidden in this card.
+beaten by the ruled scoring path) was recorded as blocked pending the
+founder's scoring-path ruling, because on the synthetic estate's
+identity_disjoint bucket the static embedding baseline (model2vec
+POTION-32M) scores F1 0.9973, the specialist's link-head path scores 0.3617,
+and the pooled cosine path scores 0.9989. The founder ruled on 2026-11-28:
+Weft's purpose was never identity-based linking; the product point is theme
+linking, so the ruled scoring path is the specialist's pooled-cosine
+theme-linking score, which beats the size-matched static baseline (0.9989
+versus 0.9973). The gate is recorded `ruled-passed` in the manifest's
+`releaseGate` block with the ruling text and the prior blocked status
+preserved. The link head is rescoped to the abstention and calibration layer
+over the theme-linking score; its 0.3617 on this bucket is retained as the
+honest measurement of the head's own behavior, unchanged by the ruling.
+One measurement caveat travels with the ruling: BM25 scores 1.0 on this
+bucket because same-theme documents in the synthetic estate share
+vocabulary, so the bucket measures lexical overlap as well as theme
+adjacency; a paraphrase-hard benchmark stratum is filed as the follow-up
+that measures learned theme linking specifically.
 
 ## 4. Failure modes and limits
 

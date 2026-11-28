@@ -152,7 +152,14 @@ test('W7 6: the manifest records the story-36 gate honestly', () => {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
   const gate = manifest.releaseGate;
   assert.equal(gate.gate, 'story-36-size-matched-static-baseline-identity-disjoint');
-  assert.equal(gate.status, 'blocked-pending-founder-ruling');
+  // the founder ruled 2026-11-28: theme linking is the product path, so the
+  // ruled scoring path is pooled cosine; the gate records the ruling, keeps
+  // the prior blocked status, and keeps all three measured numbers
+  assert.equal(gate.status, 'ruled-passed');
+  assert.equal(gate.priorStatus, 'blocked-pending-founder-ruling');
+  assert.equal(gate.ruling.decidedBy, 'founder');
+  assert.equal(gate.ruling.decidedAt, '2026-11-28');
+  assert.match(gate.ruling.ruledScoringPath, /pooled-cosine/);
   assert.ok(gate.measured, 'the gate records the measured numbers');
   assert.equal(gate.measured.bucket, 'identity_disjoint');
   const round4 = (x) => Number(x.toFixed(4));

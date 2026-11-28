@@ -70,7 +70,15 @@
   },
   "releaseGate": {
     "gate": "story-36-size-matched-static-baseline-identity-disjoint",
-    "status": "blocked-pending-founder-ruling",
+    "status": "ruled-passed",
+    "ruling": {
+      "decidedBy": "founder",
+      "decidedAt": "2026-11-28",
+      "ruledScoringPath": "pooled-cosine theme-linking score",
+      "decision": "Weft's purpose was never identity-based linking; the product point is theme linking. If two people in the same company talk about the same talking point, their documents should be linked and support each other's claims. The ruled scoring path is therefore the specialist's pooled-cosine theme-linking score, which beats the size-matched static baseline (0.9989 vs 0.9973) on the identity_disjoint bucket. The link head is rescoped to the abstention and calibration layer over the theme-linking score.",
+      "recordedIn": "docs/research-notes/2026-11-28-w7-release-verdict.md (section 9)"
+    },
+    "priorStatus": "blocked-pending-founder-ruling",
     "measured": {
       "staticEmbeddingBaselineF1": 0.9973,
       "specialistLinkHeadF1": 0.3617,
