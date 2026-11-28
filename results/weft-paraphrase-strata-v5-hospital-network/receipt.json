@@ -1,0 +1,4633 @@
+{
+  "kind": "weft-paraphrase-strata-receipt",
+  "profile": "hospital-network",
+  "seed": 20261130,
+  "sourceCorpus": "results/weft-fullscale-live-corpus-v5-hospital-network.tmp.json",
+  "axis": "source-disjoint same-theme (issue #59 founder rulings, 2026-11-28); identity disjointness is kept only as the erasure-axis property",
+  "counts": {
+    "sourceDisjointPositive": 399,
+    "sourceDisjointNegative": 200,
+    "droppedIdentityCollisions": 0,
+    "droppedNoEligibleDepartment": 0,
+    "droppedPlaceholderEcho": 1
+  },
+  "positivesAnchorToSource": {
+    "mean": 0.08185053760136818,
+    "perPair": [
+      {
+        "sourceDocId": "annual-budget-planning-c0-doc-1830048158-001",
+        "overlap": 0.08530805687203792
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c0-doc-1830048158-002",
+        "overlap": 0.06467661691542288
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c1-doc-2-02",
+        "overlap": 0.06666666666666667
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c10-11-003",
+        "overlap": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c10-11-004",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c11-12-002",
+        "overlap": 0.07563025210084033
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c11-12-004",
+        "overlap": 0.07407407407407407
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c12-doc-13-001",
+        "overlap": 0.12017167381974249
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c12-doc-13-002",
+        "overlap": 0.12449799196787148
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-001",
+        "overlap": 0.11688311688311688
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-002",
+        "overlap": 0.06756756756756757
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-008",
+        "overlap": 0.05333333333333334
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c15-doc-16-001",
+        "overlap": 0.0847457627118644
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c15-doc-16-002",
+        "overlap": 0.1044776119402985
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c16-doc-17-005",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c17-doc-18-004",
+        "overlap": 0.1348314606741573
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c17-doc-18-005",
+        "overlap": 0.10588235294117647
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c19-doc-20-004",
+        "overlap": 0.024390243902439025
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c2-doc-3-001",
+        "overlap": 0.2948717948717949
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c2-doc-3-002",
+        "overlap": 0.1744186046511628
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c20-doc-21-001",
+        "overlap": 0.14444444444444443
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c21-doc-22-001",
+        "overlap": 0.09505703422053231
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c21-doc-22-002",
+        "overlap": 0.08547008547008547
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c22-23-001",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c22-23-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c23-doc-24-002",
+        "overlap": 0.11290322580645161
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c24-doc-25-001",
+        "overlap": 0.145748987854251
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c24-doc-25-002",
+        "overlap": 0.12627986348122866
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c25-doc-26-002",
+        "overlap": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c25-doc-26-005",
+        "overlap": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-001",
+        "overlap": 0.09722222222222222
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-004",
+        "overlap": 0.11666666666666667
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-005",
+        "overlap": 0.028985507246376812
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-008",
+        "overlap": 0.1111111111111111
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c27-doc-28-001",
+        "overlap": 0.10810810810810811
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c27-doc-28-002",
+        "overlap": 0.12033195020746888
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c28-29-005",
+        "overlap": 0.029411764705882353
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c29-30-001",
+        "overlap": 0.14423076923076922
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c29-30-002",
+        "overlap": 0.08080808080808081
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c3-doc-4-001",
+        "overlap": 0.10628019323671498
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c3-doc-4-002",
+        "overlap": 0.1320754716981132
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c30-doc-31-001",
+        "overlap": 0.10714285714285714
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c30-doc-31-002",
+        "overlap": 0.128099173553719
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c31-doc-32-005",
+        "overlap": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c32-doc-33-001",
+        "overlap": 0.14457831325301204
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c32-doc-33-004",
+        "overlap": 0.15384615384615385
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c33-doc-34-001",
+        "overlap": 0.11739130434782609
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c33-doc-34-002",
+        "overlap": 0.07547169811320754
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c34-doc-35-001",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c34-doc-35-002",
+        "overlap": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c35-doc-36-003",
+        "overlap": 0.06451612903225806
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c36-doc-37-001",
+        "overlap": 0.09340659340659341
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c37-doc-38-004",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c37-doc-38-005",
+        "overlap": 0.0625
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c38-doc-39-001",
+        "overlap": 0.16470588235294117
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c38-doc-39-005",
+        "overlap": 0.14102564102564102
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c39-doc-40-001",
+        "overlap": 0.06310679611650485
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c4-doc-5-5",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c40-doc-41-003",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c42-doc-43-001",
+        "overlap": 0.11740890688259109
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-003",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-004",
+        "overlap": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-005",
+        "overlap": 0.034482758620689655
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c44-45-004",
+        "overlap": 0.0967741935483871
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c44-45-005",
+        "overlap": 0.06329113924050633
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c46-47-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-001",
+        "overlap": 0.06306306306306306
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-003",
+        "overlap": 0.10909090909090909
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-004",
+        "overlap": 0.08791208791208792
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c48-doc-49-001",
+        "overlap": 0.11607142857142858
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c49-doc-50-005",
+        "overlap": 0.03508771929824561
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c5-6-1",
+        "overlap": 0.08333333333333333
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c5-6-2",
+        "overlap": 0.04
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c50-51-004",
+        "overlap": 0.1
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-001",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-003",
+        "overlap": 0.029411764705882353
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-006",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-007",
+        "overlap": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-001",
+        "overlap": 0.1111111111111111
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-002",
+        "overlap": 0.06542056074766354
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-003",
+        "overlap": 0.05714285714285714
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-004",
+        "overlap": 0.02531645569620253
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-009",
+        "overlap": 0.06578947368421052
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c54-doc-55-001",
+        "overlap": 0.12418300653594772
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c54-doc-55-002",
+        "overlap": 0.11320754716981132
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-001",
+        "overlap": 0.08333333333333333
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-007",
+        "overlap": 0.06666666666666667
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-001",
+        "overlap": 0.2028985507246377
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-002",
+        "overlap": 0.17333333333333334
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-003",
+        "overlap": 0.08641975308641975
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c57-58-001",
+        "overlap": 0.14224137931034483
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-002",
+        "overlap": 0.06896551724137931
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-004",
+        "overlap": 0.06666666666666667
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-001",
+        "overlap": 0.08045977011494253
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-002",
+        "overlap": 0.06363636363636363
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-004",
+        "overlap": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c6-7-1",
+        "overlap": 0.12571428571428572
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c6-7-2",
+        "overlap": 0.14795918367346939
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c60-61-002",
+        "overlap": 0.14222222222222222
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-02",
+        "overlap": 0.12162162162162163
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-04",
+        "overlap": 0.08571428571428572
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-06",
+        "overlap": 0.16666666666666666
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c63-doc-64-001",
+        "overlap": 0.11961722488038277
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c63-doc-64-002",
+        "overlap": 0.10648148148148148
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-002",
+        "overlap": 0.1111111111111111
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-003",
+        "overlap": 0.0967741935483871
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-004",
+        "overlap": 0.05128205128205128
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-005",
+        "overlap": 0.14285714285714285
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c65-66-001",
+        "overlap": 0.09375
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c65-66-002",
+        "overlap": 0.06741573033707865
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-001",
+        "overlap": 0.024390243902439025
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-005",
+        "overlap": 0.18518518518518517
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-006",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c68-doc-69-005",
+        "overlap": 0.0625
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c69-70-001",
+        "overlap": 0.12735849056603774
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c7-8-5",
+        "overlap": 0.041666666666666664
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c72-73-001",
+        "overlap": 0.125
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c73-doc-74-004",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c73-doc-74-005",
+        "overlap": 0.05714285714285714
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c74-75-001",
+        "overlap": 0.11827956989247312
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c74-75-006",
+        "overlap": 0.13414634146341464
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c75-76-001",
+        "overlap": 0.108
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c75-76-002",
+        "overlap": 0.12313432835820895
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c76-77-001",
+        "overlap": 0.03125
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c76-77-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-001",
+        "overlap": 0.13008130081300814
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-002",
+        "overlap": 0.07377049180327869
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-003",
+        "overlap": 0.125
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-005",
+        "overlap": 0.0875
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c78-79-001",
+        "overlap": 0.1031390134529148
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c78-79-002",
+        "overlap": 0.11553784860557768
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c79-doc-80-004",
+        "overlap": 0.04878048780487805
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c79-doc-80-005",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c8-doc-9004",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c80-81-001",
+        "overlap": 0.08421052631578947
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c80-81-006",
+        "overlap": 0.05263157894736842
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c81-doc-82-001",
+        "overlap": 0.12598425196850394
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c81-doc-82-002",
+        "overlap": 0.10283687943262411
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c9-doc-10-001",
+        "overlap": 0.14354066985645933
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c0-doc-001",
+        "overlap": 0.06896551724137931
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c0-doc-006",
+        "overlap": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-02",
+        "overlap": 0.16030534351145037
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-04",
+        "overlap": 0.08695652173913043
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-05",
+        "overlap": 0.15789473684210525
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-002",
+        "overlap": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-003",
+        "overlap": 0.0963855421686747
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-006",
+        "overlap": 0.0547945205479452
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c11-doc-12-001",
+        "overlap": 0.08152173913043478
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c11-doc-12-002",
+        "overlap": 0.08837209302325581
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-001",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-002",
+        "overlap": 0.11428571428571428
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-004",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-005",
+        "overlap": 0.10810810810810811
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c13-14-001",
+        "overlap": 0.0707070707070707
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c14-doc-15-001",
+        "overlap": 0.11764705882352941
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c14-doc-15-002",
+        "overlap": 0.09433962264150944
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c15-doc-16-005",
+        "overlap": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c16-17-003",
+        "overlap": 0.0945945945945946
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c16-17-005",
+        "overlap": 0.04878048780487805
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c17-doc-18-001",
+        "overlap": 0.11504424778761062
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c17-doc-18-002",
+        "overlap": 0.14224137931034483
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-001",
+        "overlap": 0.11764705882352941
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-005",
+        "overlap": 0.05714285714285714
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-006",
+        "overlap": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c19-20-005",
+        "overlap": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c2-doc-1830068175-001",
+        "overlap": 0.11038961038961038
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c2-doc-1830068175-002",
+        "overlap": 0.0855614973262032
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c20-doc-21-001",
+        "overlap": 0.10837438423645321
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c20-doc-21-002",
+        "overlap": 0.13023255813953488
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c21-doc-22-002",
+        "overlap": 0.05263157894736842
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c21-doc-22-004",
+        "overlap": 0.034482758620689655
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c22-doc-23-002",
+        "overlap": 0.10112359550561797
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c22-doc-23-006",
+        "overlap": 0.05128205128205128
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c23-doc-24-001",
+        "overlap": 0.10891089108910891
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-001",
+        "overlap": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-003",
+        "overlap": 0.08333333333333333
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-005",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-001",
+        "overlap": 0.053763440860215055
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-002",
+        "overlap": 0.05333333333333334
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-003",
+        "overlap": 0.13095238095238096
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-006",
+        "overlap": 0.05747126436781609
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c26-doc-27-002",
+        "overlap": 0.0945273631840796
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c27-doc-28-04",
+        "overlap": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c27-doc-28-08",
+        "overlap": 0.06451612903225806
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c28-doc-29-001",
+        "overlap": 0.09090909090909091
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c28-doc-29-003",
+        "overlap": 0.08536585365853659
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c29-doc-30-001",
+        "overlap": 0.1507537688442211
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c29-doc-30-002",
+        "overlap": 0.12735849056603774
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-1",
+        "overlap": 0.05
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-10",
+        "overlap": 0.08823529411764706
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-6",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c30-doc-31-005",
+        "overlap": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c31-32-001",
+        "overlap": 0.034482758620689655
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c31-32-005",
+        "overlap": 0.10714285714285714
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c32-doc-33-001",
+        "overlap": 0.11612903225806452
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c32-doc-33-002",
+        "overlap": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c33-doc-34-002",
+        "overlap": 0.023809523809523808
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c33-doc-34-003",
+        "overlap": 0.05263157894736842
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c34-doc-35-002",
+        "overlap": 0.12790697674418605
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c34-doc-35-006",
+        "overlap": 0.06097560975609756
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c35-doc-36-001",
+        "overlap": 0.12254901960784313
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c35-doc-36-002",
+        "overlap": 0.09333333333333334
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-001",
+        "overlap": 0.17647058823529413
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-002",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-003",
+        "overlap": 0.05714285714285714
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-005",
+        "overlap": 0.15151515151515152
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c38-39-001",
+        "overlap": 0.12666666666666668
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c38-39-002",
+        "overlap": 0.07514450867052024
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c39-doc-40-01",
+        "overlap": 0.07894736842105263
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c39-doc-40-02",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-10",
+        "overlap": 0.15873015873015872
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-4",
+        "overlap": 0.14516129032258066
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-5",
+        "overlap": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c40-41-003",
+        "overlap": 0.057971014492753624
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c40-41-004",
+        "overlap": 0.04285714285714286
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c41-doc-42-001",
+        "overlap": 0.16666666666666666
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c41-doc-42-002",
+        "overlap": 0.11740890688259109
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c42-doc-4301",
+        "overlap": 0.08823529411764706
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c42-doc-4306",
+        "overlap": 0.03333333333333333
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-001",
+        "overlap": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-002",
+        "overlap": 0.04838709677419355
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-005",
+        "overlap": 0.1651376146788991
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c44-45-001",
+        "overlap": 0.07058823529411765
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c44-45-002",
+        "overlap": 0.11834319526627218
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-002",
+        "overlap": 0.07317073170731707
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-003",
+        "overlap": 0.08108108108108109
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-004",
+        "overlap": 0.022727272727272728
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-001",
+        "overlap": 0.06172839506172839
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-002",
+        "overlap": 0.10588235294117647
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-003",
+        "overlap": 0.11392405063291139
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-005",
+        "overlap": 0.14084507042253522
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c47-doc-48-001",
+        "overlap": 0.13425925925925927
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c47-doc-48-002",
+        "overlap": 0.08333333333333333
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-001",
+        "overlap": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-002",
+        "overlap": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-004",
+        "overlap": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c5-doc-1830068177-01",
+        "overlap": 0.13872832369942195
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c5-doc-1830068177-02",
+        "overlap": 0.09615384615384616
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c50-51-001",
+        "overlap": 0.11351351351351352
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c50-51-002",
+        "overlap": 0.11442786069651742
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c51-52-001",
+        "overlap": 0.12244897959183673
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c51-52-005",
+        "overlap": 0.020833333333333332
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c52-53-005",
+        "overlap": 0.038461538461538464
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c53-doc-54-001",
+        "overlap": 0.11682242990654206
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-001",
+        "overlap": 0.05128205128205128
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-002",
+        "overlap": 0.08571428571428572
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-005",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c55-doc-56-005",
+        "overlap": 0.07339449541284404
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c56-doc-57-001",
+        "overlap": 0.11616161616161616
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c56-doc-57-002",
+        "overlap": 0.10416666666666667
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c57-doc-58-05",
+        "overlap": 0.044444444444444446
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-001",
+        "overlap": 0.10126582278481013
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-002",
+        "overlap": 0.14925373134328357
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-006",
+        "overlap": 0.08571428571428572
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c59-60-001",
+        "overlap": 0.12446351931330472
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c59-60-002",
+        "overlap": 0.0728744939271255
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c6-7-5",
+        "overlap": 0.03125
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-001",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-002",
+        "overlap": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-005",
+        "overlap": 0.029411764705882353
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c61-62-001",
+        "overlap": 0.08547008547008547
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c61-62-002",
+        "overlap": 0.09649122807017543
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c62-doc-63-001",
+        "overlap": 0.12017167381974249
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c62-doc-63-002",
+        "overlap": 0.13247863247863248
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c63-doc-64-002",
+        "overlap": 0.044444444444444446
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c63-doc-64-005",
+        "overlap": 0.025
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c64-65-005",
+        "overlap": 0.03896103896103896
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c66-67-005",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c66-67-006",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c67-68-001",
+        "overlap": 0.04819277108433735
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c67-68-006",
+        "overlap": 0.056179775280898875
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c68-doc-69-001",
+        "overlap": 0.0967741935483871
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c68-doc-69-002",
+        "overlap": 0.06951871657754011
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-001",
+        "overlap": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-002",
+        "overlap": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c7-8-1",
+        "overlap": 0.05714285714285714
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c7-8-3",
+        "overlap": 0.09900990099009901
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c70-71-005",
+        "overlap": 0.12
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c71-72-001",
+        "overlap": 0.15648854961832062
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c71-72-002",
+        "overlap": 0.11267605633802817
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-001",
+        "overlap": 0.1
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-002",
+        "overlap": 0.03125
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-005",
+        "overlap": 0.06666666666666667
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c73-74-003",
+        "overlap": 0.09375
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c74-doc-75-001",
+        "overlap": 0.09142857142857143
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c74-doc-75-002",
+        "overlap": 0.08376963350785341
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-001",
+        "overlap": 0.01818181818181818
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-005",
+        "overlap": 0.045454545454545456
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-006",
+        "overlap": 0.06521739130434782
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c76-77-004",
+        "overlap": 0.06930693069306931
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c76-77-005",
+        "overlap": 0.1780821917808219
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c77-doc-78-001",
+        "overlap": 0.13765182186234817
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c77-doc-78-002",
+        "overlap": 0.13178294573643412
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c78-doc-79-005",
+        "overlap": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-001",
+        "overlap": 0.06593406593406594
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-002",
+        "overlap": 0.054945054945054944
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-003",
+        "overlap": 0.07
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-005",
+        "overlap": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-006",
+        "overlap": 0.02912621359223301
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c8-doc-9-001",
+        "overlap": 0.14018691588785046
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c8-doc-9-002",
+        "overlap": 0.17083333333333334
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c80-doc-81-001",
+        "overlap": 0.1278538812785388
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c80-doc-81-002",
+        "overlap": 0.15853658536585366
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c81-doc-82-001",
+        "overlap": 0.047619047619047616
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c81-doc-82-003",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-002",
+        "overlap": 0.04
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-004",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-005",
+        "overlap": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c0-doc-001",
+        "overlap": 0.10526315789473684
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c0-doc-002",
+        "overlap": 0.15384615384615385
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c1-doc-2-01",
+        "overlap": 0.03125
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c1-doc-2-06",
+        "overlap": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c10-doc-11-002",
+        "overlap": 0.06382978723404255
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c10-doc-11-005",
+        "overlap": 0.05128205128205128
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c11-doc-12-004",
+        "overlap": 0.10526315789473684
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c12-13-001",
+        "overlap": 0.10734463276836158
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c12-13-002",
+        "overlap": 0.10050251256281408
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-002",
+        "overlap": 0.05263157894736842
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-003",
+        "overlap": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-004",
+        "overlap": 0.025
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c14-doc-15-001",
+        "overlap": 0.07633587786259542
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c15-doc-16-001",
+        "overlap": 0.13127413127413126
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c15-doc-16-002",
+        "overlap": 0.11824324324324324
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-001",
+        "overlap": 0.022727272727272728
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-003",
+        "overlap": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-004",
+        "overlap": 0.03333333333333333
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-005",
+        "overlap": 0.0625
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-008",
+        "overlap": 0.06451612903225806
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c17-doc-18-002",
+        "overlap": 0.11538461538461539
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c18-doc-19-001",
+        "overlap": 0.11386138613861387
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c18-doc-19-002",
+        "overlap": 0.10747663551401869
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c19-doc-20-001",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c19-doc-20-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-001",
+        "overlap": 0.06140350877192982
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-002",
+        "overlap": 0.11904761904761904
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-007",
+        "overlap": 0.039473684210526314
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c20-doc-21-001",
+        "overlap": 0.045454545454545456
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c20-doc-21-002",
+        "overlap": 0.09615384615384616
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c21-onboard-22-001",
+        "overlap": 0.11646586345381527
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c21-onboard-22-002",
+        "overlap": 0.13186813186813187
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-001",
+        "overlap": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-002",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-007",
+        "overlap": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-001",
+        "overlap": 0.08974358974358974
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-004",
+        "overlap": 0.057971014492753624
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-006",
+        "overlap": 0.07575757575757576
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c24-doc-25-001",
+        "overlap": 0.12389380530973451
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c24-doc-25-002",
+        "overlap": 0.06722689075630252
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c25-doc-26-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-002",
+        "overlap": 0.03333333333333333
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-003",
+        "overlap": 0.061224489795918366
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-004",
+        "overlap": 0.11956521739130435
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-007",
+        "overlap": 0.07
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c27-doc-28-001",
+        "overlap": 0.08917197452229299
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c27-doc-28-002",
+        "overlap": 0.10795454545454546
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c28-doc-29-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c28-doc-29-005",
+        "overlap": 0.19230769230769232
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c29-doc-30-002",
+        "overlap": 0.2191780821917808
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c29-doc-30-003",
+        "overlap": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c3-doc-4-001",
+        "overlap": 0.08163265306122448
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c30-doc-31-001",
+        "overlap": 0.11261261261261261
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c30-doc-31-002",
+        "overlap": 0.11057692307692307
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c31-doc-32-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c32-doc-33-004",
+        "overlap": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c32-doc-33-005",
+        "overlap": 0.16
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c33-doc-34-001",
+        "overlap": 0.19662921348314608
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c33-doc-34-002",
+        "overlap": 0.17587939698492464
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-001",
+        "overlap": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-002",
+        "overlap": 0.08108108108108109
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-004",
+        "overlap": 0.03125
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c35-doc-36-005",
+        "overlap": 0.09876543209876543
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c36-doc-37-001",
+        "overlap": 0.1148936170212766
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c36-doc-37-002",
+        "overlap": 0.1059322033898305
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-003",
+        "overlap": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-005",
+        "overlap": 0.06451612903225806
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c38-39-001",
+        "overlap": 0.16666666666666666
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c38-39-003",
+        "overlap": 0.0761904761904762
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c39-doc-40-001",
+        "overlap": 0.14965986394557823
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c39-doc-40-002",
+        "overlap": 0.15060240963855423
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-1",
+        "overlap": 0.05405405405405406
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-3",
+        "overlap": 0.06451612903225806
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-5",
+        "overlap": 0.034482758620689655
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c40-41-002",
+        "overlap": 0.025
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c41-42-002",
+        "overlap": 0.08860759493670886
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c41-42-003",
+        "overlap": 0.1388888888888889
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c42-doc-43-001",
+        "overlap": 0.20103092783505155
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c42-doc-43-002",
+        "overlap": 0.1308411214953271
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c43-44-002",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c43-44-005",
+        "overlap": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c44-doc-45-002",
+        "overlap": 0.10679611650485436
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c44-doc-45-006",
+        "overlap": 0.02830188679245283
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c45-46-001",
+        "overlap": 0.14847161572052403
+      }
+    ]
+  },
+  "negativesCaveat": "near-topic negatives: talking-point difference is teacher-claimed, not mechanically verified",
+  "usage": {
+    "calls": 600,
+    "promptTokens": 234965,
+    "completionTokens": 203169,
+    "totalTokens": 438134,
+    "wallclockMs": 1841713
+  },
+  "prompts": {
+    "positive": "Seed: 3715086912. Return only a JSON object. Below is one source document (a meeting, thread, ticket, or memo). Rewrite it into ONE new document that comes from a DIFFERENT source: a different meeting, thread, or ticket in the same company that happens to cover the same talking point and the same factual substance, but in entirely different wording. Rules: never reuse a noun, verb, adjective, or phrase from the source except unavoidable function words; use different sentence structures and a different document format than the source; the source has bracketed identity placeholders, and every person or organization in your output must be a NEW invented name, never a bracketed placeholder and never any name guessable from the source; the new source belongs to the \"clinical\" department (a different department than the source's); naming cultures to fit: [\"Nordic\",\"Filipino\",\"German\"]. Length: 120 to 350 words. Schema: {\"docs\":[{\"id\",\"format\",\"department\",\"theme\",\"text\",\"identities\":[{\"key\",\"surface\",\"class\"}]}],\"links\":[]} where theme is exactly \"annual budget planning\" and the single doc id is \"p-1\".\n\nSOURCE DOCUMENT:\n\nHey Astrid,\n\nHope you’re surviving the budget chaos! So, I’ve been crunching the numbers for the central pharmacy’s annual budget, and I’ve got to say, it’s… well, a bit of a mess. We’re looking at a 12% increase in med costs from [ORGANIZATION_1]—yikes, right? And that’s *before* we factor in the new oncology drugs we’re supposed to start stocking next quarter. Oh, and don’t even get me started on the storage upgrades we need for the temperature-sensitive stuff. The current setups are from, like, the Stone Age.\n\nAnyway, I’ve drafted a rough breakdown (attached, because of course it’s a monster spreadsheet). Highlights: we’re gonna need to reallocate at least €180k from the outpatient clinic’s surplus—if they’ll let us—or we’re staring down some serious cuts elsewhere. Maybe we can lobby Henrik to push back on the new MRI machine for facilities? I know, I know, not my circus, but still. Also, side note: Medivar’s got a bulk discount if we commit to a 3-year contract. Worth a chat?\n\nLet me know when you’re free to sync. I’ll bring coffee (and my stress ball).\n\nCheers,\nEero\n\nP.S. If anyone from compliance asks, we *definitely* didn’t discuss moving funds ‘creatively.’",
+    "negative": "Seed: 1830048158. Return only a JSON object. Produce TWO documents about the theme \"annual budget planning\". The two documents must come from two DIFFERENT sources (for example two different meetings, threads, or tickets) and be about ADJACENT but genuinely DIFFERENT talking points (for example the same project but two different concerns, or the same event but two different disputes), and they must deliberately share as much vocabulary as possible (same jargon, same systems, same artifact names where applicable) so that word overlap alone cannot tell them apart; only the actual talking point differs. The two documents must be from different departments among these: [\"clinical\",\"nursing\",\"pharmacy\",\"procurement\",\"compliance\",\"facilities\"] and share zero identity keys; invent all names, fitting these naming cultures: [\"Nordic\",\"Filipino\",\"German\"]. Length: 100 to 300 words each. Schema: {\"docs\":[{\"id\",\"format\",\"department\",\"theme\",\"text\",\"identities\":[{\"key\",\"surface\",\"class\"}]}],\"links\":[]} where both documents' theme is exactly \"annual budget planning\" and the ids are \"n-1\" and \"n-2\"."
+  },
+  "licence": "mistral-api-tos",
+  "lexicalOverlap": {
+    "formula": "jaccard over distinct content words (tokens of length >= 4, lowercased) shared by both sides",
+    "positivesSourceToParaphrase": 0.03771612035644355,
+    "positivesAnchorToParaphrase": 0.03195723422297015,
+    "negativesAToB": 0.14869552945921008,
+    "positivesPerPair": [
+      {
+        "sourceDocId": "annual-budget-planning-c0-doc-1830048158-001",
+        "sourceToParaphrase": 0.02512562814070352,
+        "anchorToParaphrase": 0.037914691943127965
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c0-doc-1830048158-002",
+        "sourceToParaphrase": 0.037037037037037035,
+        "anchorToParaphrase": 0.043010752688172046
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c1-doc-2-02",
+        "sourceToParaphrase": 0.016666666666666666,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c10-11-003",
+        "sourceToParaphrase": 0.038461538461538464,
+        "anchorToParaphrase": 0.02127659574468085
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c10-11-004",
+        "sourceToParaphrase": 0.017543859649122806,
+        "anchorToParaphrase": 0.017857142857142856
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c11-12-002",
+        "sourceToParaphrase": 0.034013605442176874,
+        "anchorToParaphrase": 0.024390243902439025
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c11-12-004",
+        "sourceToParaphrase": 0.014925373134328358,
+        "anchorToParaphrase": 0.03007518796992481
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c12-doc-13-001",
+        "sourceToParaphrase": 0.047619047619047616,
+        "anchorToParaphrase": 0.04296875
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c12-doc-13-002",
+        "sourceToParaphrase": 0.052845528455284556,
+        "anchorToParaphrase": 0.04743083003952569
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-001",
+        "sourceToParaphrase": 0.07865168539325842,
+        "anchorToParaphrase": 0.021739130434782608
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-002",
+        "sourceToParaphrase": 0.03,
+        "anchorToParaphrase": 0.03296703296703297
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c14-15-008",
+        "sourceToParaphrase": 0.03488372093023256,
+        "anchorToParaphrase": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c15-doc-16-001",
+        "sourceToParaphrase": 0.053763440860215055,
+        "anchorToParaphrase": 0.04477611940298507
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c15-doc-16-002",
+        "sourceToParaphrase": 0.11616161616161616,
+        "anchorToParaphrase": 0.0871559633027523
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c16-doc-17-005",
+        "sourceToParaphrase": 0.018518518518518517,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c17-doc-18-004",
+        "sourceToParaphrase": 0.0380952380952381,
+        "anchorToParaphrase": 0.06306306306306306
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c17-doc-18-005",
+        "sourceToParaphrase": 0.018867924528301886,
+        "anchorToParaphrase": 0.03529411764705882
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c19-doc-20-004",
+        "sourceToParaphrase": 0.017857142857142856,
+        "anchorToParaphrase": 0.017241379310344827
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c2-doc-3-001",
+        "sourceToParaphrase": 0.019417475728155338,
+        "anchorToParaphrase": 0.020833333333333332
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c2-doc-3-002",
+        "sourceToParaphrase": 0.039603960396039604,
+        "anchorToParaphrase": 0.053763440860215055
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c20-doc-21-001",
+        "sourceToParaphrase": 0.11650485436893204,
+        "anchorToParaphrase": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c21-doc-22-001",
+        "sourceToParaphrase": 0.041666666666666664,
+        "anchorToParaphrase": 0.03139013452914798
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c21-doc-22-002",
+        "sourceToParaphrase": 0.05970149253731343,
+        "anchorToParaphrase": 0.04608294930875576
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c22-23-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c22-23-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.02
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c23-doc-24-002",
+        "sourceToParaphrase": 0.07692307692307693,
+        "anchorToParaphrase": 0.061224489795918366
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c24-doc-25-001",
+        "sourceToParaphrase": 0.035,
+        "anchorToParaphrase": 0.04680851063829787
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c24-doc-25-002",
+        "sourceToParaphrase": 0.03461538461538462,
+        "anchorToParaphrase": 0.033582089552238806
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c25-doc-26-002",
+        "sourceToParaphrase": 0.01639344262295082,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c25-doc-26-005",
+        "sourceToParaphrase": 0.0196078431372549,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-001",
+        "sourceToParaphrase": 0.05952380952380952,
+        "anchorToParaphrase": 0.012048192771084338
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-004",
+        "sourceToParaphrase": 0.025,
+        "anchorToParaphrase": 0.013157894736842105
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-005",
+        "sourceToParaphrase": 0.03614457831325301,
+        "anchorToParaphrase": 0.022988505747126436
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c26-27-008",
+        "sourceToParaphrase": 0.01020408163265306,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c27-doc-28-001",
+        "sourceToParaphrase": 0.05092592592592592,
+        "anchorToParaphrase": 0.0825242718446602
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c27-doc-28-002",
+        "sourceToParaphrase": 0.05555555555555555,
+        "anchorToParaphrase": 0.04961832061068702
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c28-29-005",
+        "sourceToParaphrase": 0.014925373134328358,
+        "anchorToParaphrase": 0.014285714285714285
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c29-30-001",
+        "sourceToParaphrase": 0.0423728813559322,
+        "anchorToParaphrase": 0.02654867256637168
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c29-30-002",
+        "sourceToParaphrase": 0.03787878787878788,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c3-doc-4-001",
+        "sourceToParaphrase": 0.06372549019607843,
+        "anchorToParaphrase": 0.03
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c3-doc-4-002",
+        "sourceToParaphrase": 0.06280193236714976,
+        "anchorToParaphrase": 0.03862660944206009
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c30-doc-31-001",
+        "sourceToParaphrase": 0.049019607843137254,
+        "anchorToParaphrase": 0.04504504504504504
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c30-doc-31-002",
+        "sourceToParaphrase": 0.047619047619047616,
+        "anchorToParaphrase": 0.05859375
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c31-doc-32-005",
+        "sourceToParaphrase": 0.014705882352941176,
+        "anchorToParaphrase": 0.028985507246376812
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c32-doc-33-001",
+        "sourceToParaphrase": 0.07142857142857142,
+        "anchorToParaphrase": 0.04081632653061224
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c32-doc-33-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.019230769230769232
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c33-doc-34-001",
+        "sourceToParaphrase": 0.06,
+        "anchorToParaphrase": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c33-doc-34-002",
+        "sourceToParaphrase": 0.0625,
+        "anchorToParaphrase": 0.04090909090909091
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c34-doc-35-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c34-doc-35-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c35-doc-36-003",
+        "sourceToParaphrase": 0.0390625,
+        "anchorToParaphrase": 0.04580152671755725
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c36-doc-37-001",
+        "sourceToParaphrase": 0.01675977653631285,
+        "anchorToParaphrase": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c37-doc-38-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.0425531914893617
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c37-doc-38-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c38-doc-39-001",
+        "sourceToParaphrase": 0.08247422680412371,
+        "anchorToParaphrase": 0.06666666666666667
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c38-doc-39-005",
+        "sourceToParaphrase": 0.041237113402061855,
+        "anchorToParaphrase": 0.02
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c39-doc-40-001",
+        "sourceToParaphrase": 0.06091370558375635,
+        "anchorToParaphrase": 0.035897435897435895
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c4-doc-5-5",
+        "sourceToParaphrase": 0.015873015873015872,
+        "anchorToParaphrase": 0.03278688524590164
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c40-doc-41-003",
+        "sourceToParaphrase": 0.0136986301369863,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c42-doc-43-001",
+        "sourceToParaphrase": 0.04891304347826087,
+        "anchorToParaphrase": 0.04184100418410042
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-002",
+        "sourceToParaphrase": 0.038461538461538464,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-003",
+        "sourceToParaphrase": 0.021739130434782608,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-004",
+        "sourceToParaphrase": 0.05,
+        "anchorToParaphrase": 0.04918032786885246
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c43-44-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.07142857142857142
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c44-45-004",
+        "sourceToParaphrase": 0.022222222222222223,
+        "anchorToParaphrase": 0.021739130434782608
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c44-45-005",
+        "sourceToParaphrase": 0.029411764705882353,
+        "anchorToParaphrase": 0.05
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c46-47-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-001",
+        "sourceToParaphrase": 0.0390625,
+        "anchorToParaphrase": 0.034782608695652174
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-003",
+        "sourceToParaphrase": 0.03389830508474576,
+        "anchorToParaphrase": 0.04918032786885246
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c47-doc-48-004",
+        "sourceToParaphrase": 0.01639344262295082,
+        "anchorToParaphrase": 0.010638297872340425
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c48-doc-49-001",
+        "sourceToParaphrase": 0.06951871657754011,
+        "anchorToParaphrase": 0.08333333333333333
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c49-doc-50-005",
+        "sourceToParaphrase": 0.028169014084507043,
+        "anchorToParaphrase": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c5-6-1",
+        "sourceToParaphrase": 0.07017543859649122,
+        "anchorToParaphrase": 0.0625
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c5-6-2",
+        "sourceToParaphrase": 0.04504504504504504,
+        "anchorToParaphrase": 0.05263157894736842
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c50-51-004",
+        "sourceToParaphrase": 0.03614457831325301,
+        "anchorToParaphrase": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-001",
+        "sourceToParaphrase": 0.0425531914893617,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-003",
+        "sourceToParaphrase": 0.044444444444444446,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-006",
+        "sourceToParaphrase": 0.015625,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c52-doc-53-007",
+        "sourceToParaphrase": 0.02040816326530612,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-001",
+        "sourceToParaphrase": 0.05303030303030303,
+        "anchorToParaphrase": 0.016260162601626018
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-002",
+        "sourceToParaphrase": 0.0625,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-003",
+        "sourceToParaphrase": 0.0392156862745098,
+        "anchorToParaphrase": 0.03669724770642202
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-004",
+        "sourceToParaphrase": 0.03,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c53-doc-54-009",
+        "sourceToParaphrase": 0.011627906976744186,
+        "anchorToParaphrase": 0.02040816326530612
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c54-doc-55-001",
+        "sourceToParaphrase": 0.02702702702702703,
+        "anchorToParaphrase": 0.031446540880503145
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c54-doc-55-002",
+        "sourceToParaphrase": 0.033707865168539325,
+        "anchorToParaphrase": 0.041176470588235294
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-001",
+        "sourceToParaphrase": 0.03636363636363636,
+        "anchorToParaphrase": 0.018867924528301886
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.02
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c55-doc-56-007",
+        "sourceToParaphrase": 0.031746031746031744,
+        "anchorToParaphrase": 0.05
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-001",
+        "sourceToParaphrase": 0.06382978723404255,
+        "anchorToParaphrase": 0.05813953488372093
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-002",
+        "sourceToParaphrase": 0.04950495049504951,
+        "anchorToParaphrase": 0.041666666666666664
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c56-57-003",
+        "sourceToParaphrase": 0.022727272727272728,
+        "anchorToParaphrase": 0.05747126436781609
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c57-58-001",
+        "sourceToParaphrase": 0.05859375,
+        "anchorToParaphrase": 0.056451612903225805
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-002",
+        "sourceToParaphrase": 0.02040816326530612,
+        "anchorToParaphrase": 0.020833333333333332
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c58-doc-59-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.017543859649122806
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-001",
+        "sourceToParaphrase": 0.09090909090909091,
+        "anchorToParaphrase": 0.02564102564102564
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-002",
+        "sourceToParaphrase": 0.056,
+        "anchorToParaphrase": 0.037383177570093455
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c59-doc-60-004",
+        "sourceToParaphrase": 0.0449438202247191,
+        "anchorToParaphrase": 0.02631578947368421
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c6-7-1",
+        "sourceToParaphrase": 0.03592814371257485,
+        "anchorToParaphrase": 0.027624309392265192
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c6-7-2",
+        "sourceToParaphrase": 0.0593607305936073,
+        "anchorToParaphrase": 0.02358490566037736
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c60-61-002",
+        "sourceToParaphrase": 0.037383177570093455,
+        "anchorToParaphrase": 0.01809954751131222
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-02",
+        "sourceToParaphrase": 0.04081632653061224,
+        "anchorToParaphrase": 0.011111111111111112
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-04",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.011764705882352941
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c62-doc-63-06",
+        "sourceToParaphrase": 0.00980392156862745,
+        "anchorToParaphrase": 0.010869565217391304
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c63-doc-64-001",
+        "sourceToParaphrase": 0.05116279069767442,
+        "anchorToParaphrase": 0.09359605911330049
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c63-doc-64-002",
+        "sourceToParaphrase": 0.035398230088495575,
+        "anchorToParaphrase": 0.03404255319148936
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-002",
+        "sourceToParaphrase": 0.015625,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-003",
+        "sourceToParaphrase": 0.043478260869565216,
+        "anchorToParaphrase": 0.022222222222222223
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-004",
+        "sourceToParaphrase": 0.018867924528301886,
+        "anchorToParaphrase": 0.03636363636363636
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c64-65-005",
+        "sourceToParaphrase": 0.04,
+        "anchorToParaphrase": 0.02040816326530612
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c65-66-001",
+        "sourceToParaphrase": 0.01694915254237288,
+        "anchorToParaphrase": 0.020202020202020204
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c65-66-002",
+        "sourceToParaphrase": 0.02631578947368421,
+        "anchorToParaphrase": 0.027522935779816515
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.0125
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-005",
+        "sourceToParaphrase": 0.018867924528301886,
+        "anchorToParaphrase": 0.04
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c67-68-006",
+        "sourceToParaphrase": 0.017241379310344827,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c68-doc-69-005",
+        "sourceToParaphrase": 0.042105263157894736,
+        "anchorToParaphrase": 0.033707865168539325
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c69-70-001",
+        "sourceToParaphrase": 0.07327586206896551,
+        "anchorToParaphrase": 0.056768558951965066
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c7-8-5",
+        "sourceToParaphrase": 0.0847457627118644,
+        "anchorToParaphrase": 0.03333333333333333
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c72-73-001",
+        "sourceToParaphrase": 0.038834951456310676,
+        "anchorToParaphrase": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c73-doc-74-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c73-doc-74-005",
+        "sourceToParaphrase": 0.015384615384615385,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c74-75-001",
+        "sourceToParaphrase": 0.08602150537634409,
+        "anchorToParaphrase": 0.010869565217391304
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c74-75-006",
+        "sourceToParaphrase": 0.08421052631578947,
+        "anchorToParaphrase": 0.0625
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c75-76-001",
+        "sourceToParaphrase": 0.07083333333333333,
+        "anchorToParaphrase": 0.05128205128205128
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c75-76-002",
+        "sourceToParaphrase": 0.072,
+        "anchorToParaphrase": 0.08602150537634409
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c76-77-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c76-77-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-001",
+        "sourceToParaphrase": 0.033112582781456956,
+        "anchorToParaphrase": 0.03676470588235294
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-002",
+        "sourceToParaphrase": 0.03225806451612903,
+        "anchorToParaphrase": 0.0078125
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-003",
+        "sourceToParaphrase": 0.05357142857142857,
+        "anchorToParaphrase": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c77-78-005",
+        "sourceToParaphrase": 0.0707070707070707,
+        "anchorToParaphrase": 0.024691358024691357
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c78-79-001",
+        "sourceToParaphrase": 0.041237113402061855,
+        "anchorToParaphrase": 0.027522935779816515
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c78-79-002",
+        "sourceToParaphrase": 0.030042918454935622,
+        "anchorToParaphrase": 0.02857142857142857
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c79-doc-80-004",
+        "sourceToParaphrase": 0.0196078431372549,
+        "anchorToParaphrase": 0.018518518518518517
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c79-doc-80-005",
+        "sourceToParaphrase": 0.01639344262295082,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c8-doc-9004",
+        "sourceToParaphrase": 0.011111111111111112,
+        "anchorToParaphrase": 0.020618556701030927
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c80-81-001",
+        "sourceToParaphrase": 0.038834951456310676,
+        "anchorToParaphrase": 0.030303030303030304
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c80-81-006",
+        "sourceToParaphrase": 0.056818181818181816,
+        "anchorToParaphrase": 0.03488372093023256
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c81-doc-82-001",
+        "sourceToParaphrase": 0.0481283422459893,
+        "anchorToParaphrase": 0.05069124423963134
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c81-doc-82-002",
+        "sourceToParaphrase": 0.08118081180811808,
+        "anchorToParaphrase": 0.06382978723404255
+      },
+      {
+        "sourceDocId": "annual-budget-planning-c9-doc-10-001",
+        "sourceToParaphrase": 0.06666666666666667,
+        "anchorToParaphrase": 0.06222222222222222
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c0-doc-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c0-doc-006",
+        "sourceToParaphrase": 0.022222222222222223,
+        "anchorToParaphrase": 0.022222222222222223
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-02",
+        "sourceToParaphrase": 0.0472972972972973,
+        "anchorToParaphrase": 0.06428571428571428
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-04",
+        "sourceToParaphrase": 0.06306306306306306,
+        "anchorToParaphrase": 0.09302325581395349
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c1-doc-1830068173-05",
+        "sourceToParaphrase": 0.07547169811320754,
+        "anchorToParaphrase": 0.07272727272727272
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-002",
+        "sourceToParaphrase": 0.05263157894736842,
+        "anchorToParaphrase": 0.047619047619047616
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-003",
+        "sourceToParaphrase": 0.042105263157894736,
+        "anchorToParaphrase": 0.041666666666666664
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c10-doc-11-006",
+        "sourceToParaphrase": 0.034782608695652174,
+        "anchorToParaphrase": 0.03773584905660377
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c11-doc-12-001",
+        "sourceToParaphrase": 0.058823529411764705,
+        "anchorToParaphrase": 0.07253886010362694
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c11-doc-12-002",
+        "sourceToParaphrase": 0.056074766355140186,
+        "anchorToParaphrase": 0.08837209302325581
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-001",
+        "sourceToParaphrase": 0.05660377358490566,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-002",
+        "sourceToParaphrase": 0.034482758620689655,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-004",
+        "sourceToParaphrase": 0.03333333333333333,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c12-13-005",
+        "sourceToParaphrase": 0.02127659574468085,
+        "anchorToParaphrase": 0.020833333333333332
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c13-14-001",
+        "sourceToParaphrase": 0.05,
+        "anchorToParaphrase": 0.03773584905660377
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c14-doc-15-001",
+        "sourceToParaphrase": 0.061224489795918366,
+        "anchorToParaphrase": 0.047619047619047616
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c14-doc-15-002",
+        "sourceToParaphrase": 0.06,
+        "anchorToParaphrase": 0.030303030303030304
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c15-doc-16-005",
+        "sourceToParaphrase": 0.0410958904109589,
+        "anchorToParaphrase": 0.013157894736842105
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c16-17-003",
+        "sourceToParaphrase": 0.045454545454545456,
+        "anchorToParaphrase": 0.04597701149425287
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c16-17-005",
+        "sourceToParaphrase": 0.031914893617021274,
+        "anchorToParaphrase": 0.03260869565217391
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c17-doc-18-001",
+        "sourceToParaphrase": 0.0330188679245283,
+        "anchorToParaphrase": 0.05670103092783505
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c17-doc-18-002",
+        "sourceToParaphrase": 0.10869565217391304,
+        "anchorToParaphrase": 0.06944444444444445
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-001",
+        "sourceToParaphrase": 0.06818181818181818,
+        "anchorToParaphrase": 0.023809523809523808
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-005",
+        "sourceToParaphrase": 0.04878048780487805,
+        "anchorToParaphrase": 0.024390243902439025
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c18-doc-19-006",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c19-20-005",
+        "sourceToParaphrase": 0.041666666666666664,
+        "anchorToParaphrase": 0.040983606557377046
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c2-doc-1830068175-001",
+        "sourceToParaphrase": 0.027210884353741496,
+        "anchorToParaphrase": 0.012658227848101266
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c2-doc-1830068175-002",
+        "sourceToParaphrase": 0.030120481927710843,
+        "anchorToParaphrase": 0.043010752688172046
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c20-doc-21-001",
+        "sourceToParaphrase": 0.04371584699453552,
+        "anchorToParaphrase": 0.04950495049504951
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c20-doc-21-002",
+        "sourceToParaphrase": 0.03535353535353535,
+        "anchorToParaphrase": 0.07216494845360824
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c21-doc-22-002",
+        "sourceToParaphrase": 0.016666666666666666,
+        "anchorToParaphrase": 0.017241379310344827
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c21-doc-22-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c22-doc-23-002",
+        "sourceToParaphrase": 0.039603960396039604,
+        "anchorToParaphrase": 0.039603960396039604
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c22-doc-23-006",
+        "sourceToParaphrase": 0.03260869565217391,
+        "anchorToParaphrase": 0.06097560975609756
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c23-doc-24-001",
+        "sourceToParaphrase": 0.059574468085106386,
+        "anchorToParaphrase": 0.05238095238095238
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-001",
+        "sourceToParaphrase": 0.017857142857142856,
+        "anchorToParaphrase": 0.019230769230769232
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-003",
+        "sourceToParaphrase": 0.05084745762711865,
+        "anchorToParaphrase": 0.017857142857142856
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c24-25-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-001",
+        "sourceToParaphrase": 0.0449438202247191,
+        "anchorToParaphrase": 0.011111111111111112
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-002",
+        "sourceToParaphrase": 0.06315789473684211,
+        "anchorToParaphrase": 0.053763440860215055
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-003",
+        "sourceToParaphrase": 0.03296703296703297,
+        "anchorToParaphrase": 0.043010752688172046
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c25-26-006",
+        "sourceToParaphrase": 0.05172413793103448,
+        "anchorToParaphrase": 0.04424778761061947
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c26-doc-27-002",
+        "sourceToParaphrase": 0.041666666666666664,
+        "anchorToParaphrase": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c27-doc-28-04",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c27-doc-28-08",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c28-doc-29-001",
+        "sourceToParaphrase": 0.08,
+        "anchorToParaphrase": 0.05217391304347826
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c28-doc-29-003",
+        "sourceToParaphrase": 0.04807692307692308,
+        "anchorToParaphrase": 0.010752688172043012
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c29-doc-30-001",
+        "sourceToParaphrase": 0.09251101321585903,
+        "anchorToParaphrase": 0.0779816513761468
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c29-doc-30-002",
+        "sourceToParaphrase": 0.06930693069306931,
+        "anchorToParaphrase": 0.06696428571428571
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-1",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-10",
+        "sourceToParaphrase": 0.0425531914893617,
+        "anchorToParaphrase": 0.02127659574468085
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c3-doc-4-6",
+        "sourceToParaphrase": 0.03773584905660377,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c30-doc-31-005",
+        "sourceToParaphrase": 0.017241379310344827,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c31-32-001",
+        "sourceToParaphrase": 0.010752688172043012,
+        "anchorToParaphrase": 0.012048192771084338
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c31-32-005",
+        "sourceToParaphrase": 0.020202020202020204,
+        "anchorToParaphrase": 0.02912621359223301
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c32-doc-33-001",
+        "sourceToParaphrase": 0.040268456375838924,
+        "anchorToParaphrase": 0.0379746835443038
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c32-doc-33-002",
+        "sourceToParaphrase": 0.040229885057471264,
+        "anchorToParaphrase": 0.04864864864864865
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c33-doc-34-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.0625
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c33-doc-34-003",
+        "sourceToParaphrase": 0.030303030303030304,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c34-doc-35-002",
+        "sourceToParaphrase": 0.0970873786407767,
+        "anchorToParaphrase": 0.04424778761061947
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c34-doc-35-006",
+        "sourceToParaphrase": 0.0594059405940594,
+        "anchorToParaphrase": 0.041666666666666664
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c35-doc-36-001",
+        "sourceToParaphrase": 0.05859375,
+        "anchorToParaphrase": 0.061946902654867256
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c35-doc-36-002",
+        "sourceToParaphrase": 0.07222222222222222,
+        "anchorToParaphrase": 0.04329004329004329
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-001",
+        "sourceToParaphrase": 0.018518518518518517,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.022727272727272728
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-003",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c36-37-005",
+        "sourceToParaphrase": 0.04878048780487805,
+        "anchorToParaphrase": 0.07894736842105263
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c38-39-001",
+        "sourceToParaphrase": 0.06474820143884892,
+        "anchorToParaphrase": 0.03205128205128205
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c38-39-002",
+        "sourceToParaphrase": 0.03825136612021858,
+        "anchorToParaphrase": 0.031914893617021274
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c39-doc-40-01",
+        "sourceToParaphrase": 0.013513513513513514,
+        "anchorToParaphrase": 0.06060606060606061
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c39-doc-40-02",
+        "sourceToParaphrase": 0.01818181818181818,
+        "anchorToParaphrase": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-10",
+        "sourceToParaphrase": 0.03571428571428571,
+        "anchorToParaphrase": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-4",
+        "sourceToParaphrase": 0.03409090909090909,
+        "anchorToParaphrase": 0.09302325581395349
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c4-5-5",
+        "sourceToParaphrase": 0.033707865168539325,
+        "anchorToParaphrase": 0.030612244897959183
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c40-41-003",
+        "sourceToParaphrase": 0.03225806451612903,
+        "anchorToParaphrase": 0.02247191011235955
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c40-41-004",
+        "sourceToParaphrase": 0.057692307692307696,
+        "anchorToParaphrase": 0.05102040816326531
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c41-doc-42-001",
+        "sourceToParaphrase": 0.04672897196261682,
+        "anchorToParaphrase": 0.04721030042918455
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c41-doc-42-002",
+        "sourceToParaphrase": 0.04219409282700422,
+        "anchorToParaphrase": 0.06854838709677419
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c42-doc-4301",
+        "sourceToParaphrase": 0.020833333333333332,
+        "anchorToParaphrase": 0.023255813953488372
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c42-doc-4306",
+        "sourceToParaphrase": 0.025,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-001",
+        "sourceToParaphrase": 0.06504065040650407,
+        "anchorToParaphrase": 0.008620689655172414
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-002",
+        "sourceToParaphrase": 0.08695652173913043,
+        "anchorToParaphrase": 0.022222222222222223
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c43-44-005",
+        "sourceToParaphrase": 0.051470588235294115,
+        "anchorToParaphrase": 0.05970149253731343
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c44-45-001",
+        "sourceToParaphrase": 0.036458333333333336,
+        "anchorToParaphrase": 0.03571428571428571
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c44-45-002",
+        "sourceToParaphrase": 0.03592814371257485,
+        "anchorToParaphrase": 0.03529411764705882
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-002",
+        "sourceToParaphrase": 0.031746031746031744,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-003",
+        "sourceToParaphrase": 0.06349206349206349,
+        "anchorToParaphrase": 0.015151515151515152
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c45-doc-46-004",
+        "sourceToParaphrase": 0.016666666666666666,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-001",
+        "sourceToParaphrase": 0.06382978723404255,
+        "anchorToParaphrase": 0.034482758620689655
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-002",
+        "sourceToParaphrase": 0.06422018348623854,
+        "anchorToParaphrase": 0.050505050505050504
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-003",
+        "sourceToParaphrase": 0.019801980198019802,
+        "anchorToParaphrase": 0.021052631578947368
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c46-doc-47-005",
+        "sourceToParaphrase": 0.0625,
+        "anchorToParaphrase": 0.09259259259259259
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c47-doc-48-001",
+        "sourceToParaphrase": 0.05314009661835749,
+        "anchorToParaphrase": 0.05963302752293578
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c47-doc-48-002",
+        "sourceToParaphrase": 0.06930693069306931,
+        "anchorToParaphrase": 0.05581395348837209
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-001",
+        "sourceToParaphrase": 0.015384615384615385,
+        "anchorToParaphrase": 0.016129032258064516
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-002",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.015873015873015872
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c48-49-004",
+        "sourceToParaphrase": 0.03278688524590164,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c5-doc-1830068177-01",
+        "sourceToParaphrase": 0.07344632768361582,
+        "anchorToParaphrase": 0.06282722513089005
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c5-doc-1830068177-02",
+        "sourceToParaphrase": 0.04975124378109453,
+        "anchorToParaphrase": 0.045662100456621
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c50-51-001",
+        "sourceToParaphrase": 0.03680981595092025,
+        "anchorToParaphrase": 0.032432432432432434
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c50-51-002",
+        "sourceToParaphrase": 0.05154639175257732,
+        "anchorToParaphrase": 0.04
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c51-52-001",
+        "sourceToParaphrase": 0.0410958904109589,
+        "anchorToParaphrase": 0.02531645569620253
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c51-52-005",
+        "sourceToParaphrase": 0.03529411764705882,
+        "anchorToParaphrase": 0.023529411764705882
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c52-53-005",
+        "sourceToParaphrase": 0.024691358024691357,
+        "anchorToParaphrase": 0.04878048780487805
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c53-doc-54-001",
+        "sourceToParaphrase": 0.07339449541284404,
+        "anchorToParaphrase": 0.06153846153846154
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-001",
+        "sourceToParaphrase": 0.07142857142857142,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-002",
+        "sourceToParaphrase": 0.0196078431372549,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c54-55-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c55-doc-56-005",
+        "sourceToParaphrase": 0.016129032258064516,
+        "anchorToParaphrase": 0.027777777777777776
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c56-doc-57-001",
+        "sourceToParaphrase": 0.08333333333333333,
+        "anchorToParaphrase": 0.07373271889400922
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c56-doc-57-002",
+        "sourceToParaphrase": 0.02608695652173913,
+        "anchorToParaphrase": 0.032388663967611336
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c57-doc-58-05",
+        "sourceToParaphrase": 0.015151515151515152,
+        "anchorToParaphrase": 0.014492753623188406
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-001",
+        "sourceToParaphrase": 0.038461538461538464,
+        "anchorToParaphrase": 0.041237113402061855
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-002",
+        "sourceToParaphrase": 0.03409090909090909,
+        "anchorToParaphrase": 0.043478260869565216
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c58-59-006",
+        "sourceToParaphrase": 0.04854368932038835,
+        "anchorToParaphrase": 0.0392156862745098
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c59-60-001",
+        "sourceToParaphrase": 0.05533596837944664,
+        "anchorToParaphrase": 0.04524886877828054
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c59-60-002",
+        "sourceToParaphrase": 0.07766990291262135,
+        "anchorToParaphrase": 0.044
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c6-7-5",
+        "sourceToParaphrase": 0.06,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-002",
+        "sourceToParaphrase": 0.02,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c60-doc-61-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.021739130434782608
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c61-62-001",
+        "sourceToParaphrase": 0.04827586206896552,
+        "anchorToParaphrase": 0.05042016806722689
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c61-62-002",
+        "sourceToParaphrase": 0.03007518796992481,
+        "anchorToParaphrase": 0.03759398496240601
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c62-doc-63-001",
+        "sourceToParaphrase": 0.058577405857740586,
+        "anchorToParaphrase": 0.03529411764705882
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c62-doc-63-002",
+        "sourceToParaphrase": 0.02643171806167401,
+        "anchorToParaphrase": 0.02727272727272727
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c63-doc-64-002",
+        "sourceToParaphrase": 0.03076923076923077,
+        "anchorToParaphrase": 0.07692307692307693
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c63-doc-64-005",
+        "sourceToParaphrase": 0.017857142857142856,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c64-65-005",
+        "sourceToParaphrase": 0.022222222222222223,
+        "anchorToParaphrase": 0.011764705882352941
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c66-67-005",
+        "sourceToParaphrase": 0.014925373134328358,
+        "anchorToParaphrase": 0.04285714285714286
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c66-67-006",
+        "sourceToParaphrase": 0.017241379310344827,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c67-68-001",
+        "sourceToParaphrase": 0.058823529411764705,
+        "anchorToParaphrase": 0.011363636363636364
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c67-68-006",
+        "sourceToParaphrase": 0.0297029702970297,
+        "anchorToParaphrase": 0.010101010101010102
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c68-doc-69-001",
+        "sourceToParaphrase": 0.044444444444444446,
+        "anchorToParaphrase": 0.03125
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c68-doc-69-002",
+        "sourceToParaphrase": 0.040697674418604654,
+        "anchorToParaphrase": 0.04519774011299435
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-001",
+        "sourceToParaphrase": 0.018867924528301886,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-002",
+        "sourceToParaphrase": 0.03125,
+        "anchorToParaphrase": 0.015873015873015872
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c69-70-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c7-8-1",
+        "sourceToParaphrase": 0.048,
+        "anchorToParaphrase": 0.03773584905660377
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c7-8-3",
+        "sourceToParaphrase": 0.02631578947368421,
+        "anchorToParaphrase": 0.037037037037037035
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c70-71-005",
+        "sourceToParaphrase": 0.04950495049504951,
+        "anchorToParaphrase": 0.04081632653061224
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c71-72-001",
+        "sourceToParaphrase": 0.05405405405405406,
+        "anchorToParaphrase": 0.046153846153846156
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c71-72-002",
+        "sourceToParaphrase": 0.07659574468085106,
+        "anchorToParaphrase": 0.07228915662650602
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-001",
+        "sourceToParaphrase": 0.05660377358490566,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-002",
+        "sourceToParaphrase": 0.022222222222222223,
+        "anchorToParaphrase": 0.021739130434782608
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c72-73-005",
+        "sourceToParaphrase": 0.02702702702702703,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c73-74-003",
+        "sourceToParaphrase": 0.035398230088495575,
+        "anchorToParaphrase": 0.02654867256637168
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c74-doc-75-001",
+        "sourceToParaphrase": 0.041379310344827586,
+        "anchorToParaphrase": 0.018404907975460124
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c74-doc-75-002",
+        "sourceToParaphrase": 0.021505376344086023,
+        "anchorToParaphrase": 0.032432432432432434
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-001",
+        "sourceToParaphrase": 0.058823529411764705,
+        "anchorToParaphrase": 0.03125
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-005",
+        "sourceToParaphrase": 0.06060606060606061,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c75-doc-76-006",
+        "sourceToParaphrase": 0.016666666666666666,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c76-77-004",
+        "sourceToParaphrase": 0.025210084033613446,
+        "anchorToParaphrase": 0.017543859649122806
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c76-77-005",
+        "sourceToParaphrase": 0.027777777777777776,
+        "anchorToParaphrase": 0.020618556701030927
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c77-doc-78-001",
+        "sourceToParaphrase": 0.06637168141592921,
+        "anchorToParaphrase": 0.0625
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c77-doc-78-002",
+        "sourceToParaphrase": 0.10256410256410256,
+        "anchorToParaphrase": 0.058365758754863814
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c78-doc-79-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-001",
+        "sourceToParaphrase": 0.07692307692307693,
+        "anchorToParaphrase": 0.06896551724137931
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-002",
+        "sourceToParaphrase": 0.027522935779816515,
+        "anchorToParaphrase": 0.02127659574468085
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-003",
+        "sourceToParaphrase": 0.07692307692307693,
+        "anchorToParaphrase": 0.02727272727272727
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-005",
+        "sourceToParaphrase": 0.009259259259259259,
+        "anchorToParaphrase": 0.04672897196261682
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c79-80-006",
+        "sourceToParaphrase": 0.07758620689655173,
+        "anchorToParaphrase": 0.00819672131147541
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c8-doc-9-001",
+        "sourceToParaphrase": 0.050761421319796954,
+        "anchorToParaphrase": 0.044444444444444446
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c8-doc-9-002",
+        "sourceToParaphrase": 0.07894736842105263,
+        "anchorToParaphrase": 0.0625
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c80-doc-81-001",
+        "sourceToParaphrase": 0.05084745762711865,
+        "anchorToParaphrase": 0.06572769953051644
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c80-doc-81-002",
+        "sourceToParaphrase": 0.05286343612334802,
+        "anchorToParaphrase": 0.05217391304347826
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c81-doc-82-001",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c81-doc-82-003",
+        "sourceToParaphrase": 0.01818181818181818,
+        "anchorToParaphrase": 0.02
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-002",
+        "sourceToParaphrase": 0.02857142857142857,
+        "anchorToParaphrase": 0.014925373134328358
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-004",
+        "sourceToParaphrase": 0.038461538461538464,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "api-gateway-migration-c9-doc-10-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c0-doc-001",
+        "sourceToParaphrase": 0.0759493670886076,
+        "anchorToParaphrase": 0.03571428571428571
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c0-doc-002",
+        "sourceToParaphrase": 0.07172995780590717,
+        "anchorToParaphrase": 0.0735930735930736
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c1-doc-2-01",
+        "sourceToParaphrase": 0.02127659574468085,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c1-doc-2-06",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c10-doc-11-002",
+        "sourceToParaphrase": 0.0136986301369863,
+        "anchorToParaphrase": 0.014925373134328358
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c10-doc-11-005",
+        "sourceToParaphrase": 0.014285714285714285,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c11-doc-12-004",
+        "sourceToParaphrase": 0.03260869565217391,
+        "anchorToParaphrase": 0.042105263157894736
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c12-13-001",
+        "sourceToParaphrase": 0.021164021164021163,
+        "anchorToParaphrase": 0.04020100502512563
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c12-13-002",
+        "sourceToParaphrase": 0.06666666666666667,
+        "anchorToParaphrase": 0.05789473684210526
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-002",
+        "sourceToParaphrase": 0.017857142857142856,
+        "anchorToParaphrase": 0.017241379310344827
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-003",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.058823529411764705
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c13-doc-14-004",
+        "sourceToParaphrase": 0.017241379310344827,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c14-doc-15-001",
+        "sourceToParaphrase": 0.045112781954887216,
+        "anchorToParaphrase": 0.029850746268656716
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c15-doc-16-001",
+        "sourceToParaphrase": 0.050505050505050504,
+        "anchorToParaphrase": 0.05363984674329502
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c15-doc-16-002",
+        "sourceToParaphrase": 0.030418250950570342,
+        "anchorToParaphrase": 0.05217391304347826
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-001",
+        "sourceToParaphrase": 0.03571428571428571,
+        "anchorToParaphrase": 0.016666666666666666
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-003",
+        "sourceToParaphrase": 0.015151515151515152,
+        "anchorToParaphrase": 0.014705882352941176
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-005",
+        "sourceToParaphrase": 0.018518518518518517,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c16-17-008",
+        "sourceToParaphrase": 0.015151515151515152,
+        "anchorToParaphrase": 0.014925373134328358
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c17-doc-18-002",
+        "sourceToParaphrase": 0.0449438202247191,
+        "anchorToParaphrase": 0.03296703296703297
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c18-doc-19-001",
+        "sourceToParaphrase": 0.10526315789473684,
+        "anchorToParaphrase": 0.04040404040404041
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c18-doc-19-002",
+        "sourceToParaphrase": 0.1,
+        "anchorToParaphrase": 0.03225806451612903
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c19-doc-20-001",
+        "sourceToParaphrase": 0.03636363636363636,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c19-doc-20-005",
+        "sourceToParaphrase": 0.018518518518518517,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-001",
+        "sourceToParaphrase": 0.042735042735042736,
+        "anchorToParaphrase": 0.02727272727272727
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-002",
+        "sourceToParaphrase": 0.028037383177570093,
+        "anchorToParaphrase": 0.010309278350515464
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c2-doc-3-007",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.02531645569620253
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c20-doc-21-001",
+        "sourceToParaphrase": 0.04132231404958678,
+        "anchorToParaphrase": 0.046296296296296294
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c20-doc-21-002",
+        "sourceToParaphrase": 0.037037037037037035,
+        "anchorToParaphrase": 0.02702702702702703
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c21-onboard-22-001",
+        "sourceToParaphrase": 0.01990049751243781,
+        "anchorToParaphrase": 0.031818181818181815
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c21-onboard-22-002",
+        "sourceToParaphrase": 0.078125,
+        "anchorToParaphrase": 0.05166051660516605
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-001",
+        "sourceToParaphrase": 0.03508771929824561,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-002",
+        "sourceToParaphrase": 0.014492753623188406,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-005",
+        "sourceToParaphrase": 0.01639344262295082,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c22-doc-23-007",
+        "sourceToParaphrase": 0.013513513513513514,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-001",
+        "sourceToParaphrase": 0.02,
+        "anchorToParaphrase": 0.05319148936170213
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-004",
+        "sourceToParaphrase": 0.011627906976744186,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c23-doc-24-006",
+        "sourceToParaphrase": 0.043478260869565216,
+        "anchorToParaphrase": 0.03409090909090909
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c24-doc-25-001",
+        "sourceToParaphrase": 0.0873015873015873,
+        "anchorToParaphrase": 0.06224066390041494
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c24-doc-25-002",
+        "sourceToParaphrase": 0.07727272727272727,
+        "anchorToParaphrase": 0.05371900826446281
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c25-doc-26-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-002",
+        "sourceToParaphrase": 0.009174311926605505,
+        "anchorToParaphrase": 0.041237113402061855
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-003",
+        "sourceToParaphrase": 0.07766990291262135,
+        "anchorToParaphrase": 0.026785714285714284
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-004",
+        "sourceToParaphrase": 0.06451612903225806,
+        "anchorToParaphrase": 0.048
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c26-27-007",
+        "sourceToParaphrase": 0.059322033898305086,
+        "anchorToParaphrase": 0.028037383177570093
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c27-doc-28-001",
+        "sourceToParaphrase": 0.043795620437956206,
+        "anchorToParaphrase": 0.05521472392638037
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c27-doc-28-002",
+        "sourceToParaphrase": 0.04597701149425287,
+        "anchorToParaphrase": 0.07272727272727272
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c28-doc-29-002",
+        "sourceToParaphrase": 0.03636363636363636,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c28-doc-29-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c29-doc-30-002",
+        "sourceToParaphrase": 0.0707070707070707,
+        "anchorToParaphrase": 0.05319148936170213
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c29-doc-30-003",
+        "sourceToParaphrase": 0.0898876404494382,
+        "anchorToParaphrase": 0.04938271604938271
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c3-doc-4-001",
+        "sourceToParaphrase": 0.008130081300813009,
+        "anchorToParaphrase": 0.014388489208633094
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c30-doc-31-001",
+        "sourceToParaphrase": 0.04716981132075472,
+        "anchorToParaphrase": 0.07035175879396985
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c30-doc-31-002",
+        "sourceToParaphrase": 0.09268292682926829,
+        "anchorToParaphrase": 0.085
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c31-doc-32-005",
+        "sourceToParaphrase": 0.024390243902439025,
+        "anchorToParaphrase": 0.05
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c32-doc-33-004",
+        "sourceToParaphrase": 0.05154639175257732,
+        "anchorToParaphrase": 0.038461538461538464
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c32-doc-33-005",
+        "sourceToParaphrase": 0.039603960396039604,
+        "anchorToParaphrase": 0.02
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c33-doc-34-001",
+        "sourceToParaphrase": 0.03333333333333333,
+        "anchorToParaphrase": 0.02247191011235955
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c33-doc-34-002",
+        "sourceToParaphrase": 0.03296703296703297,
+        "anchorToParaphrase": 0.02824858757062147
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-001",
+        "sourceToParaphrase": 0.03225806451612903,
+        "anchorToParaphrase": 0.01694915254237288
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-002",
+        "sourceToParaphrase": 0.034482758620689655,
+        "anchorToParaphrase": 0.018867924528301886
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-004",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.09523809523809523
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c34-doc-35-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c35-doc-36-005",
+        "sourceToParaphrase": 0.053763440860215055,
+        "anchorToParaphrase": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c36-doc-37-001",
+        "sourceToParaphrase": 0.08780487804878048,
+        "anchorToParaphrase": 0.1073170731707317
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c36-doc-37-002",
+        "sourceToParaphrase": 0.0639269406392694,
+        "anchorToParaphrase": 0.08181818181818182
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-002",
+        "sourceToParaphrase": 0.01694915254237288,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-003",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.021739130434782608
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c37-38-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c38-39-001",
+        "sourceToParaphrase": 0.046296296296296294,
+        "anchorToParaphrase": 0.04950495049504951
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c38-39-003",
+        "sourceToParaphrase": 0.05172413793103448,
+        "anchorToParaphrase": 0.026785714285714284
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c39-doc-40-001",
+        "sourceToParaphrase": 0.06040268456375839,
+        "anchorToParaphrase": 0.046242774566473986
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c39-doc-40-002",
+        "sourceToParaphrase": 0.0273224043715847,
+        "anchorToParaphrase": 0.02717391304347826
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-1",
+        "sourceToParaphrase": 0.037037037037037035,
+        "anchorToParaphrase": 0.05555555555555555
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-3",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.03773584905660377
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c4-doc-5-5",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c40-41-002",
+        "sourceToParaphrase": 0.016666666666666666,
+        "anchorToParaphrase": 0.03571428571428571
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c41-42-002",
+        "sourceToParaphrase": 0.019801980198019802,
+        "anchorToParaphrase": 0.020618556701030927
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c41-42-003",
+        "sourceToParaphrase": 0.04,
+        "anchorToParaphrase": 0.044444444444444446
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c42-doc-43-001",
+        "sourceToParaphrase": 0.06310679611650485,
+        "anchorToParaphrase": 0.06912442396313365
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c42-doc-43-002",
+        "sourceToParaphrase": 0.04205607476635514,
+        "anchorToParaphrase": 0.07881773399014778
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c43-44-002",
+        "sourceToParaphrase": 0.03076923076923077,
+        "anchorToParaphrase": 0
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c43-44-005",
+        "sourceToParaphrase": 0,
+        "anchorToParaphrase": 0.014925373134328358
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c44-doc-45-002",
+        "sourceToParaphrase": 0.0425531914893617,
+        "anchorToParaphrase": 0.05303030303030303
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c44-doc-45-006",
+        "sourceToParaphrase": 0.025210084033613446,
+        "anchorToParaphrase": 0.04878048780487805
+      },
+      {
+        "sourceDocId": "customer-onboarding-revamp-c45-46-001",
+        "sourceToParaphrase": 0.03431372549019608,
+        "anchorToParaphrase": 0.025423728813559324
+      }
+    ],
+    "negativesPerPair": [
+      {
+        "aId": "phn-0-1",
+        "bId": "phn-0-2",
+        "overlap": 0.125
+      },
+      {
+        "aId": "phn-1-1",
+        "bId": "phn-1-2",
+        "overlap": 0.12
+      },
+      {
+        "aId": "phn-2-1",
+        "bId": "phn-2-2",
+        "overlap": 0.13253012048192772
+      },
+      {
+        "aId": "phn-3-1",
+        "bId": "phn-3-2",
+        "overlap": 0.19469026548672566
+      },
+      {
+        "aId": "phn-4-1",
+        "bId": "phn-4-2",
+        "overlap": 0.07766990291262135
+      },
+      {
+        "aId": "phn-5-1",
+        "bId": "phn-5-2",
+        "overlap": 0.20987654320987653
+      },
+      {
+        "aId": "phn-6-1",
+        "bId": "phn-6-2",
+        "overlap": 0.10891089108910891
+      },
+      {
+        "aId": "phn-7-1",
+        "bId": "phn-7-2",
+        "overlap": 0.16049382716049382
+      },
+      {
+        "aId": "phn-8-1",
+        "bId": "phn-8-2",
+        "overlap": 0.14678899082568808
+      },
+      {
+        "aId": "phn-9-1",
+        "bId": "phn-9-2",
+        "overlap": 0.10606060606060606
+      },
+      {
+        "aId": "phn-10-1",
+        "bId": "phn-10-2",
+        "overlap": 0.17054263565891473
+      },
+      {
+        "aId": "phn-11-1",
+        "bId": "phn-11-2",
+        "overlap": 0.11304347826086956
+      },
+      {
+        "aId": "phn-12-1",
+        "bId": "phn-12-2",
+        "overlap": 0.13636363636363635
+      },
+      {
+        "aId": "phn-13-1",
+        "bId": "phn-13-2",
+        "overlap": 0.13333333333333333
+      },
+      {
+        "aId": "phn-14-1",
+        "bId": "phn-14-2",
+        "overlap": 0.16216216216216217
+      },
+      {
+        "aId": "phn-15-1",
+        "bId": "phn-15-2",
+        "overlap": 0.15789473684210525
+      },
+      {
+        "aId": "phn-16-1",
+        "bId": "phn-16-2",
+        "overlap": 0.14285714285714285
+      },
+      {
+        "aId": "phn-17-1",
+        "bId": "phn-17-2",
+        "overlap": 0.1134020618556701
+      },
+      {
+        "aId": "phn-18-1",
+        "bId": "phn-18-2",
+        "overlap": 0.09473684210526316
+      },
+      {
+        "aId": "phn-19-1",
+        "bId": "phn-19-2",
+        "overlap": 0.12037037037037036
+      },
+      {
+        "aId": "phn-20-1",
+        "bId": "phn-20-2",
+        "overlap": 0.18
+      },
+      {
+        "aId": "phn-21-1",
+        "bId": "phn-21-2",
+        "overlap": 0.10204081632653061
+      },
+      {
+        "aId": "phn-22-1",
+        "bId": "phn-22-2",
+        "overlap": 0.1111111111111111
+      },
+      {
+        "aId": "phn-23-1",
+        "bId": "phn-23-2",
+        "overlap": 0.13559322033898305
+      },
+      {
+        "aId": "phn-24-1",
+        "bId": "phn-24-2",
+        "overlap": 0.13333333333333333
+      },
+      {
+        "aId": "phn-25-1",
+        "bId": "phn-25-2",
+        "overlap": 0.08181818181818182
+      },
+      {
+        "aId": "phn-26-1",
+        "bId": "phn-26-2",
+        "overlap": 0.14285714285714285
+      },
+      {
+        "aId": "phn-27-1",
+        "bId": "phn-27-2",
+        "overlap": 0.1875
+      },
+      {
+        "aId": "phn-28-1",
+        "bId": "phn-28-2",
+        "overlap": 0.11688311688311688
+      },
+      {
+        "aId": "phn-29-1",
+        "bId": "phn-29-2",
+        "overlap": 0.12389380530973451
+      },
+      {
+        "aId": "phn-30-1",
+        "bId": "phn-30-2",
+        "overlap": 0.17647058823529413
+      },
+      {
+        "aId": "phn-31-1",
+        "bId": "phn-31-2",
+        "overlap": 0.15625
+      },
+      {
+        "aId": "phn-32-1",
+        "bId": "phn-32-2",
+        "overlap": 0.1941747572815534
+      },
+      {
+        "aId": "phn-33-1",
+        "bId": "phn-33-2",
+        "overlap": 0.16842105263157894
+      },
+      {
+        "aId": "phn-34-1",
+        "bId": "phn-34-2",
+        "overlap": 0.13513513513513514
+      },
+      {
+        "aId": "phn-35-1",
+        "bId": "phn-35-2",
+        "overlap": 0.25
+      },
+      {
+        "aId": "phn-36-1",
+        "bId": "phn-36-2",
+        "overlap": 0.08
+      },
+      {
+        "aId": "phn-37-1",
+        "bId": "phn-37-2",
+        "overlap": 0.1651376146788991
+      },
+      {
+        "aId": "phn-38-1",
+        "bId": "phn-38-2",
+        "overlap": 0.12396694214876033
+      },
+      {
+        "aId": "phn-39-1",
+        "bId": "phn-39-2",
+        "overlap": 0.11711711711711711
+      },
+      {
+        "aId": "phn-40-1",
+        "bId": "phn-40-2",
+        "overlap": 0.07936507936507936
+      },
+      {
+        "aId": "phn-41-1",
+        "bId": "phn-41-2",
+        "overlap": 0.11
+      },
+      {
+        "aId": "phn-42-1",
+        "bId": "phn-42-2",
+        "overlap": 0.19791666666666666
+      },
+      {
+        "aId": "phn-43-1",
+        "bId": "phn-43-2",
+        "overlap": 0.11320754716981132
+      },
+      {
+        "aId": "phn-44-1",
+        "bId": "phn-44-2",
+        "overlap": 0.10483870967741936
+      },
+      {
+        "aId": "phn-45-1",
+        "bId": "phn-45-2",
+        "overlap": 0.379746835443038
+      },
+      {
+        "aId": "phn-46-1",
+        "bId": "phn-46-2",
+        "overlap": 0.125
+      },
+      {
+        "aId": "phn-47-1",
+        "bId": "phn-47-2",
+        "overlap": 0.21649484536082475
+      },
+      {
+        "aId": "phn-48-1",
+        "bId": "phn-48-2",
+        "overlap": 0.07228915662650602
+      },
+      {
+        "aId": "phn-49-1",
+        "bId": "phn-49-2",
+        "overlap": 0.11956521739130435
+      },
+      {
+        "aId": "phn-50-1",
+        "bId": "phn-50-2",
+        "overlap": 0.13513513513513514
+      },
+      {
+        "aId": "phn-51-1",
+        "bId": "phn-51-2",
+        "overlap": 0.11206896551724138
+      },
+      {
+        "aId": "phn-52-1",
+        "bId": "phn-52-2",
+        "overlap": 0.19047619047619047
+      },
+      {
+        "aId": "phn-53-1",
+        "bId": "phn-53-2",
+        "overlap": 0.13761467889908258
+      },
+      {
+        "aId": "phn-54-1",
+        "bId": "phn-54-2",
+        "overlap": 0.10344827586206896
+      },
+      {
+        "aId": "phn-55-1",
+        "bId": "phn-55-2",
+        "overlap": 0.35714285714285715
+      },
+      {
+        "aId": "phn-56-1",
+        "bId": "phn-56-2",
+        "overlap": 0.15384615384615385
+      },
+      {
+        "aId": "phn-57-1",
+        "bId": "phn-57-2",
+        "overlap": 0.13761467889908258
+      },
+      {
+        "aId": "phn-58-1",
+        "bId": "phn-58-2",
+        "overlap": 0.11688311688311688
+      },
+      {
+        "aId": "phn-59-1",
+        "bId": "phn-59-2",
+        "overlap": 0.08196721311475409
+      },
+      {
+        "aId": "phn-60-1",
+        "bId": "phn-60-2",
+        "overlap": 0.12359550561797752
+      },
+      {
+        "aId": "phn-61-1",
+        "bId": "phn-61-2",
+        "overlap": 0.21774193548387097
+      },
+      {
+        "aId": "phn-62-1",
+        "bId": "phn-62-2",
+        "overlap": 0.09302325581395349
+      },
+      {
+        "aId": "phn-63-1",
+        "bId": "phn-63-2",
+        "overlap": 0.11009174311926606
+      },
+      {
+        "aId": "phn-64-1",
+        "bId": "phn-64-2",
+        "overlap": 0.13559322033898305
+      },
+      {
+        "aId": "phn-65-1",
+        "bId": "phn-65-2",
+        "overlap": 0.18095238095238095
+      },
+      {
+        "aId": "phn-66-1",
+        "bId": "phn-66-2",
+        "overlap": 0.0743801652892562
+      },
+      {
+        "aId": "phn-67-1",
+        "bId": "phn-67-2",
+        "overlap": 0.19791666666666666
+      },
+      {
+        "aId": "phn-68-1",
+        "bId": "phn-68-2",
+        "overlap": 0.1559633027522936
+      },
+      {
+        "aId": "phn-69-1",
+        "bId": "phn-69-2",
+        "overlap": 0.11578947368421053
+      },
+      {
+        "aId": "phn-70-1",
+        "bId": "phn-70-2",
+        "overlap": 0.12
+      },
+      {
+        "aId": "phn-71-1",
+        "bId": "phn-71-2",
+        "overlap": 0.0847457627118644
+      },
+      {
+        "aId": "phn-72-1",
+        "bId": "phn-72-2",
+        "overlap": 0.1188118811881188
+      },
+      {
+        "aId": "phn-73-1",
+        "bId": "phn-73-2",
+        "overlap": 0.15463917525773196
+      },
+      {
+        "aId": "phn-74-1",
+        "bId": "phn-74-2",
+        "overlap": 0.12371134020618557
+      },
+      {
+        "aId": "phn-75-1",
+        "bId": "phn-75-2",
+        "overlap": 0.14545454545454545
+      },
+      {
+        "aId": "phn-76-1",
+        "bId": "phn-76-2",
+        "overlap": 0.10891089108910891
+      },
+      {
+        "aId": "phn-77-1",
+        "bId": "phn-77-2",
+        "overlap": 0.1568627450980392
+      },
+      {
+        "aId": "phn-78-1",
+        "bId": "phn-78-2",
+        "overlap": 0.1282051282051282
+      },
+      {
+        "aId": "phn-79-1",
+        "bId": "phn-79-2",
+        "overlap": 0.13761467889908258
+      },
+      {
+        "aId": "phn-80-1",
+        "bId": "phn-80-2",
+        "overlap": 0.18584070796460178
+      },
+      {
+        "aId": "phn-81-1",
+        "bId": "phn-81-2",
+        "overlap": 0.2222222222222222
+      },
+      {
+        "aId": "phn-82-1",
+        "bId": "phn-82-2",
+        "overlap": 0.07228915662650602
+      },
+      {
+        "aId": "phn-83-1",
+        "bId": "phn-83-2",
+        "overlap": 0.11607142857142858
+      },
+      {
+        "aId": "phn-84-1",
+        "bId": "phn-84-2",
+        "overlap": 0.12149532710280374
+      },
+      {
+        "aId": "phn-85-1",
+        "bId": "phn-85-2",
+        "overlap": 0.19444444444444445
+      },
+      {
+        "aId": "phn-86-1",
+        "bId": "phn-86-2",
+        "overlap": 0.09433962264150944
+      },
+      {
+        "aId": "phn-87-1",
+        "bId": "phn-87-2",
+        "overlap": 0.16666666666666666
+      },
+      {
+        "aId": "phn-88-1",
+        "bId": "phn-88-2",
+        "overlap": 0.17647058823529413
+      },
+      {
+        "aId": "phn-89-1",
+        "bId": "phn-89-2",
+        "overlap": 0.19230769230769232
+      },
+      {
+        "aId": "phn-90-1",
+        "bId": "phn-90-2",
+        "overlap": 0.09009009009009009
+      },
+      {
+        "aId": "phn-91-1",
+        "bId": "phn-91-2",
+        "overlap": 0.17391304347826086
+      },
+      {
+        "aId": "phn-92-1",
+        "bId": "phn-92-2",
+        "overlap": 0.13953488372093023
+      },
+      {
+        "aId": "phn-93-1",
+        "bId": "phn-93-2",
+        "overlap": 0.11214953271028037
+      },
+      {
+        "aId": "phn-94-1",
+        "bId": "phn-94-2",
+        "overlap": 0.20535714285714285
+      },
+      {
+        "aId": "phn-95-1",
+        "bId": "phn-95-2",
+        "overlap": 0.35365853658536583
+      },
+      {
+        "aId": "phn-96-1",
+        "bId": "phn-96-2",
+        "overlap": 0.11023622047244094
+      },
+      {
+        "aId": "phn-97-1",
+        "bId": "phn-97-2",
+        "overlap": 0.18181818181818182
+      },
+      {
+        "aId": "phn-98-1",
+        "bId": "phn-98-2",
+        "overlap": 0.07339449541284404
+      },
+      {
+        "aId": "phn-99-1",
+        "bId": "phn-99-2",
+        "overlap": 0.12173913043478261
+      },
+      {
+        "aId": "phn-100-1",
+        "bId": "phn-100-2",
+        "overlap": 0.10869565217391304
+      },
+      {
+        "aId": "phn-101-1",
+        "bId": "phn-101-2",
+        "overlap": 0.11627906976744186
+      },
+      {
+        "aId": "phn-102-1",
+        "bId": "phn-102-2",
+        "overlap": 0.1981981981981982
+      },
+      {
+        "aId": "phn-103-1",
+        "bId": "phn-103-2",
+        "overlap": 0.16129032258064516
+      },
+      {
+        "aId": "phn-104-1",
+        "bId": "phn-104-2",
+        "overlap": 0.20430107526881722
+      },
+      {
+        "aId": "phn-105-1",
+        "bId": "phn-105-2",
+        "overlap": 0.17525773195876287
+      },
+      {
+        "aId": "phn-106-1",
+        "bId": "phn-106-2",
+        "overlap": 0.12295081967213115
+      },
+      {
+        "aId": "phn-107-1",
+        "bId": "phn-107-2",
+        "overlap": 0.24390243902439024
+      },
+      {
+        "aId": "phn-108-1",
+        "bId": "phn-108-2",
+        "overlap": 0.0990990990990991
+      },
+      {
+        "aId": "phn-109-1",
+        "bId": "phn-109-2",
+        "overlap": 0.11650485436893204
+      },
+      {
+        "aId": "phn-110-1",
+        "bId": "phn-110-2",
+        "overlap": 0.1282051282051282
+      },
+      {
+        "aId": "phn-111-1",
+        "bId": "phn-111-2",
+        "overlap": 0.125
+      },
+      {
+        "aId": "phn-112-1",
+        "bId": "phn-112-2",
+        "overlap": 0.20618556701030927
+      },
+      {
+        "aId": "phn-113-1",
+        "bId": "phn-113-2",
+        "overlap": 0.14953271028037382
+      },
+      {
+        "aId": "phn-114-1",
+        "bId": "phn-114-2",
+        "overlap": 0.12244897959183673
+      },
+      {
+        "aId": "phn-115-1",
+        "bId": "phn-115-2",
+        "overlap": 0.09174311926605505
+      },
+      {
+        "aId": "phn-116-1",
+        "bId": "phn-116-2",
+        "overlap": 0.11510791366906475
+      },
+      {
+        "aId": "phn-117-1",
+        "bId": "phn-117-2",
+        "overlap": 0.29069767441860467
+      },
+      {
+        "aId": "phn-118-1",
+        "bId": "phn-118-2",
+        "overlap": 0.10344827586206896
+      },
+      {
+        "aId": "phn-119-1",
+        "bId": "phn-119-2",
+        "overlap": 0.14516129032258066
+      },
+      {
+        "aId": "phn-120-1",
+        "bId": "phn-120-2",
+        "overlap": 0.1414141414141414
+      },
+      {
+        "aId": "phn-121-1",
+        "bId": "phn-121-2",
+        "overlap": 0.10256410256410256
+      },
+      {
+        "aId": "phn-122-1",
+        "bId": "phn-122-2",
+        "overlap": 0.2
+      },
+      {
+        "aId": "phn-123-1",
+        "bId": "phn-123-2",
+        "overlap": 0.1951219512195122
+      },
+      {
+        "aId": "phn-124-1",
+        "bId": "phn-124-2",
+        "overlap": 0.13043478260869565
+      },
+      {
+        "aId": "phn-125-1",
+        "bId": "phn-125-2",
+        "overlap": 0.11224489795918367
+      },
+      {
+        "aId": "phn-126-1",
+        "bId": "phn-126-2",
+        "overlap": 0.14
+      },
+      {
+        "aId": "phn-127-1",
+        "bId": "phn-127-2",
+        "overlap": 0.30337078651685395
+      },
+      {
+        "aId": "phn-128-1",
+        "bId": "phn-128-2",
+        "overlap": 0.14655172413793102
+      },
+      {
+        "aId": "phn-129-1",
+        "bId": "phn-129-2",
+        "overlap": 0.125
+      },
+      {
+        "aId": "phn-130-1",
+        "bId": "phn-130-2",
+        "overlap": 0.10714285714285714
+      },
+      {
+        "aId": "phn-131-1",
+        "bId": "phn-131-2",
+        "overlap": 0.07446808510638298
+      },
+      {
+        "aId": "phn-132-1",
+        "bId": "phn-132-2",
+        "overlap": 0.12280701754385964
+      },
+      {
+        "aId": "phn-133-1",
+        "bId": "phn-133-2",
+        "overlap": 0.15126050420168066
+      },
+      {
+        "aId": "phn-134-1",
+        "bId": "phn-134-2",
+        "overlap": 0.1827956989247312
+      },
+      {
+        "aId": "phn-135-1",
+        "bId": "phn-135-2",
+        "overlap": 0.1504424778761062
+      },
+      {
+        "aId": "phn-136-1",
+        "bId": "phn-136-2",
+        "overlap": 0.0891089108910891
+      },
+      {
+        "aId": "phn-137-1",
+        "bId": "phn-137-2",
+        "overlap": 0.11702127659574468
+      },
+      {
+        "aId": "phn-138-1",
+        "bId": "phn-138-2",
+        "overlap": 0.17094017094017094
+      },
+      {
+        "aId": "phn-139-1",
+        "bId": "phn-139-2",
+        "overlap": 0.17757009345794392
+      },
+      {
+        "aId": "phn-140-1",
+        "bId": "phn-140-2",
+        "overlap": 0.1875
+      },
+      {
+        "aId": "phn-141-1",
+        "bId": "phn-141-2",
+        "overlap": 0.10101010101010101
+      },
+      {
+        "aId": "phn-142-1",
+        "bId": "phn-142-2",
+        "overlap": 0.15476190476190477
+      },
+      {
+        "aId": "phn-143-1",
+        "bId": "phn-143-2",
+        "overlap": 0.14545454545454545
+      },
+      {
+        "aId": "phn-144-1",
+        "bId": "phn-144-2",
+        "overlap": 0.27380952380952384
+      },
+      {
+        "aId": "phn-145-1",
+        "bId": "phn-145-2",
+        "overlap": 0.3684210526315789
+      },
+      {
+        "aId": "phn-146-1",
+        "bId": "phn-146-2",
+        "overlap": 0.17142857142857143
+      },
+      {
+        "aId": "phn-147-1",
+        "bId": "phn-147-2",
+        "overlap": 0.2553191489361702
+      },
+      {
+        "aId": "phn-148-1",
+        "bId": "phn-148-2",
+        "overlap": 0.15454545454545454
+      },
+      {
+        "aId": "phn-149-1",
+        "bId": "phn-149-2",
+        "overlap": 0.1015625
+      },
+      {
+        "aId": "phn-150-1",
+        "bId": "phn-150-2",
+        "overlap": 0.18811881188118812
+      },
+      {
+        "aId": "phn-151-1",
+        "bId": "phn-151-2",
+        "overlap": 0.09565217391304348
+      },
+      {
+        "aId": "phn-152-1",
+        "bId": "phn-152-2",
+        "overlap": 0.13924050632911392
+      },
+      {
+        "aId": "phn-153-1",
+        "bId": "phn-153-2",
+        "overlap": 0.11827956989247312
+      },
+      {
+        "aId": "phn-154-1",
+        "bId": "phn-154-2",
+        "overlap": 0.1414141414141414
+      },
+      {
+        "aId": "phn-155-1",
+        "bId": "phn-155-2",
+        "overlap": 0.2
+      },
+      {
+        "aId": "phn-156-1",
+        "bId": "phn-156-2",
+        "overlap": 0.19672131147540983
+      },
+      {
+        "aId": "phn-157-1",
+        "bId": "phn-157-2",
+        "overlap": 0.13253012048192772
+      },
+      {
+        "aId": "phn-158-1",
+        "bId": "phn-158-2",
+        "overlap": 0.20689655172413793
+      },
+      {
+        "aId": "phn-159-1",
+        "bId": "phn-159-2",
+        "overlap": 0.14563106796116504
+      },
+      {
+        "aId": "phn-160-1",
+        "bId": "phn-160-2",
+        "overlap": 0.15384615384615385
+      },
+      {
+        "aId": "phn-161-1",
+        "bId": "phn-161-2",
+        "overlap": 0.15789473684210525
+      },
+      {
+        "aId": "phn-162-1",
+        "bId": "phn-162-2",
+        "overlap": 0.1574074074074074
+      },
+      {
+        "aId": "phn-163-1",
+        "bId": "phn-163-2",
+        "overlap": 0.15254237288135594
+      },
+      {
+        "aId": "phn-164-1",
+        "bId": "phn-164-2",
+        "overlap": 0.0859375
+      },
+      {
+        "aId": "phn-165-1",
+        "bId": "phn-165-2",
+        "overlap": 0.1414141414141414
+      },
+      {
+        "aId": "phn-166-1",
+        "bId": "phn-166-2",
+        "overlap": 0.14655172413793102
+      },
+      {
+        "aId": "phn-167-1",
+        "bId": "phn-167-2",
+        "overlap": 0.2619047619047619
+      },
+      {
+        "aId": "phn-168-1",
+        "bId": "phn-168-2",
+        "overlap": 0.1188118811881188
+      },
+      {
+        "aId": "phn-169-1",
+        "bId": "phn-169-2",
+        "overlap": 0.15306122448979592
+      },
+      {
+        "aId": "phn-170-1",
+        "bId": "phn-170-2",
+        "overlap": 0.12371134020618557
+      },
+      {
+        "aId": "phn-171-1",
+        "bId": "phn-171-2",
+        "overlap": 0.13445378151260504
+      },
+      {
+        "aId": "phn-172-1",
+        "bId": "phn-172-2",
+        "overlap": 0.11504424778761062
+      },
+      {
+        "aId": "phn-173-1",
+        "bId": "phn-173-2",
+        "overlap": 0.12727272727272726
+      },
+      {
+        "aId": "phn-174-1",
+        "bId": "phn-174-2",
+        "overlap": 0.14583333333333334
+      },
+      {
+        "aId": "phn-175-1",
+        "bId": "phn-175-2",
+        "overlap": 0.1414141414141414
+      },
+      {
+        "aId": "phn-176-1",
+        "bId": "phn-176-2",
+        "overlap": 0.14018691588785046
+      },
+      {
+        "aId": "phn-177-1",
+        "bId": "phn-177-2",
+        "overlap": 0.09090909090909091
+      },
+      {
+        "aId": "phn-178-1",
+        "bId": "phn-178-2",
+        "overlap": 0.13541666666666666
+      },
+      {
+        "aId": "phn-179-1",
+        "bId": "phn-179-2",
+        "overlap": 0.11
+      },
+      {
+        "aId": "phn-180-1",
+        "bId": "phn-180-2",
+        "overlap": 0.1
+      },
+      {
+        "aId": "phn-181-1",
+        "bId": "phn-181-2",
+        "overlap": 0.04081632653061224
+      },
+      {
+        "aId": "phn-182-1",
+        "bId": "phn-182-2",
+        "overlap": 0.12359550561797752
+      },
+      {
+        "aId": "phn-183-1",
+        "bId": "phn-183-2",
+        "overlap": 0.11504424778761062
+      },
+      {
+        "aId": "phn-184-1",
+        "bId": "phn-184-2",
+        "overlap": 0.12149532710280374
+      },
+      {
+        "aId": "phn-185-1",
+        "bId": "phn-185-2",
+        "overlap": 0.09649122807017543
+      },
+      {
+        "aId": "phn-186-1",
+        "bId": "phn-186-2",
+        "overlap": 0.15217391304347827
+      },
+      {
+        "aId": "phn-187-1",
+        "bId": "phn-187-2",
+        "overlap": 0.15833333333333333
+      },
+      {
+        "aId": "phn-188-1",
+        "bId": "phn-188-2",
+        "overlap": 0.14772727272727273
+      },
+      {
+        "aId": "phn-189-1",
+        "bId": "phn-189-2",
+        "overlap": 0.07368421052631578
+      },
+      {
+        "aId": "phn-190-1",
+        "bId": "phn-190-2",
+        "overlap": 0.16666666666666666
+      },
+      {
+        "aId": "phn-191-1",
+        "bId": "phn-191-2",
+        "overlap": 0.24074074074074073
+      },
+      {
+        "aId": "phn-192-1",
+        "bId": "phn-192-2",
+        "overlap": 0.20202020202020202
+      },
+      {
+        "aId": "phn-193-1",
+        "bId": "phn-193-2",
+        "overlap": 0.21739130434782608
+      },
+      {
+        "aId": "phn-194-1",
+        "bId": "phn-194-2",
+        "overlap": 0.18461538461538463
+      },
+      {
+        "aId": "phn-195-1",
+        "bId": "phn-195-2",
+        "overlap": 0.19540229885057472
+      },
+      {
+        "aId": "phn-196-1",
+        "bId": "phn-196-2",
+        "overlap": 0.12037037037037036
+      },
+      {
+        "aId": "phn-197-1",
+        "bId": "phn-197-2",
+        "overlap": 0.30973451327433627
+      },
+      {
+        "aId": "phn-198-1",
+        "bId": "phn-198-2",
+        "overlap": 0.1553398058252427
+      },
+      {
+        "aId": "phn-199-1",
+        "bId": "phn-199-2",
+        "overlap": 0.14018691588785046
+      }
+    ]
+  }
+}
